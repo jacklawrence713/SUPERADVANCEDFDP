@@ -162,7 +162,9 @@ const SLEEPER_IDS={
 "Evan Engram":"4066","Dalton Kincaid":"10236","Tucker Kraft":"9484","Isaiah Likely":"8131",
 "Juwan Johnson":"7002","Zach Ertz":"1339","Theo Johnson":"11597","Dalton Schultz":"5001",
 "Hunter Henry":"3214","Oronde Gadsden II":"12493","Terrance Ferguson":"12487","AJ Barner":"11603"};
-function headshot(n){var id=SLEEPER_IDS[n];return id?"https://sleepercdn.com/content/nfl/players/thumb/"+id+".jpg":null;}
+var _sleeperNameMap:{[k:string]:string}={};
+function initSleeperNameMap(db:{[id:string]:{name?:string}}){_sleeperNameMap={};Object.keys(db).forEach(function(id){var p=db[id];if(p&&p.name)_sleeperNameMap[p.name]=id;});}
+function headshot(n:string){var id=SLEEPER_IDS[n]||_sleeperNameMap[n];return id?"https://sleepercdn.com/content/nfl/players/thumb/"+id+".jpg":null;}
 
 const PLAYERS=[
   {name:"Lamar Jackson",pos:"QB",age:30,team:"BAL",proj:{PPR:445,Half:445,Standard:445},adp:1.1,ktcVal:7648,note:"2026: 4,400 yds 44 TD 950 rush MVP level"},
@@ -2214,7 +2216,7 @@ export default function App(){
   var [showShareModal,setShowShareModal]=useState(false);
   var [shareCopied,setShareCopied]=useState(false);
   var [sleeperTrending,setSleeperTrending]=useState(null);
-  var [sleeperRawDb,setSleeperRawDb]=useState(function(){try{var c=localStorage.getItem('fdp_sp_v1');return c?JSON.parse(c):{};}catch(e){return{};}});
+  var [sleeperRawDb,setSleeperRawDb]=useState(function(){try{var c=localStorage.getItem('fdp_sp_v1');if(c){var d=JSON.parse(c);initSleeperNameMap(d);return d;}return{};}catch(e){return{};}});
   var [leagueTrades,setLeagueTrades]=useState(null);
   var [leagueTradesLoading,setLeagueTradesLoading]=useState(false);
   var [auctionNoms,setAuctionNoms]=useState([]);
@@ -2504,7 +2506,7 @@ export default function App(){
       playersPromise
     ]).then(function(results){
       var rosters=results[0],users=results[1],tradedPicks=results[2]||[],sleeperDb=results[3]||{};
-      setSleeperRawDb(sleeperDb);
+      initSleeperNameMap(sleeperDb);setSleeperRawDb(sleeperDb);
       // Build lookup maps from rankedPlayers — exact name and normalized name
       var rpByName={},rpByNorm={};
       rankedPlayers.forEach(function(p){rpByName[p.name.toLowerCase()]=p;rpByNorm[normName(p.name)]=p;});
@@ -2613,7 +2615,7 @@ export default function App(){
       fetch("https://api.sleeper.app/v1/players/nfl/trending/drop?lookback_hours=24&limit=20").then(function(r){return r.ok?r.json():[];}).catch(function(){return[];}),
       fetchDb
     ]).then(function(res){
-      if(res[2]&&Object.keys(res[2]).length>0){try{localStorage.setItem('fdp_sp_v1',JSON.stringify(res[2]));}catch(e){}setSleeperRawDb(res[2]);}
+      if(res[2]&&Object.keys(res[2]).length>0){try{localStorage.setItem('fdp_sp_v1',JSON.stringify(res[2]));}catch(e){}initSleeperNameMap(res[2]);setSleeperRawDb(res[2]);}
       setSleeperTrending({adds:res[0]||[],drops:res[1]||[],ts:Date.now()});
     });
   }
