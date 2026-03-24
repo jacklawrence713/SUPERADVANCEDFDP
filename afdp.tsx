@@ -2912,6 +2912,10 @@ export default function App(){
         );
       }),
       React.createElement("div",{style:{marginTop:"auto",padding:"12px 16px",borderTop:"1px solid "+T.border}},
+        React.createElement("button",{onClick:toggleDarkMode,style:{display:"flex",alignItems:"center",gap:8,width:"100%",padding:"8px 10px",marginBottom:10,borderRadius:10,border:"1px solid "+T.border,background:T.bgInput,color:T.textSub,cursor:"pointer",fontSize:12,fontWeight:600}},
+          React.createElement("span",{style:{fontSize:15}},darkMode?"☀️":"🌙"),
+          React.createElement("span",null,darkMode?"Light Mode":"Dark Mode")
+        ),
         !user?React.createElement("div",{style:{display:"flex",flexDirection:"column",gap:8}},
           React.createElement("button",{onClick:function(){setAuthMode("signup");setShowAuth(true);},style:{padding:"10px",borderRadius:10,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer"}},"Sign Up Free"),
           React.createElement("button",{onClick:function(){setAuthMode("signin");setShowAuth(true);},style:{padding:"10px",borderRadius:10,border:"1px solid "+T.border,background:"transparent",color:T.text,fontWeight:700,fontSize:12,cursor:"pointer"}},"Sign In")
