@@ -888,7 +888,7 @@ const PLAYERS=[
   {name:"Mykal Walker",pos:"LB",age:29,team:"ATL",proj:{PPR:82,Half:82,Standard:82},adp:31.5,ktcVal:900,note:"Coverage: 72 tackles 2 INT"},
   // QB Wave 7
   {name:"Trey Lance",pos:"QB",age:26,team:"LAC",proj:{PPR:235,Half:235,Standard:235},adp:25.5,ktcVal:1200,note:"Mobile backup: upside arm"},
-  {name:"Marcus Mariota",pos:"QB",age:32,team:"WAS",proj:{PPR:218,Half:218,Standard:218},adp:29.5,ktcVal:500,note:"WAS backup QB"},
+  {name:"Marcus Mariota",pos:"QB",age:32,team:"WAS",proj:{PPR:218,Half:218,Standard:218},adp:29.5,ktcVal:1555,note:"WAS backup QB"},
   {name:"Carson Wentz",pos:"QB",age:34,team:"MIN",proj:{PPR:225,Half:225,Standard:225},adp:28.0,ktcVal:150,note:"MIN backup QB"},
   // WR Wave 7
   {name:"Robbie Anderson",pos:"WR",age:31,team:"FA",proj:{PPR:88,Half:81,Standard:74},adp:44.5,note:"Veteran deep threat"},
