@@ -416,7 +416,7 @@ const PLAYERS=[
   {name:"Vonn Bell",pos:"DB",age:31,team:"CIN",proj:{PPR:92,Half:92,Standard:92},adp:19.8,ktcVal:800,note:"CIN S: 88 tackles 2 INT"},
   {name:"Marcus Peters",pos:"DB",age:33,team:"FA",proj:{PPR:90,Half:90,Standard:90},adp:20.5,ktcVal:400,note:"Veteran CB: high INT upside"},
   {name:"Chamarri Conner",pos:"DB",age:25,team:"WAS",proj:{PPR:98,Half:98,Standard:98},adp:18.0,ktcVal:2000,note:"WAS S: 100 tackles 3 INT upside"},
-  {name:"Kamren Curl",pos:"DB",age:27,team:"LAR",proj:{PPR:100,Half:100,Standard:100},adp:17.5,ktcVal:3800,note:"LAR S: 98 tackles 3 INT"},
+  {name:"Kam Curl",pos:"DB",age:27,team:"LAR",proj:{PPR:100,Half:100,Standard:100},adp:17.5,ktcVal:3800,note:"LAR S: 98 tackles 3 INT"},
   {name:"Jevon Holland",pos:"DB",age:26,team:"MIA",proj:{PPR:105,Half:105,Standard:105},adp:16.2,ktcVal:3000,note:"MIA S: 95 tackles 4 INT"},
   {name:"Marcus Williams",pos:"DB",age:30,team:"BAL",proj:{PPR:98,Half:98,Standard:98},adp:17.8,ktcVal:1500,note:"BAL S: 90 tackles 3 INT"},
   {name:"Xavier McKinney",pos:"DB",age:26,team:"NYG",proj:{PPR:108,Half:108,Standard:108},adp:15.8,ktcVal:3500,note:"NYG S: 95 tackles 5 INT"},
@@ -505,7 +505,7 @@ const PLAYERS=[
   {name:"Junior Colson",pos:"LB",age:23,team:"IND",proj:{PPR:108,Half:108,Standard:108},adp:15.5,ktcVal:3000,note:"IND LB Year 2: 120 tackles 3 sacks"},
   {name:"Edefuan Ulofoshio",pos:"LB",age:26,team:"SEA",proj:{PPR:105,Half:105,Standard:105},adp:16.2,ktcVal:2200,note:"SEA LB: 115 tackles starter"},
   {name:"Tanner Koziol",pos:"LB",age:25,team:"BUF",proj:{PPR:98,Half:98,Standard:98},adp:17.5,ktcVal:1800,note:"BUF LB developing"},
-  {name:"Nikolas Bonitto",pos:"LB",age:25,team:"DEN",proj:{PPR:105,Half:105,Standard:105},adp:16.0,ktcVal:3500,note:"DEN LB: 8 sacks pass rush upside"},
+  {name:"Nik Bonitto",pos:"LB",age:25,team:"DEN",proj:{PPR:105,Half:105,Standard:105},adp:16.0,ktcVal:3500,note:"DEN LB: 8 sacks pass rush upside"},
   {name:"Omar Speights",pos:"LB",age:24,team:"LAR",proj:{PPR:95,Half:95,Standard:95},adp:18.2,ktcVal:2000,note:"LAR LB: 108 tackles ascending"},
   {name:"Isaiah Foskey",pos:"DL",age:24,team:"NO",proj:{PPR:92,Half:92,Standard:92},adp:18.8,ktcVal:2800,note:"NO edge Year 2: 8 sacks upside"},
   // DB Wave 4 — 2024 rookies & ascending CBs/Ss
