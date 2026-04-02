@@ -861,7 +861,6 @@ const PLAYERS=[
   {name:"DJ Reed",pos:"DB",age:29,team:"NYJ",proj:{PPR:90,Half:90,Standard:90},adp:26.0,ktcVal:2200,note:"CB: 58 tackles 3 INT press coverage"},
   {name:"Cam Smith",pos:"DB",age:24,team:"MIA",proj:{PPR:85,Half:85,Standard:85},adp:29.5,ktcVal:2200,note:"Year 3 CB: 55 tackles 2 INT"},
   {name:"Chidobe Awuzie",pos:"DB",age:30,team:"CIN",proj:{PPR:88,Half:88,Standard:88},adp:27.5,ktcVal:1000,note:"Veteran CB: 60 tackles 2 INT"},
-  {name:"Adoree Jackson",pos:"DB",age:29,team:"NYG",proj:{PPR:82,Half:82,Standard:82},adp:31.0,ktcVal:1200,note:"CB veteran: 54 tackles 2 INT"},
   {name:"Jaycee Horn",pos:"DB",age:27,team:"CAR",proj:{PPR:92,Half:92,Standard:92},adp:24.5,ktcVal:3200,note:"CB1 when healthy: 60 tackles 3 INT"},
   {name:"Kaiir Elam",pos:"DB",age:25,team:"BUF",proj:{PPR:78,Half:78,Standard:78},adp:34.5,ktcVal:2000,note:"CB Year 4: 52 tackles 2 INT"},
   {name:"Tyson Campbell",pos:"DB",age:27,team:"JAX",proj:{PPR:88,Half:88,Standard:88},adp:27.0,ktcVal:2200,note:"CB1: 60 tackles 3 INT"},
@@ -1314,7 +1313,6 @@ const PLAYERS=[
   // Wave 12 — IDP DL/LB/DB depth + WR/TE/RB stragglers
   // IDP DL Wave 12
   {name:"K'Lavon Chaisson",pos:"DL",age:26,team:"LV",proj:{PPR:72,Half:72,Standard:72},adp:37.5,note:"EDGE: 6 sacks rotational"},
-  {name:"AJ Epenesa",pos:"DL",age:26,team:"BUF",proj:{PPR:75,Half:75,Standard:75},adp:35.5,note:"EDGE depth: 6 sacks rotational"},
   {name:"Boogie Basham",pos:"DL",age:27,team:"BUF",proj:{PPR:68,Half:68,Standard:68},adp:41.0,note:"EDGE rotational: 5 sacks"},
   {name:"Al Woods",pos:"DL",age:37,team:"FA",proj:{PPR:55,Half:55,Standard:55},adp:50.0,note:"Veteran NT depth: 28 tackles"},
   {name:"Isaiah Buggs",pos:"DL",age:28,team:"DET",proj:{PPR:62,Half:62,Standard:62},adp:44.0,note:"IDL rotational: 28 tackles 2 sacks"},
@@ -1464,7 +1462,6 @@ const PLAYERS=[
   {name:"Chris Streveler",pos:"QB",age:30,team:"NYJ",proj:{PPR:188,Half:188,Standard:188},adp:35.5,note:"Mobile emergency backup"},
   // IDP Wave 5 — elite and rising pass rushers
   {name:"Jaelan Phillips",pos:"DL",age:26,team:"MIA",proj:{PPR:105,Half:105,Standard:105},adp:14.5,note:"EDGE: 10 sacks when healthy"},
-  {name:"Nolan Smith",pos:"DL",age:24,team:"PHI",proj:{PPR:95,Half:95,Standard:95},adp:22.5,note:"Year 3 breakout: 9 sacks"},
   {name:"Zach Harrison",pos:"DL",age:25,team:"NYG",proj:{PPR:90,Half:90,Standard:90},adp:27.0,note:"Interior rush: 8 sacks"},
   {name:"Brenton Cox Jr.",pos:"DL",age:25,team:"PHI",proj:{PPR:88,Half:88,Standard:88},adp:29.5,note:"Edge rotational: 7 sacks"},
   // IDP Wave 5 — LBs
