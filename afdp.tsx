@@ -131,7 +131,7 @@ const SLEEPER_IDS={
 "Travis Kelce":"1466","Tyler Warren":"12518","Dallas Goedert":"5022","T.J. Hockenson":"5844",
 "David Njoku":"4033","Jake Ferguson":"8110","Harold Fannin Jr.":"12506","Cade Otton":"8111",
 "Cole Kmet":"6826","Pat Freiermuth":"7600","Brenton Strange":"9480","Michael Mayer":"9482",
-"Chigoziem Okonkwo":"8210","Dawson Knox":"5906",
+"Chig Okonkwo":"8210","Dawson Knox":"5906",
 "Myles Garrett":"3973","Micah Parsons":"7640","Aidan Hutchinson":"8289","T.J. Watt":"4070",
 "Nick Bosa":"5816","Maxx Crosby":"5991","Chris Jones":"4068","Brian Burns":"5862",
 "Jonathan Greenard":"6059","Jalen Carter":"10888","Dexter Lawrence":"5847",
@@ -305,7 +305,7 @@ const PLAYERS=[
   {name:"Pat Freiermuth",pos:"TE",age:28,team:"PIT",proj:{PPR:138,Half:126,Standard:114},adp:19.5,ktcVal:2000,note:"52 rec 540 yds 5 TD"},
   {name:"Brenton Strange",pos:"TE",age:25,team:"JAX",proj:{PPR:125,Half:114,Standard:103},adp:22.5,ktcVal:3200,note:"48 rec 470 yds"},
   {name:"Michael Mayer",pos:"TE",age:24,team:"LV",proj:{PPR:118,Half:108,Standard:98},adp:25.0,ktcVal:2324,note:"45 rec 440 yds"},
-  {name:"Chigoziem Okonkwo",pos:"TE",age:27,team:"WAS",proj:{PPR:118,Half:108,Standard:98},adp:26.0,ktcVal:2100,note:"WAS TE: 48 rec 520 yds 4 TD"},
+  {name:"Chig Okonkwo",pos:"TE",age:27,team:"WAS",proj:{PPR:118,Half:108,Standard:98},adp:26.0,ktcVal:2100,note:"WAS TE: 48 rec 520 yds 4 TD"},
   {name:"Dawson Knox",pos:"TE",age:28,team:"BUF",proj:{PPR:108,Half:99,Standard:90},adp:28.8,ktcVal:1500,note:"40 rec 410 yds 5 TD"},
   // Additional DLs
   {name:"T.J. Watt",pos:"DL",age:30,team:"PIT",proj:{PPR:155,Half:155,Standard:155},adp:7.2,ktcVal:6000,note:"18 sacks 25 TFL elite pass rush"},
