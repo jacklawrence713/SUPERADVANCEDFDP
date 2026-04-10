@@ -3045,7 +3045,7 @@ export default function App(){
               var realActive=format===f;
               return React.createElement("button",{key:f,onClick:function(){setFormat(f);setAnalyzed(false);},style:{flex:1,padding:"7px 4px",borderRadius:9,border:"1px solid "+(realActive?T.purple:T.border),background:realActive?T.purple+"22":"transparent",color:realActive?T.purpleLight:T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},f);
             }),
-            React.createElement("button",{onClick:function(){setSfMode(function(v){return !v;});setAnalyzed(false);},style:{padding:"7px 10px",borderRadius:9,border:"1px solid "+(sfMode?T.purple:T.border),background:sfMode?T.purple+"22":"transparent",color:sfMode?T.purpleLight:T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},"SF"),
+            React.createElement("button",{onClick:function(){setSfMode(function(v){return !v;});setAnalyzed(false);},style:{padding:"7px 10px",borderRadius:9,border:"1px solid "+(sfMode?"#f59e0b":T.border),background:sfMode?"#f59e0b":"transparent",color:sfMode?"#000":T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},"SF"),
             React.createElement("button",{onClick:function(){var next=tePremium>0?0:0.5;setTePremium(next);try{localStorage.setItem('fdp_tep_v1',String(next));}catch(e){}setAnalyzed(false);},style:{padding:"7px 10px",borderRadius:9,border:"1px solid "+(tePremium>0?"#f59e0b":T.border),background:tePremium>0?"#f59e0b":"transparent",color:tePremium>0?"#000":T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},"TEP")
           )
         ),
