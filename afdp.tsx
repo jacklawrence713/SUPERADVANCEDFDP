@@ -4440,22 +4440,42 @@ export default function App(){
           React.createElement("div",{style:{fontSize:9,fontWeight:700,color:T.textDim,letterSpacing:1,textAlign:"center"}},"7D CHANGE"),
           React.createElement("div",{style:{fontSize:9,fontWeight:700,color:T.purple,letterSpacing:1,textAlign:"right"}},"FDP VALUE ("+rankFormat+")")
         ),
-        rankedPlayers.filter(function(p){return p.pos!=="K"&&p.pos!=="DST"&&(pvPos==="All"||p.pos===pvPos)&&(!user||user.isPro||p.rank<=FREE_RANK_LIMIT);}).slice().sort(function(a,b){return b.tradeVal-a.tradeVal;}).map(function(p){
-          var gs=getGameScript(p.team,oddsData);
-          return React.createElement("div",{key:p.name,style:{display:"grid",gridTemplateColumns:"44px 1fr 72px 96px",padding:"10px 16px",borderBottom:"1px solid "+T.border,alignItems:"center",gap:4}},
-            React.createElement(Avatar,{name:p.name,pos:p.pos,size:34}),
-            React.createElement("div",null,
-              React.createElement("div",{style:{fontWeight:700,fontSize:14,color:T.text,marginBottom:3}},p.name),
-              React.createElement("div",{style:{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap"}},
-                React.createElement(PBadge,{pos:p.pos}),
-                React.createElement("span",{style:{fontSize:11,color:T.textSub,fontWeight:600}},p.team),
-                gs&&React.createElement("span",{style:{fontSize:9,fontWeight:700,color:gs.color,background:gs.color+"18",border:"1px solid "+gs.color+"33",borderRadius:4,padding:"1px 5px"}},gs.script.toUpperCase())
-              )
-            ),
-            React.createElement("div",{style:{textAlign:"center",fontWeight:700,fontSize:13,color:T.textDim}},"—"),
-            React.createElement("div",{style:{textAlign:"right",fontWeight:800,fontSize:15,color:T.purpleLight}},p.tradeVal.toLocaleString())
-          );
-        }),
+        (function(){
+          var wantSF=rankFormat==="SF";
+          var wantTEP=rankFormat==="TEP";
+          function pvVal(p){
+            var ab=dynastyBonus(p.pos,p.age);
+            var sfBoost=wantSF&&p.pos==="QB"?1.25:1;
+            var tepBoost=wantTEP&&p.pos==="TE"?1.2:1;
+            if(p.ktcVal)return Math.min(9999,Math.round(p.ktcVal*ab*sfBoost*tepBoost));
+            var cfg=p.pos==="QB"?(wantSF?{pk:7660,dc:0.927}:{pk:5800,dc:0.912})
+              :p.pos==="RB"?{pk:9987,dc:0.921}
+              :p.pos==="TE"?(wantTEP?{pk:10500,dc:0.833}:{pk:8756,dc:0.833})
+              :p.pos==="DL"?{pk:5500,dc:0.940}
+              :p.pos==="LB"?{pk:4500,dc:0.935}
+              :p.pos==="DB"?{pk:4200,dc:0.930}
+              :{pk:9950,dc:0.927};
+            var rv=cfg.pk*Math.pow(cfg.dc,(p.posRank||1)-1);
+            return Math.round(Math.max(100,Math.min(9999,rv*ab)));
+          }
+          return rankedPlayers.filter(function(p){return p.pos!=="K"&&p.pos!=="DST"&&(pvPos==="All"||p.pos===pvPos)&&(!user||user.isPro||p.rank<=FREE_RANK_LIMIT);}).slice().sort(function(a,b){return pvVal(b)-pvVal(a);}).map(function(p){
+            var gs=getGameScript(p.team,oddsData);
+            var displayVal=pvVal(p);
+            return React.createElement("div",{key:p.name,style:{display:"grid",gridTemplateColumns:"44px 1fr 72px 96px",padding:"10px 16px",borderBottom:"1px solid "+T.border,alignItems:"center",gap:4}},
+              React.createElement(Avatar,{name:p.name,pos:p.pos,size:34}),
+              React.createElement("div",null,
+                React.createElement("div",{style:{fontWeight:700,fontSize:14,color:T.text,marginBottom:3}},p.name),
+                React.createElement("div",{style:{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap"}},
+                  React.createElement(PBadge,{pos:p.pos}),
+                  React.createElement("span",{style:{fontSize:11,color:T.textSub,fontWeight:600}},p.team),
+                  gs&&React.createElement("span",{style:{fontSize:9,fontWeight:700,color:gs.color,background:gs.color+"18",border:"1px solid "+gs.color+"33",borderRadius:4,padding:"1px 5px"}},gs.script.toUpperCase())
+                )
+              ),
+              React.createElement("div",{style:{textAlign:"center",fontWeight:700,fontSize:13,color:T.textDim}},"—"),
+              React.createElement("div",{style:{textAlign:"right",fontWeight:800,fontSize:15,color:T.purpleLight}},displayVal.toLocaleString())
+            );
+          });
+        })(),
         (!user||!user.isPro)&&React.createElement("div",{style:{background:T.purpleDim,border:"1px solid "+T.purple+"44",borderRadius:14,padding:"16px",textAlign:"center",margin:"16px"}},
           React.createElement("div",{style:{fontWeight:700,fontSize:14,color:T.purpleLight,marginBottom:6}},"Unlock Full Rankings"),
           React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:12}},"See all 200+ players with Pro"),
