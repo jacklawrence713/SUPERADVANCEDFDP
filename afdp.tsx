@@ -2236,6 +2236,7 @@ export default function App(){
   var [rankSubTab,setRankSubTab]=useState("allrankings");
   var [rankPos,setRankPos]=useState("QB");
   var [rankFormat,setRankFormat]=useState("SF");
+  var [pvTep,setPvTep]=useState(false);
   var [pvPos,setPvPos]=useState("All");
   var [rankSearch,setRankSearch]=useState("");
   var [rankTeamFilter,setRankTeamFilter]=useState("All Teams");
@@ -4427,8 +4428,10 @@ export default function App(){
         React.createElement("div",{style:{padding:"14px 16px 0"}},
           React.createElement("div",{style:{fontWeight:900,fontSize:20,marginBottom:2}},"FDP Player Values"),
           React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:12}},"Fantasy Draft Pros dynasty values"),
-          React.createElement("div",{style:{display:"flex",gap:6}},
-            ["SF","1QB","TEP"].map(function(fmt){var active=rankFormat===fmt;return React.createElement("button",{key:fmt,onClick:function(){setRankFormat(fmt);},style:{padding:"7px 18px",borderRadius:10,border:"1px solid "+(active?T.purple:T.border),background:active?T.purple:"transparent",color:active?"#fff":T.textSub,fontWeight:700,fontSize:13,cursor:"pointer"}},fmt);})
+          React.createElement("div",{style:{display:"flex",gap:6,flexWrap:"wrap"}},
+            React.createElement("button",{onClick:function(){setRankFormat(rankFormat==="SF"?"1QB":"SF");},style:{padding:"7px 18px",borderRadius:10,border:"1px solid "+(rankFormat==="SF"?T.purple:T.border),background:rankFormat==="SF"?T.purple:"transparent",color:rankFormat==="SF"?"#fff":T.textSub,fontWeight:700,fontSize:13,cursor:"pointer"}},"SF"),
+            React.createElement("button",{onClick:function(){setRankFormat(rankFormat==="SF"?"SF":"1QB");},style:{padding:"7px 18px",borderRadius:10,border:"1px solid "+(rankFormat==="1QB"?T.purple:T.border),background:rankFormat==="1QB"?T.purple:"transparent",color:rankFormat==="1QB"?"#fff":T.textSub,fontWeight:700,fontSize:13,cursor:"pointer"}},"1QB"),
+            React.createElement("button",{onClick:function(){setPvTep(function(v){return !v;});},style:{padding:"7px 18px",borderRadius:10,border:"1px solid "+(pvTep?"#f59e0b":T.border),background:pvTep?"#f59e0b":"transparent",color:pvTep?"#000":T.textSub,fontWeight:700,fontSize:13,cursor:"pointer"}},"TEP")
           ),
           React.createElement("div",{style:{display:"flex",gap:6,marginTop:8,flexWrap:"wrap"}},
             ["All","QB","RB","WR","TE","DL","LB","DB"].map(function(pos){var active=pvPos===pos;return React.createElement("button",{key:pos,onClick:function(){setPvPos(pos);},style:{padding:"5px 12px",borderRadius:8,border:"1px solid "+(active?T.purple:T.border),background:active?T.purple:"transparent",color:active?"#fff":T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},pos);})
@@ -4438,11 +4441,11 @@ export default function App(){
           React.createElement("div",null),
           React.createElement("div",{style:{fontSize:9,fontWeight:700,color:T.textDim,letterSpacing:1}},"DETAILS"),
           React.createElement("div",{style:{fontSize:9,fontWeight:700,color:T.textDim,letterSpacing:1,textAlign:"center"}},"7D CHANGE"),
-          React.createElement("div",{style:{fontSize:9,fontWeight:700,color:T.purple,letterSpacing:1,textAlign:"right"}},"FDP VALUE ("+rankFormat+")")
+          React.createElement("div",{style:{fontSize:9,fontWeight:700,color:T.purple,letterSpacing:1,textAlign:"right"}},"FDP VALUE ("+(rankFormat==="SF"?("SF"+(pvTep?"+TEP":"")):(pvTep?"1QB+TEP":"1QB"))+")")
         ),
         (function(){
           var wantSF=rankFormat==="SF";
-          var wantTEP=rankFormat==="TEP";
+          var wantTEP=pvTep;
           function pvVal(p){
             var ab=dynastyBonus(p.pos,p.age);
             var sfBoost=wantSF&&p.pos==="QB"?1.25:1;
