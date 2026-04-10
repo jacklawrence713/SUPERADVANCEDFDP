@@ -166,6 +166,60 @@ var _sleeperNameMap:{[k:string]:string}={};
 function initSleeperNameMap(db:{[id:string]:{name?:string}}){_sleeperNameMap={};Object.keys(db).forEach(function(id){var p=db[id];if(p&&p.name)_sleeperNameMap[p.name]=id;});}
 function headshot(n:string){var id=SLEEPER_IDS[n]||_sleeperNameMap[n];return id?"https://sleepercdn.com/content/nfl/players/thumb/"+id+".jpg":null;}
 
+// ── Vegas Lines / Game Script (The Odds API) ─────────────────────────────────
+const ODDS_API_KEY="fe9999914cab4185901b7881ec7474cb";
+const ODDS_TEAM_MAP:{[k:string]:string}={
+  "Arizona Cardinals":"ARI","Atlanta Falcons":"ATL","Baltimore Ravens":"BAL",
+  "Buffalo Bills":"BUF","Carolina Panthers":"CAR","Chicago Bears":"CHI",
+  "Cincinnati Bengals":"CIN","Cleveland Browns":"CLE","Dallas Cowboys":"DAL",
+  "Denver Broncos":"DEN","Detroit Lions":"DET","Green Bay Packers":"GB",
+  "Houston Texans":"HOU","Indianapolis Colts":"IND","Jacksonville Jaguars":"JAX",
+  "Kansas City Chiefs":"KC","Las Vegas Raiders":"LV","Los Angeles Chargers":"LAC",
+  "Los Angeles Rams":"LAR","Miami Dolphins":"MIA","Minnesota Vikings":"MIN",
+  "New England Patriots":"NE","New Orleans Saints":"NO","New York Giants":"NYG",
+  "New York Jets":"NYJ","Philadelphia Eagles":"PHI","Pittsburgh Steelers":"PIT",
+  "San Francisco 49ers":"SF","Seattle Seahawks":"SEA","Tampa Bay Buccaneers":"TB",
+  "Tennessee Titans":"TEN","Washington Commanders":"WAS"
+};
+var _oddsCache:{data:{[t:string]:{spread:number,total:number,opp:string}};ts:number}|null=null;
+async function fetchOdds():Promise<{[t:string]:{spread:number,total:number,opp:string}}>{
+  if(_oddsCache&&Date.now()-_oddsCache.ts<3600000)return _oddsCache.data;
+  try{
+    var r=await fetch("https://api.the-odds-api.com/v4/sports/americanfootball_nfl/odds/?apiKey="+ODDS_API_KEY+"&regions=us&markets=spreads,totals");
+    var games=await r.json();
+    if(!Array.isArray(games))return {};
+    var result:{[t:string]:{spread:number,total:number,opp:string}}={};
+    games.forEach(function(game:any){
+      var home=ODDS_TEAM_MAP[game.home_team],away=ODDS_TEAM_MAP[game.away_team];
+      if(!home||!away)return;
+      var spreadHome=0,spreadAway=0,total=45;
+      var bk=game.bookmakers&&(game.bookmakers.find(function(b:any){return b.key==="draftkings";})||game.bookmakers[0]);
+      if(bk){
+        var sm=bk.markets.find(function(m:any){return m.key==="spreads";});
+        var tm=bk.markets.find(function(m:any){return m.key==="totals";});
+        if(sm)sm.outcomes.forEach(function(o:any){if(ODDS_TEAM_MAP[o.name]===home)spreadHome=o.point;if(ODDS_TEAM_MAP[o.name]===away)spreadAway=o.point;});
+        if(tm&&tm.outcomes[0])total=tm.outcomes[0].point;
+      }
+      result[home]={spread:spreadHome,total,opp:away};
+      result[away]={spread:spreadAway,total,opp:home};
+    });
+    _oddsCache={data:result,ts:Date.now()};
+    return result;
+  }catch{return {};}
+}
+function getGameScript(team:string,odds:{[t:string]:{spread:number,total:number,opp:string}}|null):{spread:number,total:number,script:string,label:string,color:string,opp:string}|null{
+  if(!odds)return null;
+  var g=odds[team];if(!g)return null;
+  var spread=g.spread,total=g.total;
+  var script="Neutral",label="Neutral",color="#94a3b8";
+  if(spread<=-7){script="Positive";label="Positive Script";color="#22c55e";}
+  else if(spread<=-3){script="Positive";label="Slight Fav";color="#4ade80";}
+  else if(spread>=7){script="Negative";label="Negative Script";color="#f87171";}
+  else if(spread>=3){script="Negative";label="Slight Dog";color="#fb923c";}
+  var totalNote=total>=50?" · Shootout":total<=41?" · Low O/U":"";
+  return{spread,total,script,label:label+totalNote,color,opp:g.opp};
+}
+
 const PLAYERS=[
   {name:"Lamar Jackson",pos:"QB",age:30,team:"BAL",proj:{PPR:445,Half:445,Standard:445},adp:1.1,ktcVal:7648,note:"2026: 4,400 yds 44 TD 950 rush MVP level"},
   {name:"Josh Allen",pos:"QB",age:30,team:"BUF",proj:{PPR:432,Half:432,Standard:432},adp:1.5,ktcVal:9992,note:"2026: 4,500 yds 43 TD elite"},
@@ -2210,6 +2264,7 @@ export default function App(){
   var [sitS1,setSitS1]=useState("");
   var [sitS2,setSitS2]=useState("");
   var [sitFormat,setSitFormat]=useState("PPR");
+  var [oddsData,setOddsData]=useState<{[t:string]:{spread:number,total:number,opp:string}}|null>(null);
   var [tradeHistory,setTradeHistory]=useState(function(){try{var s=localStorage.getItem('fdp_th_v1');return s?JSON.parse(s):[];}catch(e){return [];}});
   var [tradeSaved,setTradeSaved]=useState(false);
   var [aiAnalysis,setAiAnalysis]=useState("");
@@ -2388,6 +2443,7 @@ export default function App(){
       trackEvent("page_view",{referrer:document.referrer||"direct",path:window.location.pathname});
     }
     loadPublicStats().then(function(s){if(s)setPublicStats(s);});
+    fetchOdds().then(function(d){if(Object.keys(d).length>0)setOddsData(d);});
   },[]);
 
   function doEspnImport(){
@@ -3704,13 +3760,17 @@ export default function App(){
                 })
               )
             ),
-            sitP1&&React.createElement("div",{style:{textAlign:"center"}},
+            sitP1&&(function(){var gs1=getGameScript(sitP1.team,oddsData);return React.createElement("div",{style:{textAlign:"center"}},
               React.createElement(Avatar,{name:sitP1.name,pos:sitP1.pos,size:56}),
               React.createElement("div",{style:{fontWeight:700,fontSize:14,marginTop:8,color:T.text}},sitP1.name),
               React.createElement("div",{style:{fontSize:11,color:T.textSub,marginBottom:8}},sitP1.pos+" · "+sitP1.team),
               React.createElement("div",{style:{fontWeight:900,fontSize:28,color:T.purple}},((sitP1.proj&&(sitP1.proj[sitFormat==="Standard"?"Standard":sitFormat==="Half"?"Half":"PPR"]||sitP1.proj.PPR))||sitP1.pts||0).toFixed(1)),
-              React.createElement("div",{style:{fontSize:10,color:T.textSub}},"PROJ PTS ("+sitFormat+")")
-            )
+              React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:gs1?6:0}},"PROJ PTS ("+sitFormat+")"),
+              gs1&&React.createElement("div",{style:{display:"inline-flex",flexDirection:"column",gap:2,marginTop:4,background:gs1.color+"18",border:"1px solid "+gs1.color+"44",borderRadius:8,padding:"4px 8px"}},
+                React.createElement("div",{style:{fontSize:10,fontWeight:700,color:gs1.color}},gs1.label),
+                React.createElement("div",{style:{fontSize:9,color:T.textSub}},(gs1.spread>0?"+":"")+gs1.spread+" · O/U "+gs1.total+" vs "+gs1.opp)
+              )
+            );})()
           ),
           React.createElement("div",{style:{display:"flex",alignItems:"center",justifyContent:"center",height:40,marginTop:40}},
             React.createElement("div",{style:{fontWeight:900,fontSize:13,color:T.textSub}},"VS")
@@ -3731,13 +3791,17 @@ export default function App(){
                 })
               )
             ),
-            sitP2&&React.createElement("div",{style:{textAlign:"center"}},
+            sitP2&&(function(){var gs2=getGameScript(sitP2.team,oddsData);return React.createElement("div",{style:{textAlign:"center"}},
               React.createElement(Avatar,{name:sitP2.name,pos:sitP2.pos,size:56}),
               React.createElement("div",{style:{fontWeight:700,fontSize:14,marginTop:8,color:T.text}},sitP2.name),
               React.createElement("div",{style:{fontSize:11,color:T.textSub,marginBottom:8}},sitP2.pos+" · "+sitP2.team),
               React.createElement("div",{style:{fontWeight:900,fontSize:28,color:T.purple}},((sitP2.proj&&(sitP2.proj[sitFormat==="Standard"?"Standard":sitFormat==="Half"?"Half":"PPR"]||sitP2.proj.PPR))||sitP2.pts||0).toFixed(1)),
-              React.createElement("div",{style:{fontSize:10,color:T.textSub}},"PROJ PTS ("+sitFormat+")")
-            )
+              React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:gs2?6:0}},"PROJ PTS ("+sitFormat+")"),
+              gs2&&React.createElement("div",{style:{display:"inline-flex",flexDirection:"column",gap:2,marginTop:4,background:gs2.color+"18",border:"1px solid "+gs2.color+"44",borderRadius:8,padding:"4px 8px"}},
+                React.createElement("div",{style:{fontSize:10,fontWeight:700,color:gs2.color}},gs2.label),
+                React.createElement("div",{style:{fontSize:9,color:T.textSub}},(gs2.spread>0?"+":"")+gs2.spread+" · O/U "+gs2.total+" vs "+gs2.opp)
+              )
+            );})()
           )
         ),
         sitP1&&sitP2&&(function(){
@@ -3751,6 +3815,8 @@ export default function App(){
           var margin=+(starterPts-sitterPts).toFixed(1);
           var confidence=margin>8?"High":margin>3?"Medium":"Slight";
           var confColor=margin>8?T.green:margin>3?T.gold:T.textSub;
+          var gs1=getGameScript(sitP1.team,oddsData);
+          var gs2=getGameScript(sitP2.team,oddsData);
           var rows=[
             ["Proj Pts ("+sitFormat+")",p1pts.toFixed(1),p2pts.toFixed(1),false],
             ["Trade Value",(sitP1.tradeVal||0).toLocaleString(),(sitP2.tradeVal||0).toLocaleString(),false],
@@ -3781,6 +3847,25 @@ export default function App(){
                   React.createElement("div",{style:{fontWeight:800,fontSize:16,color:p2wins?T.green:T.text,textAlign:"left"}},row[2])
                 );
               }),
+              (gs1||gs2)&&React.createElement("div",{style:{marginBottom:12,paddingBottom:12,borderBottom:"1px solid "+T.border}},
+                React.createElement("div",{style:{fontSize:10,color:T.textSub,textAlign:"center",fontWeight:600,marginBottom:8}},"GAME SCRIPT"),
+                React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}},
+                  React.createElement("div",{style:{textAlign:"center"}},
+                    gs1?React.createElement("div",null,
+                      React.createElement("div",{style:{fontWeight:700,fontSize:11,color:gs1.color}},gs1.script),
+                      React.createElement("div",{style:{fontSize:9,color:T.textSub}},(gs1.spread>0?"+":"")+gs1.spread+" · O/U "+gs1.total),
+                      React.createElement("div",{style:{fontSize:9,color:T.textDim}},"vs "+gs1.opp)
+                    ):React.createElement("div",{style:{fontSize:10,color:T.textDim}},"No line")
+                  ),
+                  React.createElement("div",{style:{textAlign:"center"}},
+                    gs2?React.createElement("div",null,
+                      React.createElement("div",{style:{fontWeight:700,fontSize:11,color:gs2.color}},gs2.script),
+                      React.createElement("div",{style:{fontSize:9,color:T.textSub}},(gs2.spread>0?"+":"")+gs2.spread+" · O/U "+gs2.total),
+                      React.createElement("div",{style:{fontSize:9,color:T.textDim}},"vs "+gs2.opp)
+                    ):React.createElement("div",{style:{fontSize:10,color:T.textDim}},"No line")
+                  )
+                )
+              ),
               React.createElement("div",{style:{display:"flex",gap:12,marginTop:4}},
                 React.createElement("div",{style:{flex:1,background:T.bgInput,borderRadius:10,padding:"10px 14px",textAlign:"center"}},
                   React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:4}},"SIT"),
@@ -4344,13 +4429,15 @@ export default function App(){
           React.createElement("div",{style:{fontSize:9,fontWeight:700,color:T.purple,letterSpacing:1,textAlign:"right"}},"FDP VALUE ("+rankFormat+")")
         ),
         rankedPlayers.filter(function(p){return p.pos!=="K"&&p.pos!=="DST"&&(pvPos==="All"||p.pos===pvPos)&&(!user||user.isPro||p.rank<=FREE_RANK_LIMIT);}).slice().sort(function(a,b){return b.tradeVal-a.tradeVal;}).map(function(p){
+          var gs=getGameScript(p.team,oddsData);
           return React.createElement("div",{key:p.name,style:{display:"grid",gridTemplateColumns:"44px 1fr 72px 96px",padding:"10px 16px",borderBottom:"1px solid "+T.border,alignItems:"center",gap:4}},
             React.createElement(Avatar,{name:p.name,pos:p.pos,size:34}),
             React.createElement("div",null,
               React.createElement("div",{style:{fontWeight:700,fontSize:14,color:T.text,marginBottom:3}},p.name),
-              React.createElement("div",{style:{display:"flex",alignItems:"center",gap:5}},
+              React.createElement("div",{style:{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap"}},
                 React.createElement(PBadge,{pos:p.pos}),
-                React.createElement("span",{style:{fontSize:11,color:T.textSub,fontWeight:600}},p.team)
+                React.createElement("span",{style:{fontSize:11,color:T.textSub,fontWeight:600}},p.team),
+                gs&&React.createElement("span",{style:{fontSize:9,fontWeight:700,color:gs.color,background:gs.color+"18",border:"1px solid "+gs.color+"33",borderRadius:4,padding:"1px 5px"}},gs.script.toUpperCase())
               )
             ),
             React.createElement("div",{style:{textAlign:"center",fontWeight:700,fontSize:13,color:T.textDim}},"—"),
@@ -4411,13 +4498,18 @@ export default function App(){
           });
           filtered=filtered.slice().sort(function(a,b){return b.tradeVal-a.tradeVal;});
           return filtered.filter(function(_,i){return !user||user.isPro||i<FREE_RANK_LIMIT;}).map(function(p,i){
+            var gs=getGameScript(p.team,oddsData);
             return React.createElement("div",{key:p.name,style:{display:"grid",gridTemplateColumns:"44px 1fr 52px",padding:"12px 16px",borderBottom:"1px solid "+T.border,alignItems:"center"}},
               React.createElement("div",{style:{fontWeight:800,fontSize:13,color:T.textDim}},i+1),
               React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10}},
                 React.createElement(Avatar,{name:p.name,pos:p.pos,size:36}),
                 React.createElement("div",null,
                   React.createElement("div",{style:{fontWeight:700,fontSize:14,color:T.text}},p.name),
-                  React.createElement("div",{style:{fontSize:10,color:T.textSub,marginTop:2}},p.note)
+                  React.createElement("div",{style:{fontSize:10,color:T.textSub,marginTop:2}},p.note),
+                  gs&&React.createElement("div",{style:{display:"inline-flex",alignItems:"center",gap:4,marginTop:3,background:gs.color+"18",border:"1px solid "+gs.color+"33",borderRadius:5,padding:"1px 6px"}},
+                    React.createElement("span",{style:{fontSize:8,fontWeight:700,color:gs.color}},gs.script.toUpperCase()),
+                    React.createElement("span",{style:{fontSize:8,color:T.textDim}},(gs.spread>0?"+":"")+gs.spread+" O/U "+gs.total)
+                  )
                 )
               ),
               React.createElement("div",{style:{textAlign:"right"}},
