@@ -3040,16 +3040,13 @@ export default function App(){
               return React.createElement("button",{key:lt,onClick:function(){setLeagueType(lt);setAnalyzed(false);},style:{flex:1,padding:"9px 4px",borderRadius:10,border:"2px solid "+(active?T.purple:T.border),background:active?"linear-gradient(135deg,"+T.purple+",#5b21b6)":"transparent",color:active?"#fff":T.textSub,fontWeight:800,fontSize:13,cursor:"pointer"}},lt);
             })
           ),
-          React.createElement("div",{style:{display:"flex",gap:6,marginBottom:6}},
+          React.createElement("div",{style:{display:"flex",gap:6,flexWrap:"wrap"}},
             ["PPR","Half","Standard"].map(function(f){
-              var active=format===f||((f==="PPR")&&(format==="Superflex"||format==="PPR"));
               var realActive=format===f;
               return React.createElement("button",{key:f,onClick:function(){setFormat(f);setAnalyzed(false);},style:{flex:1,padding:"7px 4px",borderRadius:9,border:"1px solid "+(realActive?T.purple:T.border),background:realActive?T.purple+"22":"transparent",color:realActive?T.purpleLight:T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},f);
-            })
-          ),
-          React.createElement("div",{style:{display:"flex",gap:6}},
-            React.createElement("button",{onClick:function(){setSfMode(function(v){return !v;});setAnalyzed(false);},style:{padding:"6px 14px",borderRadius:9,border:"1px solid "+(sfMode?T.purple:T.border),background:sfMode?T.purple+"22":"transparent",color:sfMode?T.purpleLight:T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},"Superflex"),
-            React.createElement("button",{onClick:function(){var next=tePremium>0?0:0.5;setTePremium(next);try{localStorage.setItem('fdp_tep_v1',String(next));}catch(e){}setAnalyzed(false);},style:{padding:"6px 14px",borderRadius:9,border:"1px solid "+(tePremium>0?"#f59e0b":T.border),background:tePremium>0?"#f59e0b":"transparent",color:tePremium>0?"#000":T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},"TEP"+(tePremium>0?" (+"+tePremium+")":""))
+            }),
+            React.createElement("button",{onClick:function(){setSfMode(function(v){return !v;});setAnalyzed(false);},style:{padding:"7px 10px",borderRadius:9,border:"1px solid "+(sfMode?T.purple:T.border),background:sfMode?T.purple+"22":"transparent",color:sfMode?T.purpleLight:T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},"SF"),
+            React.createElement("button",{onClick:function(){var next=tePremium>0?0:0.5;setTePremium(next);try{localStorage.setItem('fdp_tep_v1',String(next));}catch(e){}setAnalyzed(false);},style:{padding:"7px 10px",borderRadius:9,border:"1px solid "+(tePremium>0?"#f59e0b":T.border),background:tePremium>0?"#f59e0b":"transparent",color:tePremium>0?"#000":T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},"TEP")
           )
         ),
         React.createElement("div",{style:{marginBottom:12}},
