@@ -2046,7 +2046,7 @@ function AnalyticsDashboard({T,data,loading,onLoad}:{T:any,data:any,loading:bool
 }
 
 export default function App(){
-  var validTabs=["trade","rankings","news","watchlist","import","admin"];
+  var validTabs=["trade","league","rankings","reports","admin"];
   var [tab,setTabRaw]=useState(function(){var h=window.location.hash.replace("#","");return validTabs.includes(h)?h:"trade";});
   function setTab(t:string){setTabRaw(t);window.location.hash=t;}
   var [isDesktop,setIsDesktop]=useState(function(){return window.innerWidth>=1024;});
@@ -2559,7 +2559,9 @@ export default function App(){
   function tVal(side,fa){return side.reduce(function(s,x){return s+(x.pos==="PICK"?x.est:Math.max(0,x.tradeVal));},0)+((fa||0)*10);}
   var tvA=tVal(tradeA,faabA),tvB=tVal(tradeB,faabB);
   function verdict(){
-    var diff=tvA-tvB,pct=tvB>0?Math.abs(diff/tvB)*100:0;
+    var diff=tvA-tvB,maxVal=Math.max(tvA,tvB);
+    if(maxVal===0) return {txt:"Fair Trade",sub:"Both sides get equal value",c:T.green,pct:50};
+    var pct=Math.abs(diff)/maxVal*100;
     if(pct<8) return {txt:"Fair Trade",sub:"Both sides get equal value",c:T.green,pct:50};
     if(diff>0) return {txt:"Team A Overpays",sub:"Team B wins by "+pct.toFixed(0)+"%",c:T.red,pct:Math.max(15,50-pct/2)};
     return {txt:"Team B Overpays",sub:"Team A wins by "+pct.toFixed(0)+"%",c:T.gold,pct:Math.min(85,50+pct/2)};
@@ -3071,7 +3073,7 @@ export default function App(){
             React.createElement("div",{style:{display:"flex",gap:8,marginTop:12}},
               React.createElement("button",{onClick:saveTrade,disabled:tradeSaved,style:{flex:1,padding:"10px",borderRadius:10,border:"1px solid "+(tradeSaved?T.green:T.border),cursor:tradeSaved?"default":"pointer",fontWeight:700,fontSize:12,background:tradeSaved?T.green:T.bgInput,color:tradeSaved?"#fff":T.textSub}},tradeSaved?"Saved ✓":"Save Trade"),
               React.createElement("button",{onClick:function(){setShowShareModal(true);},style:{flex:1,padding:"10px",borderRadius:10,border:"1px solid "+T.purple,cursor:"pointer",fontWeight:700,fontSize:12,background:T.purpleDim,color:T.purpleLight}},"🔗 Share"),
-              React.createElement("button",{onClick:function(){setAiAnalysis(null);setTimeout(function(){setAiAnalysis(genAiAnalysis(tradeA,tradeB,tvA,tvB));},50);},style:{flex:1,padding:"10px",borderRadius:10,border:"1px solid "+T.borderPurple,cursor:"pointer",fontWeight:700,fontSize:12,background:T.bgInput,color:T.textSub}},"↻")
+              React.createElement("button",{onClick:function(){setAiAnalysis(null);setTimeout(function(){setAiAnalysis(genAiAnalysis(tradeA,tradeB,tvA,tvB));},250);},style:{flex:1,padding:"10px",borderRadius:10,border:"1px solid "+T.borderPurple,cursor:"pointer",fontWeight:700,fontSize:12,background:T.bgInput,color:T.textSub}},"↻")
             ),
             !user&&React.createElement("div",{style:{marginTop:12,background:T.purpleDim,border:"1px solid "+T.purple+"44",borderRadius:12,padding:"12px 14px"}},
               React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.purpleLight,marginBottom:4}},"Want AI Trade Suggestions?"),
@@ -5215,8 +5217,14 @@ export default function App(){
             React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:4,fontWeight:600}},"Message"),
             React.createElement("textarea",{value:contactMsg,onChange:function(e){setContactMsg(e.target.value);},placeholder:"Tell us what you need help with...",rows:4,style:{background:T.bgInput,color:T.text,border:"1px solid "+T.border,borderRadius:10,padding:"12px 14px",fontSize:13,outline:"none",width:"100%",boxSizing:"border-box",resize:"none",fontFamily:"inherit",lineHeight:1.6}})
           ),
-          contactSent?React.createElement("div",{style:{padding:"14px",background:T.green+"15",border:"1px solid "+T.green+"44",borderRadius:10,color:T.green,fontWeight:700,fontSize:14}},"Message sent! We'll respond within 24-48 hours."):
-          React.createElement("button",{onClick:function(){setContactSent(true);},style:{width:"100%",padding:"14px",borderRadius:12,border:"none",background:T.purple,color:"#fff",fontWeight:800,fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}},
+          contactSent?React.createElement("div",{style:{padding:"14px",background:T.green+"15",border:"1px solid "+T.green+"44",borderRadius:10,color:T.green,fontWeight:700,fontSize:14}},"✓ Message sent! We'll respond within 24-48 hours."):
+          React.createElement("button",{onClick:function(){
+            if(!contactName.trim()||!contactEmail.includes("@")||!contactMsg.trim()){alert("Please fill in your name, a valid email, and a message.");return;}
+            trackEvent("contact_form",{name:contactName,email:contactEmail,subject:contactSubject,msg:contactMsg.slice(0,200)});
+            setContactSent(true);
+            setContactName("");setContactEmail("");setContactSubject("");setContactMsg("");
+            setTimeout(function(){setContactSent(false);},5000);
+          },style:{width:"100%",padding:"14px",borderRadius:12,border:"none",background:T.purple,color:"#fff",fontWeight:800,fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}},
             React.createElement("span",null,"➤"),"Send Message"
           )
         ),
