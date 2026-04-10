@@ -2237,6 +2237,7 @@ export default function App(){
   var [rankPos,setRankPos]=useState("QB");
   var [rankFormat,setRankFormat]=useState("SF");
   var [pvTep,setPvTep]=useState(false);
+  var [sfMode,setSfMode]=useState(false);
   var [pvPos,setPvPos]=useState("All");
   var [rankSearch,setRankSearch]=useState("");
   var [rankTeamFilter,setRankTeamFilter]=useState("All Teams");
@@ -2300,9 +2301,9 @@ export default function App(){
   var T=darkMode?DARK:LIGHT;
   var isPro=user&&user.isPro;
   var isDynasty=leagueType==="Dynasty";
-  var isSF=format==="Superflex";
+  var isSF=sfMode;
   var sKey=isDynasty?"PPR":(format==="Half"?"Half":(format==="Standard"?"Standard":"PPR"));
-  var scoring=leagueType+" · "+(isSF?"Superflex":format==="Half"?"Half PPR":format==="Standard"?"Standard":"PPR");
+  var scoring=leagueType+" · "+(sfMode?"Superflex ":"")+(format==="Half"?"Half PPR":format==="Standard"?"Standard":"PPR");
 
   var rankedPlayers=useMemo(function(){
     var bl=getBaselines(teams,isSF);
@@ -3040,12 +3041,16 @@ export default function App(){
             })
           ),
           React.createElement("div",{style:{display:"flex",gap:6,marginBottom:6}},
-            FORMATS.map(function(f){
-              var active=format===f;
-              return React.createElement("button",{key:f,onClick:function(){setFormat(f);setAnalyzed(false);},style:{flex:1,padding:"7px 4px",borderRadius:9,border:"1px solid "+(active?T.purple:T.border),background:active?T.purple+"22":"transparent",color:active?T.purpleLight:T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},f);
+            ["PPR","Half","Standard"].map(function(f){
+              var active=format===f||((f==="PPR")&&(format==="Superflex"||format==="PPR"));
+              var realActive=format===f;
+              return React.createElement("button",{key:f,onClick:function(){setFormat(f);setAnalyzed(false);},style:{flex:1,padding:"7px 4px",borderRadius:9,border:"1px solid "+(realActive?T.purple:T.border),background:realActive?T.purple+"22":"transparent",color:realActive?T.purpleLight:T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},f);
             })
           ),
-          React.createElement("button",{onClick:function(){var next=tePremium>0?0:0.5;setTePremium(next);try{localStorage.setItem('fdp_tep_v1',String(next));}catch(e){}setAnalyzed(false);},style:{padding:"6px 14px",borderRadius:9,border:"1px solid "+(tePremium>0?"#f59e0b":T.border),background:tePremium>0?"#f59e0b":"transparent",color:tePremium>0?"#000":T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},"TEP"+(tePremium>0?" (+"+tePremium+")":""))
+          React.createElement("div",{style:{display:"flex",gap:6}},
+            React.createElement("button",{onClick:function(){setSfMode(function(v){return !v;});setAnalyzed(false);},style:{padding:"6px 14px",borderRadius:9,border:"1px solid "+(sfMode?T.purple:T.border),background:sfMode?T.purple+"22":"transparent",color:sfMode?T.purpleLight:T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},"Superflex"),
+            React.createElement("button",{onClick:function(){var next=tePremium>0?0:0.5;setTePremium(next);try{localStorage.setItem('fdp_tep_v1',String(next));}catch(e){}setAnalyzed(false);},style:{padding:"6px 14px",borderRadius:9,border:"1px solid "+(tePremium>0?"#f59e0b":T.border),background:tePremium>0?"#f59e0b":"transparent",color:tePremium>0?"#000":T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},"TEP"+(tePremium>0?" (+"+tePremium+")":""))
+          )
         ),
         React.createElement("div",{style:{marginBottom:12}},
           React.createElement("div",{style:{fontWeight:700,fontSize:14,marginBottom:8}},"Team A"),
