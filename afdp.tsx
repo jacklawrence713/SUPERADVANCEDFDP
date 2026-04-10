@@ -3198,11 +3198,6 @@ export default function App(){
           );
         })
       ),
-      React.createElement("div",{style:{textAlign:"center",borderTop:"1px solid "+T.border,paddingTop:20,paddingBottom:20}},
-        React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:8}},"2026 Fantasy Draft Pros - All rights reserved"),
-        React.createElement("div",{style:{display:"flex",justifyContent:"center",gap:20,marginBottom:10,fontSize:12,color:T.textSub}},[["Contact","contact"],["FAQ","faq"],["Help","help"]].map(function(l){return React.createElement("span",{key:l[0],onClick:function(){setTab("reports");setReportSubTab(l[1]);},style:{cursor:"pointer",textDecoration:"underline"}},l[0]);})),
-        React.createElement("div",{style:{fontSize:10,color:T.textDim}},"Not affiliated with Sleeper, ESPN, or Yahoo. For entertainment only.")
-      )
     ),
 
     // ════ MY LEAGUE TAB ════
@@ -5253,9 +5248,6 @@ export default function App(){
           React.createElement("span",{style:{fontSize:12,color:T.textSub}},"© 2026 Fantasy Draft Pros · All rights reserved")
         ),
         React.createElement("div",{style:{display:"flex",justifyContent:"center",gap:24,marginBottom:16}},
-          [["Contact","contact"],["FAQ","faq"],["Help","help"]].map(function(l){return React.createElement("span",{key:l[0],onClick:function(){setTab("reports");setReportSubTab(l[1]);},style:{fontSize:12,color:T.textSub,cursor:"pointer",fontWeight:500,textDecoration:"underline"}},l[0]);})
-        ),
-        React.createElement("div",{style:{display:"flex",justifyContent:"center",gap:24,marginBottom:16}},
           [["f","Facebook"],["@","Instagram"],["T","TikTok"]].map(function(s){return React.createElement("div",{key:s[1],style:{width:32,height:32,borderRadius:"50%",background:T.bgCard,border:"1px solid "+T.border,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:13,color:T.textSub,fontWeight:700}},s[0]);})
         ),
         React.createElement("div",{style:{fontSize:10,color:T.textDim,lineHeight:1.6}},"Player values powered by Fantasy Draft Pros. Not affiliated with",React.createElement("br",null),"Sleeper, ESPN, or Yahoo. For entertainment only.")
@@ -5473,9 +5465,6 @@ export default function App(){
             LogoSvg,
             React.createElement("span",{style:{fontSize:12,color:T.textSub}},"© 2026 Fantasy Draft Pros · All rights reserved")
           ),
-          React.createElement("div",{style:{display:"flex",justifyContent:"center",gap:24}},
-            [["Contact","contact"],["FAQ","faq"],["Help","help"]].map(function(l){return React.createElement("span",{key:l[0],onClick:function(){setReportSubTab(l[1]);},style:{fontSize:12,color:T.textSub,cursor:"pointer",textDecoration:"underline"}},l[0]);})
-          )
         )
       ),
       // Upgrade to Pro
@@ -5874,9 +5863,6 @@ export default function App(){
           React.createElement("div",{style:{display:"flex",justifyContent:"center",alignItems:"center",gap:8,marginBottom:10}},
             LogoSvg,
             React.createElement("span",{style:{fontSize:12,color:T.textSub}},"© 2026 Fantasy Draft Pros · All rights reserved")
-          ),
-          React.createElement("div",{style:{display:"flex",justifyContent:"center",gap:24,marginBottom:16}},
-            [["Contact","contact"],["FAQ","faq"],["Help","help"]].map(function(l){return React.createElement("span",{key:l[0],onClick:function(){setTab("reports");setReportSubTab(l[1]);},style:{fontSize:12,color:T.textSub,cursor:"pointer",fontWeight:500,textDecoration:"underline"}},l[0]);})
           ),
           React.createElement("div",{style:{display:"flex",justifyContent:"center",gap:24,marginBottom:16}},
             [["f","Facebook"],["@","Instagram"],["T","TikTok"]].map(function(s){return React.createElement("div",{key:s[1],style:{width:32,height:32,borderRadius:"50%",background:T.bgCard,border:"1px solid "+T.border,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:13,color:T.textSub,fontWeight:700}},s[0]);})
