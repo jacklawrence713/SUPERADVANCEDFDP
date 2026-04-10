@@ -6301,6 +6301,16 @@ export default function App(){
       )
     ),
 
+    // GLOBAL FOOTER
+    React.createElement("div",{style:{borderTop:"1px solid "+T.border,padding:"20px 16px",textAlign:"center",marginTop:8}},
+      React.createElement("div",{style:{display:"flex",justifyContent:"center",gap:24,marginBottom:8}},
+        [["Contact","contact"],["FAQ","faq"],["Help","help"]].map(function(l){
+          return React.createElement("span",{key:l[0],onClick:function(){setTab("reports");setReportSubTab(l[1]);},style:{fontSize:13,color:T.textSub,cursor:"pointer",textDecoration:"underline",fontWeight:500}},l[0]);
+        })
+      ),
+      React.createElement("div",{style:{fontSize:11,color:T.textDim}},"© 2026 Fantasy Draft Pros · Not affiliated with Sleeper, ESPN, or Yahoo · For entertainment only")
+    ),
+
     // END MAIN CONTENT WRAPPER
     ),
 
