@@ -3569,48 +3569,55 @@ export default function App(){
       ),
 
       // WAIVER WIRE
-      leagueSubTab==="waiver"&&React.createElement("div",{style:{padding:"16px"}},
-        React.createElement("div",{style:{display:"flex",alignItems:"flex-start",gap:12,marginBottom:20}},
-          React.createElement("span",{style:{fontSize:30,color:"#60a5fa",fontWeight:900,marginTop:2}},"↗"),
-          React.createElement("div",{style:{fontWeight:900,fontSize:30,lineHeight:1.15}},"Waiver Wire Assistant")
-        ),
-        React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:16,marginBottom:16}},
-          React.createElement("div",{style:{display:"flex",gap:12,alignItems:"flex-start",marginBottom:8}},
-            React.createElement("div",{style:{flex:1}},
-              React.createElement("div",{style:{fontSize:13,color:T.text,lineHeight:1.5,marginBottom:4}},"Showing available players from your league's waiver wire, sorted by dynasty value"),
-              React.createElement("div",{style:{fontSize:11,color:T.textSub,lineHeight:1.5}},"Values from Fantasy Draft Pros · Higher values indicate more valuable players")
-            ),
-            React.createElement("button",{onClick:function(){setWaiverLoaded(false);setTimeout(function(){setWaiverLoaded(true);},1200);},style:{padding:"10px 14px",borderRadius:10,border:"none",background:"#2563eb",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}},"Force Refresh")
-          ),
-          React.createElement("input",{value:waiverSearch,onChange:function(e){setWaiverSearch(e.target.value);},placeholder:"Search players...",style:Object.assign({},inpS,{marginBottom:10})}),
-          React.createElement("select",{value:waiverPos,onChange:function(e){setWaiverPos(e.target.value);},style:{background:T.bgInput,color:T.text,border:"1px solid "+T.border,borderRadius:10,padding:"10px 14px",fontSize:13,outline:"none",width:"100%",marginBottom:10}},
-            ["All Positions","QB","RB","WR","TE","DL","LB","DB"].map(function(p){return React.createElement("option",{key:p},p);})
-          ),
-          React.createElement("select",{value:sortBy,onChange:function(e){setSortBy(e.target.value);},style:{background:T.bgInput,color:T.text,border:"1px solid "+T.border,borderRadius:10,padding:"10px 14px",fontSize:13,outline:"none",width:"100%",marginBottom:10}},
-            React.createElement("option",{value:"rank"},"Sort by Dynasty Value"),
-            React.createElement("option",{value:"pts"},"Sort by Projected Points"),
-            React.createElement("option",{value:"age"},"Sort by Age")
-          ),
-          !waiverLoaded&&React.createElement("button",{onClick:function(){setWaiverLoaded(true);},style:{padding:"10px 20px",borderRadius:10,border:"none",background:"#2563eb",color:"#ffffffaa",fontWeight:700,fontSize:13,cursor:"pointer"}},"Loading...")
-        ),
-        waiverLoaded&&rankedPlayers.filter(function(p){
-          return (waiverPos==="All Positions"||p.pos===waiverPos)&&
-                 (!waiverSearch||p.name.toLowerCase().includes(waiverSearch.toLowerCase()))&&
-                 p.rank>20;
-        }).slice().sort(function(a,b){return sortBy==="pts"?b.pts-a.pts:sortBy==="age"?a.age-b.age:b.tradeVal-a.tradeVal;}).slice(0,15).map(function(p){
-          return React.createElement("div",{key:p.name,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"12px 14px",marginBottom:8,display:"flex",alignItems:"center",gap:10}},
-            React.createElement(Avatar,{name:p.name,pos:p.pos,size:40}),
-            React.createElement("div",{style:{flex:1}},
-              React.createElement("div",{style:{fontWeight:700,fontSize:13}},p.name),
-              React.createElement("div",{style:{fontSize:11,color:T.textSub}},p.pos+" - "+p.team+" | Age "+p.age)
-            ),
-            React.createElement("div",{style:{textAlign:"right"}},
-              React.createElement("div",{style:{fontSize:12,color:T.purple,fontWeight:700}},"Value: "+(p.tradeVal||0).toLocaleString()),
-              React.createElement("div",{style:{fontSize:11,color:T.green}},"Proj: "+p.pts.toFixed(1)+" pts")
+      leagueSubTab==="waiver"&&(function(){
+        var hasRealRosters=activeTeams.length>0&&activeTeams.some(function(t){return Array.isArray(t.players)&&t.players.length>0;});
+        var rosteredNames=new Set();
+        if(hasRealRosters){activeTeams.forEach(function(t){if(Array.isArray(t.players))t.players.forEach(function(p){if(p&&p.name)rosteredNames.add(p.name.toLowerCase());});});}
+        var availablePlayers=rankedPlayers.filter(function(p){
+          if(p.pos==="DST"||p.pos==="K")return false;
+          if(waiverPos!=="All Positions"&&p.pos!==waiverPos)return false;
+          if(waiverSearch&&!p.name.toLowerCase().includes(waiverSearch.toLowerCase()))return false;
+          return hasRealRosters?!rosteredNames.has(p.name.toLowerCase()):p.rank>20;
+        }).slice().sort(function(a,b){return sortBy==="pts"?b.pts-a.pts:sortBy==="age"?a.age-b.age:b.tradeVal-a.tradeVal;});
+        return React.createElement("div",{style:{padding:"16px"}},
+          React.createElement("div",{style:{display:"flex",alignItems:"flex-start",gap:12,marginBottom:16}},
+            React.createElement("span",{style:{fontSize:30,color:"#60a5fa",fontWeight:900,marginTop:2}},"↗"),
+            React.createElement("div",null,
+              React.createElement("div",{style:{fontWeight:900,fontSize:30,lineHeight:1.15}},"Waiver Wire"),
+              React.createElement("div",{style:{fontSize:12,color:T.textSub}},hasRealRosters?availablePlayers.length+" players available in your league":"Showing unrostered players by value")
             )
-          );
-        })
-      ),
+          ),
+          React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:16,marginBottom:12}},
+            React.createElement("div",{style:{display:"flex",gap:8,marginBottom:10}},
+              React.createElement("input",{value:waiverSearch,onChange:function(e){setWaiverSearch(e.target.value);},placeholder:"Search players...",style:Object.assign({},inpS,{flex:1,margin:0})}),
+              React.createElement("button",{onClick:function(){if(activeLeague&&!activeLeague.league_id.startsWith("espn_")&&activeLeague.league_id!=="manual")connectLeague(activeLeague);},style:{padding:"10px 14px",borderRadius:10,border:"none",background:"#2563eb",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}},"↻ Refresh")
+            ),
+            React.createElement("div",{style:{display:"flex",gap:8}},
+              React.createElement("select",{value:waiverPos,onChange:function(e){setWaiverPos(e.target.value);},style:{flex:1,background:T.bgInput,color:T.text,border:"1px solid "+T.border,borderRadius:10,padding:"10px 12px",fontSize:13,outline:"none"}},
+                ["All Positions","QB","RB","WR","TE","DL","LB","DB"].map(function(p){return React.createElement("option",{key:p},p);})
+              ),
+              React.createElement("select",{value:sortBy,onChange:function(e){setSortBy(e.target.value);},style:{flex:1,background:T.bgInput,color:T.text,border:"1px solid "+T.border,borderRadius:10,padding:"10px 12px",fontSize:13,outline:"none"}},
+                React.createElement("option",{value:"rank"},"Dynasty Value"),
+                React.createElement("option",{value:"pts"},"Proj Points"),
+                React.createElement("option",{value:"age"},"Age")
+              )
+            )
+          ),
+          availablePlayers.slice(0,50).map(function(p){
+            return React.createElement("div",{key:p.name,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"12px 14px",marginBottom:8,display:"flex",alignItems:"center",gap:10}},
+              React.createElement(Avatar,{name:p.name,pos:p.pos,size:40}),
+              React.createElement("div",{style:{flex:1}},
+                React.createElement("div",{style:{fontWeight:700,fontSize:13}},p.name),
+                React.createElement("div",{style:{fontSize:11,color:T.textSub}},p.pos+" · "+p.team+" · Age "+p.age)
+              ),
+              React.createElement("div",{style:{textAlign:"right"}},
+                React.createElement("div",{style:{fontSize:12,color:T.purple,fontWeight:700}},(p.tradeVal||0).toLocaleString()),
+                React.createElement("div",{style:{fontSize:11,color:T.green}},p.pts.toFixed(1)+" proj")
+              )
+            );
+          })
+        );
+      })(),
 
       // LINEUP OPTIMIZER
       leagueSubTab==="lineup"&&React.createElement("div",{style:{padding:"16px"}},
