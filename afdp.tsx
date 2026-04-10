@@ -4414,7 +4414,7 @@ export default function App(){
       React.createElement("div",{style:{position:"relative",borderBottom:"1px solid "+T.border}},
         isDesktop&&React.createElement("button",{onClick:function(){rankingTabsRef.current&&rankingTabsRef.current.scrollBy({left:-200,behavior:"smooth"});},style:{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",zIndex:2,background:T.bgCard,border:"1px solid "+T.border,borderRadius:"50%",width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:T.text,fontSize:14,padding:0}},"‹"),
         React.createElement("div",{ref:rankingTabsRef,style:{display:"flex",gap:6,overflowX:"auto",padding:isDesktop?"10px 36px":"10px 12px",scrollbarWidth:"none",WebkitOverflowScrolling:"touch"}},
-          [["playervalues","$ Player Values"],["allrankings","All Rankings"],["qbs","QBs"],["rbs","RBs"],["wrs","WRs"],["tes","TEs"],["idp","IDP"],["rookie","Rookie Picks"],["trending","Trending"],["market","Market"],["valuetrends","Value Trends"],["pickcalc","Pick Calculator"],["watchlist","Watchlist"],["draft","Draft Kit"],["keeper","Keeper Calc"],["compare","Compare"],["history","Trade History"]].map(function(st){
+          [["playervalues","$ Player Values"],["allrankings","All Rankings"],["qbs","QBs"],["rbs","RBs"],["wrs","WRs"],["tes","TEs"],["idp","IDP"],["rookie","Rookie Picks"],["vegas","Vegas Lines"],["trending","Trending"],["market","Market"],["valuetrends","Value Trends"],["pickcalc","Pick Calculator"],["watchlist","Watchlist"],["draft","Draft Kit"],["keeper","Keeper Calc"],["compare","Compare"],["history","Trade History"]].map(function(st){
             var active=rankSubTab===st[0];
             return React.createElement("button",{key:st[0],onClick:function(){setRankSubTab(st[0]);},style:{padding:"7px 14px",borderRadius:20,border:"1px solid "+(active?T.purple:T.border),background:active?T.purple:"transparent",color:active?"#fff":T.textSub,fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}},st[1]);
           })
@@ -4623,6 +4623,77 @@ export default function App(){
           );
         })()
       ),
+
+      // VEGAS LINES
+      rankSubTab==="vegas"&&(function(){
+        var games=oddsData?Object.keys(oddsData).filter(function(team){var g=oddsData[team];return g&&g.spread<=0;}).map(function(homeTeam){var g=oddsData[homeTeam];return{home:homeTeam,away:g.opp,spread:g.spread,total:g.total};}).sort(function(a,b){return a.spread-b.spread;}):[];
+        var hasData=games.length>0;
+        return React.createElement("div",{style:{padding:"16px"}},
+          React.createElement("div",{style:{display:"flex",alignItems:"center",gap:12,marginBottom:16}},
+            React.createElement("div",{style:{width:44,height:44,borderRadius:12,background:"#16a34a",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}},
+              React.createElement("span",{style:{fontSize:22,color:"#fff"}},"$")
+            ),
+            React.createElement("div",null,
+              React.createElement("div",{style:{fontWeight:900,fontSize:22,color:T.text}},"Vegas Lines"),
+              React.createElement("div",{style:{fontSize:12,color:T.textSub}},"NFL spreads, totals, and game script predictions")
+            )
+          ),
+          !hasData&&React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,padding:32,textAlign:"center",marginBottom:16}},
+            React.createElement("div",{style:{fontSize:36,marginBottom:12}},"📅"),
+            React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:8}},"No Current NFL Lines"),
+            React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.6,maxWidth:320,margin:"0 auto",marginBottom:16}},"Odds are posted Thursday–Sunday during the NFL season (September–January). Check back once Week 1 lines drop."),
+            React.createElement("button",{onClick:function(){_oddsCache=null;fetchOdds().then(function(d){if(Object.keys(d).length>0)setOddsData(d);});},style:{padding:"10px 24px",borderRadius:12,border:"1px solid "+T.border,background:T.bgInput,color:T.text,fontWeight:700,fontSize:13,cursor:"pointer"}},"↻ Check for Lines")
+          ),
+          hasData&&React.createElement("div",{style:{marginBottom:12}},
+            React.createElement("div",{style:{fontSize:11,color:T.textSub,fontWeight:700,letterSpacing:1,marginBottom:8}},"THIS WEEK'S GAMES — "+games.length+" MATCHUPS"),
+            games.map(function(g){
+              var gsHome=getGameScript(g.home,oddsData);
+              var gsAway=getGameScript(g.away,oddsData);
+              var totalNote=g.total>=50?"🔥 Shootout":g.total<=41?"🛡 Low Scoring":"";
+              return React.createElement("div",{key:g.home+g.away,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:16,marginBottom:10}},
+                React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}},
+                  React.createElement("div",{style:{fontWeight:800,fontSize:15,color:T.text}},g.away+" @ "+g.home),
+                  totalNote&&React.createElement("div",{style:{fontSize:11,fontWeight:700,color:g.total>=50?"#f59e0b":"#60a5fa"}},totalNote)
+                ),
+                React.createElement("div",{style:{display:"flex",gap:8,marginBottom:10}},
+                  React.createElement("div",{style:{flex:1,background:T.bgInput,borderRadius:10,padding:"10px 12px",textAlign:"center"}},
+                    React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:4}},"SPREAD"),
+                    React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text}},(g.spread>0?"+":"")+g.spread)
+                  ),
+                  React.createElement("div",{style:{flex:1,background:T.bgInput,borderRadius:10,padding:"10px 12px",textAlign:"center"}},
+                    React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:4}},"O/U TOTAL"),
+                    React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text}},g.total)
+                  )
+                ),
+                React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}},
+                  gsAway&&React.createElement("div",{style:{background:gsAway.color+"14",border:"1px solid "+gsAway.color+"33",borderRadius:10,padding:"8px 12px"}},
+                    React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:2}},g.away),
+                    React.createElement("div",{style:{fontWeight:700,fontSize:12,color:gsAway.color}},gsAway.script),
+                    React.createElement("div",{style:{fontSize:10,color:T.textDim}},"Spread: "+(gsAway.spread>0?"+":"")+gsAway.spread)
+                  ),
+                  gsHome&&React.createElement("div",{style:{background:gsHome.color+"14",border:"1px solid "+gsHome.color+"33",borderRadius:10,padding:"8px 12px"}},
+                    React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:2}},g.home),
+                    React.createElement("div",{style:{fontWeight:700,fontSize:12,color:gsHome.color}},gsHome.script),
+                    React.createElement("div",{style:{fontSize:10,color:T.textDim}},"Spread: "+(gsHome.spread>0?"+":"")+gsHome.spread)
+                  )
+                )
+              );
+            })
+          ),
+          React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:16}},
+            React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text,marginBottom:10}},"Game Script Guide"),
+            [["Positive Script","Favored by 7+ pts — run-heavy, clock control. Boost RBs.","#22c55e"],["Slight Fav","Favored by 3–6 pts — balanced attack expected.","#4ade80"],["Neutral","Pick'em or within 2 pts — no clear script edge.","#94a3b8"],["Slight Dog","Underdog by 3–6 pts — pass volume increases.","#fb923c"],["Negative Script","Underdog by 7+ pts — pass-heavy game script. Boost WRs/TEs.","#f87171"]].map(function(row){
+              return React.createElement("div",{key:row[0],style:{display:"flex",alignItems:"center",gap:10,marginBottom:8}},
+                React.createElement("div",{style:{width:10,height:10,borderRadius:"50%",background:row[2],flexShrink:0}}),
+                React.createElement("div",null,
+                  React.createElement("span",{style:{fontWeight:700,fontSize:12,color:row[2]}},(row[0] as string)+": "),
+                  React.createElement("span",{style:{fontSize:12,color:T.textSub}},row[1])
+                )
+              );
+            })
+          )
+        );
+      })(),
 
       // TRENDING (image 3)
       rankSubTab==="trending"&&React.createElement("div",{style:{padding:"16px"}},
