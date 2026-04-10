@@ -3039,12 +3039,13 @@ export default function App(){
               return React.createElement("button",{key:lt,onClick:function(){setLeagueType(lt);setAnalyzed(false);},style:{flex:1,padding:"9px 4px",borderRadius:10,border:"2px solid "+(active?T.purple:T.border),background:active?"linear-gradient(135deg,"+T.purple+",#5b21b6)":"transparent",color:active?"#fff":T.textSub,fontWeight:800,fontSize:13,cursor:"pointer"}},lt);
             })
           ),
-          React.createElement("div",{style:{display:"flex",gap:6}},
+          React.createElement("div",{style:{display:"flex",gap:6,marginBottom:6}},
             FORMATS.map(function(f){
               var active=format===f;
               return React.createElement("button",{key:f,onClick:function(){setFormat(f);setAnalyzed(false);},style:{flex:1,padding:"7px 4px",borderRadius:9,border:"1px solid "+(active?T.purple:T.border),background:active?T.purple+"22":"transparent",color:active?T.purpleLight:T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},f);
             })
-          )
+          ),
+          React.createElement("button",{onClick:function(){var next=tePremium>0?0:0.5;setTePremium(next);try{localStorage.setItem('fdp_tep_v1',String(next));}catch(e){}setAnalyzed(false);},style:{padding:"6px 14px",borderRadius:9,border:"1px solid "+(tePremium>0?"#f59e0b":T.border),background:tePremium>0?"#f59e0b":"transparent",color:tePremium>0?"#000":T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},"TEP"+(tePremium>0?" (+"+tePremium+")":""))
         ),
         React.createElement("div",{style:{marginBottom:12}},
           React.createElement("div",{style:{fontWeight:700,fontSize:14,marginBottom:8}},"Team A"),
