@@ -3134,7 +3134,7 @@ export default function App(){
       ),
       React.createElement("div",{style:{textAlign:"center",borderTop:"1px solid "+T.border,paddingTop:20,paddingBottom:20}},
         React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:8}},"2026 Fantasy Draft Pros - All rights reserved"),
-        React.createElement("div",{style:{display:"flex",justifyContent:"center",gap:20,marginBottom:10,fontSize:12,color:T.textSub}},React.createElement("span",{style:{cursor:"pointer"}},"Contact"),React.createElement("span",{style:{cursor:"pointer"}},"FAQ"),React.createElement("span",{style:{cursor:"pointer"}},"Help")),
+        React.createElement("div",{style:{display:"flex",justifyContent:"center",gap:20,marginBottom:10,fontSize:12,color:T.textSub}},[["Contact","contact"],["FAQ","contact"],["Help","contact"]].map(function(l){return React.createElement("span",{key:l[0],onClick:function(){setTab("reports");setReportSubTab(l[1]);},style:{cursor:"pointer",textDecoration:"underline"}},l[0]);})),
         React.createElement("div",{style:{fontSize:10,color:T.textDim}},"Not affiliated with Sleeper, ESPN, or Yahoo. For entertainment only.")
       )
     ),
@@ -3242,12 +3242,17 @@ export default function App(){
         ),
         simRan&&(function(){
           var n=activeTeams.length;
+          var totalLeagueVal=activeTeams.reduce(function(s,t){return s+(t.totalVal||1);},0);
+          var avgVal=totalLeagueVal/Math.max(1,n);
+          var playoffSpots=Math.round(n/2);
           var simTeams=activeTeams.map(function(team,i){
-            var mp=team.makePlayoffs!=null?team.makePlayoffs:Math.max(8,Math.round(82-i*5.5));
-            var frb=team.firstRoundBye!=null?team.firstRoundBye:Math.max(2,Math.round(28-i*2.2));
-            var wc=team.winChamp!=null?team.winChamp:Math.max(1,Math.round(36-i*2.8));
+            var str=Math.max(0.1,(team.totalVal||avgVal)/avgVal);
+            var mp=team.makePlayoffs!=null?team.makePlayoffs:Math.min(97,Math.max(8,Math.round((playoffSpots/n)*100*(0.5+str*0.5))));
+            var frb=team.firstRoundBye!=null?team.firstRoundBye:Math.min(55,Math.max(2,Math.round(mp*0.28)));
+            var wc=team.winChamp!=null?team.winChamp:Math.min(45,Math.max(1,Math.round(mp*0.15)));
+            var gamesPerSeason=n>=10?14:13;
             var rec=team.record||(powerRankingTeams?(team.wins||0)+"-"+(team.losses||0):"0-0");
-            var projW=team.projW!=null?team.projW:+(Math.max(2,8.5-i*0.55)).toFixed(1);
+            var projW=team.projW!=null?team.projW:+(Math.min(gamesPerSeason-1,Math.max(1,gamesPerSeason*(mp/100)*(0.8+Math.random()*0.4)))).toFixed(1);
             return Object.assign({},team,{makePlayoffs:mp,firstRoundBye:frb,winChamp:wc,record:rec,projW:projW});
           });
           var leader=simTeams[0];
@@ -3307,9 +3312,12 @@ export default function App(){
           React.createElement("div",{style:{fontWeight:900,fontSize:26,lineHeight:1.1}},"Championship Probability")
         ),
         activeTeams.map(function(team,i){
-          var po=team.playoffOdds!=null?team.playoffOdds:Math.max(10,Math.round(82-i*5.5));
-          var co=team.champOdds!=null?team.champOdds:Math.max(1,Math.round(36-i*2.8));
-          var ww=team.weeklyWin!=null?team.weeklyWin:Math.max(20,Math.round(68-i*3.5));
+          var _avgV2=activeTeams.reduce(function(s,t){return s+(t.totalVal||1);},0)/Math.max(1,activeTeams.length);
+          var _str=Math.max(0.1,(team.totalVal||_avgV2)/_avgV2);
+          var _spots=Math.round(activeTeams.length/2);
+          var po=team.playoffOdds!=null?team.playoffOdds:Math.min(97,Math.max(8,Math.round((_spots/activeTeams.length)*100*(0.5+_str*0.5))));
+          var co=team.champOdds!=null?team.champOdds:Math.min(45,Math.max(1,Math.round(po*0.15)));
+          var ww=team.weeklyWin!=null?team.weeklyWin:Math.min(75,Math.max(25,Math.round(50+(_str-1)*20)));
           var showStr=strengthTeam===i;
           var players=Array.isArray(team.players)?team.players:[];
           var posGroups=["QB","RB","WR","TE"].map(function(pos){
@@ -4908,7 +4916,7 @@ export default function App(){
           React.createElement("span",{style:{fontSize:12,color:T.textSub}},"© 2026 Fantasy Draft Pros · All rights reserved")
         ),
         React.createElement("div",{style:{display:"flex",justifyContent:"center",gap:24,marginBottom:16}},
-          ["Contact","FAQ","Help"].map(function(l){return React.createElement("span",{key:l,style:{fontSize:12,color:T.textSub,cursor:"pointer",fontWeight:500}},l);})
+          [["Contact","contact"],["FAQ","contact"],["Help","contact"]].map(function(l){return React.createElement("span",{key:l[0],onClick:function(){setTab("reports");setReportSubTab(l[1]);},style:{fontSize:12,color:T.textSub,cursor:"pointer",fontWeight:500,textDecoration:"underline"}},l[0]);})
         ),
         React.createElement("div",{style:{display:"flex",justifyContent:"center",gap:24,marginBottom:16}},
           [["f","Facebook"],["@","Instagram"],["T","TikTok"]].map(function(s){return React.createElement("div",{key:s[1],style:{width:32,height:32,borderRadius:"50%",background:T.bgCard,border:"1px solid "+T.border,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:13,color:T.textSub,fontWeight:700}},s[0]);})
@@ -5075,25 +5083,49 @@ export default function App(){
             )
           );
         }),
-        React.createElement("button",{style:{width:"100%",padding:"16px",borderRadius:14,border:"none",background:"#3b82f6",color:"#fff",fontWeight:700,fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:28}},
-          React.createElement("span",{style:{fontSize:18}},"\uD83D\uDDBC"),"Generate Graphic"
+        React.createElement("button",{onClick:function(){
+          var text="🏆 Fantasy Draft Pros — Dynasty Rankings\n\n"+rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;}).slice(0,20).map(function(p,i){return (i+1)+". "+p.name+" ("+p.pos+", "+p.team+") — Value: "+(p.tradeVal||0).toLocaleString();}).join("\n")+"\n\nfantasydraftpros.com";
+          navigator.clipboard.writeText(text).then(function(){alert("Rankings summary copied to clipboard!");});
+        },style:{width:"100%",padding:"16px",borderRadius:14,border:"none",background:"#3b82f6",color:"#fff",fontWeight:700,fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:28}},
+          React.createElement("span",{style:{fontSize:18}},"📋"),"Copy Rankings Summary"
         ),
         React.createElement("div",{style:{fontWeight:800,fontSize:18,color:T.text,marginBottom:14}},"Export Data"),
         React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"16px",marginBottom:14}},
           React.createElement("div",{style:{fontWeight:700,fontSize:15,color:T.text,marginBottom:12}},"Download Options"),
-          [["Export to CSV"],["Export to PDF"],["Export to JSON"]].map(function(btn){
-            return React.createElement("button",{key:btn[0],style:{width:"100%",padding:"14px",borderRadius:10,border:"none",background:"#22c55e",color:"#fff",fontWeight:700,fontSize:15,cursor:"pointer",marginBottom:8,display:"flex",alignItems:"center",justifyContent:"center",gap:8}},
-              React.createElement("span",null,"\u2913"),btn[0]
-            );
-          })
+          React.createElement("button",{onClick:function(){
+            var hdr="Name,Position,Team,Age,Rank,Trade Value,ADP\n";
+            var rows=rankedPlayers.map(function(p){return ['"'+p.name+'"',p.pos,p.team,p.age,p.rank||"",p.tradeVal||"",p.adp||""].join(",");}).join("\n");
+            var blob=new Blob([hdr+rows],{type:"text/csv"});
+            var url=URL.createObjectURL(blob);
+            var a=document.createElement("a");a.href=url;a.download="fantasy-draft-pros-rankings.csv";a.click();URL.revokeObjectURL(url);
+          },style:{width:"100%",padding:"14px",borderRadius:10,border:"none",background:"#22c55e",color:"#fff",fontWeight:700,fontSize:15,cursor:"pointer",marginBottom:8,display:"flex",alignItems:"center",justifyContent:"center",gap:8}},
+            React.createElement("span",null,"⬇"),"Export to CSV"
+          ),
+          React.createElement("button",{onClick:function(){window.print();},style:{width:"100%",padding:"14px",borderRadius:10,border:"none",background:"#22c55e",color:"#fff",fontWeight:700,fontSize:15,cursor:"pointer",marginBottom:8,display:"flex",alignItems:"center",justifyContent:"center",gap:8}},
+            React.createElement("span",null,"🖨"),"Print / Save as PDF"
+          ),
+          React.createElement("button",{onClick:function(){
+            var data=rankedPlayers.map(function(p){return {name:p.name,pos:p.pos,team:p.team,age:p.age,rank:p.rank,tradeVal:p.tradeVal,adp:p.adp};});
+            var blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+            var url=URL.createObjectURL(blob);
+            var a=document.createElement("a");a.href=url;a.download="fantasy-draft-pros-rankings.json";a.click();URL.revokeObjectURL(url);
+          },style:{width:"100%",padding:"14px",borderRadius:10,border:"none",background:"#22c55e",color:"#fff",fontWeight:700,fontSize:15,cursor:"pointer",marginBottom:8,display:"flex",alignItems:"center",justifyContent:"center",gap:8}},
+            React.createElement("span",null,"⬇"),"Export to JSON"
+          )
         ),
         React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"16px",marginBottom:14}},
           React.createElement("div",{style:{fontWeight:700,fontSize:15,color:T.text,marginBottom:12}},"Share to Social Media"),
-          ["Share to Twitter/X","Share to Facebook","Share to Reddit","Copy Link"].map(function(btn){
-            return React.createElement("button",{key:btn,style:{width:"100%",padding:"14px",borderRadius:10,border:"none",background:T.bgInput,color:T.text,fontWeight:600,fontSize:14,cursor:"pointer",marginBottom:8,display:"flex",alignItems:"center",justifyContent:"center",gap:8}},
-              React.createElement("span",{style:{fontSize:16}},"\uD83D\uDD17"),btn
-            );
-          })
+          (function(){
+            var siteUrl=encodeURIComponent("https://fantasydraftpros.com");
+            var txt=encodeURIComponent("The best dynasty fantasy football trade analyzer — check out my rankings on Fantasy Draft Pros!");
+            return [
+              ["𝕏  Share to Twitter/X","https://twitter.com/intent/tweet?url="+siteUrl+"&text="+txt],
+              ["f  Share to Facebook","https://www.facebook.com/sharer/sharer.php?u="+siteUrl],
+              ["r/  Share to Reddit","https://reddit.com/submit?url="+siteUrl+"&title="+txt],
+            ].map(function(btn){
+              return React.createElement("button",{key:btn[0],onClick:function(){window.open(btn[1],"_blank","noopener");},style:{width:"100%",padding:"14px",borderRadius:10,border:"none",background:T.bgInput,color:T.text,fontWeight:600,fontSize:14,cursor:"pointer",marginBottom:8,display:"flex",alignItems:"center",justifyContent:"center",gap:8}},btn[0]);
+            }).concat([React.createElement("button",{key:"copylink",onClick:function(){navigator.clipboard.writeText("https://fantasydraftpros.com").then(function(){alert("Link copied!");});},style:{width:"100%",padding:"14px",borderRadius:10,border:"none",background:T.bgInput,color:T.text,fontWeight:600,fontSize:14,cursor:"pointer",marginBottom:8,display:"flex",alignItems:"center",justifyContent:"center",gap:8}},"🔗  Copy Link")]);
+          })()
         ),
         React.createElement("div",{style:{background:T.purpleDim,border:"1px solid "+T.borderPurple,borderRadius:14,padding:"16px",marginBottom:8}},
           React.createElement("div",{style:{fontWeight:800,fontSize:15,color:T.text,marginBottom:8}},"Pro Tip"),
@@ -5105,7 +5137,7 @@ export default function App(){
             React.createElement("span",{style:{fontSize:12,color:T.textSub}},"© 2026 Fantasy Draft Pros · All rights reserved")
           ),
           React.createElement("div",{style:{display:"flex",justifyContent:"center",gap:24}},
-            ["Contact","FAQ","Help"].map(function(l){return React.createElement("span",{key:l,style:{fontSize:12,color:T.textSub,cursor:"pointer"}},l);})
+            [["Contact","contact"],["FAQ","contact"],["Help","contact"]].map(function(l){return React.createElement("span",{key:l[0],onClick:function(){setReportSubTab(l[1]);},style:{fontSize:12,color:T.textSub,cursor:"pointer",textDecoration:"underline"}},l[0]);})
           )
         )
       ),
@@ -5455,7 +5487,7 @@ export default function App(){
             React.createElement("span",{style:{fontSize:12,color:T.textSub}},"© 2026 Fantasy Draft Pros · All rights reserved")
           ),
           React.createElement("div",{style:{display:"flex",justifyContent:"center",gap:24,marginBottom:16}},
-            ["Contact","FAQ","Help"].map(function(l){return React.createElement("span",{key:l,style:{fontSize:12,color:T.textSub,cursor:"pointer",fontWeight:500}},l);})
+            [["Contact","contact"],["FAQ","contact"],["Help","contact"]].map(function(l){return React.createElement("span",{key:l[0],onClick:function(){setTab("reports");setReportSubTab(l[1]);},style:{fontSize:12,color:T.textSub,cursor:"pointer",fontWeight:500,textDecoration:"underline"}},l[0]);})
           ),
           React.createElement("div",{style:{display:"flex",justifyContent:"center",gap:24,marginBottom:16}},
             [["f","Facebook"],["@","Instagram"],["T","TikTok"]].map(function(s){return React.createElement("div",{key:s[1],style:{width:32,height:32,borderRadius:"50%",background:T.bgCard,border:"1px solid "+T.border,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:13,color:T.textSub,fontWeight:700}},s[0]);})
