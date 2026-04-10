@@ -2603,7 +2603,7 @@ export default function App(){
       });
       teams.sort(function(a,b){return b.totalVal-a.totalVal;});
       saveAndSetImportedTeams(teams);setLeagueRosters(null);setLeagueUsers(null);saveAndSetActiveLeague(lg);
-      setLeagueImportStatus("connected");setLeagueSubTab("power");
+      setLeagueImportStatus("connected");if(leagueSubTab==="leagimport")setLeagueSubTab("power");
     }).catch(function(e){setLeagueImportErr(e.message||"Failed to load league");setLeagueImportStatus("error");});
   }
 
