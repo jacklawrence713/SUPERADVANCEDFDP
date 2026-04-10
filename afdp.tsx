@@ -2200,6 +2200,7 @@ export default function App(){
   var [lineupOptimized,setLineupOptimized]=useState(false);
   var [rivalryTeam1,setRivalryTeam1]=useState("All Teams");
   var [rivalryTeam2,setRivalryTeam2]=useState("All Teams");
+  var [rosterTeamIdx,setRosterTeamIdx]=useState(0);
   var [recapWeek,setRecapWeek]=useState("1");
   var [recapGenerated,setRecapGenerated]=useState(false);
   var [recapError,setRecapError]=useState(false);
@@ -3499,12 +3500,16 @@ export default function App(){
 
       // ROSTER HEALTH
       leagueSubTab==="roster"&&React.createElement("div",{style:{padding:"16px"}},
-        React.createElement("div",{style:{display:"flex",alignItems:"center",gap:12,marginBottom:20}},
+        React.createElement("div",{style:{display:"flex",alignItems:"center",gap:12,marginBottom:12}},
           React.createElement("span",{style:{fontSize:28,color:"#60a5fa",fontWeight:900}},"\u2665"),
           React.createElement("div",{style:{fontWeight:900,fontSize:28,lineHeight:1.1}},"Roster Health Dashboard")
         ),
+        activeTeams.length>0&&React.createElement("select",{value:rosterTeamIdx,onChange:function(e){setRosterTeamIdx(Number(e.target.value));},style:{width:"100%",background:T.bgInput,color:T.text,border:"1px solid "+T.borderPurple,borderRadius:12,padding:"12px 14px",fontSize:14,fontWeight:700,outline:"none",marginBottom:16,cursor:"pointer"}},
+          activeTeams.map(function(t,i){return React.createElement("option",{key:i,value:i},t.name||"Team "+(i+1));})
+        ),
         (function(){
-          var myPlayers=(activeTeams[0]&&activeTeams[0].players&&activeTeams[0].players.length>0?activeTeams[0].players:rankedPlayers).filter(function(p){return p.pos!=="DST"&&p.pos!=="K";});
+          var selectedTeam=activeTeams[rosterTeamIdx]||activeTeams[0];
+          var myPlayers=(selectedTeam&&selectedTeam.players&&selectedTeam.players.length>0?selectedTeam.players:rankedPlayers).filter(function(p){return p.pos!=="DST"&&p.pos!=="K";});
           var healthy=myPlayers.length;
           var injured=0;
           var onBye=0;
