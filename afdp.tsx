@@ -4591,7 +4591,7 @@ export default function App(){
 
       // ROOKIE PICKS
       rankSubTab==="rookie"&&React.createElement("div",{style:{padding:"16px"}},
-        React.createElement("div",{style:{fontWeight:900,fontSize:22,marginBottom:2}},"2026 Rookie Class"),
+        React.createElement("div",{style:{fontWeight:900,fontSize:22,marginBottom:2}},"2025 Rookie Class"),
         React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:16}},"Player grades, draft capital & dynasty upside"),
         (function(){
           var ROOKIE_GRADES=[
