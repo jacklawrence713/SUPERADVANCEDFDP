@@ -6309,6 +6309,6 @@ export default function App(){
     ),
 
     // FLOATING CHAT BUTTON
-    React.createElement("button",{style:{position:"fixed",bottom:isDesktop?20:72,right:20,width:52,height:52,borderRadius:"50%",background:"#3b82f6",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 16px rgba(59,130,246,0.5)",zIndex:200,fontSize:22,color:"#fff"}},"\uD83D\uDCAC")
+    React.createElement("button",{onClick:function(){setTab("reports");setReportSubTab("contact");},style:{position:"fixed",bottom:isDesktop?20:72,right:20,width:52,height:52,borderRadius:"50%",background:"#3b82f6",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 16px rgba(59,130,246,0.5)",zIndex:200,fontSize:22,color:"#fff"}},"\uD83D\uDCAC")
   );
 }
