@@ -1660,6 +1660,14 @@ const DRAFT_PICKS=[
   {id:"p2027_3",name:"2027 3rd Round",round:3,est:2300,note:"Future 3rd"},
   {id:"p2027_4",name:"2027 4th Round",round:4,est:1700,note:"Future 4th"},
   {id:"p2027_5",name:"2027 5th Round",round:5,est:1200,note:"Future 5th"},
+  // Future 2028 Picks
+  {id:"p2028_1_early",name:"2028 1st Early",round:1,est:4800,note:"Future 1st · top-4 range"},
+  {id:"p2028_1_mid",name:"2028 1st Mid",round:1,est:3800,note:"Future 1st · mid range"},
+  {id:"p2028_1_late",name:"2028 1st Late",round:1,est:3000,note:"Future 1st · late range"},
+  {id:"p2028_2",name:"2028 2nd Round",round:2,est:2500,note:"Future 2nd"},
+  {id:"p2028_3",name:"2028 3rd Round",round:3,est:1800,note:"Future 3rd"},
+  {id:"p2028_4",name:"2028 4th Round",round:4,est:1300,note:"Future 4th"},
+  {id:"p2028_5",name:"2028 5th Round",round:5,est:900,note:"Future 5th"},
 ];
 
 const UNQ=PLAYERS.filter(function(p,i,a){return a.findIndex(function(x){return x.name===p.name;})===i;});
@@ -2698,7 +2706,7 @@ export default function App(){
   function loadLiveProj(){
     setLiveProjLoading(true);
     fetch("https://api.sleeper.app/v1/state/nfl").then(function(r){return r.json();}).then(function(state){
-      var season=state.season||"2025";
+      var season=state.season||"2026";
       var week=Math.max(1,state.display_week||state.week||1);
       return fetch("https://api.sleeper.app/v1/projections/nfl/"+season+"/"+week+"?season_type=regular").then(function(r){return r.ok?r.json():null;}).then(function(data){
         if(data){
@@ -2722,7 +2730,7 @@ export default function App(){
     setSleeperStatsLoading(true);
     // Get current NFL state to find the latest week
     fetch("https://api.sleeper.app/v1/state/nfl").then(function(r){return r.json();}).then(function(state){
-      var season=state.season||"2025";
+      var season=state.season||"2026";
       var week=Math.max(1,state.display_week||state.week||1);
       return fetch("https://api.sleeper.app/v1/stats/nfl/"+season+"/"+week+"?season_type=regular").then(function(r){return r.ok?r.json():null;}).then(function(stats){
         setSleeperStats({data:stats||{},week:week,season:season,ts:Date.now()});
@@ -4583,7 +4591,7 @@ export default function App(){
 
       // ROOKIE PICKS
       rankSubTab==="rookie"&&React.createElement("div",{style:{padding:"16px"}},
-        React.createElement("div",{style:{fontWeight:900,fontSize:22,marginBottom:2}},"2025 Rookie Class"),
+        React.createElement("div",{style:{fontWeight:900,fontSize:22,marginBottom:2}},"2026 Rookie Class"),
         React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:16}},"Player grades, draft capital & dynasty upside"),
         (function(){
           var ROOKIE_GRADES=[
