@@ -41,10 +41,14 @@ async function getGeo() {
   if (_geoFetching) return null;
   _geoFetching = true;
   try {
-    const r = await fetch("https://ipapi.co/json/");
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+    const r = await fetch("https://ipapi.co/json/", {signal: controller.signal});
+    clearTimeout(timeout);
     const d = await r.json();
     _geoCache = {country: d.country_name||"Unknown", city: d.city||"", region: d.region||"", flag: d.country_code ? String.fromCodePoint(...[...d.country_code].map((c:string)=>0x1F1E0-65+c.charCodeAt(0))) : ""};
   } catch { _geoCache = {country:"Unknown",city:"",region:"",flag:""}; }
+  _geoFetching = false;
   return _geoCache;
 }
 
@@ -3207,8 +3211,11 @@ export default function App(){
           if(!isPro&&tradeCount>=FREE_TRADE_LIMIT){setAuthMode("signup");setShowAuth(true);return;}
           setAnalyzed(true);setAiAnalysis("Analyzing...");setTradeSaved(false);if(!isPro)setTradeCount(function(c){var n=c+1;try{localStorage.setItem('fdp_tc_v1',String(n));}catch(e){}return n;});
           try{var aiRes=await callEdgeFn("analyze-trade",{sideA:tradeA.map(function(p){return{name:p.name,pos:p.pos,age:p.age,val:p.ktcVal||0};}),sideB:tradeB.map(function(p){return{name:p.name,pos:p.pos,age:p.age,val:p.ktcVal||0};}),tvA,tvB,scoring},user?.token);setAiAnalysis(aiRes.analysis||genAiAnalysis(tradeA,tradeB,tvA,tvB));}catch(e){setAiAnalysis(genAiAnalysis(tradeA,tradeB,tvA,tvB));}
-          var geo=await getGeo();
-          trackEvent("trade_analyzed",{scoring,sideA:tradeA.map(function(x){return x.name;}),sideB:tradeB.map(function(x){return x.name;}),origin:window.location.hash||"#trade",device:window.innerWidth>=1024?"desktop":"mobile",platform:navigator.userAgent.toLowerCase().includes("iphone")||navigator.userAgent.toLowerCase().includes("ipad")?"iOS":navigator.userAgent.toLowerCase().includes("android")?"Android":"Web",country:geo?.country||"",city:geo?.city||"",region:geo?.region||"",flag:geo?.flag||""});
+          var device=window.innerWidth>=1024?"desktop":"mobile";
+          var ua=navigator.userAgent.toLowerCase();
+          var platform=ua.includes("iphone")||ua.includes("ipad")?"iOS":ua.includes("android")?"Android":"Web";
+          trackEvent("trade_analyzed",{scoring,sideA:tradeA.map(function(x){return x.name;}),sideB:tradeB.map(function(x){return x.name;}),origin:window.location.hash||"#trade",device,platform,country:"",city:"",region:"",flag:""});
+          getGeo().then(function(geo){if(geo&&geo.country!=="Unknown"){trackEvent("trade_geo",{country:geo.country,city:geo.city,region:geo.region,flag:geo.flag});}}).catch(function(){});
         },style:{width:"100%",padding:"15px",borderRadius:14,border:"none",cursor:"pointer",fontWeight:800,fontSize:15,
           background:(tradeA.length>0||tradeB.length>0)?(!isPro&&tradeCount>=FREE_TRADE_LIMIT?"linear-gradient(135deg,"+T.gold+",#92400e)":"linear-gradient(135deg,"+T.purple+",#5b21b6)"):T.purpleDim,
           color:(tradeA.length>0||tradeB.length>0)?"#fff":T.textDim}},
