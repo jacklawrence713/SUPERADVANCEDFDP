@@ -8,9 +8,10 @@ const SUPA_SVC = (import.meta as any).env?.VITE_SUPABASE_SERVICE_KEY || "eyJhbGc
 const EDGE_URL = (import.meta as any).env?.VITE_EDGE_FUNCTIONS_URL || "https://wizdxspglxpvvogiivsv.supabase.co/functions/v1";
 // Auth + data client
 const authClient = SUPA_URL && SUPA_KEY ? createClient(SUPA_URL, SUPA_KEY) : null;
-// Analytics clients (kept separate)
+// Analytics write client — anon key, for inserting events (respects RLS insert policy)
 const analyticsClient = authClient;
-const analyticsReadClient = SUPA_URL && SUPA_SVC ? createClient(SUPA_URL, SUPA_SVC) : null;
+// Analytics read client — service role, for admin reads only
+const analyticsReadClient = SUPA_URL && SUPA_SVC ? createClient(SUPA_URL, SUPA_SVC, {auth:{persistSession:false,autoRefreshToken:false}}) : null;
 
 // ── Edge Function helpers ─────────────────────────────────────────────────────
 async function callEdgeFn(fn: string, body: any, userToken?: string) {
@@ -53,7 +54,7 @@ async function getGeo() {
 }
 
 async function trackEvent(type: string, data: Record<string, any> = {}) {
-  const client = analyticsReadClient || analyticsClient;
+  const client = analyticsClient;
   if (!client) return;
   try {
     const result = await client.from("analytics_events").insert({
