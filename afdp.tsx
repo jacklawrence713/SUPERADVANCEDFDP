@@ -57,8 +57,8 @@ async function trackEvent(type: string, data: Record<string, any> = {}) {
       event_type: type,
       event_data: _trackedEmail ? Object.assign({}, data, {user_email: _trackedEmail}) : data,
     });
-    if (result.error) { /* analytics write failed silently */ }
-  } catch(e) { /* analytics unavailable */ }
+    if (result.error) { console.error("[analytics] insert error:", result.error); }
+  } catch(e) { console.error("[analytics] exception:", e); }
 }
 
 async function loadPublicStats() {
@@ -5394,7 +5394,7 @@ export default function App(){
         React.createElement("div",{style:{fontSize:14,color:T.textSub,lineHeight:1.6,marginBottom:20}},"Key dynasty value insights heading into the 2026 season"),
         [
           {tag:"QB",tagColor:"#818cf8",title:"Josh Allen & Drake Maye: The QB buy/hold of 2026",body:"Allen is the consensus dynasty QB1 — elite rushing floor, top-end passing ceiling, and still in his prime at 30. The bigger conversation is Drake Maye: the Patriots' franchise QB is 22 years old with generational arm talent and mobility. His dynasty stock is rising fast. Buy Maye now before the price gets out of hand — he's the QB1 of the future."},
-          {tag:"RB",tagColor:"#34d399",title:"Bijan Robinson: Still undervalued",body:"Despite a quiet 2025 in Atlanta's run-heavy scheme, Bijan's age-23 profile and elite college pedigree keep him in the top-5 RB conversation. With Tua now in Atlanta, expect a more pass-friendly attack."},
+          {tag:"RB",tagColor:"#34d399",title:"Bijan Robinson: The dynasty RB1",body:"Bijan is the consensus RB1 in dynasty — age-24, elite receiving ability, and locked into a lead role in Atlanta. With Tua Tagovailoa now running the offense, expect a more pass-friendly scheme that elevates Bijan's receiving upside on top of his already elite rushing floor. Hold at all costs."},
           {tag:"WR",tagColor:"#c084fc",title:"Marvin Harrison Jr. dynasty outlook",body:"MHJ posted 1,100+ yards as a rookie on a bad Cardinals team. With Kyler Murray now in Minnesota, the target share question is real — but his route-running separates him from the WR1 pack regardless of QB."},
           {tag:"TE",tagColor:"#f59e0b",title:"Sam LaPorta: Premium TE locked in",body:"LaPorta established himself as a top-5 dynasty TE in year one. With Goff re-signed and the Lions' offense humming, LaPorta's floor is elite. Buy at current values (5,500–6,000 range)."},
           {tag:"IDP",tagColor:"#f87171",title:"Jalen Carter: Best IDP buy of the offseason",body:"Carter's pass-rush development in Year 3 has dynasty IDP managers excited. His sack upside combined with Philly's defensive scheme makes him a DL1 in most IDP formats. Currently valued ~6,000."},
