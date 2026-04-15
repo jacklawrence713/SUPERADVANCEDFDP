@@ -1899,6 +1899,7 @@ function TradeItem(props){
 }
 // ── Analytics Dashboard Component ─────────────────────────────────────────
 function AnalyticsDashboard({T,data,loading,onLoad}:{T:any,data:any,loading:boolean,onLoad:()=>void}){
+  var [testResult,setTestResult]=useState("");
   useEffect(function(){onLoad();},[]);// eslint-disable-line react-hooks/exhaustive-deps
 
   // Build daily chart from raw page_view events
@@ -1945,7 +1946,18 @@ function AnalyticsDashboard({T,data,loading,onLoad}:{T:any,data:any,loading:bool
     "Loading analytics..."
   );
 
-  if(!data) return React.createElement("div",{style:{padding:16,textAlign:"center",color:T.textSub}},"No data yet — visit the site to start collecting.");
+  if(!data) return React.createElement("div",{style:{padding:16,textAlign:"center"}},
+    React.createElement("div",{style:{color:T.textSub,marginBottom:16}},"No data yet — visit the site to start collecting."),
+    React.createElement("button",{onClick:async function(){
+      setTestResult("Testing...");
+      var client=analyticsReadClient||analyticsClient;
+      if(!client){setTestResult("ERROR: No Supabase client initialized");return;}
+      var r=await client.from("analytics_events").insert({visitor_id:"admin-test",event_type:"test",event_data:{ts:Date.now()}});
+      setTestResult(r.error?"ERROR: "+r.error.message+" (code:"+r.error.code+")":"SUCCESS: Insert worked!");
+    },style:{padding:"10px 20px",borderRadius:10,border:"1px solid "+T.border,background:T.bgCard,color:T.text,cursor:"pointer",fontWeight:700,fontSize:13}},
+    "🔧 Test Insert"),
+    testResult&&React.createElement("div",{style:{marginTop:12,padding:"10px 14px",borderRadius:10,background:testResult.startsWith("ERROR")?T.red+"18":T.green+"18",border:"1px solid "+(testResult.startsWith("ERROR")?T.red:T.green),color:testResult.startsWith("ERROR")?T.red:T.green,fontFamily:"monospace",fontSize:12}},testResult)
+  );
   if(data.error) return React.createElement("div",{style:{padding:16}},
     React.createElement("div",{style:{background:"#ef444418",border:"1px solid #ef4444",borderRadius:12,padding:16,marginBottom:12}},
       React.createElement("div",{style:{fontWeight:800,fontSize:14,color:"#ef4444",marginBottom:6}},"Analytics Query Error"),
@@ -1954,6 +1966,13 @@ function AnalyticsDashboard({T,data,loading,onLoad}:{T:any,data:any,loading:bool
     React.createElement("button",{onClick:onLoad,style:{marginTop:12,padding:"10px 20px",borderRadius:10,border:"1px solid "+T.border,background:"transparent",color:T.textSub,cursor:"pointer",fontWeight:600,fontSize:13}},"\u21BB Retry")
   );
 
+  var testInsert=async function(){
+    setTestResult("Testing...");
+    var client=analyticsReadClient||analyticsClient;
+    if(!client){setTestResult("ERROR: No Supabase client");return;}
+    var r=await client.from("analytics_events").insert({visitor_id:"admin-test",event_type:"test",event_data:{ts:Date.now()}});
+    setTestResult(r.error?"ERROR: "+r.error.message+" (code:"+r.error.code+")":"SUCCESS: Insert worked — refresh to see count go up!");
+  };
   var daily=buildDailyBuckets(data.daily);
   var maxDay=Math.max(1,...daily.map(function(d:any){return d.count;}));
   var totalUnique=new Set((data.daily||[]).map(function(e:any){return e.visitor_id;})).size;
@@ -1990,6 +2009,12 @@ function AnalyticsDashboard({T,data,loading,onLoad}:{T:any,data:any,loading:bool
   var anonList=Object.values(anonMap).sort(function(a,b){return b.lastSeen.localeCompare(a.lastSeen);});
 
   return React.createElement("div",{style:{padding:16}},
+    // Diagnostics strip
+    React.createElement("div",{style:{display:"flex",gap:8,alignItems:"center",marginBottom:12,flexWrap:"wrap"}},
+      React.createElement("button",{onClick:onLoad,style:{padding:"7px 14px",borderRadius:8,border:"1px solid "+T.border,background:"transparent",color:T.textSub,cursor:"pointer",fontWeight:600,fontSize:12}},"↻ Refresh"),
+      React.createElement("button",{onClick:testInsert,style:{padding:"7px 14px",borderRadius:8,border:"1px solid "+T.border,background:"transparent",color:T.textSub,cursor:"pointer",fontWeight:600,fontSize:12}},"🔧 Test Insert"),
+      testResult&&React.createElement("span",{style:{fontSize:12,fontFamily:"monospace",color:testResult.startsWith("ERROR")?T.red:T.green,padding:"4px 10px",borderRadius:8,background:testResult.startsWith("ERROR")?T.red+"18":T.green+"18"}},testResult)
+    ),
     // Header
     React.createElement("div",{style:{marginBottom:16}},
       React.createElement("div",{style:{fontWeight:900,fontSize:20,color:T.text}},"Site Analytics"),
