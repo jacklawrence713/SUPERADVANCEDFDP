@@ -863,7 +863,7 @@ const PLAYERS=[
   {name:"Amorion Walker",pos:"WR",age:23,team:"DAL",proj:{PPR:118,Half:109,Standard:100},adp:37.0,ktcVal:2000,note:"2026 Year 2 developmental"},
   {name:"Isaac TeSlaa",pos:"WR",age:24,team:"GB",proj:{PPR:112,Half:103,Standard:94},adp:38.5,ktcVal:2800,note:"2026 Year 2: 42 rec 500 yds"},
   {name:"Jalen Coker",pos:"WR",age:24,team:"CAR",proj:{PPR:158,Half:145,Standard:132},adp:28.5,ktcVal:3904,note:"2026 Year 2: 60 rec 720 yds 6 TD ascending receiver"},
-  {name:"Tre' Harris",pos:"WR",age:23,team:"LAC",proj:{PPR:152,Half:140,Standard:128},adp:29.5,ktcVal:3564,note:"2026 rookie: 56 rec 680 yds elite size/speed profile"},
+  {name:"Tre' Harris",pos:"WR",age:23,team:"LAC",proj:{PPR:152,Half:140,Standard:128},adp:29.5,ktcVal:3564,note:"Year 2: 56 rec 680 yds as rookie · elite size/speed profile"},
   {name:"Tory Horton",pos:"WR",age:24,team:"NE",proj:{PPR:132,Half:121,Standard:110},adp:34.0,ktcVal:3539,note:"2026 Year 2: 50 rec 620 yds developing WR2"},
   {name:"Ryan Flournoy",pos:"WR",age:23,team:"SEA",proj:{PPR:118,Half:108,Standard:98},adp:38.0,ktcVal:2311,note:"2026 Year 2: 44 rec 520 yds developmental WR"},
   {name:"Konata Mumpfield",pos:"WR",age:24,team:"PIT",proj:{PPR:98,Half:90,Standard:82},adp:44.0,ktcVal:1789,note:"Speed receiver depth: 34 rec 420 yds"},
@@ -1043,7 +1043,7 @@ const PLAYERS=[
   {name:"Daiyan Henley",pos:"LB",age:27,team:"TEN",proj:{PPR:118,Half:118,Standard:118},adp:14.5,ktcVal:1800,note:"TEN LB: 125 tackles 3 sacks solid"},
   {name:"Ernest Jones",pos:"LB",age:26,team:"TEN",proj:{PPR:122,Half:122,Standard:122},adp:13.5,ktcVal:2000,note:"TEN ILB: 130 tackles 2 sacks"},
   {name:"Andrew Van Ginkel",pos:"LB",age:30,team:"MIA",proj:{PPR:108,Half:108,Standard:108},adp:16.5,ktcVal:1200,note:"MIA LB: 8.5 sacks 15 TFL pass rush"},
-  {name:"Cedric Gray",pos:"LB",age:23,team:"CAR",proj:{PPR:112,Half:112,Standard:112},adp:15.5,ktcVal:2000,note:"CAR LB: 120 tackles 3 sacks rookie"},
+  {name:"Cedric Gray",pos:"LB",age:23,team:"CAR",proj:{PPR:112,Half:112,Standard:112},adp:15.5,ktcVal:2000,note:"CAR LB: 120 tackles 3 sacks in Year 1"},
   {name:"SirVocea Dennis",pos:"LB",age:24,team:"PIT",proj:{PPR:102,Half:102,Standard:102},adp:18.5,ktcVal:1600,note:"PIT LB: 108 tackles 2 sacks"},
   {name:"Tyrice Knight",pos:"LB",age:24,team:"LAC",proj:{PPR:98,Half:98,Standard:98},adp:20.0,ktcVal:1500,note:"LAC LB: 102 tackles 2 sacks ascending"},
   // IDP — DB
@@ -2272,7 +2272,7 @@ export default function App(){
   var [rankSearch,setRankSearch]=useState("");
   var [rankTeamFilter,setRankTeamFilter]=useState("All Teams");
   var [rankIdpPos,setRankIdpPos]=useState("DL");
-  var [watchlist,setWatchlist]=useState([]);
+  var [watchlist,setWatchlist]=useState(function(){try{var s=localStorage.getItem('fdp_wl_v1');return s?JSON.parse(s):[];}catch(e){return [];}});
   var [valueTrendsPos,setValueTrendsPos]=useState("QB");
   var [trendingFilter,setTrendingFilter]=useState("all");
   var [marketFilter,setMarketFilter]=useState("buylow");
@@ -3474,13 +3474,18 @@ export default function App(){
         ),
         (function(){
           var team=activeTeams[adviceTeam]||activeTeams[0];
-          var mode=adviceTeam<2?"COMPETE":adviceTeam<4?"NEUTRAL":"REBUILD";
+          var sortedVals=activeTeams.slice().sort(function(a,b){return b.totalVal-a.totalVal;});
+          var valRank=sortedVals.findIndex(function(t){return t.name===team.name;});
+          var pct=activeTeams.length>1?valRank/(activeTeams.length-1):0.5;
+          var mode=pct<0.33?"COMPETE":pct<0.67?"NEUTRAL":"REBUILD";
           var modeColor=mode==="COMPETE"?T.green:mode==="NEUTRAL"?T.gold:T.red;
           var modeBg=mode==="COMPETE"?"linear-gradient(135deg,#052e16,#064e3b)":mode==="NEUTRAL"?"linear-gradient(135deg,#1c1400,#261c00)":"linear-gradient(135deg,#2d0707,#3b0f0f)";
           var modeIcon=mode==="COMPETE"?"↗":mode==="NEUTRAL"?"→":"↘";
           var modeDesc=mode==="COMPETE"?"Win now. Your team is built to compete for a championship this season.":mode==="NEUTRAL"?"Balance youth and veterans. Trades should go either direction.":"Focus on the future. Acquire picks and young talent for sustained success.";
-          var confidence=mode==="REBUILD"?95:mode==="COMPETE"?89:72;
-          var leaguePercentile=Math.round(((activeTeams.length-1-adviceTeam)/Math.max(1,activeTeams.length-1))*100);
+          var spread=sortedVals.length>1?Math.abs(sortedVals[0].totalVal-sortedVals[sortedVals.length-1].totalVal):1;
+          var distFromMedian=spread>0?Math.abs(team.totalVal-(sortedVals[Math.floor(sortedVals.length/2)]||{totalVal:team.totalVal}).totalVal)/spread:0;
+          var confidence=Math.min(98,Math.round(60+distFromMedian*38));
+          var leaguePercentile=Math.round((1-pct)*100);
           var starterVal=Math.round(team.totalVal*0.65/1000)*1000;
           var futureVal=team.picks*8500;
           var agingRisk=Math.max(0,Math.round(adviceTeam*3.5));
@@ -3959,28 +3964,11 @@ export default function App(){
       // WEEKLY RECAP
       leagueSubTab==="recap"&&React.createElement("div",{style:{padding:"16px"}},
         React.createElement("div",{style:{fontWeight:900,fontSize:22,marginBottom:4}},"Weekly Recap"),
-        React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:16}},"AI-generated league recap and storylines"),
-        React.createElement("div",{style:{display:"flex",gap:8,marginBottom:12}},
-          React.createElement("select",{value:recapWeek,onChange:function(e){setRecapWeek(e.target.value);setRecapGenerated(false);setRecapError(false);},style:Object.assign({},inpS,{flex:1})},
-            Array.from({length:14},function(_,i){return React.createElement("option",{key:i+1,value:String(i+1)},"Week "+(i+1));})
-          ),
-          React.createElement("button",{onClick:function(){setRecapGenerated(false);setRecapError(false);setTimeout(function(){setRecapGenerated(true);},1200);},style:{padding:"10px 18px",borderRadius:12,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer"}},"Generate")
-        ),
-        !recapGenerated&&React.createElement("div",{style:{textAlign:"center",padding:"30px",color:T.textSub,fontSize:13}},"Select a week and generate your recap"),
-        recapGenerated&&React.createElement("div",null,
-          React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:14,padding:16,marginBottom:12}},
-            React.createElement("div",{style:{fontWeight:900,fontSize:16,color:T.purple,marginBottom:10}},"Week "+recapWeek+" Recap"),
-            React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.7,marginBottom:12}},"Week "+recapWeek+" saw "+(activeTeams[0]&&activeTeams[0].name)+" extend their lead atop the standings with a dominant performance. "+(activeTeams[1]&&activeTeams[1].name)+" stayed within striking distance, while "+(activeTeams[activeTeams.length-1]&&activeTeams[activeTeams.length-1].name)+" continue to struggle."),
-            React.createElement("div",{style:{fontWeight:700,fontSize:13,marginBottom:8}},"Top Performers"),
-            rankedPlayers.slice(0,3).map(function(p){
-              return React.createElement("div",{key:p.name,style:{display:"flex",alignItems:"center",gap:10,marginBottom:8}},
-                React.createElement(Avatar,{name:p.name,pos:p.pos,size:28}),
-                React.createElement(PBadge,{pos:p.pos}),
-                React.createElement("span",{style:{fontSize:13,fontWeight:700}},p.name),
-                React.createElement("span",{style:{fontSize:12,color:T.gold,marginLeft:"auto"}},p.pts.toFixed(0)+" pts")
-              );
-            })
-          )
+        React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:20}},"AI-generated league recap and storylines"),
+        React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"40px 20px",textAlign:"center"}},
+          React.createElement("div",{style:{fontSize:40,marginBottom:12}},"📋"),
+          React.createElement("div",{style:{fontWeight:800,fontSize:18,color:T.text,marginBottom:8}},"Coming Soon"),
+          React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.6,maxWidth:300,margin:"0 auto"}},"Weekly recap summaries require live matchup scores. This feature will be available during the 2026 regular season.")
         )
       ),
 
@@ -5028,7 +5016,7 @@ export default function App(){
                 React.createElement("input",{value:watchlistSearch,onChange:function(e){setWatchlistSearch(e.target.value);},placeholder:"Add player to watchlist...",style:Object.assign({},inpS)}),
                 watchlistSearch&&React.createElement("div",{style:{position:"absolute",top:"calc(100% + 4px)",left:0,right:0,background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:10,zIndex:50}},
                   rankedPlayers.filter(function(p){return p.name.toLowerCase().includes(watchlistSearch.toLowerCase())&&watchlist.indexOf(p.name)===-1;}).slice(0,5).map(function(p){
-                    return React.createElement("div",{key:p.name,onClick:function(){setWatchlist(function(w){return w.concat([p.name]);});setWatchlistSearch("");},style:{padding:"10px 14px",cursor:"pointer",borderBottom:"1px solid "+T.border,display:"flex",alignItems:"center",gap:8}},
+                    return React.createElement("div",{key:p.name,onClick:function(){setWatchlist(function(w){var n=w.concat([p.name]);try{localStorage.setItem('fdp_wl_v1',JSON.stringify(n));}catch(e){}return n;});setWatchlistSearch("");},style:{padding:"10px 14px",cursor:"pointer",borderBottom:"1px solid "+T.border,display:"flex",alignItems:"center",gap:8}},
                       React.createElement(PBadge,{pos:p.pos}),
                       React.createElement("span",{style:{flex:1,fontWeight:600,fontSize:13}},p.name),
                       React.createElement("span",{style:{color:T.purple,fontWeight:700,fontSize:12}},p.tradeVal.toLocaleString())
@@ -5044,7 +5032,7 @@ export default function App(){
                     React.createElement("div",{style:{fontWeight:700,fontSize:13}},p.name),
                     React.createElement("div",{style:{fontSize:10,color:T.textSub}},p.team+" | val "+p.tradeVal)
                   ),
-                  React.createElement("button",{onClick:function(){setWatchlist(function(w){return w.filter(function(x){return x!==p.name;});});},style:{background:"none",border:"none",cursor:"pointer",color:T.gold,fontSize:16}},"\u2605")
+                  React.createElement("button",{onClick:function(){setWatchlist(function(w){var n=w.filter(function(x){return x!==p.name;});try{localStorage.setItem('fdp_wl_v1',JSON.stringify(n));}catch(e){}return n;});},style:{background:"none",border:"none",cursor:"pointer",color:T.gold,fontSize:16}},"\u2605")
                 );
               })
             )
@@ -5599,7 +5587,7 @@ export default function App(){
             React.createElement("span",{style:{fontSize:13,color:"#22c55e",fontWeight:700}},"$35.88/year")
           ),
           React.createElement("div",{style:{display:"inline-block",background:"#ccfbf1",color:"#065f46",fontWeight:700,fontSize:12,padding:"4px 12px",borderRadius:20,marginBottom:16}},"7-Day Free Trial"),
-          ["Player search and profiles","Dynasty rankings","Weekly market reports","Unlimited trade calculations","Unlimited league imports","Player value history","AI trade suggestions","Team strategy advice","Market alerts & notifications","Unlimited watchlist","Advanced trend analytics","Priority support"].map(function(f){
+          ["Unlimited trade analyses","Full dynasty rankings (600+ players)","League import (Sleeper, ESPN, Yahoo)","AI trade analysis & suggestions","Dynasty market reports","Team strategy advice","Buy-low / sell-high alerts","Unlimited watchlist","Pick value calculator","Start/Sit tool","Priority support"].map(function(f){
             return React.createElement("div",{key:f,style:{display:"flex",alignItems:"center",gap:10,marginBottom:10,fontSize:14,color:"#1a1a2e"}},
               React.createElement("span",{style:{color:"#22c55e",fontWeight:700,fontSize:16}},"\u2713"),f
             );
