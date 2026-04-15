@@ -671,7 +671,7 @@ const PLAYERS=[
   {name:"Jameson Williams",pos:"WR",age:24,team:"DET",proj:{PPR:205,Half:189,Standard:173},adp:19.5,ktcVal:4816,note:"Deep threat: 68 rec 950 yds 8 TD"},
   {name:"Jayden Reed",pos:"WR",age:25,team:"GB",proj:{PPR:198,Half:183,Standard:168},adp:20.8,ktcVal:4119,note:"Slot: 78 rec 860 yds 7 TD"},
   {name:"Christian Watson",pos:"WR",age:26,team:"GB",proj:{PPR:185,Half:171,Standard:157},adp:22.5,ktcVal:3644,note:"68 rec 820 yds 7 TD"},
-  {name:"Rashid Shaheed",pos:"WR",age:26,team:"NO",proj:{PPR:178,Half:164,Standard:150},adp:23.8,ktcVal:3612,note:"Deep threat: 60 rec 820 yds"},
+  {name:"Rashid Shaheed",pos:"WR",age:26,team:"SEA",proj:{PPR:178,Half:164,Standard:150},adp:23.8,ktcVal:3612,note:"Deep threat: 60 rec 820 yds"},
   {name:"Jahan Dotson",pos:"WR",age:25,team:"PHI",proj:{PPR:172,Half:158,Standard:144},adp:25.0,ktcVal:2200,note:"Year 4: 65 rec 760 yds 6 TD"},
   {name:"Josh Palmer",pos:"WR",age:27,team:"LAC",proj:{PPR:162,Half:149,Standard:136},adp:27.2,ktcVal:600,note:"60 rec 700 yds 5 TD"},
   {name:"Alec Pierce",pos:"WR",age:26,team:"IND",proj:{PPR:155,Half:143,Standard:131},adp:28.8,ktcVal:4210,note:"Deep threat: 55 rec 720 yds"},
@@ -985,7 +985,7 @@ const PLAYERS=[
   {name:"Quentin Lake",pos:"DB",age:27,team:"LAR",proj:{PPR:70,Half:70,Standard:70},adp:40.0,ktcVal:700,note:"S: 65 tackles 1 INT"},
   {name:"Elijah Riley",pos:"DB",age:27,team:"MIN",proj:{PPR:65,Half:65,Standard:65},adp:44.5,ktcVal:500,note:"S depth: 58 tackles 1 INT"},
   {name:"Keenan Isaac",pos:"DB",age:25,team:"JAX",proj:{PPR:62,Half:62,Standard:62},adp:46.0,ktcVal:800,note:"CB depth: 50 tackles 1 INT"},
-  {name:"Josh Jobe",pos:"DB",age:26,team:"PIT",proj:{PPR:68,Half:68,Standard:68},adp:41.0,ktcVal:800,note:"CB: 55 tackles 2 INT slot"},
+  {name:"Josh Jobe",pos:"DB",age:26,team:"SEA",proj:{PPR:68,Half:68,Standard:68},adp:41.0,ktcVal:800,note:"CB: 55 tackles 2 INT slot"},
   {name:"Coby Bryant",pos:"DB",age:26,team:"CHI",proj:{PPR:72,Half:72,Standard:72},adp:38.5,ktcVal:800,note:"CB: 60 tackles 2 INT solid"},
   // IDP LB Wave 25
   {name:"Ja'Whaun Bentley",pos:"LB",age:30,team:"NE",proj:{PPR:88,Half:88,Standard:88},adp:27.5,ktcVal:1200,note:"ILB: 85 tackles 2 sacks veteran"},
@@ -1513,7 +1513,7 @@ const PLAYERS=[
   {name:"Tanner Mordecai",pos:"QB",age:27,team:"MIA",proj:{PPR:192,Half:192,Standard:192},adp:34.5,ktcVal:300,note:"Deep backup"},
   {name:"Chris Streveler",pos:"QB",age:30,team:"NYJ",proj:{PPR:188,Half:188,Standard:188},adp:35.5,ktcVal:200,note:"Mobile emergency backup"},
   // IDP Wave 5 — elite and rising pass rushers
-  {name:"Jaelan Phillips",pos:"DL",age:26,team:"MIA",proj:{PPR:105,Half:105,Standard:105},adp:14.5,ktcVal:2500,note:"EDGE: 10 sacks when healthy"},
+  {name:"Jaelan Phillips",pos:"DL",age:26,team:"CAR",proj:{PPR:105,Half:105,Standard:105},adp:14.5,ktcVal:2500,note:"EDGE: 10 sacks when healthy · 4yr/$120M CAR"},
   {name:"Zach Harrison",pos:"DL",age:25,team:"NYG",proj:{PPR:90,Half:90,Standard:90},adp:27.0,ktcVal:1500,note:"Interior rush: 8 sacks"},
   {name:"Brenton Cox Jr.",pos:"DL",age:25,team:"PHI",proj:{PPR:88,Half:88,Standard:88},adp:29.5,ktcVal:1500,note:"Edge rotational: 7 sacks"},
   // IDP Wave 5 — LBs
@@ -1584,6 +1584,28 @@ const PLAYERS=[
   {name:"Luke Schoonmaker",pos:"TE",age:26,team:"DAL",proj:{PPR:112,Half:103,Standard:94},adp:26.5,ktcVal:800,note:"Year 3: 44 rec 460 yds 4 TD"},
   {name:"Dalton Kincaid",pos:"TE",age:26,team:"BUF",proj:{PPR:118,Half:108,Standard:98},adp:24.8,ktcVal:3409,note:"Receiving TE: 48 rec 500 yds"},
   {name:"Nate Wieting",pos:"TE",age:28,team:"DET",proj:{PPR:75,Half:69,Standard:63},adp:45.0,ktcVal:300,note:"Blocking/depth"},
+  // 2026 Rookie Prospects (pre-draft · April 23-25 2026)
+  {name:"Fernando Mendoza",pos:"QB",age:22,team:"TBD",proj:{PPR:265,Half:265,Standard:265},adp:1.1,ktcVal:5500,note:"2026 #1 overall QB · Indiana · elite arm talent SF dynasty asset"},
+  {name:"Ty Simpson",pos:"QB",age:22,team:"TBD",proj:{PPR:235,Half:235,Standard:235},adp:2.5,ktcVal:3500,note:"2026 1st round QB · Alabama · dual-threat upside"},
+  {name:"Jeremiyah Love",pos:"RB",age:21,team:"TBD",proj:{PPR:270,Half:250,Standard:230},adp:1.1,ktcVal:8500,note:"2026 top-3 pick RB · Notre Dame · elite workhorse dynasty RB1"},
+  {name:"Jadarian Price",pos:"RB",age:21,team:"TBD",proj:{PPR:195,Half:180,Standard:165},adp:2.5,ktcVal:5000,note:"2026 2nd round RB · Notre Dame · three-down potential"},
+  {name:"Carnell Tate",pos:"WR",age:21,team:"TBD",proj:{PPR:160,Half:147,Standard:134},adp:1.2,ktcVal:6500,note:"2026 top-10 pick WR · Ohio State · dynasty WR1 ceiling"},
+  {name:"Makai Lemon",pos:"WR",age:21,team:"TBD",proj:{PPR:148,Half:136,Standard:124},adp:1.4,ktcVal:5500,note:"2026 1st round WR · USC · elite athleticism and route running"},
+  {name:"Omar Cooper Jr.",pos:"WR",age:22,team:"TBD",proj:{PPR:138,Half:126,Standard:114},adp:2.0,ktcVal:4500,note:"2026 1st round WR · Indiana · elite YAC and separation"},
+  {name:"Jordyn Tyson",pos:"WR",age:22,team:"TBD",proj:{PPR:132,Half:121,Standard:110},adp:2.1,ktcVal:4000,note:"2026 1st round WR · Arizona State · big-play vertical threat"},
+  {name:"Denzel Boston",pos:"WR",age:22,team:"TBD",proj:{PPR:125,Half:115,Standard:105},adp:2.2,ktcVal:3800,note:"2026 1st round WR · Washington · big body possession receiver"},
+  {name:"KC Concepcion",pos:"WR",age:21,team:"TBD",proj:{PPR:115,Half:106,Standard:97},adp:3.0,ktcVal:2800,note:"2026 2nd round WR · Texas A&M · explosive slot weapon"},
+  {name:"Antonio Williams",pos:"WR",age:22,team:"TBD",proj:{PPR:100,Half:92,Standard:84},adp:4.0,ktcVal:1800,note:"2026 3rd+ round WR · Clemson · depth flier with upside"},
+  {name:"Kenyon Sadiq",pos:"TE",age:22,team:"TBD",proj:{PPR:118,Half:108,Standard:98},adp:1.3,ktcVal:4500,note:"2026 1st round TE · Oregon · top TE prospect elite upside"},
+  // 2026 IDP Rookies
+  {name:"Sonny Styles",pos:"LB",age:21,team:"TBD",proj:{PPR:118,Half:118,Standard:118},adp:1.1,ktcVal:5500,note:"2026 top-5 pick LB · Ohio State · elite coverage and pass rush"},
+  {name:"David Bailey",pos:"DL",age:22,team:"TBD",proj:{PPR:108,Half:108,Standard:108},adp:1.1,ktcVal:5000,note:"2026 top-5 pick Edge · Texas Tech · 12+ sack ceiling"},
+  {name:"Arvell Reese",pos:"DL",age:21,team:"TBD",proj:{PPR:102,Half:102,Standard:102},adp:1.2,ktcVal:4800,note:"2026 top-5 pick Edge · Ohio State · explosive first step"},
+  {name:"Rueben Bain Jr.",pos:"DL",age:21,team:"TBD",proj:{PPR:98,Half:98,Standard:98},adp:1.2,ktcVal:4500,note:"2026 1st round Edge · Miami · elite motor elite pass rusher"},
+  {name:"Caleb Downs",pos:"DB",age:22,team:"TBD",proj:{PPR:108,Half:108,Standard:108},adp:1.3,ktcVal:5000,note:"2026 1st round S · Ohio State · ball-hawk elite tackler"},
+  {name:"Mansoor Delane",pos:"DB",age:22,team:"TBD",proj:{PPR:95,Half:95,Standard:95},adp:1.3,ktcVal:4000,note:"2026 1st round CB · LSU · long press coverage specialist"},
+  {name:"CJ Allen",pos:"LB",age:22,team:"TBD",proj:{PPR:112,Half:112,Standard:112},adp:2.0,ktcVal:3500,note:"2026 1st round LB · Georgia · sideline-to-sideline tackling machine"},
+  {name:"T.J. Parker",pos:"DL",age:22,team:"TBD",proj:{PPR:92,Half:92,Standard:92},adp:2.1,ktcVal:3200,note:"2026 1st round Edge · Clemson · 10+ sack upside"},
 ];
 
 const DRAFT_PICKS=[
@@ -4625,6 +4647,40 @@ export default function App(){
                 ),
                 React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginTop:10}},
                   [["Draft Capital",r.dc,T.gold],["Team Fit",r.fit,T.cyan],["Dynasty Val",p?p.tradeVal.toLocaleString():"N/A",T.purple]].map(function(s){
+                    return React.createElement("div",{key:s[0],style:{background:T.bgInput,borderRadius:8,padding:"7px 6px",textAlign:"center"}},
+                      React.createElement("div",{style:{fontSize:9,color:T.textSub,marginBottom:2}},s[0]),
+                      React.createElement("div",{style:{fontWeight:800,fontSize:13,color:s[2]}},s[1])
+                    );
+                  })
+                ),
+                React.createElement("div",{style:{fontSize:11,color:T.textSub,marginTop:8,lineHeight:1.5,borderTop:"1px solid "+T.border,paddingTop:8}},r.note)
+              );
+            }),
+            React.createElement("div",{style:{marginTop:24,fontWeight:900,fontSize:18,marginBottom:4}},"2026 Draft Class Preview"),
+            React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:12}},"Top prospects · Draft April 23-25 · Teams TBD"),
+            [
+              {name:"Jeremiyah Love",pos:"RB",team:"TBD",grade:"A+",dc:"Top 3",fit:"TBD",note:"Elite workhorse RB from Notre Dame — dynasty RB1 ceiling",color:T.green},
+              {name:"Fernando Mendoza",pos:"QB",team:"TBD",grade:"A",dc:"#1 OA",fit:"TBD",note:"#1 overall QB from Indiana — elite arm, must-have in SF leagues",color:"#22c55e"},
+              {name:"Carnell Tate",pos:"WR",team:"TBD",grade:"A",dc:"Top 10",fit:"TBD",note:"Elite WR from Ohio State — dynasty WR1 upside, great size/speed",color:"#22c55e"},
+              {name:"Kenyon Sadiq",pos:"TE",team:"TBD",grade:"A-",dc:"Top 15",fit:"TBD",note:"Top TE from Oregon — rare athleticism, long-term TE1 upside",color:"#86efac"},
+              {name:"Makai Lemon",pos:"WR",team:"TBD",grade:"A-",dc:"1st Rd",fit:"TBD",note:"USC WR with elite athleticism — immediate target share upside",color:"#86efac"},
+              {name:"Jadarian Price",pos:"RB",team:"TBD",grade:"B+",dc:"2nd Rd",fit:"TBD",note:"Notre Dame RB2 — three-down back with solid floor",color:"#f59e0b"},
+              {name:"Omar Cooper Jr.",pos:"WR",team:"TBD",grade:"B+",dc:"1st Rd",fit:"TBD",note:"Indiana WR — elite YAC, separation specialist",color:"#f59e0b"},
+              {name:"Ty Simpson",pos:"QB",team:"TBD",grade:"B",dc:"1st Rd",fit:"TBD",note:"Alabama QB — dual-threat upside, SF league developmental",color:"#fbbf24"},
+              {name:"Jordyn Tyson",pos:"WR",team:"TBD",grade:"B",dc:"1st Rd",fit:"TBD",note:"Arizona State WR — big-play vertical threat",color:"#fbbf24"},
+            ].map(function(r){
+              var p=rankedPlayers.find(function(x){return x.name===r.name;});
+              return React.createElement("div",{key:r.name,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"13px 14px",marginBottom:8}},
+                React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10}},
+                  p&&React.createElement(Avatar,{name:r.name,pos:r.pos,size:40}),
+                  React.createElement("div",{style:{flex:1}},
+                    React.createElement("div",{style:{fontWeight:800,fontSize:14}},r.name),
+                    React.createElement("div",{style:{fontSize:11,color:T.textSub}},r.team+" · "+r.pos+" · Pick "+r.dc)
+                  ),
+                  React.createElement("div",{style:{width:40,height:40,borderRadius:10,background:r.color+"22",border:"2px solid "+r.color+"66",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:16,color:r.color,flexShrink:0}},r.grade)
+                ),
+                React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginTop:10}},
+                  [["Draft Cap",r.dc,T.gold],["Team Fit",r.fit,T.cyan],["Dynasty Val",p?p.tradeVal.toLocaleString():"TBD",T.purple]].map(function(s){
                     return React.createElement("div",{key:s[0],style:{background:T.bgInput,borderRadius:8,padding:"7px 6px",textAlign:"center"}},
                       React.createElement("div",{style:{fontSize:9,color:T.textSub,marginBottom:2}},s[0]),
                       React.createElement("div",{style:{fontWeight:800,fontSize:13,color:s[2]}},s[1])
