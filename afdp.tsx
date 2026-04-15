@@ -2239,7 +2239,7 @@ export default function App(){
   var [faabA,setFaabA]=useState(0);
   var [faabB,setFaabB]=useState(0);
   var [analyzed,setAnalyzed]=useState(false);
-  var [tradeCount,setTradeCount]=useState(0);
+  var [tradeCount,setTradeCount]=useState(function(){try{var s=localStorage.getItem('fdp_tc_v1');return s?+s:0;}catch(e){return 0;}});
   var [impTab,setImpTab]=useState("sleeper");
   var [slUser,setSlUser]=useState("");
   var [impStatus,setImpStatus]=useState(null);
@@ -2275,7 +2275,7 @@ export default function App(){
   var [contactMsg,setContactMsg]=useState("");
   var [contactSent,setContactSent]=useState(false);
   var [user,setUser]=useState(function(){try{var s=localStorage.getItem('fdp_user_v1');if(s){var u=JSON.parse(s);setTrackedUser(u?.email||"");return u;}return null;}catch(e){return null;}});
-  function saveAndSetUser(u){try{if(u)localStorage.setItem('fdp_user_v1',JSON.stringify(u));else localStorage.removeItem('fdp_user_v1');}catch(e){}setUser(u);setTrackedUser(u?.email||"");}
+  function saveAndSetUser(u){try{if(u)localStorage.setItem('fdp_user_v1',JSON.stringify(u));else localStorage.removeItem('fdp_user_v1');if(u?.isPro){localStorage.removeItem('fdp_tc_v1');}}catch(e){}setUser(u);setTrackedUser(u?.email||"");if(u?.isPro)setTradeCount(0);}
   async function handleCheckout(plan:string,billing:string){
     if(!user){setAuthMode("signup");setShowAuth(true);return;}
     try{
@@ -3205,7 +3205,7 @@ export default function App(){
         React.createElement("button",{onClick:async function(){
           if(tradeA.length===0&&tradeB.length===0)return;
           if(!isPro&&tradeCount>=FREE_TRADE_LIMIT){setAuthMode("signup");setShowAuth(true);return;}
-          setAnalyzed(true);setAiAnalysis("Analyzing...");setTradeSaved(false);if(!isPro)setTradeCount(function(c){return c+1;});
+          setAnalyzed(true);setAiAnalysis("Analyzing...");setTradeSaved(false);if(!isPro)setTradeCount(function(c){var n=c+1;try{localStorage.setItem('fdp_tc_v1',String(n));}catch(e){}return n;});
           try{var aiRes=await callEdgeFn("analyze-trade",{sideA:tradeA.map(function(p){return{name:p.name,pos:p.pos,age:p.age,val:p.ktcVal||0};}),sideB:tradeB.map(function(p){return{name:p.name,pos:p.pos,age:p.age,val:p.ktcVal||0};}),tvA,tvB,scoring},user?.token);setAiAnalysis(aiRes.analysis||genAiAnalysis(tradeA,tradeB,tvA,tvB));}catch(e){setAiAnalysis(genAiAnalysis(tradeA,tradeB,tvA,tvB));}
           var geo=await getGeo();
           trackEvent("trade_analyzed",{scoring,sideA:tradeA.map(function(x){return x.name;}),sideB:tradeB.map(function(x){return x.name;}),origin:window.location.hash||"#trade",device:window.innerWidth>=1024?"desktop":"mobile",platform:navigator.userAgent.toLowerCase().includes("iphone")||navigator.userAgent.toLowerCase().includes("ipad")?"iOS":navigator.userAgent.toLowerCase().includes("android")?"Android":"Web",country:geo?.country||"",city:geo?.city||"",region:geo?.region||"",flag:geo?.flag||""});
