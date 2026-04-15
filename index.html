@@ -31,10 +31,12 @@
     <meta name="twitter:image" content="https://fantasydraftpros.com/og-image.png" />
 
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="/favicon.png" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" href="/logo-shield.png" />
+    <link rel="shortcut icon" type="image/png" href="/logo-shield.png" />
+    <link rel="apple-touch-icon" href="/logo-shield.png" />
     <meta name="theme-color" content="#7c4dff" />
     <meta name="msapplication-TileColor" content="#7c4dff" />
+    <meta name="msapplication-TileImage" content="/logo-shield.png" />
 
     <!-- Mobile / PWA -->
     <meta name="mobile-web-app-capable" content="yes" />
@@ -44,6 +46,24 @@
     <meta name="application-name" content="Fantasy Draft Pros" />
 
     <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Fantasy Draft Pros",
+      "url": "https://fantasydraftpros.com/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://fantasydraftpros.com/logo-shield.png",
+        "width": 512,
+        "height": 512
+      },
+      "sameAs": [
+        "https://fantasydraftpros.com/"
+      ]
+    }
+    </script>
+
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
