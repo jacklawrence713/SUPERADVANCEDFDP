@@ -1835,6 +1835,7 @@ function SrchDrop(props){
   var inpS={background:T.bgInput,color:T.text,border:"1px solid "+(q?T.borderPurple:T.border),borderRadius:10,padding:"12px 16px",fontSize:13,outline:"none",width:"100%",boxSizing:"border-box"};
   return React.createElement("div",{style:{position:"relative",flex:1}},
     React.createElement("input",{value:q,onChange:function(e){setQ(e.target.value);},placeholder:ph||"Search players or picks...",autoComplete:"off",style:inpS}),
+    q&&res.length===0&&React.createElement("div",{style:{position:"absolute",top:"calc(100% + 4px)",left:0,right:0,zIndex:200,background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"14px 16px",boxShadow:"0 12px 40px #0009",fontSize:13,color:T.textDim,textAlign:"center"}},"No players found for \""+q+"\""),
     q&&res.length>0&&React.createElement("div",{style:{position:"absolute",top:"calc(100% + 4px)",left:0,right:0,zIndex:200,background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:12,overflow:"hidden",boxShadow:"0 12px 40px #0009"}},
       res.map(function(p,ri){
         var bg=ri%2===0?T.bgCard:T.bg;
@@ -4796,7 +4797,7 @@ export default function App(){
               React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.5,marginBottom:10}},"Real-time buy-low and sell-high opportunities based on value movement"),
               React.createElement("div",{style:{fontSize:11,color:T.textDim}},"Last updated: "+(new Date().toLocaleString()))
             ),
-            React.createElement("button",{style:{padding:"10px 14px",borderRadius:10,border:"none",background:"#2563eb",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",gap:6,flexShrink:0,whiteSpace:"nowrap"}},"o Refresh")
+            React.createElement("button",{onClick:function(){setMarketFilter(marketFilter);},style:{padding:"10px 14px",borderRadius:10,border:"none",background:"#2563eb",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",gap:6,flexShrink:0,whiteSpace:"nowrap"}},"↻ Refresh")
           )
         ),
         React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,margin:"0 16px 12px",overflow:"hidden"}},
@@ -5511,7 +5512,7 @@ export default function App(){
         ),
         React.createElement("div",{style:{background:T.purpleDim,border:"1px solid "+T.borderPurple,borderRadius:14,padding:"16px",marginBottom:8}},
           React.createElement("div",{style:{fontWeight:800,fontSize:15,color:T.text,marginBottom:8}},"Pro Tip"),
-          React.createElement("div",{style:{fontSize:14,color:T.textSub,lineHeight:1.6}},"Generated graphics are optimized for social media sharing. They include your league branding and are sized perfectly for Twitter, Facebook, and Instagram posts.")
+          React.createElement("div",{style:{fontSize:14,color:T.textSub,lineHeight:1.6}},"Use the Copy Rankings Summary button to quickly share your dynasty rankings on Reddit, Twitter/X, or in your league group chat.")
         ),
         React.createElement("div",{style:{padding:"24px 0 8px",borderTop:"1px solid "+T.border,textAlign:"center",marginTop:16}},
           React.createElement("div",{style:{display:"flex",justifyContent:"center",alignItems:"center",gap:8,marginBottom:8}},
