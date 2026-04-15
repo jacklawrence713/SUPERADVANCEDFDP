@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 // ── Supabase ─────────────────────────────────────────────────────────────────
-const SUPA_URL = (import.meta as any).env?.VITE_SUPABASE_URL || "https://wizdxspglxpvvogiivsv.supabase.co";
+const SUPA_URL = "https://wizdxspglxpvvogiivsv.supabase.co";
 const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndpemR4c3BnbHhwdnZvZ2lpdnN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0NTUzNDcsImV4cCI6MjA4ODAzMTM0N30.jaMMEymsU7Xx3H32V2xuCfC3O9_-y0t2-IuXqhNfW5A";
 const SUPA_SVC = (import.meta as any).env?.VITE_SUPABASE_SERVICE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndpemR4c3BnbHhwdnZvZ2lpdnN2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjQ1NTM0NywiZXhwIjoyMDg4MDMxMzQ3fQ.sr-qZWscq59_HxN8wil1GCP6CmK97kXaLvphXnupoIk";
 const EDGE_URL = (import.meta as any).env?.VITE_EDGE_FUNCTIONS_URL || "https://wizdxspglxpvvogiivsv.supabase.co/functions/v1";
