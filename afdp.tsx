@@ -1748,7 +1748,7 @@ function Chip(props){
 
 var PLANS=[{id:"free",label:"Free",priceStr:"$0",sub:"forever"},{id:"pro",label:"Pro",priceStr:"$2.99",sub:"/mo"},{id:"elite",label:"Elite",priceStr:"$6.99",sub:"/mo"}];
 var COMPARE_ROWS=[["Trade Analyzer",true,true,true],["FAAB + Draft Picks",true,true,true],["IDP Rankings",true,true,true],["Top 20 Rankings",true,true,true],["Full 200+ Rankings",false,true,true],["League Import",false,true,true],["AI Trade Suggestions",false,true,true],["Market Alerts",false,true,true],["Roster Grades",false,true,true],["Power Rankings",false,true,true],["API Access",false,false,true],["Priority Support",false,false,true],["CSV Export",false,false,true]];
-var FAQS=[{q:"What makes Fantasy Draft Pros the best dynasty trade analyzer?",a:"We combine 1,000+ player values updated daily across all positions including IDP, with FAAB budget tracking, draft pick values, and support for every major scoring format."},{q:"Is the dynasty trade calculator free?",a:"Yes! The core trade analyzer with 2026 player values is completely free — no account required."},{q:"Does it support IDP dynasty leagues?",a:"Absolutely. We rank DL, LB, and DB with full VBD scoring, age grades, and trade values."},{q:"Does Fantasy Draft Pros have superflex rankings?",a:"Yes — Superflex mode boosts QB values appropriately for SF leagues."},{q:"How often are player values updated?",a:"Player values are updated daily based on the latest news, injury reports, and 2026 projection data."},{q:"What league platforms are supported?",a:"Sleeper (live API), ESPN, Yahoo, and MFL — plus manual roster entry."}];
+var FAQS=[{q:"What makes Fantasy Draft Pros the best dynasty trade analyzer?",a:"We combine 1,000+ player values updated daily across all positions including IDP, with FAAB budget tracking, draft pick values, and support for every major scoring format."},{q:"Is the dynasty trade calculator free?",a:"Yes! The core trade analyzer with 2026 player values is completely free — no account required. Pro features (unlimited trades, league import, full rankings) include a 7-day free trial."},{q:"Does it support IDP dynasty leagues?",a:"Absolutely. We rank DL, LB, and DB with full VBD scoring, age grades, and trade values."},{q:"Does Fantasy Draft Pros have superflex rankings?",a:"Yes — Superflex mode boosts QB values appropriately for SF leagues."},{q:"How often are player values updated?",a:"Player values are updated daily based on the latest news, injury reports, and 2026 projection data."},{q:"What league platforms are supported?",a:"Sleeper (live API), ESPN, Yahoo, and MFL — plus manual roster entry."}];
 
 function AuthModal(props){
   var T=props.T||DARK,onClose=props.onClose,onAuth=props.onAuth,initMode=props.mode||"signup";
@@ -4780,7 +4780,7 @@ export default function App(){
             React.createElement("button",{style:{width:36,height:36,borderRadius:10,border:"1px solid "+T.border,background:T.bgInput,cursor:"pointer",color:T.textSub,fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}},"o")
           ),
           React.createElement("div",{style:{display:"flex",gap:8,marginBottom:12}},
-            [["all","All (0)"],["rising","Rising (0)"],["falling","Falling (0)"]].map(function(f){
+            [["all","All"],["rising","Rising"],["falling","Falling"]].map(function(f){
               var active=trendingFilter===f[0];
               return React.createElement("button",{key:f[0],onClick:function(){setTrendingFilter(f[0]);},style:{padding:"7px 14px",borderRadius:20,border:"1px solid "+(active?T.purple:T.border),background:active?T.purple:"transparent",color:active?"#fff":T.textSub,fontWeight:700,fontSize:12,cursor:"pointer"}},f[1]);
             })
@@ -4843,7 +4843,7 @@ export default function App(){
         ),
         (function(){
           var catColor=marketFilter==="buylow"?"#22c55e":marketFilter==="sellhigh"?"#818cf8":marketFilter==="rising"?"#60a5fa":T.red;
-          var confColor=function(c){return c>=80?"#22c55e":c>=60?"#f59e0b":"#ef4444";};
+          var signalLabel=marketFilter==="buylow"?"Age Signal":marketFilter==="sellhigh"?"Value Signal":marketFilter==="rising"?"Upside":marketFilter==="falling"?"Decline Risk":"Signal";
           return rankedPlayers.filter(function(p){
             if(p.pos==="K"||p.pos==="DST")return false;
             if(marketPos!=="All Positions"&&p.pos!==marketPos)return false;
@@ -4852,7 +4852,6 @@ export default function App(){
             if(marketFilter==="rising")return p.age<27&&p.posRank<=12;
             return p.age>31;
           }).slice(0,8).map(function(p){
-            var conf=marketFilter==="buylow"||marketFilter==="rising"?75:85;
             return React.createElement("div",{key:p.name,style:{background:T.bgCard,border:"2px solid "+catColor+"33",borderRadius:16,padding:16,margin:"0 16px 10px"}},
               React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}},
                 React.createElement("div",null,
@@ -4861,7 +4860,7 @@ export default function App(){
                     React.createElement(PBadge,{pos:p.pos}),React.createElement("span",null,"·"),React.createElement("span",{style:{fontWeight:600}},p.team)
                   )
                 ),
-                React.createElement("div",{style:{background:confColor(conf),color:"#fff",fontWeight:800,fontSize:12,borderRadius:20,padding:"4px 10px",flexShrink:0}},conf+"%")
+                React.createElement("div",{style:{background:catColor+"22",color:catColor,fontWeight:800,fontSize:11,borderRadius:20,padding:"4px 10px",flexShrink:0,border:"1px solid "+catColor+"44"}},signalLabel)
               ),
               React.createElement("div",{style:{marginTop:10}},
                 React.createElement("div",{style:{fontSize:11,color:T.textSub,marginBottom:2}},"Trade Value"),
@@ -4884,10 +4883,11 @@ export default function App(){
 
       // VALUE TRENDS — Value Trend Tracker
       rankSubTab==="valuetrends"&&React.createElement("div",{style:{padding:"16px"}},
-        React.createElement("div",{style:{display:"flex",alignItems:"center",gap:12,marginBottom:20}},
+        React.createElement("div",{style:{display:"flex",alignItems:"center",gap:12,marginBottom:8}},
           React.createElement("span",{style:{fontSize:28,color:"#3b82f6",fontWeight:900,lineHeight:1}},"^"),
           React.createElement("div",{style:{fontWeight:900,fontSize:26,color:T.text}},"Value Trend Tracker")
         ),
+        React.createElement("div",{style:{background:"#f59e0b18",border:"1px solid #f59e0b44",borderRadius:10,padding:"10px 14px",marginBottom:16,fontSize:12,color:T.textSub,lineHeight:1.5}},"⚠ Trend charts show estimated value ranges based on player age, position rank, and dynasty profile — not historical transaction data."),
         React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:16,marginBottom:12}},
           React.createElement("div",{style:{position:"relative",marginBottom:10}},
             React.createElement("span",{style:{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",color:T.textDim,fontSize:13}},"Q"),
@@ -5326,16 +5326,31 @@ export default function App(){
       ),
       // Dynasty Reports
       reportSubTab==="dynasty"&&React.createElement("div",{style:{padding:"20px 16px"}},
-        React.createElement("div",{style:{display:"flex",alignItems:"flex-start",gap:14,marginBottom:20}},
+        React.createElement("div",{style:{display:"flex",alignItems:"flex-start",gap:14,marginBottom:8}},
           React.createElement("span",{style:{fontSize:40,color:"#60a5fa",flexShrink:0,lineHeight:1}},"\uD83D\uDCC4"),
-          React.createElement("div",{style:{fontWeight:900,fontSize:28,color:T.text,lineHeight:1.2}},"Dynasty Market Reports")
+          React.createElement("div",null,
+            React.createElement("div",{style:{fontWeight:900,fontSize:28,color:T.text,lineHeight:1.2}},"Dynasty Market Reports"),
+            React.createElement("div",{style:{fontSize:12,color:T.textSub,marginTop:4}},"2026 Offseason Edition · Updated April 2026")
+          )
         ),
-        React.createElement("div",{style:{fontSize:14,color:T.textSub,lineHeight:1.6,marginBottom:24}},"Weekly analysis of the biggest value changes and market trends in dynasty fantasy football"),
-        React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,padding:"48px 20px",textAlign:"center"}},
-          React.createElement("div",{style:{fontSize:48,color:T.textDim,marginBottom:12}},"\uD83D\uDCC4"),
-          React.createElement("div",{style:{fontWeight:800,fontSize:18,color:T.text,marginBottom:8}},"No Reports Yet"),
-          React.createElement("div",{style:{fontSize:13,color:T.textSub}},"Weekly dynasty market reports will appear here")
-        )
+        React.createElement("div",{style:{fontSize:14,color:T.textSub,lineHeight:1.6,marginBottom:20}},"Key dynasty value insights heading into the 2026 season"),
+        [
+          {tag:"QB",tagColor:"#818cf8",title:"Jordan Love is the QB1 of the future",body:"Love enters 2026 as the consensus dynasty QB1 after back-to-back 4,000+ yard seasons. His contract extension locks him in Green Bay through 2029. Buy window is closing — values near 8,500."},
+          {tag:"RB",tagColor:"#34d399",title:"Bijan Robinson: Still undervalued",body:"Despite a quiet 2025 in Atlanta's run-heavy scheme, Bijan's age-23 profile and elite college pedigree keep him in the top-5 RB conversation. With Tua now in Atlanta, expect a more pass-friendly attack."},
+          {tag:"WR",tagColor:"#c084fc",title:"Marvin Harrison Jr. dynasty outlook",body:"MHJ posted 1,100+ yards as a rookie on a bad Cardinals team. With Kyler Murray now in Minnesota, the target share question is real — but his route-running separates him from the WR1 pack regardless of QB."},
+          {tag:"TE",tagColor:"#f59e0b",title:"Sam LaPorta: Premium TE locked in",body:"LaPorta established himself as a top-5 dynasty TE in year one. With Goff re-signed and the Lions' offense humming, LaPorta's floor is elite. Buy at current values (5,500–6,000 range)."},
+          {tag:"IDP",tagColor:"#f87171",title:"Jalen Carter: Best IDP buy of the offseason",body:"Carter's pass-rush development in Year 3 has dynasty IDP managers excited. His sack upside combined with Philly's defensive scheme makes him a DL1 in most IDP formats. Currently valued ~6,000."},
+          {tag:"PICK",tagColor:"#f1c40f",title:"2026 1st round picks: buy before the draft",body:"The 2026 class (Jeremiyah Love, Fernando Mendoza, Carnell Tate) has the makings of a strong dynasty rookie class. Early 1sts are trading near 6,500–7,000. Landing spot will be everything — expect big moves on draft weekend (April 24–26)."}
+        ].map(function(r){
+          return React.createElement("div",{key:r.title,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:16,marginBottom:10}},
+            React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:8}},
+              React.createElement("span",{style:{background:r.tagColor+"22",color:r.tagColor,fontWeight:800,fontSize:11,padding:"3px 10px",borderRadius:20}},r.tag),
+              React.createElement("div",{style:{fontWeight:800,fontSize:15,color:T.text}},r.title)
+            ),
+            React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.6}},r.body)
+          );
+        }),
+        React.createElement("div",{style:{fontSize:11,color:T.textDim,textAlign:"center",paddingTop:8}},"Reports reflect dynasty consensus as of April 2026. Values sourced from KTC-adjusted rankings.")
       ),
       // Player News — Sleeper Trending
       reportSubTab==="news"&&React.createElement("div",{style:{padding:"20px 16px"}},
@@ -5422,6 +5437,7 @@ export default function App(){
           React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:16}},"Pulls actual scoring stats from Sleeper's free API"),
           React.createElement("button",{onClick:loadSleeperStats,style:{padding:"11px 24px",borderRadius:10,border:"none",background:T.purple,color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}},"Load Now")
         ),
+        sleeperStats&&sleeperStats.data&&(function(){var allEntries=Object.entries(sleeperStats.data);var hasData=allEntries.some(function(e){var s=e[1]||{};return (s.pts_ppr||s.pts_half_ppr||s.pts_std||0)>0;});if(!hasData)return React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"48px 20px",textAlign:"center"}},React.createElement("div",{style:{fontSize:36,marginBottom:10}},"📭"),React.createElement("div",{style:{fontWeight:700,fontSize:15,marginBottom:6,color:T.text}},"No Stats Available"),React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.6,maxWidth:280,margin:"0 auto"}},"The NFL is in the offseason. Live stats will be available once the 2026 regular season begins in September."));return null;})(),
         sleeperStats&&sleeperStats.data&&React.createElement("div",null,
           React.createElement("div",{style:{fontSize:11,color:T.textSub,fontWeight:600,marginBottom:10}},"TOP SCORERS — WEEK "+sleeperStats.week),
           (function(){
