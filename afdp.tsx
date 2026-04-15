@@ -1,13 +1,24 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { createClient } from "@supabase/supabase-js";
 
-// ── Analytics (project: wizdxspglxpvvogiivsv) ──────────────────────────────
+// ── Supabase ─────────────────────────────────────────────────────────────────
 const SUPA_URL = (import.meta as any).env?.VITE_SUPABASE_URL || "https://wizdxspglxpvvogiivsv.supabase.co";
 const SUPA_KEY = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || "sb_publishable_d8hlXb52bBoR65xl4owmSg_nW2UwoIg";
-// Service role JWT used only for admin-only analytics reads
 const SUPA_SVC = (import.meta as any).env?.VITE_SUPABASE_SERVICE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndpemR4c3BnbHhwdnZvZ2lpdnN2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjQ1NTM0NywiZXhwIjoyMDg4MDMxMzQ3fQ.sr-qZWscq59_HxN8wil1GCP6CmK97kXaLvphXnupoIk";
-const analyticsClient = SUPA_URL && SUPA_KEY ? createClient(SUPA_URL, SUPA_KEY) : null;
+const EDGE_URL = (import.meta as any).env?.VITE_EDGE_FUNCTIONS_URL || "https://wizdxspglxpvvogiivsv.supabase.co/functions/v1";
+// Auth + data client
+const authClient = SUPA_URL && SUPA_KEY ? createClient(SUPA_URL, SUPA_KEY) : null;
+// Analytics clients (kept separate)
+const analyticsClient = authClient;
 const analyticsReadClient = SUPA_URL && SUPA_SVC ? createClient(SUPA_URL, SUPA_SVC) : null;
+
+// ── Edge Function helpers ─────────────────────────────────────────────────────
+async function callEdgeFn(fn: string, body: any, userToken?: string) {
+  const headers: Record<string,string> = { "Content-Type": "application/json", "apikey": SUPA_KEY };
+  if (userToken) headers["Authorization"] = `Bearer ${userToken}`;
+  const res = await fetch(`${EDGE_URL}/${fn}`, { method: "POST", headers, body: JSON.stringify(body) });
+  return res.json();
+}
 
 function getVisitorId(): string {
   try {
@@ -1753,18 +1764,46 @@ function AuthModal(props){
   var T=props.T||DARK,onClose=props.onClose,onAuth=props.onAuth,initMode=props.mode||"signup";
   var [mode,setMode]=useState(initMode),[email,setEmail]=useState(""),[password,setPassword]=useState(""),[name,setName]=useState(""),[plan,setPlan]=useState("pro"),[step,setStep]=useState(1),[err,setErr]=useState(""),[loading,setLoading]=useState(false);
   var inp={background:T.bgInput,color:T.text,border:"1px solid "+T.border,borderRadius:10,padding:"13px 16px",fontSize:14,outline:"none",width:"100%",boxSizing:"border-box",marginBottom:12};
-  function submit(){
+  async function submit(){
     if(!email.includes("@")){setErr("Enter a valid email");return;}
     if(password.length<6){setErr("Password must be 6+ characters");return;}
-    if(mode==="signup"&&!name.trim()){setErr("Enter your name");return;}
+    if(mode==="signup"&&step===1&&!name.trim()){setErr("Enter your name");return;}
     setErr("");setLoading(true);
-    setTimeout(function(){
+    try {
+      if(mode==="signup"){
+        if(step===1){setLoading(false);setStep(2);return;}
+        var signUpResult=await authClient!.auth.signUp({
+          email,password,
+          options:{data:{name,plan},emailRedirectTo:"https://fantasydraftpros.com"}
+        });
+        if(signUpResult.error)throw signUpResult.error;
+        // Send welcome email (non-blocking)
+        callEdgeFn("send-email",{type:"welcome",to:email,name}).catch(function(){});
+        // If email confirmation required, show message; otherwise auth state will fire
+        if(signUpResult.data.session){
+          var u=signUpResult.data.session.user;
+          var admin2=isAdminEmail(u.email||"");
+          onAuth({id:u.id,name:name||u.email||"",email:u.email||"",plan:admin2?"elite":plan,isPro:plan!=="free"||admin2,isAdmin:admin2,token:signUpResult.data.session.access_token});
+        } else {
+          setErr("Check your email to confirm your account, then sign in.");
+          setMode("signin");setStep(1);
+        }
+      } else {
+        var signInResult=await authClient!.auth.signInWithPassword({email,password});
+        if(signInResult.error)throw signInResult.error;
+        var sess=signInResult.data.session;
+        var usr=signInResult.data.user;
+        // Load profile from DB
+        var profResult=await authClient!.from("users").select("name,plan,is_pro,is_admin").eq("id",usr.id).single();
+        var prof=profResult.data;
+        var admin3=isAdminEmail(usr.email||"")||prof?.is_admin||false;
+        onAuth({id:usr.id,name:prof?.name||usr.user_metadata?.name||usr.email||"",email:usr.email||"",plan:admin3?"elite":(prof?.plan||"free"),isPro:prof?.is_pro||admin3,isAdmin:admin3,token:sess.access_token});
+      }
+    } catch(e:any){
+      setErr(e.message||"Something went wrong. Please try again.");
+    } finally {
       setLoading(false);
-      if(mode==="signup"&&step===1){setStep(2);return;}
-      var admin=isAdminEmail(email);
-      var adminName=email.toLowerCase().trim()==="prez@yahoo.com"?"Commissioner":(admin?"Admin":(mode==="signup"?name:"Dynasty Manager"));
-      onAuth({name:adminName,email:email,plan:admin?"elite":(mode==="signup"?plan:"pro"),isPro:true,isAdmin:admin});
-    },800);
+    }
   }
   var logoSrc=T.bgCard==="#ffffff"?"/logo-shield-light.png":"/logo-shield.png";
   var LogoSvg=React.createElement("img",{src:logoSrc,alt:"Fantasy DraftPros",style:{height:48,width:"auto"}});
@@ -2156,6 +2195,29 @@ export default function App(){
       window.history.replaceState({},"",window.location.pathname+"#trade");
     }catch(e){}
   },[]);// eslint-disable-line react-hooks/exhaustive-deps
+  // Auth state sync with Supabase
+  useEffect(function(){
+    if(!authClient)return;
+    var {data:{subscription}}=authClient.auth.onAuthStateChange(async function(event,session){
+      if(event==="SIGNED_OUT"||!session){saveAndSetUser(null);return;}
+      if(event==="SIGNED_IN"||event==="TOKEN_REFRESHED"){
+        var usr=session.user;
+        var {data:prof}=await authClient.from("users").select("*").eq("id",usr.id).single();
+        var isAdmin2=["jacklawrence713@gmail.com","theprez@yahoo.com","modgy28@hotmail.com","sbesk787@gmail.com","starrrya@yahoo.com"].includes(usr.email||"");
+        saveAndSetUser({id:usr.id,name:prof?.name||usr.user_metadata?.name||usr.email||"",email:usr.email||"",plan:isAdmin2?"elite":(prof?.plan||"free"),isPro:prof?.is_pro||isAdmin2,isAdmin:isAdmin2,token:session.access_token});
+      }
+    });
+    return function(){subscription.unsubscribe();};
+  },[]);// eslint-disable-line react-hooks/exhaustive-deps
+  // Checkout success detection
+  useEffect(function(){
+    var p=new URLSearchParams(window.location.search);
+    if(p.get("checkout")==="success"){
+      window.history.replaceState({},"",window.location.pathname+window.location.hash);
+      // Refresh user profile from DB after successful checkout, then send welcome_pro email
+      if(authClient){authClient.auth.getSession().then(async function({data:{session}}){if(!session)return;var {data:prof}=await authClient.from("users").select("*").eq("id",session.user.id).single();if(prof){saveAndSetUser(function(u){return Object.assign({},u,{plan:prof.plan,isPro:prof.is_pro,subscriptionStatus:prof.subscription_status});});try{await callEdgeFn("send-email",{type:"welcome_pro",userId:session.user.id});}catch(e){}}})}
+    }
+  },[]);// eslint-disable-line react-hooks/exhaustive-deps
   var leagueTabsRef=React.useRef<HTMLDivElement>(null);
   var rankingTabsRef=React.useRef<HTMLDivElement>(null);
   var reportsTabsRef=React.useRef<HTMLDivElement>(null);
@@ -2214,6 +2276,13 @@ export default function App(){
   var [contactSent,setContactSent]=useState(false);
   var [user,setUser]=useState(function(){try{var s=localStorage.getItem('fdp_user_v1');if(s){var u=JSON.parse(s);setTrackedUser(u?.email||"");return u;}return null;}catch(e){return null;}});
   function saveAndSetUser(u){try{if(u)localStorage.setItem('fdp_user_v1',JSON.stringify(u));else localStorage.removeItem('fdp_user_v1');}catch(e){}setUser(u);setTrackedUser(u?.email||"");}
+  async function handleCheckout(plan:string,billing:string){
+    if(!user){setAuthMode("signup");setShowAuth(true);return;}
+    try{
+      var result=await callEdgeFn("create-checkout",{plan,billing,successUrl:window.location.origin+window.location.pathname+"?checkout=success"+window.location.hash,cancelUrl:window.location.href},user.token);
+      if(result.url)window.location.href=result.url;
+    }catch(e){}
+  }
   var [showAuth,setShowAuth]=useState(false);
   var [authMode,setAuthMode]=useState("signup");
   var [showAdmin,setShowAdmin]=useState(false);
@@ -2972,7 +3041,7 @@ export default function App(){
         !user?React.createElement(React.Fragment,null,
           React.createElement("button",{onClick:function(){setAuthMode("signin");setShowAuth(true);},style:{padding:"8px 16px",minHeight:40,borderRadius:20,border:"1px solid "+T.border,background:"transparent",color:T.textSub,cursor:"pointer",fontWeight:600,fontSize:12,WebkitTapHighlightColor:"transparent"}},"Sign In"),
           React.createElement("button",{onClick:function(){setAuthMode("signup");setShowAuth(true);},style:{padding:"8px 18px",minHeight:40,borderRadius:20,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",cursor:"pointer",fontWeight:700,fontSize:12,WebkitTapHighlightColor:"transparent"}},"Sign Up Free")
-        ):React.createElement(UserMenu,{user:user,T:T,onSignOut:function(){saveAndSetUser(null);setShowAdmin(false);},onUpgrade:function(){setAuthMode("signup");setShowAuth(true);},onAdmin:function(){setTab("admin");}})
+        ):React.createElement(UserMenu,{user:user,T:T,onSignOut:function(){authClient?.auth.signOut();saveAndSetUser(null);setShowAdmin(false);},onUpgrade:function(){if(user){setReportSubTab("upgrade");setTab("reports");}else{setAuthMode("signup");setShowAuth(true);}},onAdmin:function(){setTab("admin");}})
       )
     ),
 
@@ -3007,7 +3076,7 @@ export default function App(){
         !user?React.createElement("div",{style:{display:"flex",flexDirection:"column",gap:8}},
           React.createElement("button",{onClick:function(){setAuthMode("signup");setShowAuth(true);},style:{padding:"10px",borderRadius:10,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer"}},"Sign Up Free"),
           React.createElement("button",{onClick:function(){setAuthMode("signin");setShowAuth(true);},style:{padding:"10px",borderRadius:10,border:"1px solid "+T.border,background:"transparent",color:T.text,fontWeight:700,fontSize:12,cursor:"pointer"}},"Sign In")
-        ):React.createElement(UserMenu,{user:user,T:T,onSignOut:function(){saveAndSetUser(null);setShowAdmin(false);},onUpgrade:function(){setAuthMode("signup");setShowAuth(true);},onAdmin:function(){setTab("admin");}})
+        ):React.createElement(UserMenu,{user:user,T:T,onSignOut:function(){authClient?.auth.signOut();saveAndSetUser(null);setShowAdmin(false);},onUpgrade:function(){if(user){setReportSubTab("upgrade");setTab("reports");}else{setAuthMode("signup");setShowAuth(true);}},onAdmin:function(){setTab("admin");}})
       )
     ),
 
@@ -3136,7 +3205,8 @@ export default function App(){
         React.createElement("button",{onClick:async function(){
           if(tradeA.length===0&&tradeB.length===0)return;
           if(!isPro&&tradeCount>=FREE_TRADE_LIMIT){setAuthMode("signup");setShowAuth(true);return;}
-          setAnalyzed(true);setAiAnalysis(genAiAnalysis(tradeA,tradeB,tvA,tvB));setTradeSaved(false);if(!isPro)setTradeCount(function(c){return c+1;});
+          setAnalyzed(true);setAiAnalysis("Analyzing...");setTradeSaved(false);if(!isPro)setTradeCount(function(c){return c+1;});
+          try{var aiRes=await callEdgeFn("analyze-trade",{sideA:tradeA.map(function(p){return{name:p.name,pos:p.pos,age:p.age,val:p.ktcVal||0};}),sideB:tradeB.map(function(p){return{name:p.name,pos:p.pos,age:p.age,val:p.ktcVal||0};}),tvA,tvB,scoring},user?.token);setAiAnalysis(aiRes.analysis||genAiAnalysis(tradeA,tradeB,tvA,tvB));}catch(e){setAiAnalysis(genAiAnalysis(tradeA,tradeB,tvA,tvB));}
           var geo=await getGeo();
           trackEvent("trade_analyzed",{scoring,sideA:tradeA.map(function(x){return x.name;}),sideB:tradeB.map(function(x){return x.name;}),origin:window.location.hash||"#trade",device:window.innerWidth>=1024?"desktop":"mobile",platform:navigator.userAgent.toLowerCase().includes("iphone")||navigator.userAgent.toLowerCase().includes("ipad")?"iOS":navigator.userAgent.toLowerCase().includes("android")?"Android":"Web",country:geo?.country||"",city:geo?.city||"",region:geo?.region||"",flag:geo?.flag||""});
         },style:{width:"100%",padding:"15px",borderRadius:14,border:"none",cursor:"pointer",fontWeight:800,fontSize:15,
@@ -3164,7 +3234,7 @@ export default function App(){
             React.createElement("div",{style:{display:"flex",gap:8,marginTop:12}},
               React.createElement("button",{onClick:saveTrade,disabled:tradeSaved,style:{flex:1,padding:"10px",borderRadius:10,border:"1px solid "+(tradeSaved?T.green:T.border),cursor:tradeSaved?"default":"pointer",fontWeight:700,fontSize:12,background:tradeSaved?T.green:T.bgInput,color:tradeSaved?"#fff":T.textSub}},tradeSaved?"Saved ✓":"Save Trade"),
               React.createElement("button",{onClick:function(){setShowShareModal(true);},style:{flex:1,padding:"10px",borderRadius:10,border:"1px solid "+T.purple,cursor:"pointer",fontWeight:700,fontSize:12,background:T.purpleDim,color:T.purpleLight}},"🔗 Share"),
-              React.createElement("button",{onClick:function(){setAiAnalysis(null);setTimeout(function(){setAiAnalysis(genAiAnalysis(tradeA,tradeB,tvA,tvB));},250);},style:{flex:1,padding:"10px",borderRadius:10,border:"1px solid "+T.borderPurple,cursor:"pointer",fontWeight:700,fontSize:12,background:T.bgInput,color:T.textSub}},"↻")
+              React.createElement("button",{onClick:async function(){setAiAnalysis("Analyzing...");try{var rr=await callEdgeFn("analyze-trade",{sideA:tradeA.map(function(p){return{name:p.name,pos:p.pos,age:p.age,val:p.ktcVal||0};}),sideB:tradeB.map(function(p){return{name:p.name,pos:p.pos,age:p.age,val:p.ktcVal||0};}),tvA,tvB,scoring},user?.token);setAiAnalysis(rr.analysis||genAiAnalysis(tradeA,tradeB,tvA,tvB));}catch(e){setAiAnalysis(genAiAnalysis(tradeA,tradeB,tvA,tvB));}},style:{flex:1,padding:"10px",borderRadius:10,border:"1px solid "+T.borderPurple,cursor:"pointer",fontWeight:700,fontSize:12,background:T.bgInput,color:T.textSub}},"↻")
             ),
             !user&&React.createElement("div",{style:{marginTop:12,background:T.purpleDim,border:"1px solid "+T.purple+"44",borderRadius:12,padding:"12px 14px"}},
               React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.purpleLight,marginBottom:4}},"Want AI Trade Suggestions?"),
@@ -5323,7 +5393,7 @@ export default function App(){
         ),
         React.createElement("div",{style:{fontSize:14,color:T.textSub,lineHeight:1.6,marginBottom:20}},"Key dynasty value insights heading into the 2026 season"),
         [
-          {tag:"QB",tagColor:"#818cf8",title:"Jordan Love is the QB1 of the future",body:"Love enters 2026 as the consensus dynasty QB1 after back-to-back 4,000+ yard seasons. His contract extension locks him in Green Bay through 2029. Buy window is closing — values near 8,500."},
+          {tag:"QB",tagColor:"#818cf8",title:"Lamar Jackson: The undisputed dynasty QB1",body:"Jackson is the consensus dynasty QB1 heading into 2026 — his dual-threat ceiling, age-28 prime, and back-to-back MVP campaigns make him untouchable. Josh Allen and Jalen Hurts round out the top 3. Jordan Love (GB) is a top-5 dynasty QB with strong upside, but he's not yet QB1 in most rankings."},
           {tag:"RB",tagColor:"#34d399",title:"Bijan Robinson: Still undervalued",body:"Despite a quiet 2025 in Atlanta's run-heavy scheme, Bijan's age-23 profile and elite college pedigree keep him in the top-5 RB conversation. With Tua now in Atlanta, expect a more pass-friendly attack."},
           {tag:"WR",tagColor:"#c084fc",title:"Marvin Harrison Jr. dynasty outlook",body:"MHJ posted 1,100+ yards as a rookie on a bad Cardinals team. With Kyler Murray now in Minnesota, the target share question is real — but his route-running separates him from the WR1 pack regardless of QB."},
           {tag:"TE",tagColor:"#f59e0b",title:"Sam LaPorta: Premium TE locked in",body:"LaPorta established himself as a top-5 dynasty TE in year one. With Goff re-signed and the Lions' offense humming, LaPorta's floor is elite. Buy at current values (5,500–6,000 range)."},
@@ -5544,15 +5614,15 @@ export default function App(){
           React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",marginBottom:12}},
             React.createElement("div",null,
               React.createElement("div",{style:{fontSize:11,color:T.textSub,marginBottom:4}},"Current Plan"),
-              React.createElement("div",{style:{fontWeight:800,fontSize:18,color:T.text}},"Pro")
+              React.createElement("div",{style:{fontWeight:800,fontSize:18,color:T.text}},(user?.plan||"free").charAt(0).toUpperCase()+(user?.plan||"free").slice(1))
             ),
             React.createElement("div",{style:{textAlign:"right"}},
               React.createElement("div",{style:{fontSize:11,color:T.textSub,marginBottom:4}},"Status"),
-              React.createElement("div",{style:{fontWeight:800,fontSize:18,color:T.green}},"Active")
+              React.createElement("div",{style:{fontWeight:800,fontSize:18,color:isPro?T.green:T.textSub}},isPro?"Active":"Free")
             )
           ),
           React.createElement("div",{style:{fontSize:13,color:T.textSub,marginBottom:16,display:"flex",alignItems:"center",gap:6}},
-            React.createElement("span",null,"\uD83D\uDCC5"),user&&user.plan==="pro"?"Pro plan — billed monthly":"Free plan — no billing"
+            React.createElement("span",null,"\uD83D\uDCC5"),isPro?(user?.plan||"pro")+" plan — billed "+(billingPeriod==="yearly"?"annually":"monthly"):"Free plan — no billing"
           ),
           React.createElement("div",{style:{borderTop:"1px solid "+T.border,paddingTop:12}},
             React.createElement("span",{onClick:function(){window.open("mailto:fantasydraftproshelp@gmail.com?subject=Cancel%20Subscription&body=Please%20cancel%20my%20Fantasy%20Draft%20Pros%20Pro%20subscription.%0A%0AEmail%3A%20"+(user&&user.email||""));},style:{fontSize:13,color:T.red,cursor:"pointer",fontWeight:600}},"Cancel Subscription")
@@ -5568,7 +5638,7 @@ export default function App(){
               React.createElement("span",{style:{color:T.textDim,fontSize:14}},"\u2713"),f
             );
           }),
-          React.createElement("button",{disabled:true,style:{width:"100%",marginTop:12,padding:"12px",borderRadius:10,border:"1px solid "+T.border,background:"transparent",color:T.textDim,fontWeight:700,fontSize:13,cursor:"default",opacity:0.6}},"✓ Current Plan")
+          !isPro?React.createElement("button",{onClick:function(){handleCheckout("pro",billingPeriod);},style:{width:"100%",marginTop:12,padding:"12px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#7c4dff,#5b21b6)",color:"#fff",fontWeight:800,fontSize:13,cursor:"pointer"}},"Start 7-Day Free Trial"):React.createElement("button",{disabled:true,style:{width:"100%",marginTop:12,padding:"12px",borderRadius:10,border:"1px solid "+T.border,background:"transparent",color:T.textDim,fontWeight:700,fontSize:13,cursor:"default",opacity:0.6}},"✓ Current Plan")
         ),
         // Pro plan card
         React.createElement("div",{style:{background:"#fff8f0",border:"2px solid #f97316",borderRadius:14,padding:"20px",marginBottom:24,position:"relative",overflow:"hidden"}},
@@ -5588,7 +5658,7 @@ export default function App(){
               React.createElement("span",{style:{color:"#22c55e",fontWeight:700,fontSize:16}},"\u2713"),f
             );
           }),
-          React.createElement("button",{disabled:true,style:{width:"100%",marginTop:16,padding:"14px",borderRadius:12,border:"none",background:"#f9731699",color:"#fff",fontWeight:800,fontSize:15,cursor:"default"}},"✓ Current Plan")
+          isPro?React.createElement("button",{disabled:true,style:{width:"100%",marginTop:16,padding:"14px",borderRadius:12,border:"none",background:"#f9731699",color:"#fff",fontWeight:800,fontSize:15,cursor:"default"}},"✓ Current Plan"):React.createElement("button",{onClick:function(){handleCheckout("pro",billingPeriod);},style:{width:"100%",marginTop:16,padding:"14px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#f97316,#ea580c)",color:"#fff",fontWeight:800,fontSize:15,cursor:"pointer"}},"Start 7-Day Free Trial →")
         ),
         // FAQ
         React.createElement("div",{style:{background:"#eef2ff",borderRadius:14,padding:"20px",marginBottom:24}},
@@ -5629,11 +5699,11 @@ export default function App(){
             React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:4,fontWeight:600}},"Message"),
             React.createElement("textarea",{value:contactMsg,onChange:function(e){setContactMsg(e.target.value);},placeholder:"Tell us what you need help with...",rows:4,style:{background:T.bgInput,color:T.text,border:"1px solid "+T.border,borderRadius:10,padding:"12px 14px",fontSize:13,outline:"none",width:"100%",boxSizing:"border-box",resize:"none",fontFamily:"inherit",lineHeight:1.6}})
           ),
-          contactSent?React.createElement("div",{style:{padding:"14px",background:T.green+"15",border:"1px solid "+T.green+"44",borderRadius:10,color:T.green,fontWeight:700,fontSize:14}},"✓ Your email client has opened with your message — just hit Send. We'll respond within 24-48 hours."):
-          React.createElement("button",{onClick:function(){
-            if(!contactName.trim()||!contactEmail.includes("@")||!contactMsg.trim()){alert("Please fill in your name, a valid email, and a message.");return;}
+          contactSent?React.createElement("div",{style:{padding:"14px",background:T.green+"15",border:"1px solid "+T.green+"44",borderRadius:10,color:T.green,fontWeight:700,fontSize:14}},"✓ Message sent! We'll respond within 24-48 hours."):
+          React.createElement("button",{onClick:async function(){
+            if(!contactName.trim()||!contactEmail.includes("@")||!contactMsg.trim()){setImpErr("Please fill in your name, a valid email, and a message.");return;}
             trackEvent("contact_form",{name:contactName,email:contactEmail,subject:contactSubject,msg:contactMsg.slice(0,200)});
-            window.open("mailto:fantasydraftproshelp@gmail.com?subject="+encodeURIComponent(contactSubject||"Contact from Fantasy Draft Pros")+"&body="+encodeURIComponent("Name: "+contactName+"\nEmail: "+contactEmail+"\n\n"+contactMsg));
+            try{await callEdgeFn("send-email",{type:"contact",to:contactEmail,name:contactName,subject:contactSubject,message:contactMsg});}catch(e){}
             setContactSent(true);
             setContactName("");setContactEmail("");setContactSubject("");setContactMsg("");
             setTimeout(function(){setContactSent(false);},5000);
