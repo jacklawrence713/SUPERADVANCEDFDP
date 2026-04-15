@@ -46,8 +46,8 @@ async function trackEvent(type: string, data: Record<string, any> = {}) {
       event_type: type,
       event_data: _trackedEmail ? Object.assign({}, data, {user_email: _trackedEmail}) : data,
     });
-    if (result.error) console.warn("[FDP analytics]", result.error.message);
-  } catch(e) { console.warn("[FDP analytics]", e); }
+    if (result.error) { /* analytics write failed silently */ }
+  } catch(e) { /* analytics unavailable */ }
 }
 
 async function loadPublicStats() {
@@ -1763,7 +1763,7 @@ function AuthModal(props){
       setLoading(false);
       if(mode==="signup"&&step===1){setStep(2);return;}
       var admin=isAdminEmail(email);
-      var adminName=email.toLowerCase().trim()==="prez@yahoo.com"?"Commissioner":(admin?"Jack Lawrence":(mode==="signup"?name:"Dynasty Manager"));
+      var adminName=email.toLowerCase().trim()==="prez@yahoo.com"?"Commissioner":(admin?"Admin":(mode==="signup"?name:"Dynasty Manager"));
       onAuth({name:adminName,email:email,plan:admin?"elite":(mode==="signup"?plan:"pro"),isPro:true,isAdmin:admin});
     },800);
   }
@@ -2510,8 +2510,6 @@ export default function App(){
     }
     function processEspnData(data){
       // Debug: log first team object to inspect field names
-      if(data.teams&&data.teams[0]) console.log("[ESPN] team[0]:",JSON.stringify(data.teams[0]).slice(0,500));
-      if(data.members&&data.members[0]) console.log("[ESPN] member[0]:",JSON.stringify(data.members[0]));
       // Build member ID → display name map
       var memberMap={};
       (data.members||[]).forEach(function(m){
@@ -2874,12 +2872,9 @@ export default function App(){
           React.createElement("div",null,React.createElement("div",{style:{fontWeight:900,fontSize:20,color:"#f1c40f"}},"Admin Panel"),React.createElement("div",{style:{fontSize:11,color:T.textSub,marginTop:2}},user.email)),
           React.createElement("button",{onClick:function(){setShowAdmin(false);},style:{background:"none",border:"none",color:T.textDim,cursor:"pointer",fontSize:20}},"x")
         ),
-        React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:20}},
-          [["68","Users"],["41","Pro"],["$122","MRR"]].map(function(s){return React.createElement("div",{key:s[0],style:{background:T.bgInput,borderRadius:10,padding:"12px 8px",textAlign:"center",border:"1px solid "+T.border}},React.createElement("div",{style:{fontWeight:900,fontSize:22,color:"#f1c40f"}},s[0]),React.createElement("div",{style:{fontSize:9,color:T.textSub,letterSpacing:1}},s[1]));})
-        ),
-        [["Platform Analytics","User signups, retention, feature usage","#818cf8"],["User Management","View, edit, upgrade, or ban any account","#34d399"],["Player Database","Edit projections, VBD scores, rankings","#f59e0b"],["Trade Value Editor","Override trade values for any player","#c084fc"],["Push Notifications","Send market alerts to all Pro users","#f87171"],["Revenue Dashboard","Stripe MRR, churn, LTV metrics","#06b6d4"],["Feature Flags","Toggle features per plan or per user","#fb923c"],["Content Manager","Edit rankings copy, FAQ, landing page","#a78bfa"]].map(function(f){
-          return React.createElement("div",{key:f[0],style:{display:"flex",alignItems:"center",gap:12,background:T.bgInput,border:"1px solid "+T.border,borderRadius:12,padding:"12px 14px",marginBottom:8,cursor:"pointer"}},
-            React.createElement("div",{style:{width:36,height:36,borderRadius:10,background:f[2]+"18",border:"1px solid "+f[2]+"33",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0,color:f[2]}},"*"),
+        [["Platform Analytics","User signups, retention, feature usage","#818cf8","analytics"],["Value Tuner","Override trade value multiplier for all players","#c084fc","valuetuner"],["RB Context","RB role definitions and depth chart adjustments","#f59e0b","rbcontext"],["RB AI","Generate AI RB role and value suggestions","#34d399","rbai"],["Headshots","Bulk player photo and avatar management","#f87171","headshots"],["IDP Upload","Bulk import IDP player data and rankings","#06b6d4","idpupload"],["System Health","Platform health, DB sync, rebuild controls","#fb923c","system"]].map(function(f){
+          return React.createElement("div",{key:f[0],onClick:function(){setShowAdmin(false);setAdminSubTab(f[3]);setTab("admin");},style:{display:"flex",alignItems:"center",gap:12,background:T.bgInput,border:"1px solid "+T.border,borderRadius:12,padding:"12px 14px",marginBottom:8,cursor:"pointer"}},
+            React.createElement("div",{style:{width:36,height:36,borderRadius:10,background:f[2]+"18",border:"1px solid "+f[2]+"33",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0,color:f[2]}},"→"),
             React.createElement("div",{style:{flex:1}},React.createElement("div",{style:{fontWeight:700,fontSize:13}},f[0]),React.createElement("div",{style:{fontSize:11,color:T.textSub,marginTop:1}},f[1])),
             React.createElement("span",{style:{color:f[2],fontSize:16}},">")
           );
@@ -3180,7 +3175,7 @@ export default function App(){
         })()
       ),
       !user&&React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:28,padding:"0 4px"}},
-        [["1,000+","PLAYERS RANKED"],["4","LEAGUE PLATFORMS"],["6","SCORING FORMATS"],["Daily","VALUE UPDATES"]].map(function(s){return React.createElement("div",{key:s[0],style:{textAlign:"center"}},React.createElement("div",{style:{fontWeight:900,fontSize:26,color:T.purple}},s[0]),React.createElement("div",{style:{fontSize:10,color:T.textSub,letterSpacing:1.5,fontWeight:600}},s[1]));})
+        [["1,000+","PLAYERS RANKED"],["4","LEAGUE PLATFORMS"],["6","SCORING COMBOS"],["Daily","VALUE UPDATES"]].map(function(s){return React.createElement("div",{key:s[0],style:{textAlign:"center"}},React.createElement("div",{style:{fontWeight:900,fontSize:26,color:T.purple}},s[0]),React.createElement("div",{style:{fontSize:10,color:T.textSub,letterSpacing:1.5,fontWeight:600}},s[1]));})
       ),
       // Pricing
       !user&&React.createElement("div",{style:{marginBottom:32}},
@@ -3992,20 +3987,11 @@ export default function App(){
       // CHAT
       leagueSubTab==="chat"&&React.createElement("div",{style:{padding:"16px"}},
         React.createElement("div",{style:{fontWeight:900,fontSize:22,marginBottom:4}},"League Chat"),
-        React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:12}},"Chat with your leaguemates"),
-        React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:12,marginBottom:12,minHeight:200,overflowY:"auto"}},
-          chatMessages.length===0
-            ?React.createElement("div",{style:{textAlign:"center",padding:"30px",color:T.textDim,fontSize:13}},"No messages yet. Start the conversation!")
-            :chatMessages.map(function(m,i){
-                return React.createElement("div",{key:i,style:{marginBottom:10}},
-                  React.createElement("div",{style:{fontSize:11,color:T.textSub,marginBottom:2}},m.user+" - "+m.time),
-                  React.createElement("div",{style:{background:T.bgInput,borderRadius:8,padding:"8px 12px",fontSize:13}},m.text)
-                );
-              })
-        ),
-        React.createElement("div",{style:{display:"flex",gap:8}},
-          React.createElement("input",{value:chatInput,onChange:function(e){setChatInput(e.target.value);},onKeyDown:function(e){if(e.key==="Enter"&&chatInput.trim()){setChatMessages(function(prev){return prev.concat([{user:"You",text:chatInput,time:"Now"}]);});setChatInput("");}},placeholder:"Type a message...",style:Object.assign({},inpS,{flex:1})}),
-          React.createElement("button",{onClick:function(){if(chatInput.trim()){setChatMessages(function(prev){return prev.concat([{user:"You",text:chatInput,time:"Now"}]);});setChatInput("");}},style:{padding:"10px 18px",borderRadius:12,border:"none",background:T.purple,color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer"}},"Send")
+        React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:20}},"Chat with your leaguemates"),
+        React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"40px 20px",textAlign:"center"}},
+          React.createElement("div",{style:{fontSize:40,marginBottom:12}},"💬"),
+          React.createElement("div",{style:{fontWeight:800,fontSize:18,color:T.text,marginBottom:8}},"Coming Soon"),
+          React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.6,maxWidth:300,margin:"0 auto"}},"In-app league chat is in development. For now, coordinate with your leaguemates directly on Sleeper, Discord, or GroupMe.")
         )
       ),
 
@@ -4267,7 +4253,7 @@ export default function App(){
                       lines.push("");
                     }
                     others.slice().sort(function(a,b){return b.price-a.price;}).forEach(function(n){lines.push(n.pos+" "+n.name+" $"+n.price);});
-                    navigator.clipboard&&navigator.clipboard.writeText(lines.join("\n")).then(function(){alert("Copied!");});
+                    navigator.clipboard&&navigator.clipboard.writeText(lines.join("\n"));
                   },style:{padding:"6px 12px",borderRadius:8,border:"1px solid "+T.border,background:T.bgCard,color:T.text,fontWeight:700,fontSize:11,cursor:"pointer"}},"Copy")
                 )
               ),
@@ -5072,7 +5058,11 @@ export default function App(){
             React.createElement("span",{style:{fontSize:22,color:"#3b82f6"}},"[=]"),
             React.createElement("div",{style:{fontWeight:900,fontSize:24,color:T.text}},"Draft Kit")
           ),
-          React.createElement("button",{onClick:function(){alert("Rankings saved!");},style:{padding:"10px 18px",borderRadius:10,border:"none",background:"#22c55e",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}},"Save Rankings")
+          React.createElement("button",{onClick:function(){
+            var text=rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;}).slice(0,100).map(function(p,i){return (i+1)+","+p.name+","+p.pos+","+p.team+","+(p.tradeVal||0);}).join("\n");
+            var blob=new Blob(["Rank,Name,Pos,Team,Value\n"+text],{type:"text/csv"});
+            var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="fdp-rankings.csv";a.click();
+          },style:{padding:"10px 18px",borderRadius:10,border:"none",background:"#22c55e",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}},"Download CSV")
         ),
         React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,margin:"0 16px 16px",padding:"14px 16px"}},
           React.createElement("div",{style:{display:"flex",gap:8,marginBottom:10}},
@@ -5478,7 +5468,7 @@ export default function App(){
         }),
         React.createElement("button",{onClick:function(){
           var text="🏆 Fantasy Draft Pros — Dynasty Rankings\n\n"+rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;}).slice(0,20).map(function(p,i){return (i+1)+". "+p.name+" ("+p.pos+", "+p.team+") — Value: "+(p.tradeVal||0).toLocaleString();}).join("\n")+"\n\nfantasydraftpros.com";
-          navigator.clipboard.writeText(text).then(function(){alert("Rankings summary copied to clipboard!");});
+          navigator.clipboard.writeText(text);
         },style:{width:"100%",padding:"16px",borderRadius:14,border:"none",background:"#3b82f6",color:"#fff",fontWeight:700,fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:28}},
           React.createElement("span",{style:{fontSize:18}},"📋"),"Copy Rankings Summary"
         ),
@@ -5517,7 +5507,7 @@ export default function App(){
               ["r/  Share to Reddit","https://reddit.com/submit?url="+siteUrl+"&title="+txt],
             ].map(function(btn){
               return React.createElement("button",{key:btn[0],onClick:function(){window.open(btn[1],"_blank","noopener");},style:{width:"100%",padding:"14px",borderRadius:10,border:"none",background:T.bgInput,color:T.text,fontWeight:600,fontSize:14,cursor:"pointer",marginBottom:8,display:"flex",alignItems:"center",justifyContent:"center",gap:8}},btn[0]);
-            }).concat([React.createElement("button",{key:"copylink",onClick:function(){navigator.clipboard.writeText("https://fantasydraftpros.com").then(function(){alert("Link copied!");});},style:{width:"100%",padding:"14px",borderRadius:10,border:"none",background:T.bgInput,color:T.text,fontWeight:600,fontSize:14,cursor:"pointer",marginBottom:8,display:"flex",alignItems:"center",justifyContent:"center",gap:8}},"🔗  Copy Link")]);
+            }).concat([React.createElement("button",{key:"copylink",onClick:function(){navigator.clipboard.writeText("https://fantasydraftpros.com");},style:{width:"100%",padding:"14px",borderRadius:10,border:"none",background:T.bgInput,color:T.text,fontWeight:600,fontSize:14,cursor:"pointer",marginBottom:8,display:"flex",alignItems:"center",justifyContent:"center",gap:8}},"🔗  Copy Link")]);
           })()
         ),
         React.createElement("div",{style:{background:T.purpleDim,border:"1px solid "+T.borderPurple,borderRadius:14,padding:"16px",marginBottom:8}},
@@ -5562,10 +5552,10 @@ export default function App(){
             )
           ),
           React.createElement("div",{style:{fontSize:13,color:T.textSub,marginBottom:16,display:"flex",alignItems:"center",gap:6}},
-            React.createElement("span",null,"\uD83D\uDCC5"),"Renews on February 27, 2036"
+            React.createElement("span",null,"\uD83D\uDCC5"),user&&user.plan==="pro"?"Pro plan — billed monthly":"Free plan — no billing"
           ),
           React.createElement("div",{style:{borderTop:"1px solid "+T.border,paddingTop:12}},
-            React.createElement("span",{style:{fontSize:13,color:T.textSub,cursor:"pointer"}},"Cancel Subscription")
+            React.createElement("span",{onClick:function(){window.open("mailto:fantasydraftproshelp@gmail.com?subject=Cancel%20Subscription&body=Please%20cancel%20my%20Fantasy%20Draft%20Pros%20Pro%20subscription.%0A%0AEmail%3A%20"+(user&&user.email||""));},style:{fontSize:13,color:T.red,cursor:"pointer",fontWeight:600}},"Cancel Subscription")
           )
         ),
         // Free plan card
@@ -5573,12 +5563,12 @@ export default function App(){
           React.createElement("div",{style:{fontWeight:800,fontSize:20,color:T.text,marginBottom:4}},"Free"),
           React.createElement("div",{style:{fontWeight:900,fontSize:28,color:T.text,marginBottom:4}},"$0"),
           React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:16}},"Forever free · No credit card required"),
-          ["Basic trade calculator","10 trade analyses/day","Dynasty rankings (top 100)","1 watchlist slot"].map(function(f){
+          ["Basic trade analyzer","20 trade analyses/day","Dynasty rankings (top 20 per position)","IDP support (DL, LB, DB)"].map(function(f){
             return React.createElement("div",{key:f,style:{display:"flex",alignItems:"center",gap:8,marginBottom:8,fontSize:13,color:T.textSub}},
               React.createElement("span",{style:{color:T.textDim,fontSize:14}},"\u2713"),f
             );
           }),
-          React.createElement("button",{style:{width:"100%",marginTop:12,padding:"12px",borderRadius:10,border:"1px solid "+T.border,background:"transparent",color:T.textSub,fontWeight:700,fontSize:13,cursor:"pointer"}},"Current Plan")
+          React.createElement("button",{disabled:true,style:{width:"100%",marginTop:12,padding:"12px",borderRadius:10,border:"1px solid "+T.border,background:"transparent",color:T.textDim,fontWeight:700,fontSize:13,cursor:"default",opacity:0.6}},"✓ Current Plan")
         ),
         // Pro plan card
         React.createElement("div",{style:{background:"#fff8f0",border:"2px solid #f97316",borderRadius:14,padding:"20px",marginBottom:24,position:"relative",overflow:"hidden"}},
@@ -5592,13 +5582,13 @@ export default function App(){
             React.createElement("span",{style:{fontSize:13,color:"#999",textDecoration:"line-through",marginRight:8}},"$59.88/year"),
             React.createElement("span",{style:{fontSize:13,color:"#22c55e",fontWeight:700}},"$35.88/year")
           ),
-          React.createElement("div",{style:{display:"inline-block",background:"#ccfbf1",color:"#065f46",fontWeight:700,fontSize:12,padding:"4px 12px",borderRadius:20,marginBottom:16}},"24-Hour Free Trial"),
+          React.createElement("div",{style:{display:"inline-block",background:"#ccfbf1",color:"#065f46",fontWeight:700,fontSize:12,padding:"4px 12px",borderRadius:20,marginBottom:16}},"7-Day Free Trial"),
           ["Player search and profiles","Dynasty rankings","Weekly market reports","Unlimited trade calculations","Unlimited league imports","Player value history","AI trade suggestions","Team strategy advice","Market alerts & notifications","Unlimited watchlist","Advanced trend analytics","Priority support"].map(function(f){
             return React.createElement("div",{key:f,style:{display:"flex",alignItems:"center",gap:10,marginBottom:10,fontSize:14,color:"#1a1a2e"}},
               React.createElement("span",{style:{color:"#22c55e",fontWeight:700,fontSize:16}},"\u2713"),f
             );
           }),
-          React.createElement("button",{style:{width:"100%",marginTop:16,padding:"14px",borderRadius:12,border:"none",background:"#f97316",color:"#fff",fontWeight:800,fontSize:15,cursor:"pointer"}},"Current Plan")
+          React.createElement("button",{disabled:true,style:{width:"100%",marginTop:16,padding:"14px",borderRadius:12,border:"none",background:"#f9731699",color:"#fff",fontWeight:800,fontSize:15,cursor:"default"}},"✓ Current Plan")
         ),
         // FAQ
         React.createElement("div",{style:{background:"#eef2ff",borderRadius:14,padding:"20px",marginBottom:24}},
@@ -5639,10 +5629,11 @@ export default function App(){
             React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:4,fontWeight:600}},"Message"),
             React.createElement("textarea",{value:contactMsg,onChange:function(e){setContactMsg(e.target.value);},placeholder:"Tell us what you need help with...",rows:4,style:{background:T.bgInput,color:T.text,border:"1px solid "+T.border,borderRadius:10,padding:"12px 14px",fontSize:13,outline:"none",width:"100%",boxSizing:"border-box",resize:"none",fontFamily:"inherit",lineHeight:1.6}})
           ),
-          contactSent?React.createElement("div",{style:{padding:"14px",background:T.green+"15",border:"1px solid "+T.green+"44",borderRadius:10,color:T.green,fontWeight:700,fontSize:14}},"✓ Message sent! We'll respond within 24-48 hours."):
+          contactSent?React.createElement("div",{style:{padding:"14px",background:T.green+"15",border:"1px solid "+T.green+"44",borderRadius:10,color:T.green,fontWeight:700,fontSize:14}},"✓ Your email client has opened with your message — just hit Send. We'll respond within 24-48 hours."):
           React.createElement("button",{onClick:function(){
             if(!contactName.trim()||!contactEmail.includes("@")||!contactMsg.trim()){alert("Please fill in your name, a valid email, and a message.");return;}
             trackEvent("contact_form",{name:contactName,email:contactEmail,subject:contactSubject,msg:contactMsg.slice(0,200)});
+            window.open("mailto:fantasydraftproshelp@gmail.com?subject="+encodeURIComponent(contactSubject||"Contact from Fantasy Draft Pros")+"&body="+encodeURIComponent("Name: "+contactName+"\nEmail: "+contactEmail+"\n\n"+contactMsg));
             setContactSent(true);
             setContactName("");setContactEmail("");setContactSubject("");setContactMsg("");
             setTimeout(function(){setContactSent(false);},5000);
@@ -6322,7 +6313,7 @@ export default function App(){
           React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:16}},"Enter your league ID to connect"),
           React.createElement("div",{style:{display:"flex",gap:8,marginBottom:16}},
             React.createElement("input",{value:impTab==="mfl"?mflId:espnId,onChange:function(e){impTab==="mfl"?setMflId(e.target.value):setEspnId(e.target.value);},placeholder:impTab.toUpperCase()+" League ID",style:Object.assign({},inpS,{flex:1})}),
-            React.createElement("button",{onClick:function(){alert(impTab.toUpperCase()+" import coming soon!");},style:{padding:"10px 18px",borderRadius:12,border:"none",background:T.purple,color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer"}},"Connect")
+            React.createElement("button",{onClick:function(){setImpErr(impTab.toUpperCase()+" direct import is coming soon. Try Sleeper in the meantime!");},style:{padding:"10px 18px",borderRadius:12,border:"none",background:T.purple,color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer"}},"Connect")
           ),
           React.createElement("div",{style:{background:T.bgInput,borderRadius:10,padding:"12px 14px",fontSize:12,color:T.textSub,lineHeight:1.6}},"To find your "+impTab.toUpperCase()+" League ID: open your league and look for the league ID in the URL.")
         )
