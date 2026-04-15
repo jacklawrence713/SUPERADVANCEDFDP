@@ -1216,7 +1216,6 @@ const PLAYERS=[
   {name:"Tre Nixon",pos:"WR",age:26,team:"NE",proj:{PPR:62,Half:57,Standard:52},adp:54.5,ktcVal:200,note:"Speed receiver depth"},
   {name:"Taywan Taylor",pos:"WR",age:31,team:"FA",proj:{PPR:55,Half:50,Standard:45},adp:57.0,ktcVal:150,note:"Veteran speed depth"},
   // 2025 WR rookies Wave 18
-  {name:"Tre Harris",pos:"WR",age:23,team:"LAC",proj:{PPR:128,Half:117,Standard:106},adp:31.5,ktcVal:2500,note:"2025 1st round: 50 rec 620 yds 5 TD"},
   {name:"Pat Bryant",pos:"WR",age:23,team:"DEN",proj:{PPR:108,Half:99,Standard:90},adp:36.5,ktcVal:2929,note:"2025 pick: 42 rec 510 yds 4 TD"},
   {name:"Malachi Fields",pos:"WR",age:23,team:"CIN",proj:{PPR:95,Half:87,Standard:79},adp:41.0,ktcVal:800,note:"2025: big WR 38 rec 460 yds"},
   {name:"Tai Felton",pos:"WR",age:23,team:"MIN",proj:{PPR:102,Half:94,Standard:86},adp:38.5,ktcVal:1000,note:"2025 speed: 40 rec 490 yds 4 TD"},
@@ -2243,7 +2242,7 @@ export default function App(){
   var [leagueImportErr,setLeagueImportErr]=useState("");
   var [importPlatform,setImportPlatform]=useState("sleeper");
   var [espnLeagueId,setEspnLeagueId]=useState("");
-  var [espnYear,setEspnYear]=useState("2025");
+  var [espnYear,setEspnYear]=useState("2026");
   var [espnS2,setEspnS2]=useState(function(){try{return localStorage.getItem('fdp_espn_s2')||"";}catch(e){return "";}});
   var [espnSWID,setEspnSWID]=useState(function(){try{return localStorage.getItem('fdp_espn_swid')||"";}catch(e){return "";}});
   var [espnWorkerUrl,setEspnWorkerUrl]=useState("https://espn-proxy.fantasydraftpros.workers.dev");
@@ -4354,7 +4353,7 @@ export default function App(){
           React.createElement("div",{style:{display:"flex",gap:8,marginBottom:12}},
             React.createElement("input",{value:espnLeagueId,onChange:function(e){setEspnLeagueId(e.target.value);},placeholder:"League ID",style:Object.assign({},inpS,{flex:1})}),
             React.createElement("select",{value:espnYear,onChange:function(e){setEspnYear(e.target.value);},style:{background:T.bgInput,color:T.text,border:"1px solid "+T.border,borderRadius:10,padding:"10px 12px",fontSize:13,outline:"none"}},
-              ["2025","2024","2023"].map(function(y){return React.createElement("option",{key:y},y);})
+              ["2026","2025","2024","2023"].map(function(y){return React.createElement("option",{key:y},y);})
             )
           ),
           React.createElement("div",{style:{background:T.bgInput,border:"1px solid "+T.border,borderRadius:12,padding:"12px 14px",marginBottom:12}},
@@ -5460,16 +5459,12 @@ export default function App(){
           React.createElement("span",{style:{fontSize:36,color:"#818cf8",flexShrink:0,lineHeight:1}},"\uD83D\uDD17"),
           React.createElement("div",{style:{fontWeight:900,fontSize:28,color:T.text,lineHeight:1.1}},"Export & Share")
         ),
-        React.createElement("div",{style:{fontWeight:800,fontSize:18,color:T.text,marginBottom:14}},"Generate Graphics"),
-        [["Power Rankings","Share your league power rankings"],["Trade Analysis","Export trade breakdown with values"],["Roster Summary","Your roster with player values"],["Weekly Recap","Weekly matchup results and highlights"],["Playoff Bracket","Championship tournament bracket"],["Draft Results","Draft picks and grades"]].map(function(card){
-          return React.createElement("div",{key:card[0],style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"16px",marginBottom:10,display:"flex",alignItems:"center",gap:12}},
-            React.createElement("div",{style:{width:36,height:36,borderRadius:8,background:"#1e3a5f",border:"1px solid #3b82f644",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0,color:"#60a5fa"}},"\uD83D\uDDBC"),
-            React.createElement("div",{style:{flex:1}},
-              React.createElement("div",{style:{fontWeight:700,fontSize:15,color:T.text}},card[0]),
-              React.createElement("div",{style:{fontSize:12,color:T.textSub,marginTop:2}},card[1])
-            )
-          );
-        }),
+        React.createElement("div",{style:{fontWeight:800,fontSize:18,color:T.text,marginBottom:10}},"Generate Graphics"),
+        React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"28px 20px",textAlign:"center",marginBottom:20}},
+          React.createElement("div",{style:{fontSize:32,marginBottom:8}},"🖼️"),
+          React.createElement("div",{style:{fontWeight:700,fontSize:15,color:T.text,marginBottom:6}},"Coming Soon"),
+          React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.6,maxWidth:280,margin:"0 auto"}},"Shareable graphics for power rankings, trade breakdowns, and playoff brackets are in development.")
+        ),
         React.createElement("button",{onClick:function(){
           var text="🏆 Fantasy Draft Pros — Dynasty Rankings\n\n"+rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;}).slice(0,20).map(function(p,i){return (i+1)+". "+p.name+" ("+p.pos+", "+p.team+") — Value: "+(p.tradeVal||0).toLocaleString();}).join("\n")+"\n\nfantasydraftpros.com";
           navigator.clipboard.writeText(text);
