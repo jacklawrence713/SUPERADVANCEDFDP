@@ -8,8 +8,8 @@ const SUPA_SVC = (import.meta as any).env?.VITE_SUPABASE_SERVICE_KEY || "eyJhbGc
 const EDGE_URL = (import.meta as any).env?.VITE_EDGE_FUNCTIONS_URL || "https://wizdxspglxpvvogiivsv.supabase.co/functions/v1";
 // Auth + data client
 const authClient = SUPA_URL && SUPA_KEY ? createClient(SUPA_URL, SUPA_KEY) : null;
-// Analytics write client — anon key, for inserting events (respects RLS insert policy)
-const analyticsClient = authClient;
+// Analytics write client — separate instance so it always uses anon key, never inherits user session
+const analyticsClient = SUPA_URL && SUPA_KEY ? createClient(SUPA_URL, SUPA_KEY, {auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}}) : null;
 // Analytics read client — service role, for admin reads only
 const analyticsReadClient = SUPA_URL && SUPA_SVC ? createClient(SUPA_URL, SUPA_SVC, {auth:{persistSession:false,autoRefreshToken:false}}) : null;
 
