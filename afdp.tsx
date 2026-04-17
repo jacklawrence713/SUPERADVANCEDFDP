@@ -308,7 +308,7 @@ const PLAYERS=[
   {name:"Tua Tagovailoa",pos:"QB",age:28,team:"ATL",proj:{PPR:342,Half:342,Standard:342},adp:8.1,ktcVal:2645,note:"3,900 yds 28 TD · signed ATL 2026"},
   {name:"J.J. McCarthy",pos:"QB",age:23,team:"MIN",proj:{PPR:315,Half:315,Standard:315},adp:10.5,ktcVal:2900,note:"2026 Year 2: 3,600 yds 27 TD post-injury"},
   {name:"Brock Purdy",pos:"QB",age:27,team:"SF",proj:{PPR:338,Half:338,Standard:338},adp:8.6,ktcVal:6016,note:"4,000 yds 27 TD"},
-  {name:"Matthew Stafford",pos:"QB",age:38,team:"LAR",proj:{PPR:316,Half:316,Standard:316},adp:13.8,ktcVal:3747,note:"3,600 yds 24 TD aging"},
+  {name:"Matthew Stafford",pos:"QB",age:38,team:"LAR",proj:{PPR:316,Half:316,Standard:316},adp:13.8,ktcVal:5574,note:"3,600 yds 24 TD veteran starter"},
   {name:"Kirk Cousins",pos:"QB",age:38,team:"FA",proj:{PPR:305,Half:305,Standard:305},adp:16.5,ktcVal:1811,note:"3,400 yds 22 TD"},
   {name:"Geno Smith",pos:"QB",age:35,team:"NYJ",proj:{PPR:308,Half:308,Standard:308},adp:15.9,ktcVal:2053,note:"3,500 yds 22 TD"},
   {name:"Bryce Young",pos:"QB",age:24,team:"CAR",proj:{PPR:295,Half:295,Standard:295},adp:18.8,ktcVal:4499,note:"Year 3: 3,200 yds rebound"},
