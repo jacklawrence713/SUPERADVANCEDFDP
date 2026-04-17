@@ -2190,7 +2190,7 @@ export default function App(){
       var p=new URLSearchParams(window.location.search);
       var t=p.get("trade");
       if(!t)return;
-      var d=JSON.parse(atob(t));
+      var d=JSON.parse(decodeURIComponent(escape(atob(t))));
       function findItem(n:string){return rankedPlayers.find(function(p){return p.name===n;})||(function(){var pk=DRAFT_PICKS.find(function(pk){return pk.name===n;});return pk?makePick(pk):null;})();}
       if(d.a&&Array.isArray(d.a)){var pa=d.a.map(findItem).filter(Boolean);if(pa.length)setTradeA(pa as any[]);}
       if(d.b&&Array.isArray(d.b)){var pb=d.b.map(findItem).filter(Boolean);if(pb.length)setTradeB(pb as any[]);}
@@ -2440,7 +2440,7 @@ export default function App(){
           if(wkPts>0) pts=Math.round(wkPts*17*0.72+pts*0.28);
         }
       }
-      if(p.pos==="TE"&&tePremium>0){var estRec=p.proj["PPR"]&&p.proj["Standard"]?Math.round((p.proj["PPR"]-p.proj["Standard"])*0.7):p.posRank<=5?80:p.posRank<=12?55:35;pts+=tePremium*estRec;}
+      if(p.pos==="TE"&&tePremium>0){var estRec=p.proj["PPR"]&&p.proj["Standard"]?Math.round((p.proj["PPR"]-p.proj["Standard"])*0.7):45;pts+=tePremium*estRec;}
       if(isDynasty) pts=pts*dynastyBonus(p.pos,p.age);
       // KTC override: scale confirmed KTC values to pts range for accurate dynasty ranking
       if(isDynasty&&p.ktcVal) pts=p.ktcVal*0.037;
@@ -2547,11 +2547,7 @@ export default function App(){
 
   // Track page view on mount (once per session) + load public stats
   useEffect(function(){
-    var key="fdp_tracked_"+new Date().toDateString();
-    if(!sessionStorage.getItem(key)){
-      sessionStorage.setItem(key,"1");
-      trackEvent("page_view",{referrer:document.referrer||"direct",path:window.location.pathname});
-    }
+    try{var key="fdp_tracked_"+new Date().toDateString();if(!sessionStorage.getItem(key)){sessionStorage.setItem(key,"1");trackEvent("page_view",{referrer:document.referrer||"direct",path:window.location.pathname});}}catch(e){trackEvent("page_view",{referrer:document.referrer||"direct",path:window.location.pathname});}
     loadPublicStats().then(function(s){if(s)setPublicStats(s);});
     fetchOdds().then(function(d){if(Object.keys(d).length>0)setOddsData(d);});
   },[]);
@@ -2699,8 +2695,7 @@ export default function App(){
       var teams=rosters.map(function(r){
         var u=userMap[r.owner_id]||{};
         var teamName=(u.metadata&&u.metadata.team_name)||u.display_name||("Team "+r.roster_id);
-        var players=(r.players||[]).map(function(id){return idMap[id];}).filter(function(p){return p&&p.pos!=="DEF"&&p.pos!=="K"&&p.pos!=="?"||false;});
-        players=players.filter(function(p){return p.pos!=="DEF"&&p.pos!=="K";});
+        var players=(r.players||[]).map(function(id){return idMap[id];}).filter(function(p){return p&&p.pos!=="DEF"&&p.pos!=="K"&&p.pos!=="?";});
         players.sort(function(a,b){return (b.tradeVal||0)-(a.tradeVal||0);});
         var totalVal=players.reduce(function(s,p){return s+(p.tradeVal||0);},0);
         var faabUsed=(r.settings&&r.settings.waiver_budget_used)||0;
@@ -2782,7 +2777,7 @@ export default function App(){
     ]).then(function(res){
       if(res[2]&&Object.keys(res[2]).length>0){try{localStorage.setItem('fdp_sp_v1',JSON.stringify(res[2]));}catch(e){}initSleeperNameMap(res[2]);setSleeperRawDb(res[2]);}
       setSleeperTrending({adds:res[0]||[],drops:res[1]||[],ts:Date.now()});
-    });
+    }).catch(function(){setSleeperTrending({adds:[],drops:[],ts:Date.now()});});
   }
 
   function loadLeagueTrades(){
@@ -2931,7 +2926,7 @@ export default function App(){
                 React.createElement("div",{style:{fontSize:10,color:T.textSub}},p.team+" · Age "+p.age+" · "+(p.tier&&p.tier.t?p.tier.t+" · ":"")+("#"+p.posRank+" "+p.pos))
               ),
               React.createElement("div",{style:{textAlign:"right"}},
-                React.createElement("div",{style:{fontWeight:800,fontSize:13,color:T.purpleLight}},p.tradeVal.toLocaleString()),
+                React.createElement("div",{style:{fontWeight:800,fontSize:13,color:T.purpleLight}},(p.tradeVal||0).toLocaleString()),
                 React.createElement("div",{style:{fontSize:9,color:T.textSub}},"value")
               )
             );
@@ -3003,7 +2998,7 @@ export default function App(){
     showShareModal&&(function(){
       var buildShareUrl=function(){
         var data={a:tradeA.map(function(x:any){return x.name;}),b:tradeB.map(function(x:any){return x.name;}),s:scoring,fa:faabA,fb:faabB};
-        return window.location.origin+window.location.pathname+"?trade="+btoa(JSON.stringify(data))+"#trade";
+        return window.location.origin+window.location.pathname+"?trade="+encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(data)))))+"#trade";
       };
       var shareUrl=buildShareUrl();
       var v=verdict();
@@ -3760,7 +3755,7 @@ export default function App(){
           var curVal=curSlots.reduce(function(s,sl){return s+(sl[1]?sl[1].tradeVal:0);},0);
           var optVal=optSlots.reduce(function(s,sl){return s+(sl[1]?sl[1].tradeVal:0);},0);
           var imps=[];
-          optSlots.forEach(function(os,i){if(curSlots[i]&&os[1]&&curSlots[i][1]&&os[1].name!==curSlots[i][1].name){var vd=Math.max(1,os[1].tradeVal-curSlots[i][1].tradeVal);var pd=+(os[1].pts-curSlots[i][1].pts).toFixed(1);imps.push("Swap in "+os[1].name+" for "+curSlots[i][1].name+" (+"+vd.toLocaleString()+" value, +"+pd+" pts)");}});
+          optSlots.forEach(function(os,i){if(curSlots[i]&&os[1]&&curSlots[i][1]&&os[1].name!==curSlots[i][1].name){var vd=Math.max(1,(os[1].tradeVal||0)-(curSlots[i][1].tradeVal||0));var pd=+((os[1].pts||0)-(curSlots[i][1].pts||0)).toFixed(1);imps.push("Swap in "+os[1].name+" for "+curSlots[i][1].name+" (+"+vd.toLocaleString()+" value, +"+pd+" pts)");}});
           return React.createElement("div",null,
             React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr",gap:10,marginBottom:16}},
               [["Current Value",curVal.toLocaleString(),curPts.toFixed(1)+" pts",T.text,T.border],["Optimal Value",optVal.toLocaleString(),optPts.toFixed(1)+" pts",T.green,T.green+"33"],["Value Gain","+"+(optVal-curVal).toLocaleString(),"+"+(optPts-curPts).toFixed(1)+" pts",T.green,T.green+"33"]].map(function(card){
