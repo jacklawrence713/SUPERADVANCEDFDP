@@ -36,21 +36,22 @@ let _trackedEmail = "";
 function setTrackedUser(email: string) { _trackedEmail = email || ""; }
 
 let _geoCache: {country:string;city:string;region:string;flag:string}|null = null;
-let _geoFetching = false;
+let _geoPromise: Promise<{country:string;city:string;region:string;flag:string}|null>|null = null;
 async function getGeo() {
   if (_geoCache) return _geoCache;
-  if (_geoFetching) return null;
-  _geoFetching = true;
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3000);
-    const r = await fetch("https://ipapi.co/json/", {signal: controller.signal});
-    clearTimeout(timeout);
-    const d = await r.json();
-    _geoCache = {country: d.country_name||"Unknown", city: d.city||"", region: d.region||"", flag: d.country_code ? String.fromCodePoint(...[...d.country_code].map((c:string)=>0x1F1E0-65+c.charCodeAt(0))) : ""};
-  } catch { _geoCache = {country:"Unknown",city:"",region:"",flag:""}; }
-  _geoFetching = false;
-  return _geoCache;
+  if (_geoPromise) return _geoPromise;
+  _geoPromise = (async () => {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3000);
+      const r = await fetch("https://ipapi.co/json/", {signal: controller.signal});
+      clearTimeout(timeout);
+      const d = await r.json();
+      _geoCache = {country: d.country_name||"Unknown", city: d.city||"", region: d.region||"", flag: d.country_code ? String.fromCodePoint(...[...d.country_code].map((c:string)=>0x1F1E0-65+c.charCodeAt(0))) : ""};
+    } catch { _geoCache = {country:"Unknown",city:"",region:"",flag:""}; }
+    return _geoCache;
+  })();
+  return _geoPromise;
 }
 
 async function trackEvent(type: string, data: Record<string, any> = {}) {
