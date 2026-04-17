@@ -2701,13 +2701,30 @@ export default function App(){
       var userMap={};users.forEach(function(u){userMap[u.user_id]=u;});
       // FAAB: use actual league budget from lg.settings
       var faabBudget=(lg.settings&&lg.settings.waiver_budget!=null)?lg.settings.waiver_budget:200;
-      // Count traded draft picks per roster (owner_id = current owner)
+      // Accurate draft pick count:
+      // Each team starts with base = futureSns × rounds own picks.
+      // traded_picks only records picks that moved. Apply +/- adjustments.
       var curSeason=parseInt(lg.season)||new Date().getFullYear();
+      var rounds=(lg.settings&&lg.settings.draft_rounds)||3;
+      // Find all unique future seasons referenced in traded_picks
+      var futureSnsSet=new Set();
+      tradedPicks.forEach(function(pk){if(parseInt(pk.season)>=curSeason)futureSnsSet.add(parseInt(pk.season));});
+      // If no traded picks exist yet, assume current + next 2 seasons
+      if(futureSnsSet.size===0){futureSnsSet.add(curSeason);futureSnsSet.add(curSeason+1);futureSnsSet.add(curSeason+2);}
+      var numFutureSns=futureSnsSet.size;
+      // Initialise every roster with base picks (own picks they haven't traded away)
       var picksByRoster={};
+      rosters.forEach(function(r){picksByRoster[r.roster_id]=numFutureSns*rounds;});
+      // Apply adjustments from traded picks
       tradedPicks.forEach(function(pk){
-        if(pk.owner_id&&parseInt(pk.season)>=curSeason){
-          picksByRoster[pk.owner_id]=(picksByRoster[pk.owner_id]||0)+1;
-        }
+        var sn=parseInt(pk.season);
+        if(sn<curSeason)return;
+        var orig=pk.roster_id;   // original owner — they lose their pick
+        var curr=pk.owner_id;    // current owner  — they gain a pick
+        if(orig===curr)return;   // no net change
+        if(picksByRoster[orig]!=null)picksByRoster[orig]=Math.max(0,picksByRoster[orig]-1);
+        if(picksByRoster[curr]!=null)picksByRoster[curr]++;
+        else picksByRoster[curr]=1;
       });
       var teams=rosters.map(function(r){
         var u=userMap[r.owner_id]||{};
