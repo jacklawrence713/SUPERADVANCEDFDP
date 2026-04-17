@@ -3317,7 +3317,7 @@ export default function App(){
             var active=leagueSubTab===st[0];
             return React.createElement("button",{key:st[0],onClick:function(){
               setLeagueSubTab(st[0]);
-              if(st[0]==="waiver"&&!waiverLoaded){setTimeout(function(){setWaiverLoaded(true);},1400);}
+              if(st[0]==="waiver"&&!waiverLoaded){setWaiverLoaded(true);}
             },style:{padding:"7px 16px",borderRadius:20,border:"1px solid "+(active?T.purple:T.border),background:active?T.purple:"transparent",color:active?"#fff":T.textSub,fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}},st[1]);
           })
         ),
