@@ -47,7 +47,7 @@ async function getGeo() {
       const r = await fetch("https://ipapi.co/json/", {signal: controller.signal});
       clearTimeout(timeout);
       const d = await r.json();
-      _geoCache = {country: d.country_name||"Unknown", city: d.city||"", region: d.region||"", flag: d.country_code ? String.fromCodePoint(...[...d.country_code].map((c:string)=>0x1F1E0-65+c.charCodeAt(0))) : ""};
+      _geoCache = {country: d.country_name||"Unknown", city: d.city||"", region: d.region||"", flag: d.country_code ? String.fromCodePoint(...[...d.country_code].map((c:string)=>0x1F1E6-65+c.charCodeAt(0))) : ""};
     } catch { _geoCache = {country:"Unknown",city:"",region:"",flag:""}; }
     return _geoCache;
   })();
