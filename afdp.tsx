@@ -2719,7 +2719,7 @@ export default function App(){
     });
   },[]);
 
-  function tVal(side,fa){return side.reduce(function(s,x){return s+(x.pos==="PICK"?x.est:Math.max(0,x.tradeVal));},0)+((fa||0)*10);}
+  function tVal(side,fa){return side.reduce(function(s,x){return s+(x.pos==="PICK"?x.est:Math.max(0,x.tradeVal));},0)+((fa||0)*(2000/Math.max(1,budget)));}
   var tvA=tVal(tradeA,faabA),tvB=tVal(tradeB,faabB);
   function verdict(){
     var diff=tvA-tvB,maxVal=Math.max(tvA,tvB);
