@@ -3218,7 +3218,8 @@ export default function App(){
           var platform=ua.includes("iphone")||ua.includes("ipad")?"iOS":ua.includes("android")?"Android":"Web";
           var geo=await getGeo().catch(function(){return null;});
           var country=geo?.country||"";var city=geo?.city||"";var region=geo?.region||"";var flag=geo?.flag||"";
-          trackEvent("trade_analyzed",{scoring,sideA:tradeA.map(function(x){return x.name;}),sideB:tradeB.map(function(x){return x.name;}),origin:window.location.hash||"#trade",device,platform,country,city,region,flag});
+          var location=city&&region?city+", "+region:city||region||"";
+          trackEvent("trade_analyzed",{scoring,sideA:tradeA.map(function(x){return x.name;}),sideB:tradeB.map(function(x){return x.name;}),origin:window.location.hash||"#trade",device,platform,country,location,flag});
         },style:{width:"100%",padding:"15px",borderRadius:14,border:"none",cursor:"pointer",fontWeight:800,fontSize:15,
           background:(tradeA.length>0||tradeB.length>0)?(!isPro&&tradeCount>=FREE_TRADE_LIMIT?"linear-gradient(135deg,"+T.gold+",#92400e)":"linear-gradient(135deg,"+T.purple+",#5b21b6)"):T.purpleDim,
           color:(tradeA.length>0||tradeB.length>0)?"#fff":T.textDim}},
