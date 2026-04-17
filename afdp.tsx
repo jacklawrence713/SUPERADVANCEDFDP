@@ -3257,10 +3257,9 @@ export default function App(){
           React.createElement("div",{style:{fontWeight:700,fontSize:14,marginBottom:8}},"Team A"),
           React.createElement("div",{style:{display:"flex",gap:8,marginBottom:8}},
             React.createElement(SrchDrop,{T:T,pool:tradePool,value:tSrchA,onChange:setTSrchA,exclude:[].concat(tradeA,tradeB),onSelect:function(p){setTradeA(function(prev){return prev.concat([p]);});setAnalyzed(false);}}),
-            user&&React.createElement("button",{onClick:function(){setTradeRosterSide(tradeRosterSide==="A"?null:"A");},style:{background:tradeRosterSide==="A"?T.purple+"33":T.bgInput,border:"1px solid "+(tradeRosterSide==="A"?T.purple:T.border),borderRadius:10,padding:"0 12px",color:tradeRosterSide==="A"?T.purpleLight:T.textSub,cursor:"pointer",fontWeight:600,fontSize:11,whiteSpace:"nowrap",flexShrink:0}},"+ Roster")
+            powerRankingTeams&&React.createElement("button",{onClick:function(){setTradeRosterSide(tradeRosterSide==="A"?null:"A");},style:{background:tradeRosterSide==="A"?T.purple+"33":T.bgInput,border:"1px solid "+(tradeRosterSide==="A"?T.purple:T.border),borderRadius:10,padding:"0 12px",color:tradeRosterSide==="A"?T.purpleLight:T.textSub,cursor:"pointer",fontWeight:600,fontSize:11,whiteSpace:"nowrap",flexShrink:0}},tradeRosterSide==="A"?"✕ Close":"+ Roster")
           ),
           tradeRosterSide==="A"&&React.createElement("div",{style:{background:T.bgInput,borderRadius:12,padding:10,marginBottom:8,border:"1px solid "+T.borderPurple}},
-            !powerRankingTeams&&React.createElement("div",{style:{textAlign:"center",padding:"16px 8px",color:T.textSub,fontSize:12}},"Connect a league in the League tab to pick from rosters"),
             powerRankingTeams&&React.createElement(React.Fragment,null,
               React.createElement("select",{value:tradeRosterTeam,onChange:function(e){setTradeRosterTeam(+e.target.value);},style:{width:"100%",background:T.bgCard,color:T.text,border:"1px solid "+T.border,borderRadius:8,padding:"7px 10px",fontSize:12,marginBottom:8,outline:"none"}},
                 powerRankingTeams.map(function(t,i){return React.createElement("option",{key:i,value:i},t.name);})),
@@ -3285,10 +3284,9 @@ export default function App(){
           React.createElement("div",{style:{fontWeight:700,fontSize:14,marginBottom:8}},"Team B"),
           React.createElement("div",{style:{display:"flex",gap:8,marginBottom:8}},
             React.createElement(SrchDrop,{T:T,pool:tradePool,value:tSrchB,onChange:setTSrchB,exclude:[].concat(tradeA,tradeB),onSelect:function(p){setTradeB(function(prev){return prev.concat([p]);});setAnalyzed(false);}}),
-            user&&React.createElement("button",{onClick:function(){setTradeRosterSide(tradeRosterSide==="B"?null:"B");},style:{background:tradeRosterSide==="B"?T.purple+"33":T.bgInput,border:"1px solid "+(tradeRosterSide==="B"?T.purple:T.border),borderRadius:10,padding:"0 12px",color:tradeRosterSide==="B"?T.purpleLight:T.textSub,cursor:"pointer",fontWeight:600,fontSize:11,whiteSpace:"nowrap",flexShrink:0}},"+ Roster")
+            powerRankingTeams&&React.createElement("button",{onClick:function(){setTradeRosterSide(tradeRosterSide==="B"?null:"B");},style:{background:tradeRosterSide==="B"?T.purple+"33":T.bgInput,border:"1px solid "+(tradeRosterSide==="B"?T.purple:T.border),borderRadius:10,padding:"0 12px",color:tradeRosterSide==="B"?T.purpleLight:T.textSub,cursor:"pointer",fontWeight:600,fontSize:11,whiteSpace:"nowrap",flexShrink:0}},tradeRosterSide==="B"?"✕ Close":"+ Roster")
           ),
           tradeRosterSide==="B"&&React.createElement("div",{style:{background:T.bgInput,borderRadius:12,padding:10,marginBottom:8,border:"1px solid "+T.borderPurple}},
-            !powerRankingTeams&&React.createElement("div",{style:{textAlign:"center",padding:"16px 8px",color:T.textSub,fontSize:12}},"Connect a league in the League tab to pick from rosters"),
             powerRankingTeams&&React.createElement(React.Fragment,null,
               React.createElement("select",{value:tradeRosterTeam,onChange:function(e){setTradeRosterTeam(+e.target.value);},style:{width:"100%",background:T.bgCard,color:T.text,border:"1px solid "+T.border,borderRadius:8,padding:"7px 10px",fontSize:12,marginBottom:8,outline:"none"}},
                 powerRankingTeams.map(function(t,i){return React.createElement("option",{key:i,value:i},t.name);})),
