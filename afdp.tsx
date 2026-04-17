@@ -1865,7 +1865,7 @@ function UserMenu(props){
         React.createElement("div",{style:{fontSize:11,color:T.textSub}},user.email),
         React.createElement("div",{style:{marginTop:4,display:"flex",gap:4}},
           user.isAdmin&&React.createElement("span",{style:{background:"#f1c40f",color:"#000",fontSize:9,fontWeight:800,borderRadius:4,padding:"2px 7px"}},"ADMIN"),
-          React.createElement("span",{style:{background:user.isPro?T.purple:"#374151",color:"#fff",fontSize:9,fontWeight:700,borderRadius:4,padding:"2px 7px"}},user.plan.toUpperCase())
+          React.createElement("span",{style:{background:user.isPro?T.purple:"#374151",color:"#fff",fontSize:9,fontWeight:700,borderRadius:4,padding:"2px 7px"}},(user.plan||"free").toUpperCase())
         )
       ),
       user.isAdmin&&React.createElement("button",{onClick:function(){setOpen(false);onAdmin();},style:{width:"100%",padding:"11px 16px",background:T.purpleDim,border:"none",borderBottom:"1px solid "+T.border,cursor:"pointer",fontWeight:700,fontSize:12,color:"#f1c40f",textAlign:"left"}},"Admin Panel"),
@@ -2705,6 +2705,11 @@ export default function App(){
       });
       teams.sort(function(a,b){return b.totalVal-a.totalVal;});
       saveAndSetImportedTeams(teams);setLeagueRosters(null);setLeagueUsers(null);saveAndSetActiveLeague(lg);
+      // Auto-sync scoring format from league settings
+      var rec=lg.scoring_settings&&lg.scoring_settings.rec!=null?lg.scoring_settings.rec:null;
+      if(rec===1)setFormat("PPR");else if(rec===0.5)setFormat("Half");else if(rec===0)setFormat("Standard");
+      if(lg.roster_positions&&lg.roster_positions.indexOf("SUPER_FLEX")!==-1)setSfMode(true);
+      if(lg.settings&&(lg.settings.type===2||lg.settings.type==="2"))setLeagueType("Dynasty");
       setLeagueImportStatus("connected");if(leagueSubTab==="leagimport")setLeagueSubTab("power");
     }).catch(function(e){setLeagueImportErr(e.message||"Failed to load league");setLeagueImportStatus("error");});
   }
