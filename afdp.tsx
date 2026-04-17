@@ -113,7 +113,7 @@ const FORMATS=["Superflex","PPR","Half","Standard"];
 const ALL_POSITIONS=["ALL","QB","RB","WR","TE","K","DST","DL","LB","DB"];
 const PRIME={QB:[26,35],RB:[22,27],WR:[23,29],TE:[25,30],K:[25,38],DST:[0,99],DL:[23,30],LB:[23,30],DB:[23,29]};
 const FREE_RANK_LIMIT=20;
-const FREE_TRADE_LIMIT=20;
+const FREE_TRADE_LIMIT=5;
 const ADMIN_EMAILS=["jacklawrence713@gmail.com","theprez@yahoo.com","modgy28@hotmail.com","sbesk787@gmail.com","starrrya@yahoo.com"];
 function isAdminEmail(e){return ADMIN_EMAILS.indexOf((e||"").toLowerCase().trim())!==-1;}
 
@@ -2246,7 +2246,7 @@ export default function App(){
   var [faabA,setFaabA]=useState(0);
   var [faabB,setFaabB]=useState(0);
   var [analyzed,setAnalyzed]=useState(false);
-  var [tradeCount,setTradeCount]=useState(function(){try{var s=localStorage.getItem('fdp_tc_v1');return s?+s:0;}catch(e){return 0;}});
+  var [tradeCount,setTradeCount]=useState(function(){try{var s=localStorage.getItem('fdp_tc_v2');if(s){var o=JSON.parse(s);var today=new Date().toISOString().slice(0,10);if(o.d===today)return o.n||0;}return 0;}catch(e){return 0;}});
   var [impTab,setImpTab]=useState("sleeper");
   var [slUser,setSlUser]=useState("");
   var [impStatus,setImpStatus]=useState(null);
@@ -2282,7 +2282,7 @@ export default function App(){
   var [contactMsg,setContactMsg]=useState("");
   var [contactSent,setContactSent]=useState(false);
   var [user,setUser]=useState(function(){try{var s=localStorage.getItem('fdp_user_v1');if(s){var u=JSON.parse(s);setTrackedUser(u?.email||"");return u;}return null;}catch(e){return null;}});
-  function saveAndSetUser(u){try{if(u)localStorage.setItem('fdp_user_v1',JSON.stringify(u));else localStorage.removeItem('fdp_user_v1');if(u?.isPro){localStorage.removeItem('fdp_tc_v1');}}catch(e){}setUser(u);setTrackedUser(u?.email||"");if(u?.isPro)setTradeCount(0);}
+  function saveAndSetUser(u){try{if(u)localStorage.setItem('fdp_user_v1',JSON.stringify(u));else localStorage.removeItem('fdp_user_v1');if(u?.isPro){localStorage.removeItem('fdp_tc_v2');}}catch(e){}setUser(u);setTrackedUser(u?.email||"");if(u?.isPro)setTradeCount(0);}
   async function handleCheckout(plan:string,billing:string){
     if(!user){setAuthMode("signup");setShowAuth(true);return;}
     try{
@@ -3212,7 +3212,7 @@ export default function App(){
         React.createElement("button",{onClick:async function(){
           if(tradeA.length===0&&tradeB.length===0)return;
           if(!isPro&&tradeCount>=FREE_TRADE_LIMIT){setAuthMode("signup");setShowAuth(true);return;}
-          setAnalyzed(true);setAiAnalysis("Analyzing...");setTradeSaved(false);if(!isPro)setTradeCount(function(c){var n=c+1;try{localStorage.setItem('fdp_tc_v1',String(n));}catch(e){}return n;});
+          setAnalyzed(true);setAiAnalysis("Analyzing...");setTradeSaved(false);if(!isPro)setTradeCount(function(c){var n=c+1;try{var today=new Date().toISOString().slice(0,10);localStorage.setItem('fdp_tc_v2',JSON.stringify({n,d:today}));}catch(e){}return n;});
           try{var aiRes=await callEdgeFn("analyze-trade",{sideA:tradeA.map(function(p){return{name:p.name,pos:p.pos,age:p.age,val:p.ktcVal||0};}),sideB:tradeB.map(function(p){return{name:p.name,pos:p.pos,age:p.age,val:p.ktcVal||0};}),tvA,tvB,scoring},user?.token);setAiAnalysis(aiRes.analysis||genAiAnalysis(tradeA,tradeB,tvA,tvB));}catch(e){setAiAnalysis(genAiAnalysis(tradeA,tradeB,tvA,tvB));}
           var device=window.innerWidth>=1024?"desktop":"mobile";
           var ua=navigator.userAgent.toLowerCase();
