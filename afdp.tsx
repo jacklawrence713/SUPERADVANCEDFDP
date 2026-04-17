@@ -114,6 +114,18 @@ const ALL_POSITIONS=["ALL","QB","RB","WR","TE","K","DST","DL","LB","DB"];
 const PRIME={QB:[26,35],RB:[22,27],WR:[23,29],TE:[25,30],K:[25,38],DST:[0,99],DL:[23,30],LB:[23,30],DB:[23,29]};
 const FREE_RANK_LIMIT=20;
 const FREE_TRADE_LIMIT=5;
+const DYNASTY_NEWS=[
+  {id:1,ts:"Apr 17",tag:"DRAFT",pos:"RB",title:"Jeremiyah Love projected top-3 pick",body:"Notre Dame RB Jeremiyah Love expected to be a top-3 NFL Draft selection. Dynasty value surging — buy now before the draft."},
+  {id:2,ts:"Apr 17",tag:"NEWS",pos:"QB",title:"Fernando Mendoza the new dynasty QB1",body:"Indiana's Mendoza is widely viewed as the top 2026 QB dynasty asset in SF leagues, with elite arm talent and pocket presence."},
+  {id:3,ts:"Apr 16",tag:"TRADE",pos:"WR",title:"Carnell Tate dynasty target post-draft",body:"Ohio State's Tate continues to trend up in dynasty trade value ahead of the NFL Draft. WR1 ceiling in SF leagues."},
+  {id:4,ts:"Apr 15",tag:"NEWS",pos:"RB",title:"Kenneth Walker III lands in Kansas City",body:"Walker signed with KC after leaving SEA. Expected to see an immediate starting role — dynasty value spike incoming."},
+  {id:5,ts:"Apr 14",tag:"NEWS",pos:"TE",title:"Kenyon Sadiq top TE dynasty asset",body:"Oregon TE Sadiq is the consensus TE1 in the 2026 class. Buy in SF and TEP leagues ahead of the draft."},
+  {id:6,ts:"Apr 13",tag:"TRADE",pos:"QB",title:"Justin Fields joins KC — SF value watch",body:"Fields signed with KC. Dynasty managers should track his role — potential SF value if Mahomes were to miss time."},
+  {id:7,ts:"Apr 12",tag:"NEWS",pos:"WR",title:"Tetairoa McMillan Year 2 breakout candidate",body:"Carolina WR McMillan entering Year 2 with full grasp of the offense. Elite size and route running — buy window closing."},
+  {id:8,ts:"Apr 11",tag:"DRAFT",pos:"LB",title:"Sonny Styles the premier 2026 IDP prospect",body:"Ohio State LB Sonny Styles is the top IDP prospect in the 2026 class. Three-down coverage backer with top-10 pick upside."},
+  {id:9,ts:"Apr 10",tag:"NEWS",pos:"RB",title:"Derrick Henry aging curve watch",body:"Henry turns 32 in January 2027. Dynasty managers holding the veteran RB should consider selling into remaining value."},
+  {id:10,ts:"Apr 9",tag:"TRADE",pos:"WR",title:"Mike Evans SF value in Year 1",body:"Evans joins the 49ers at age 32. Dynasty value reflects aging curve, but viable SF trade target in contender win-now leagues."},
+];
 const ADMIN_EMAILS=["jacklawrence713@gmail.com","theprez@yahoo.com","modgy28@hotmail.com","sbesk787@gmail.com","starrrya@yahoo.com"];
 function isAdminEmail(e){return ADMIN_EMAILS.indexOf((e||"").toLowerCase().trim())!==-1;}
 
@@ -2351,6 +2363,10 @@ export default function App(){
   var [rankTeamFilter,setRankTeamFilter]=useState("All Teams");
   var [rankIdpPos,setRankIdpPos]=useState("DL");
   var [watchlist,setWatchlist]=useState(function(){try{var s=localStorage.getItem('fdp_wl_v1');return s?JSON.parse(s):[];}catch(e){return [];}});
+  var [watchlistSnapshots,setWatchlistSnapshots]=useState(function(){try{var s=localStorage.getItem('fdp_wls_v1');return s?JSON.parse(s):{};}catch(e){return {};}});
+  var [newsPos,setNewsPos]=useState("All");
+  var [counterOffer,setCounterOffer]=useState<any>(null);
+  var [aiSuggestions,setAiSuggestions]=useState("");
   var [valueTrendsPos,setValueTrendsPos]=useState("QB");
   var [trendingFilter,setTrendingFilter]=useState("all");
   var [marketFilter,setMarketFilter]=useState("buylow");
@@ -2771,6 +2787,92 @@ export default function App(){
     var qbOut=aPlrs.filter(function(p){return p.pos==="QB";});
     if(qbOut.length>qbIn.length){lines.push("You're giving up a QB without equal return. Ensure you have starter depth — QB scarcity is real.");}
     return lines.join(" ");
+  }
+
+  function genCounterOffer(){
+    var diff=tvA-tvB;
+    if(Math.abs(diff)<100)return null;
+    // Team A overpays (diff>0): suggest Team A removes a player to balance
+    // Team B overpays (diff<0): suggest Team B adds a player or Team A adds a player
+    var overpaySide=diff>0?"A":"B";
+    var overpayAmt=Math.abs(diff);
+    if(overpaySide==="A"&&tradeA.length>1){
+      // Find the lowest-val player on A side closest to the overpay amount
+      var byDelta=tradeA.slice().sort(function(a,b){return Math.abs((a.tradeVal||a.est||0)-overpayAmt)-Math.abs((b.tradeVal||b.est||0)-overpayAmt);});
+      var candidate=byDelta[0];
+      return {action:"remove",side:"A",player:candidate,description:"Remove "+candidate.name+" from Team A's offer to balance the trade (reduces A's overpay by ~"+(candidate.tradeVal||candidate.est||0).toLocaleString()+" pts)"};
+    }
+    // Find a player from the tradePool that Team B could add to their side
+    var pool=tradePool.filter(function(p){return !tradeA.find(function(x){return x.name===p.name;})&&!tradeB.find(function(x){return x.name===p.name;})&&(p.tradeVal||0)>0;});
+    pool.sort(function(a,b){return Math.abs((a.tradeVal||0)-overpayAmt)-Math.abs((b.tradeVal||0)-overpayAmt);});
+    var addCandidate=pool[0];
+    if(!addCandidate)return null;
+    var addSide=diff>0?"B":"A";
+    return {action:"add",side:addSide,player:addCandidate,description:"Add "+addCandidate.name+" ("+( addCandidate.tradeVal||0).toLocaleString()+") to Team "+addSide+"'s side to create a fairer deal"};
+  }
+
+  function genAiSuggestions(){
+    var lines=[];
+    var allPlayers=tradeA.concat(tradeB).filter(function(p){return p.pos!=="PICK";});
+    // Sell-high: outgoing players that are young and valuable
+    var sellHigh=tradeA.filter(function(p){return p.pos!=="PICK"&&p.age<=27&&(p.tradeVal||0)>=3000;});
+    if(sellHigh.length>0){lines.push("Sell-High on "+sellHigh[0].name+": "+sellHigh[0].age+" yrs, still near peak value — ideal window to sell.");}
+    // Buy-low: incoming players on slumps or recent value drops
+    var buyLow=tradeB.filter(function(p){return p.pos!=="PICK"&&(p.tradeVal||0)>=1500&&p.age<=30;});
+    if(buyLow.length>0){lines.push("Buy-Low target: "+buyLow[0].name+" — solid dynasty value at this price point.");}
+    // Age risk
+    var oldRbs=allPlayers.filter(function(p){return p.pos==="RB"&&p.age>=29;});
+    if(oldRbs.length>0){lines.push("Aging RB alert: "+oldRbs.map(function(p){return p.name+"("+p.age+")";}).join(", ")+" — RBs 29+ carry steep dynasty risk.");}
+    // Similar value targets in pool
+    var topIncoming=tradeB.filter(function(p){return p.pos!=="PICK";}).sort(function(a,b){return (b.tradeVal||0)-(a.tradeVal||0);})[0];
+    if(topIncoming){
+      var similar=rankedPlayers.filter(function(p){return p.pos===topIncoming.pos&&p.name!==topIncoming.name&&Math.abs((p.tradeVal||0)-(topIncoming.tradeVal||0))<500;}).slice(0,2);
+      if(similar.length>0){lines.push("Comparable to "+topIncoming.name+": "+similar.map(function(p){return p.name+"("+p.tradeVal+")";}).join(", ")+" — consider these alternatives.");}
+    }
+    if(lines.length===0){lines.push("Both teams are exchanging similar-value assets. Look for youth (under 25) or picks to maximize long-term dynasty value.");}
+    return lines.join(" • ");
+  }
+
+  function downloadGradeCard(team:any){
+    try{
+      var canvas=document.createElement("canvas");
+      canvas.width=600;canvas.height=360;
+      var ctx=canvas.getContext("2d");
+      if(!ctx)return;
+      // Background
+      ctx.fillStyle="#0f0e17";ctx.fillRect(0,0,600,360);
+      // Purple gradient top bar
+      var grd=ctx.createLinearGradient(0,0,600,0);grd.addColorStop(0,"#7c3aed");grd.addColorStop(1,"#5b21b6");
+      ctx.fillStyle=grd;ctx.fillRect(0,0,600,6);
+      // Title
+      ctx.fillStyle="#ffffff";ctx.font="bold 28px system-ui,sans-serif";ctx.fillText("Dynasty Roster Grade",28,56);
+      // Team name
+      ctx.fillStyle="#a78bfa";ctx.font="bold 16px system-ui,sans-serif";ctx.fillText(team.name||"My Team",28,82);
+      // Grade
+      var totalVal=team.totalVal||team.players?.reduce(function(s:number,p:any){return s+(p.tradeVal||0);},0)||0;
+      var grade=totalVal>=120000?"A+":totalVal>=100000?"A":totalVal>=85000?"A-":totalVal>=70000?"B+":totalVal>=58000?"B":totalVal>=47000?"B-":totalVal>=38000?"C+":totalVal>=30000?"C":"D";
+      var gradeColor=grade.startsWith("A")?"#22c55e":grade.startsWith("B")?"#60a5fa":grade.startsWith("C")?"#f59e0b":"#f87171";
+      ctx.fillStyle=gradeColor;ctx.font="bold 80px system-ui,sans-serif";ctx.fillText(grade,500,120);
+      // Divider
+      ctx.strokeStyle="#2a2040";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(28,100);ctx.lineTo(572,100);ctx.stroke();
+      // Total value
+      ctx.fillStyle="#94a3b8";ctx.font="12px system-ui,sans-serif";ctx.fillText("TOTAL DYNASTY VALUE",28,128);
+      ctx.fillStyle="#a78bfa";ctx.font="bold 22px system-ui,sans-serif";ctx.fillText(totalVal.toLocaleString(),28,154);
+      // Top players
+      ctx.fillStyle="#94a3b8";ctx.font="12px system-ui,sans-serif";ctx.fillText("TOP PLAYERS",28,188);
+      var topPlayers=(team.players||[]).slice(0,5);
+      topPlayers.forEach(function(p:any,i:number){
+        var y=212+i*26;
+        var pc=POS_COLORS[p.pos]||"#a78bfa";
+        ctx.fillStyle=pc;ctx.font="bold 10px system-ui,sans-serif";ctx.fillText(p.pos,28,y);
+        ctx.fillStyle="#ffffff";ctx.font="14px system-ui,sans-serif";ctx.fillText(p.name,56,y);
+        ctx.fillStyle="#a78bfa";ctx.font="bold 13px system-ui,sans-serif";ctx.fillText((p.tradeVal||0).toLocaleString(),450,y);
+      });
+      // Footer
+      ctx.fillStyle="#4a4060";ctx.font="11px system-ui,sans-serif";ctx.fillText("fantasydraftpros.com · Dynasty Trade Analyzer",28,348);
+      // Download
+      var a=document.createElement("a");a.href=canvas.toDataURL("image/png");a.download=(team.name||"roster-grade")+".png";a.click();
+    }catch(e){console.error("Grade card error",e);}
   }
 
   function loadSleeperTrending(){
@@ -3249,6 +3351,34 @@ export default function App(){
               React.createElement("button",{onClick:function(){setShowShareModal(true);},style:{flex:1,padding:"10px",borderRadius:10,border:"1px solid "+T.purple,cursor:"pointer",fontWeight:700,fontSize:12,background:T.purpleDim,color:T.purpleLight}},"🔗 Share"),
               React.createElement("button",{onClick:async function(){setAiAnalysis("Analyzing...");try{var rr=await callEdgeFn("analyze-trade",{sideA:tradeA.map(function(p){return{name:p.name,pos:p.pos,age:p.age,val:p.ktcVal||0};}),sideB:tradeB.map(function(p){return{name:p.name,pos:p.pos,age:p.age,val:p.ktcVal||0};}),tvA,tvB,scoring},user?.token);setAiAnalysis(rr.analysis||genAiAnalysis(tradeA,tradeB,tvA,tvB));}catch(e){setAiAnalysis(genAiAnalysis(tradeA,tradeB,tvA,tvB));}},style:{flex:1,padding:"10px",borderRadius:10,border:"1px solid "+T.borderPurple,cursor:"pointer",fontWeight:700,fontSize:12,background:T.bgInput,color:T.textSub}},"↻")
             ),
+            (function(){var v=verdict();var pct=v.pct;var isUnfair=Math.abs(tvA-tvB)/Math.max(1,Math.max(tvA,tvB))*100>=8;
+            return React.createElement(React.Fragment,null,
+              isUnfair&&React.createElement("div",{style:{display:"flex",gap:8,marginTop:8}},
+                React.createElement("button",{onClick:function(){setCounterOffer(genCounterOffer());},style:{flex:1,padding:"10px",borderRadius:10,border:"1px solid "+T.gold+"66",cursor:"pointer",fontWeight:700,fontSize:12,background:T.gold+"11",color:T.gold}},"⚖️ Suggest Fairer Deal"),
+                React.createElement("button",{onClick:function(){setAiSuggestions(genAiSuggestions());},style:{flex:1,padding:"10px",borderRadius:10,border:"1px solid "+T.borderPurple,cursor:"pointer",fontWeight:700,fontSize:12,background:T.bgInput,color:T.purpleLight}},"💡 Trade Tips")
+              ),
+              counterOffer&&React.createElement("div",{style:{marginTop:10,background:T.gold+"11",border:"1px solid "+T.gold+"44",borderRadius:12,padding:"12px 14px"}},
+                React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,marginBottom:6}},
+                  React.createElement("span",{style:{fontSize:13,color:T.gold}},"⚖️"),
+                  React.createElement("span",{style:{fontSize:10,fontWeight:800,color:T.gold,letterSpacing:1}},"SUGGESTED FIX")
+                ),
+                React.createElement("div",{style:{fontSize:12,color:T.text,lineHeight:1.7,marginBottom:8}},counterOffer.description),
+                counterOffer.action==="add"&&React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,background:T.bgCard,borderRadius:8,padding:"8px 10px"}},
+                  React.createElement(PBadge,{pos:counterOffer.player.pos}),
+                  React.createElement("span",{style:{fontWeight:700,fontSize:13}},counterOffer.player.name),
+                  React.createElement("span",{style:{marginLeft:"auto",fontWeight:800,fontSize:12,color:T.purpleLight}},(counterOffer.player.tradeVal||0).toLocaleString())
+                ),
+                React.createElement("button",{onClick:function(){setCounterOffer(null);},style:{marginTop:8,background:"none",border:"none",fontSize:10,color:T.textDim,cursor:"pointer"}},"Dismiss")
+              ),
+              aiSuggestions&&React.createElement("div",{style:{marginTop:10,background:darkMode?"#0f1f35":"#eff6ff",border:"1px solid "+T.borderPurple,borderRadius:12,padding:"12px 14px"}},
+                React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,marginBottom:6}},
+                  React.createElement("span",{style:{fontSize:13,color:"#60a5fa"}},"💡"),
+                  React.createElement("span",{style:{fontSize:10,fontWeight:800,color:"#60a5fa",letterSpacing:1}},"TRADE TIPS")
+                ),
+                React.createElement("div",{style:{fontSize:12,color:T.text,lineHeight:1.8}},aiSuggestions),
+                React.createElement("button",{onClick:function(){setAiSuggestions("");},style:{marginTop:8,background:"none",border:"none",fontSize:10,color:T.textDim,cursor:"pointer"}},"Dismiss")
+              )
+            );})(),
             !user&&React.createElement("div",{style:{marginTop:12,background:T.purpleDim,border:"1px solid "+T.purple+"44",borderRadius:12,padding:"12px 14px"}},
               React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.purpleLight,marginBottom:4}},"Want AI Trade Suggestions?"),
               React.createElement("div",{style:{fontSize:11,color:T.textSub,marginBottom:10}},"Sign up free to unlock full rankings, league import, and personalized recommendations."),
@@ -3374,7 +3504,10 @@ export default function App(){
               React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:2}},"FAAB Remaining"),
               React.createElement("div",{style:{fontWeight:800,fontSize:18}},"$"+team.faab)
             ),
-            React.createElement("button",{onClick:function(){setRosterViewTeam(i);},style:{width:"100%",padding:"11px",borderRadius:10,border:"1px solid "+T.border,background:"transparent",color:T.purple,fontWeight:700,fontSize:13,cursor:"pointer",marginTop:team.faab!=null?0:12}},"View Full Roster")
+            React.createElement("div",{style:{display:"flex",gap:8,marginTop:team.faab!=null?0:12}},
+              React.createElement("button",{onClick:function(){setRosterViewTeam(i);},style:{flex:1,padding:"11px",borderRadius:10,border:"1px solid "+T.border,background:"transparent",color:T.purple,fontWeight:700,fontSize:13,cursor:"pointer"}},"View Roster"),
+              powerRankingTeams&&React.createElement("button",{onClick:function(){downloadGradeCard(team);},title:"Download Roster Grade Card",style:{padding:"11px 14px",borderRadius:10,border:"1px solid "+T.border,background:T.bgInput,color:T.textSub,fontWeight:700,fontSize:13,cursor:"pointer"}},"⬇ Grade")
+            )
           );
         })
       ),
@@ -4135,10 +4268,23 @@ export default function App(){
               picks.forEach(function(pk){var rid=String(pk.owner_id);if(!picksByRoster[rid])picksByRoster[rid]=[];picksByRoster[rid].push(pk);});
               var rosterIds=Array.from(new Set(Object.keys(byRoster).concat(Object.keys(picksByRoster))));
               var teamName=function(rid:string){return "Team "+rid;};
+              // Compute trade verdict for each side
+              var sideVals=rosterIds.slice(0,2).map(function(rid){
+                var pids=byRoster[rid]||[];
+                return pids.reduce(function(s,pid){var p=sleeperIdToPlayer[pid];return s+(p&&p.tradeVal?p.tradeVal:0);},0);
+              });
+              var v0=sideVals[0]||0,v1=sideVals[1]||0;
+              var tvDiff=v0-v1,tvMax=Math.max(v0,v1,1);
+              var tvPct=Math.abs(tvDiff)/tvMax*100;
+              var tvBadge=tvPct<8?"Fair":tvDiff>0?(teamName(rosterIds[1])+" wins"):(teamName(rosterIds[0])+" wins");
+              var tvColor=tvPct<8?T.green:tvDiff>0?T.gold:T.purpleLight;
               return React.createElement("div",{key:tx.transaction_id||idx,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"14px",marginBottom:10}},
                 React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}},
                   React.createElement("div",{style:{fontWeight:700,fontSize:12,color:T.purple}},"Trade #"+(leagueTrades.length-idx)),
-                  React.createElement("div",{style:{fontSize:11,color:T.textSub}},ts)
+                  React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8}},
+                    (v0>0||v1>0)&&React.createElement("span",{style:{background:tvColor+"22",border:"1px solid "+tvColor+"44",borderRadius:20,padding:"2px 8px",fontSize:9,fontWeight:800,color:tvColor}},tvBadge),
+                    React.createElement("div",{style:{fontSize:11,color:T.textSub}},ts)
+                  )
                 ),
                 React.createElement("div",{style:{display:"grid",gridTemplateColumns:rosterIds.length>1?"1fr auto 1fr":"1fr",gap:8,alignItems:"flex-start"}},
                   rosterIds.slice(0,2).map(function(rid){
@@ -4500,7 +4646,7 @@ export default function App(){
       React.createElement("div",{style:{position:"relative",borderBottom:"1px solid "+T.border}},
         isDesktop&&React.createElement("button",{onClick:function(){rankingTabsRef.current&&rankingTabsRef.current.scrollBy({left:-200,behavior:"smooth"});},style:{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",zIndex:2,background:T.bgCard,border:"1px solid "+T.border,borderRadius:"50%",width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:T.text,fontSize:14,padding:0}},"‹"),
         React.createElement("div",{ref:rankingTabsRef,style:{display:"flex",gap:6,overflowX:"auto",padding:isDesktop?"10px 36px":"10px 12px",scrollbarWidth:"none",WebkitOverflowScrolling:"touch"}},
-          [["playervalues","$ Player Values"],["allrankings","All Rankings"],["qbs","QBs"],["rbs","RBs"],["wrs","WRs"],["tes","TEs"],["idp","IDP"],["rookie","Rookie Picks"],["vegas","Vegas Lines"],["trending","Trending"],["market","Market"],["valuetrends","Value Trends"],["pickcalc","Pick Calculator"],["watchlist","Watchlist"],["draft","Draft Kit"],["keeper","Keeper Calc"],["compare","Compare"],["history","Trade History"]].map(function(st){
+          [["news","📰 Dynasty News"],["playervalues","$ Player Values"],["allrankings","All Rankings"],["qbs","QBs"],["rbs","RBs"],["wrs","WRs"],["tes","TEs"],["idp","IDP"],["rookie","Rookie Picks"],["vegas","Vegas Lines"],["trending","Trending"],["market","Market"],["valuetrends","Value Trends"],["pickcalc","Pick Calculator"],["watchlist","Watchlist"],["draft","Draft Kit"],["keeper","Keeper Calc"],["compare","Compare"],["history","Trade History"]].map(function(st){
             var active=rankSubTab===st[0];
             return React.createElement("button",{key:st[0],onClick:function(){setRankSubTab(st[0]);},style:{padding:"7px 14px",borderRadius:20,border:"1px solid "+(active?T.purple:T.border),background:active?T.purple:"transparent",color:active?"#fff":T.textSub,fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}},st[1]);
           })
@@ -5072,6 +5218,58 @@ export default function App(){
         )
       ),
 
+      // DYNASTY NEWS
+      rankSubTab==="news"&&React.createElement("div",{style:{padding:"16px",paddingBottom:32}},
+        React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10,marginBottom:16}},
+          React.createElement("span",{style:{fontSize:24}},"📰"),
+          React.createElement("div",null,
+            React.createElement("div",{style:{fontWeight:900,fontSize:22}},"Dynasty News"),
+            React.createElement("div",{style:{fontSize:12,color:T.textSub}},"Latest dynasty updates and value insights")
+          )
+        ),
+        React.createElement("div",{style:{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}},
+          ["All","QB","RB","WR","TE","DL","LB","DB"].map(function(pos){
+            var active=newsPos===pos;var pc=POS_COLORS[pos]||T.purple;
+            return React.createElement("button",{key:pos,onClick:function(){setNewsPos(pos);},style:{padding:"6px 14px",borderRadius:20,border:"1px solid "+(active?pc:T.border),background:active?pc+"22":"transparent",color:active?pc:T.textSub,fontWeight:700,fontSize:12,cursor:"pointer"}},pos);
+          })
+        ),
+        DYNASTY_NEWS.filter(function(n){return newsPos==="All"||n.pos===newsPos;}).map(function(item){
+          var tagColor=item.tag==="INJURY"?T.red:item.tag==="TRADE"?T.purple:item.tag==="DRAFT"?T.green:T.gold;
+          return React.createElement("div",{key:item.id,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"14px",marginBottom:10}},
+            React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}},
+              React.createElement("div",{style:{display:"flex",gap:8,alignItems:"center"}},
+                React.createElement("span",{style:{background:tagColor+"22",border:"1px solid "+tagColor+"44",borderRadius:20,padding:"2px 10px",fontSize:9,fontWeight:800,color:tagColor,letterSpacing:1}},item.tag),
+                React.createElement(PBadge,{pos:item.pos})
+              ),
+              React.createElement("span",{style:{fontSize:10,color:T.textDim}},item.ts)
+            ),
+            React.createElement("div",{style:{fontWeight:700,fontSize:14,marginBottom:6}},item.title),
+            React.createElement("div",{style:{fontSize:12,color:T.textSub,lineHeight:1.6}},item.body)
+          );
+        }),
+        sleeperTrending&&sleeperTrending.adds&&sleeperTrending.adds.length>0&&React.createElement("div",{style:{marginTop:16}},
+          React.createElement("div",{style:{fontWeight:800,fontSize:15,marginBottom:10,display:"flex",alignItems:"center",gap:8}},
+            React.createElement("span",{style:{color:T.green}},"🔥"),
+            "Trending on Sleeper"
+          ),
+          sleeperTrending.adds.slice(0,5).map(function(item){
+            var p=sleeperIdToPlayer[item.player_id]||null;
+            var name=p?p.name:("Player "+item.player_id);
+            return React.createElement("div",{key:item.player_id,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:10,padding:"10px 14px",marginBottom:6,display:"flex",alignItems:"center",gap:10}},
+              p?React.createElement(Avatar,{name:p.name,pos:p.pos,size:32}):React.createElement("div",{style:{width:32,height:32,borderRadius:"50%",background:T.bgInput,flexShrink:0}}),
+              React.createElement("div",{style:{flex:1}},
+                React.createElement("div",{style:{fontWeight:700,fontSize:13}},name),
+                p&&React.createElement("div",{style:{fontSize:10,color:T.textSub}},p.team+" · "+p.pos)
+              ),
+              React.createElement("div",{style:{color:T.green,fontWeight:800,fontSize:12}},"+"+item.count.toLocaleString())
+            );
+          })
+        ),
+        !sleeperTrending&&React.createElement("div",{style:{marginTop:16,textAlign:"center"}},
+          React.createElement("button",{onClick:loadSleeperTrending,style:{padding:"10px 20px",borderRadius:10,border:"1px solid "+T.border,background:T.bgCard,color:T.textSub,fontWeight:700,fontSize:12,cursor:"pointer"}},"Load Sleeper Trending")
+        )
+      ),
+
       // WATCHLIST — empty state redesign
       rankSubTab==="watchlist"&&React.createElement("div",{style:{paddingBottom:8}},
         watchlist.length===0
@@ -5083,7 +5281,7 @@ export default function App(){
                 React.createElement("input",{value:watchlistSearch,onChange:function(e){setWatchlistSearch(e.target.value);},placeholder:"Search players to watch...",style:Object.assign({},inpS,{background:T.bgCard,borderRadius:12,border:"1px solid "+T.border})}),
                 watchlistSearch&&React.createElement("div",{style:{position:"absolute",top:"calc(100%+4px)",left:0,right:0,background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:10,zIndex:50,marginTop:4}},
                   rankedPlayers.filter(function(p){return p.name.toLowerCase().includes(watchlistSearch.toLowerCase())&&watchlist.indexOf(p.name)===-1;}).slice(0,6).map(function(p){
-                    return React.createElement("div",{key:p.name,onClick:function(){setWatchlist(function(w){return w.concat([p.name]);});setWatchlistSearch("");},style:{padding:"10px 14px",cursor:"pointer",borderBottom:"1px solid "+T.border,display:"flex",alignItems:"center",gap:8}},
+                    return React.createElement("div",{key:p.name,onClick:function(){setWatchlist(function(w){var n=w.concat([p.name]);try{localStorage.setItem('fdp_wl_v1',JSON.stringify(n));}catch(e){}return n;});setWatchlistSnapshots(function(s){var n=Object.assign({},s);if(!(p.name in n)){n[p.name]=p.tradeVal;try{localStorage.setItem('fdp_wls_v1',JSON.stringify(n));}catch(e){}}return n;});setWatchlistSearch("");},style:{padding:"10px 14px",cursor:"pointer",borderBottom:"1px solid "+T.border,display:"flex",alignItems:"center",gap:8}},
                       React.createElement(PBadge,{pos:p.pos}),
                       React.createElement("span",{style:{flex:1,fontWeight:600,fontSize:13}},p.name),
                       React.createElement("span",{style:{fontSize:11,color:T.textSub}},p.team)
@@ -5097,7 +5295,7 @@ export default function App(){
                 React.createElement("input",{value:watchlistSearch,onChange:function(e){setWatchlistSearch(e.target.value);},placeholder:"Add player to watchlist...",style:Object.assign({},inpS)}),
                 watchlistSearch&&React.createElement("div",{style:{position:"absolute",top:"calc(100% + 4px)",left:0,right:0,background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:10,zIndex:50}},
                   rankedPlayers.filter(function(p){return p.name.toLowerCase().includes(watchlistSearch.toLowerCase())&&watchlist.indexOf(p.name)===-1;}).slice(0,5).map(function(p){
-                    return React.createElement("div",{key:p.name,onClick:function(){setWatchlist(function(w){var n=w.concat([p.name]);try{localStorage.setItem('fdp_wl_v1',JSON.stringify(n));}catch(e){}return n;});setWatchlistSearch("");},style:{padding:"10px 14px",cursor:"pointer",borderBottom:"1px solid "+T.border,display:"flex",alignItems:"center",gap:8}},
+                    return React.createElement("div",{key:p.name,onClick:function(){setWatchlist(function(w){var n=w.concat([p.name]);try{localStorage.setItem('fdp_wl_v1',JSON.stringify(n));}catch(e){}return n;});setWatchlistSnapshots(function(s){var n=Object.assign({},s);if(!(p.name in n)){n[p.name]=p.tradeVal;try{localStorage.setItem('fdp_wls_v1',JSON.stringify(n));}catch(e){}}return n;});setWatchlistSearch("");},style:{padding:"10px 14px",cursor:"pointer",borderBottom:"1px solid "+T.border,display:"flex",alignItems:"center",gap:8}},
                       React.createElement(PBadge,{pos:p.pos}),
                       React.createElement("span",{style:{flex:1,fontWeight:600,fontSize:13}},p.name),
                       React.createElement("span",{style:{color:T.purple,fontWeight:700,fontSize:12}},p.tradeVal.toLocaleString())
@@ -5111,7 +5309,11 @@ export default function App(){
                   React.createElement(PBadge,{pos:p.pos,rank:p.posRank}),
                   React.createElement("div",{style:{flex:1}},
                     React.createElement("div",{style:{fontWeight:700,fontSize:13}},p.name),
-                    React.createElement("div",{style:{fontSize:10,color:T.textSub}},p.team+" | val "+p.tradeVal)
+                    React.createElement("div",{style:{fontSize:10,color:T.textSub}},p.team+" · "+p.pos+" · Age "+p.age)
+                  ),
+                  React.createElement("div",{style:{textAlign:"right",marginRight:8}},
+                    React.createElement("div",{style:{fontWeight:800,fontSize:14,color:T.purpleLight}},p.tradeVal.toLocaleString()),
+                    watchlistSnapshots[p.name]!=null&&(function(){var delta=p.tradeVal-(watchlistSnapshots[p.name]||0);return delta!==0?React.createElement("div",{style:{fontSize:10,fontWeight:700,color:delta>0?T.green:T.red}},(delta>0?"+":"")+delta.toLocaleString()):React.createElement("div",{style:{fontSize:10,color:T.textDim}},"—");})()||null
                   ),
                   React.createElement("button",{onClick:function(){setWatchlist(function(w){var n=w.filter(function(x){return x!==p.name;});try{localStorage.setItem('fdp_wl_v1',JSON.stringify(n));}catch(e){}return n;});},style:{background:"none",border:"none",cursor:"pointer",color:T.gold,fontSize:16}},"\u2605")
                 );
