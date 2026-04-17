@@ -2191,8 +2191,9 @@ export default function App(){
       var t=p.get("trade");
       if(!t)return;
       var d=JSON.parse(atob(t));
-      if(d.a&&Array.isArray(d.a)){var pa=d.a.map(function(n:string){return PLAYERS.find(function(p){return p.name===n;});}).filter(Boolean);if(pa.length)setTradeA(pa as any[]);}
-      if(d.b&&Array.isArray(d.b)){var pb=d.b.map(function(n:string){return PLAYERS.find(function(p){return p.name===n;});}).filter(Boolean);if(pb.length)setTradeB(pb as any[]);}
+      function findItem(n:string){return rankedPlayers.find(function(p){return p.name===n;})||(function(){var pk=DRAFT_PICKS.find(function(pk){return pk.name===n;});return pk?makePick(pk):null;})();}
+      if(d.a&&Array.isArray(d.a)){var pa=d.a.map(findItem).filter(Boolean);if(pa.length)setTradeA(pa as any[]);}
+      if(d.b&&Array.isArray(d.b)){var pb=d.b.map(findItem).filter(Boolean);if(pb.length)setTradeB(pb as any[]);}
       if(d.s)setScoring(d.s);
       if(d.fa)setFaabA(d.fa);
       if(d.fb)setFaabB(d.fb);
@@ -3025,7 +3026,7 @@ export default function App(){
               window.open("https://wa.me/?text="+encodeURIComponent("Check out this dynasty trade analysis: "+shareUrl),"_blank","noopener");
             },style:{padding:"13px",borderRadius:12,border:"1px solid #25d36644",background:"#25d36611",color:"#25d366",fontWeight:700,fontSize:14,cursor:"pointer"}},"💬 Share on WhatsApp"),
             typeof navigator.share==="function"&&React.createElement("button",{onClick:function(){
-              navigator.share({title:"Fantasy Draft Pros Trade Analysis",text:"Check out this dynasty trade analysis!",url:shareUrl}).catch(function(){});
+              navigator.share({title:"Fantasy Draft Pros Trade Analysis",text:summaryText}).catch(function(){});
             },style:{padding:"13px",borderRadius:12,border:"1px solid "+T.border,background:T.bgInput,color:T.text,fontWeight:700,fontSize:14,cursor:"pointer"}},"📱 Share via Device"),
             React.createElement("button",{onClick:function(){
               navigator.clipboard.writeText(summaryText).catch(function(){});
