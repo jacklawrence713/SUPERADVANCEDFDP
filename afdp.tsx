@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 // ── Supabase ─────────────────────────────────────────────────────────────────
 const SUPA_URL = "https://wizdxspglxpvvogiivsv.supabase.co";
 const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndpemR4c3BnbHhwdnZvZ2lpdnN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0NTUzNDcsImV4cCI6MjA4ODAzMTM0N30.jaMMEymsU7Xx3H32V2xuCfC3O9_-y0t2-IuXqhNfW5A";
-const SUPA_SVC = (import.meta as any).env?.VITE_SUPABASE_SERVICE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndpemR4c3BnbHhwdnZvZ2lpdnN2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjQ1NTM0NywiZXhwIjoyMDg4MDMxMzQ3fQ.sr-qZWscq59_HxN8wil1GCP6CmK97kXaLvphXnupoIk";
+const SUPA_SVC = (import.meta as any).env?.VITE_SUPABASE_SERVICE_KEY || "";
 const EDGE_URL = (import.meta as any).env?.VITE_EDGE_FUNCTIONS_URL || "https://wizdxspglxpvvogiivsv.supabase.co/functions/v1";
 // Auth + data client
 const authClient = SUPA_URL && SUPA_KEY ? createClient(SUPA_URL, SUPA_KEY) : null;
@@ -184,7 +184,7 @@ function initSleeperNameMap(db:{[id:string]:{name?:string}}){_sleeperNameMap={};
 function headshot(n:string){var id=SLEEPER_IDS[n]||_sleeperNameMap[n];return id?"https://sleepercdn.com/content/nfl/players/thumb/"+id+".jpg":null;}
 
 // ── Vegas Lines / Game Script (The Odds API) ─────────────────────────────────
-const ODDS_API_KEY="fe9999914cab4185901b7881ec7474cb";
+const ODDS_API_KEY=(import.meta as any).env?.VITE_ODDS_API_KEY||"";
 const ODDS_TEAM_MAP:{[k:string]:string}={
   "Arizona Cardinals":"ARI","Atlanta Falcons":"ATL","Baltimore Ravens":"BAL",
   "Buffalo Bills":"BUF","Carolina Panthers":"CAR","Chicago Bears":"CHI",
@@ -1752,7 +1752,8 @@ var Avatar=React.memo(function Avatar(props){
   var hs=headshot(props.name),pc=POS_COLORS[props.pos]||"#888";
   var [err,setErr]=useState(false);
   if(hs&&!err) return React.createElement("img",{src:hs,alt:props.name,style:{width:props.size,height:props.size,borderRadius:"50%",objectFit:"cover",border:"1.5px solid "+pc+"55",background:"#1c1a2e",flexShrink:0},onError:function(){setErr(true);}});
-  return React.createElement("div",{style:{width:props.size,height:props.size,borderRadius:"50%",background:pc+"22",border:"1.5px solid "+pc+"44",display:"flex",alignItems:"center",justifyContent:"center",fontSize:props.size*0.3,fontWeight:800,color:pc,flexShrink:0}},props.name.split(" ").map(function(w){return w[0];}).join("").slice(0,2));
+  var parts=props.name.split(" ");var initials=(parts[0]?.[0]||"")+(parts[1]?.[0]||parts[0]?.[1]||"");
+  return React.createElement("div",{style:{width:props.size,height:props.size,borderRadius:"50%",background:pc+"22",border:"1.5px solid "+pc+"44",display:"flex",alignItems:"center",justifyContent:"center",fontSize:props.size*0.3,fontWeight:800,color:pc,flexShrink:0}},initials);
 });
 var PBadge=React.memo(function PBadge(props){
   var pc=POS_COLORS[props.pos]||"#888";
@@ -4188,7 +4189,7 @@ export default function App(){
           React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}},
             React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:10,padding:"10px 12px"}},
               React.createElement("div",{style:{fontSize:9,color:T.textSub,fontWeight:700,marginBottom:4}},"YOUR BUDGET ($)"),
-              React.createElement("input",{type:"number",value:auctionBudget,onChange:function(e){setAuctionBudget(+e.target.value||200);},style:{background:"transparent",color:T.text,border:"none",fontSize:20,fontWeight:900,width:"100%",outline:"none"}})
+              React.createElement("input",{type:"number",value:auctionBudget,min:1,onChange:function(e){setAuctionBudget(Math.max(1,+e.target.value||1));},style:{background:"transparent",color:T.text,border:"none",fontSize:20,fontWeight:900,width:"100%",outline:"none"}})
             ),
             React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:10,padding:"10px 12px"}},
               React.createElement("div",{style:{fontSize:9,color:T.textSub,fontWeight:700,marginBottom:4}},"ROSTER SLOTS"),
@@ -5335,7 +5336,7 @@ export default function App(){
           return React.createElement("div",{key:entry.id,style:{background:T.bgCard,border:"1px solid "+(fair?T.green+"44":aWins?T.gold+"44":T.red+"44"),borderRadius:12,padding:"14px",marginBottom:10}},
             React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}},
               React.createElement("div",{style:{fontWeight:800,fontSize:13,color:vc}},vt),
-              React.createElement("div",{style:{fontSize:11,color:T.textDim}},entry.date+(entry.scoring?" · "+entry.scoring:""))
+              React.createElement("div",{style:{fontSize:11,color:T.textDim}},entry.date+(entry.scoring?" · "+entry.scoring:"")+" · saved values")
             ),
             React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr auto 1fr",gap:8,alignItems:"start"}},
               React.createElement("div",null,

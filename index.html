@@ -223,6 +223,7 @@
     </script>
 
   <script>
+(function(){try{var d=localStorage.getItem('fdp_dark_v1');if(d===null||JSON.parse(d))document.documentElement.style.background='#0f0e17';}catch(e){document.documentElement.style.background='#0f0e17';}})();
 window.onerror=function(msg,src,line,col,err){var fb=document.getElementById('fb');if(fb)fb.innerHTML='<b style=color:#f1c40f>JS CRASH:</b><br>'+msg+'<br>Line:'+line+'<br>'+(err&&err.stack||'');return true;};
 window.addEventListener('error',function(e){if(e.target&&e.target!==window){var fb=document.getElementById('fb');if(fb)fb.innerHTML='<b style=color:#f1c40f>FILE LOAD FAILED:</b><br>'+(e.target.src||e.target.href||'unknown file');}},true);
 </script>
