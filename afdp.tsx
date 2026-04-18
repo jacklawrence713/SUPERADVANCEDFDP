@@ -2701,30 +2701,36 @@ export default function App(){
       var userMap={};users.forEach(function(u){userMap[u.user_id]=u;});
       // FAAB: use actual league budget from lg.settings
       var faabBudget=(lg.settings&&lg.settings.waiver_budget!=null)?lg.settings.waiver_budget:200;
-      // Accurate draft pick count:
-      // Each team starts with base = futureSns × rounds own picks.
-      // traded_picks only records picks that moved. Apply +/- adjustments.
+      // Accurate draft pick count + pick details for value calculation
       var curSeason=parseInt(lg.season)||new Date().getFullYear();
       var rounds=(lg.settings&&lg.settings.draft_rounds)||3;
       // Find all unique future seasons referenced in traded_picks
       var futureSnsSet=new Set();
       tradedPicks.forEach(function(pk){if(parseInt(pk.season)>=curSeason)futureSnsSet.add(parseInt(pk.season));});
-      // If no traded picks exist yet, assume current + next 2 seasons
       if(futureSnsSet.size===0){futureSnsSet.add(curSeason);futureSnsSet.add(curSeason+1);futureSnsSet.add(curSeason+2);}
-      var numFutureSns=futureSnsSet.size;
-      // Initialise every roster with base picks (own picks they haven't traded away)
-      var picksByRoster={};
-      rosters.forEach(function(r){picksByRoster[r.roster_id]=numFutureSns*rounds;});
-      // Apply adjustments from traded picks
+      var futureSnsList=Array.from(futureSnsSet).sort();
+      // Build set of which original picks have been traded away
+      var tradedAwaySet={}; // roster_id → Set of "season_round"
+      var tradedToTeam={};  // roster_id → array of {round,season}
       tradedPicks.forEach(function(pk){
-        var sn=parseInt(pk.season);
-        if(sn<curSeason)return;
-        var orig=pk.roster_id;   // original owner — they lose their pick
-        var curr=pk.owner_id;    // current owner  — they gain a pick
-        if(orig===curr)return;   // no net change
-        if(picksByRoster[orig]!=null)picksByRoster[orig]=Math.max(0,picksByRoster[orig]-1);
-        if(picksByRoster[curr]!=null)picksByRoster[curr]++;
-        else picksByRoster[curr]=1;
+        var sn=parseInt(pk.season);if(sn<curSeason)return;
+        var orig=pk.roster_id,curr=pk.owner_id;if(orig===curr)return;
+        if(!tradedAwaySet[orig])tradedAwaySet[orig]=new Set();
+        tradedAwaySet[orig].add(sn+"_"+pk.round);
+        if(!tradedToTeam[curr])tradedToTeam[curr]=[];
+        tradedToTeam[curr].push({round:+pk.round,season:sn});
+      });
+      // Build detailed pick list per roster
+      var pickDetailsByRoster={};
+      rosters.forEach(function(r){
+        var rid=r.roster_id,details=[];
+        futureSnsList.forEach(function(sn){
+          for(var rd=1;rd<=rounds;rd++){
+            if(!tradedAwaySet[rid]||!tradedAwaySet[rid].has(sn+"_"+rd))details.push({round:rd,season:sn});
+          }
+        });
+        (tradedToTeam[rid]||[]).forEach(function(pk){details.push(pk);});
+        pickDetailsByRoster[rid]=details;
       });
       var teams=rosters.map(function(r){
         var u=userMap[r.owner_id]||{};
@@ -2733,8 +2739,11 @@ export default function App(){
         players.sort(function(a,b){return (b.tradeVal||0)-(a.tradeVal||0);});
         var totalVal=players.reduce(function(s,p){return s+(p.tradeVal||0);},0);
         var faabUsed=(r.settings&&r.settings.waiver_budget_used)||0;
-        var draftPicks=picksByRoster[r.roster_id]||0;
-        return {name:teamName,owner:u.display_name||"",players:players,totalVal:totalVal,faab:faabBudget-faabUsed,picks:draftPicks,wins:(r.settings&&r.settings.wins)||0,losses:(r.settings&&r.settings.losses)||0,ties:(r.settings&&r.settings.ties)||0};
+        var details=pickDetailsByRoster[r.roster_id]||[];
+        var draftPicks=details.length;
+        // Estimate pick value: 1st≈5000, 2nd≈2000, 3rd≈1000, 4th≈500, 5th≈250; discounted 15%/yr out
+        var pickValue=details.reduce(function(s,pk){var base=[0,5000,2000,1000,500,250][Math.min(pk.round,5)]||200;return s+Math.round(base*Math.pow(0.85,Math.max(0,pk.season-curSeason)));},0);
+        return {name:teamName,owner:u.display_name||"",players:players,totalVal:totalVal,faab:faabBudget-faabUsed,picks:draftPicks,pickDetails:details,pickValue:pickValue,wins:(r.settings&&r.settings.wins)||0,losses:(r.settings&&r.settings.losses)||0,ties:(r.settings&&r.settings.ties)||0};
       });
       teams.sort(function(a,b){return b.totalVal-a.totalVal;});
       saveAndSetImportedTeams(teams);setLeagueRosters(null);setLeagueUsers(null);saveAndSetActiveLeague(lg);
@@ -3458,7 +3467,7 @@ export default function App(){
       React.createElement("div",{style:{position:"relative",borderBottom:"1px solid "+T.border}},
         isDesktop&&React.createElement("button",{onClick:function(){leagueTabsRef.current&&leagueTabsRef.current.scrollBy({left:-200,behavior:"smooth"});},style:{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",zIndex:2,background:T.bgCard,border:"1px solid "+T.border,borderRadius:"50%",width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:T.text,fontSize:14,padding:0}},"‹"),
         React.createElement("div",{ref:leagueTabsRef,style:{display:"flex",gap:8,overflowX:"auto",padding:isDesktop?"12px 36px":"12px 16px",scrollbarWidth:"none"}},
-          [["power","Power Rankings"],["playoff","Playoff Odds"],["champ","Championship"],["advice","Team Advice"],["roster","Roster Health"],["waiver","Waiver Wire"],["lineup","Lineup"],["startsit","Start/Sit"],["trades","League Trades"],["auction","Auction"],["rivalry","Rivalry"],["recap","Recap"],["chat","Chat"],["alerts","Alerts"],["leagimport","Import"]].map(function(st){
+          [["power","Power Rankings"],["pickpower","Pick Power Rankings"],["playoff","Playoff Odds"],["champ","Championship"],["advice","Team Advice"],["roster","Roster Health"],["waiver","Waiver Wire"],["lineup","Lineup"],["startsit","Start/Sit"],["trades","League Trades"],["auction","Auction"],["rivalry","Rivalry"],["recap","Recap"],["chat","Chat"],["alerts","Alerts"],["leagimport","Import"]].map(function(st){
             var active=leagueSubTab===st[0];
             return React.createElement("button",{key:st[0],onClick:function(){
               setLeagueSubTab(st[0]);
@@ -3525,6 +3534,77 @@ export default function App(){
             )
           );
         })
+      ),
+
+      // PICK POWER RANKINGS
+      leagueSubTab==="pickpower"&&React.createElement("div",{style:{padding:"16px"}},
+        React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:16,padding:16,marginBottom:16}},
+          React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10,marginBottom:4}},
+            React.createElement("span",{style:{fontSize:22,color:T.gold}},"🏆"),
+            React.createElement("div",null,
+              React.createElement("div",{style:{fontWeight:900,fontSize:22}},"Pick Power Rankings"),
+              React.createElement("div",{style:{fontSize:12,color:T.textSub,marginTop:2}},"Dynasty value = player value + estimated pick value")
+            )
+          ),
+          React.createElement("div",{style:{display:"flex",gap:16,marginTop:12,fontSize:11}},
+            React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6}},React.createElement("div",{style:{width:10,height:10,borderRadius:2,background:T.purple,flexShrink:0}}),React.createElement("span",{style:{color:T.textSub}},"Players")),
+            React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6}},React.createElement("div",{style:{width:10,height:10,borderRadius:2,background:T.gold,flexShrink:0}}),React.createElement("span",{style:{color:T.textSub}},"Picks"))
+          )
+        ),
+        !powerRankingTeams&&React.createElement("div",{style:{background:T.bgInput,border:"1px solid "+T.border,borderRadius:12,padding:"14px 16px",textAlign:"center"}},
+          React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:8}},"Import your Sleeper league to see pick-adjusted power rankings"),
+          React.createElement("button",{onClick:function(){setLeagueSubTab("leagimport");},style:{padding:"8px 20px",borderRadius:10,border:"none",background:T.purple,color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer"}},"Import League")
+        ),
+        powerRankingTeams&&(function(){
+          // Sort by totalVal + pickValue (combined dynasty value)
+          var ranked=powerRankingTeams.slice().map(function(team){
+            var pv=team.pickValue||0;
+            return Object.assign({},team,{combinedVal:(team.totalVal||0)+pv,pickValue:pv});
+          }).sort(function(a,b){return b.combinedVal-a.combinedVal;});
+          var maxCombined=ranked[0]?ranked[0].combinedVal:1;
+          return ranked.map(function(team,i){
+            var ords=["1st","2nd","3rd","4th","5th","6th","7th","8th","9th","10th","11th","12th"];
+            var ord=ords[i]||(i+1)+"th";
+            var badgeBg=i===0?"#f59e0b":i===1?"#9ca3af":i===2?"#b45309":T.bgInput;
+            var badgeText=i<3?"#000":T.textSub;
+            var playerPct=Math.round((team.totalVal||0)/Math.max(1,maxCombined)*100);
+            var pickPct=Math.round((team.pickValue||0)/Math.max(1,maxCombined)*100);
+            // Round breakdown
+            var byRound={};
+            (team.pickDetails||[]).forEach(function(pk){var k=pk.round+"rd";byRound[k]=(byRound[k]||0)+1;});
+            var roundSummary=Object.keys(byRound).sort().map(function(k){return byRound[k]+"×"+k;}).join(" · ");
+            return React.createElement("div",{key:team.name+i,style:{background:T.bgCard,border:"1px solid "+(i===0?T.borderPurple:T.border),borderRadius:14,padding:16,marginBottom:10}},
+              React.createElement("div",{style:{display:"flex",alignItems:"flex-start",gap:12,marginBottom:10}},
+                React.createElement("div",{style:{background:badgeBg,borderRadius:20,padding:"5px 12px",display:"inline-flex",alignItems:"center",gap:4,flexShrink:0}},
+                  React.createElement("span",{style:{fontSize:12}},"🏆"),
+                  React.createElement("span",{style:{fontWeight:900,fontSize:13,color:badgeText}},ord)
+                ),
+                React.createElement("div",{style:{flex:1}},
+                  React.createElement("div",{style:{fontWeight:800,fontSize:15,marginBottom:2}},team.name),
+                  team.owner&&React.createElement("div",{style:{fontSize:11,color:T.textSub,marginBottom:4}},team.owner),
+                  React.createElement("div",{style:{display:"flex",gap:12,fontSize:11}},
+                    React.createElement("span",{style:{color:T.purpleLight,fontWeight:700}},"Players: "+(team.totalVal||0).toLocaleString()),
+                    React.createElement("span",{style:{color:T.gold,fontWeight:700}},"Picks: "+(team.pickValue||0).toLocaleString())
+                  )
+                ),
+                React.createElement("div",{style:{textAlign:"right",flexShrink:0}},
+                  React.createElement("div",{style:{fontWeight:900,fontSize:18,color:T.text}},team.combinedVal.toLocaleString()),
+                  React.createElement("div",{style:{fontSize:9,color:T.textDim,letterSpacing:1}},("TOTAL VALUE"))
+                )
+              ),
+              React.createElement("div",{style:{marginBottom:8}},
+                React.createElement("div",{style:{height:8,borderRadius:99,background:T.border,overflow:"hidden",display:"flex"}},
+                  React.createElement("div",{style:{width:playerPct+"%",height:"100%",background:T.purple,borderRadius:"99px 0 0 99px",transition:"width 0.3s"}}),
+                  React.createElement("div",{style:{width:pickPct+"%",height:"100%",background:T.gold,borderRadius:pickPct>0&&playerPct===0?"99px":"0 99px 99px 0",transition:"width 0.3s"}})
+                )
+              ),
+              team.picks>0&&React.createElement("div",{style:{display:"flex",justifyContent:"space-between",fontSize:11,color:T.textSub}},
+                React.createElement("span",null,team.picks+" picks · "+roundSummary),
+                React.createElement("span",{style:{color:T.textDim}},(Math.round((team.pickValue||0)/(team.combinedVal||1)*100))+"%pick")
+              )
+            );
+          });
+        })()
       ),
 
       // PLAYOFF ODDS
