@@ -329,7 +329,7 @@ const PLAYERS=[
   {name:"James Cook",pos:"RB",age:25,team:"BUF",proj:{PPR:260,Half:240,Standard:220},adp:9.0,ktcVal:6115,note:"900 rush 72 rec 11 TD"},
   {name:"Rhamondre Stevenson",pos:"RB",age:27,team:"NE",proj:{PPR:238,Half:218,Standard:198},adp:11.2,ktcVal:3074,note:"1,050 rush 38 rec 7 TD"},
   {name:"Travis Etienne Jr.",pos:"RB",age:27,team:"NO",proj:{PPR:235,Half:215,Standard:195},adp:11.8,ktcVal:4563,note:"1,000 rush 45 rec"},
-  {name:"Isiah Pacheco",pos:"RB",age:26,team:"DET",proj:{PPR:228,Half:209,Standard:190},adp:12.9,ktcVal:2079,note:"950 rush 8 TD"},
+  {name:"Isiah Pacheco",pos:"RB",age:26,team:"DET",proj:{PPR:228,Half:209,Standard:190},adp:12.9,ktcVal:3800,note:"DET RB1: 950 rush 8 TD"},
   {name:"Joe Mixon",pos:"RB",age:30,team:"HOU",proj:{PPR:222,Half:204,Standard:186},adp:13.5,ktcVal:1532,note:"1,000 rush 8 TD"},
   {name:"David Montgomery",pos:"RB",age:29,team:"HOU",proj:{PPR:215,Half:198,Standard:181},adp:14.2,ktcVal:3488,note:"1,050 rush 9 TD tandem"},
   {name:"Tony Pollard",pos:"RB",age:28,team:"TEN",proj:{PPR:210,Half:193,Standard:176},adp:14.8,ktcVal:2700,note:"800 rush 50 rec 7 TD"},
@@ -342,7 +342,7 @@ const PLAYERS=[
   {name:"Zonovan Knight",pos:"RB",age:25,team:"ARI",proj:{PPR:165,Half:151,Standard:137},adp:21.8,ktcVal:1500,note:"700 rush starter"},
   {name:"Blake Corum",pos:"RB",age:24,team:"LAR",proj:{PPR:158,Half:144,Standard:130},adp:23.1,ktcVal:3401,note:"650 rush 5 TD"},
   {name:"Kimani Vidal",pos:"RB",age:24,team:"LAC",proj:{PPR:152,Half:139,Standard:126},adp:23.8,ktcVal:1800,note:"600 rush 40 rec"},
-  {name:"Braelon Allen",pos:"RB",age:22,team:"NYJ",proj:{PPR:172,Half:158,Standard:144},adp:20.8,ktcVal:2780,note:"Year 2: 700 rush 55 rec lead back potential"},
+  {name:"Braelon Allen",pos:"RB",age:22,team:"NYJ",proj:{PPR:172,Half:158,Standard:144},adp:20.8,ktcVal:3500,note:"Year 2: 700 rush 55 rec lead back potential"},
   {name:"Keaton Mitchell",pos:"RB",age:24,team:"LAC",proj:{PPR:142,Half:130,Standard:118},adp:25.5,ktcVal:2200,note:"600 rush explosive"},
   {name:"MarShawn Lloyd",pos:"RB",age:24,team:"GB",proj:{PPR:138,Half:126,Standard:114},adp:26.2,ktcVal:2000,note:"500 rush backup"},
   {name:"Will Shipley",pos:"RB",age:23,team:"PHI",proj:{PPR:132,Half:121,Standard:110},adp:27.8,ktcVal:2000,note:"400 rush 55 rec"},
@@ -809,7 +809,7 @@ const PLAYERS=[
   {name:"RJ Harvey",pos:"RB",age:23,team:"DEN",proj:{PPR:162,Half:148,Standard:134},adp:21.8,ktcVal:4112,note:"2026 Year 2: 680 rush 48 rec"},
   {name:"Tahj Brooks",pos:"RB",age:24,team:"CIN",proj:{PPR:148,Half:135,Standard:122},adp:24.8,ktcVal:1800,note:"2026 Year 2: 620 rush 5 TD"},
   {name:"Dylan Sampson",pos:"RB",age:23,team:"CLE",proj:{PPR:155,Half:142,Standard:129},adp:23.2,ktcVal:2705,note:"2026 Year 2: 650 rush 6 TD"},
-  {name:"Damien Martinez",pos:"RB",age:23,team:"MIA",proj:{PPR:145,Half:133,Standard:121},adp:25.8,ktcVal:2000,note:"2026 Year 2: 580 rush 5 TD"},
+  {name:"Damien Martinez",pos:"RB",age:23,team:"MIA",proj:{PPR:145,Half:133,Standard:121},adp:25.8,ktcVal:2500,note:"2026 Year 2: 580 rush 5 TD"},
   {name:"Emeka Egbuka",pos:"WR",age:23,team:"TB",proj:{PPR:215,Half:199,Standard:183},adp:17.5,ktcVal:5985,note:"2026 Year 2: 85 rec 970 yds 8 TD"},
   {name:"Luther Burden III",pos:"WR",age:22,team:"CHI",proj:{PPR:222,Half:205,Standard:188},adp:16.8,ktcVal:5436,note:"2026 Year 2 with Williams: 88 rec 980 yds 8 TD"},
   {name:"Jayden Higgins",pos:"WR",age:23,team:"HOU",proj:{PPR:218,Half:202,Standard:186},adp:17.5,ktcVal:3678,note:"2026 Year 2 with Stroud: 85 rec 960 yds 8 TD"},
@@ -980,7 +980,7 @@ const PLAYERS=[
   {name:"Mike Gesicki",pos:"TE",age:30,team:"CIN",proj:{PPR:115,Half:105,Standard:95},adp:24.5,ktcVal:600,note:"Receiving TE: 46 rec 490 yds 4 TD"},
   // Wave 10 — 2025 NFL Draft rookies: skill + IDP
   // 2025 RB Rookies
-  {name:"Trevor Etienne",pos:"RB",age:22,team:"CAR",proj:{PPR:182,Half:167,Standard:152},adp:15.0,ktcVal:2200,note:"2025 draft: pass-catching 800 rush 55 rec"},
+  {name:"Trevor Etienne",pos:"RB",age:22,team:"CAR",proj:{PPR:182,Half:167,Standard:152},adp:15.0,ktcVal:3800,note:"CAR feature back: 800 rush 55 rec age 22"},
   {name:"Nicholas Singleton",pos:"RB",age:22,team:"PHI",proj:{PPR:168,Half:154,Standard:140},adp:18.5,ktcVal:2500,note:"Power speed combo: 700 rush depth"},
   {name:"Ollie Gordon II",pos:"RB",age:22,team:"MIA",proj:{PPR:175,Half:161,Standard:147},adp:17.0,ktcVal:3238,note:"Big back: 800 rush 40 rec"},
   // 2025 QB Rookies
@@ -1087,7 +1087,7 @@ const PLAYERS=[
   {name:"KeAndre Lambert-Smith",pos:"WR",age:24,team:"PHI",proj:{PPR:158,Half:145,Standard:132},adp:25.0,ktcVal:2800,note:"PHI WR: 58 rec 720 yds 5 TD speed"},
   // Wave 27 — additional missing players
   {name:"Nathan Carter",pos:"RB",age:23,team:"LV",proj:{PPR:165,Half:151,Standard:137},adp:22.5,ktcVal:2600,note:"LV RB: speed back 800 rush 50 rec 5 TD"},
-  {name:"Sione Vaki",pos:"RB",age:23,team:"ATL",proj:{PPR:148,Half:135,Standard:122},adp:27.0,ktcVal:2200,note:"ATL RB: versatile 600 rush 55 rec 4 TD"},
+  {name:"Sione Vaki",pos:"RB",age:23,team:"ATL",proj:{PPR:148,Half:135,Standard:122},adp:27.0,ktcVal:2800,note:"ATL RB: versatile 600 rush 55 rec 4 TD"},
   {name:"Chris Brooks",pos:"RB",age:27,team:"GB",proj:{PPR:132,Half:121,Standard:110},adp:32.0,ktcVal:1000,note:"GB RB: committee 550 rush 40 rec 4 TD"},
   {name:"Malik Davis",pos:"RB",age:26,team:"DAL",proj:{PPR:118,Half:108,Standard:98},adp:36.0,ktcVal:800,note:"DAL RB: depth 450 rush 35 rec 3 TD"},
   {name:"Frank Gore",pos:"RB",age:24,team:"BUF",proj:{PPR:138,Half:126,Standard:114},adp:29.5,ktcVal:1600,note:"BUF RB: powerful runner 650 rush 40 rec"},
@@ -1568,7 +1568,7 @@ const PLAYERS=[
   {name:"Connor Heyward",pos:"TE",age:32,team:"PIT",proj:{PPR:88,Half:81,Standard:74},adp:38.0,ktcVal:300,note:"Utility: 35 rec 350 yds"},
   {name:"Irv Smith Jr.",pos:"TE",age:28,team:"CIN",proj:{PPR:98,Half:90,Standard:82},adp:32.5,ktcVal:600,note:"Backup: 40 rec 410 yds"},
   {name:"Tyler Kroft",pos:"TE",age:32,team:"FA",proj:{PPR:68,Half:62,Standard:56},adp:50.0,ktcVal:150,note:"Veteran blocker/depth"},
-  {name:"Evan Hull",pos:"RB",age:25,team:"IND",proj:{PPR:118,Half:108,Standard:98},adp:32.0,ktcVal:700,note:"Pass-catching back"},
+  {name:"Evan Hull",pos:"RB",age:25,team:"IND",proj:{PPR:118,Half:108,Standard:98},adp:32.0,ktcVal:1500,note:"Pass-catching back"},
   {name:"Drew Sample",pos:"TE",age:29,team:"CIN",proj:{PPR:68,Half:62,Standard:56},adp:49.5,ktcVal:400,note:"Blocking/depth"},
   {name:"Anthony Firkser",pos:"TE",age:29,team:"TEN",proj:{PPR:75,Half:69,Standard:63},adp:45.5,ktcVal:400,note:"Depth receiving TE"},
   {name:"Albert Okwuosa",pos:"WR",age:26,team:"NYJ",proj:{PPR:92,Half:84,Standard:76},adp:44.0,ktcVal:300,note:"Developmental receiver"},
