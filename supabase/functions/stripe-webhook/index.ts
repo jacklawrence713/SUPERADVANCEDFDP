@@ -33,32 +33,40 @@ Deno.serve(async (req) => {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.CheckoutSession;
-        const userId = session.metadata?.supabase_user_id;
         const plan = session.metadata?.plan || "pro";
+        // Try metadata first (Checkout Sessions), fall back to email (Payment Links)
+        let userId = session.metadata?.supabase_user_id;
+        if (!userId) {
+          const email = session.customer_details?.email || session.customer_email;
+          if (email) {
+            const { data: profile } = await supabase
+              .from("users")
+              .select("id")
+              .eq("email", email)
+              .single();
+            userId = profile?.id;
+          }
+        }
         if (userId) {
           await supabase.from("users").update({
             plan,
             is_pro: true,
+            stripe_customer_id: session.customer as string,
             stripe_subscription_id: session.subscription as string,
             subscription_status: "active",
             updated_at: new Date().toISOString(),
           }).eq("id", userId);
-          // Send welcome email
-          await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-email`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-            },
-            body: JSON.stringify({ type: "welcome_pro", userId, plan }),
-          });
         }
         break;
       }
 
       case "customer.subscription.updated": {
         const sub = event.data.object as Stripe.Subscription;
-        const userId = sub.metadata?.supabase_user_id;
+        let userId = sub.metadata?.supabase_user_id;
+        if (!userId) {
+          const { data: profile } = await supabase.from("users").select("id").eq("stripe_customer_id", sub.customer as string).single();
+          userId = profile?.id;
+        }
         if (userId) {
           const isActive = sub.status === "active" || sub.status === "trialing";
           await supabase.from("users").update({
@@ -72,7 +80,11 @@ Deno.serve(async (req) => {
 
       case "customer.subscription.deleted": {
         const sub = event.data.object as Stripe.Subscription;
-        const userId = sub.metadata?.supabase_user_id;
+        let userId = sub.metadata?.supabase_user_id;
+        if (!userId) {
+          const { data: profile } = await supabase.from("users").select("id").eq("stripe_customer_id", sub.customer as string).single();
+          userId = profile?.id;
+        }
         if (userId) {
           await supabase.from("users").update({
             plan: "free",
