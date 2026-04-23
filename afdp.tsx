@@ -2229,12 +2229,11 @@ export default function App(){
     });
     return function(){subscription.unsubscribe();};
   },[]);// eslint-disable-line react-hooks/exhaustive-deps
-  // Checkout success detection — auto-poll DB when redirected back from Stripe
+  // Checkout success detection — handle redirect back from Stripe if configured
   useEffect(function(){
     var p=new URLSearchParams(window.location.search);
     if(p.get("checkout")==="success"){
       window.history.replaceState({},"",window.location.pathname+window.location.hash);
-      setShowPostPayment(true);
       setTimeout(function(){checkSubscriptionAfterPayment();},1500);
     }
   },[]);// eslint-disable-line react-hooks/exhaustive-deps
@@ -2333,7 +2332,19 @@ export default function App(){
     if(!user){setAuthMode("signup");setShowAuth(true);return;}
     setCheckoutLoading(true);setCheckoutErr("");
     var link=STRIPE_LINKS[plan+"_"+billing]||STRIPE_LINKS[plan+"_monthly"]||"";
-    if(link){window.location.href=link;return;}
+    if(link){
+      window.open(link,"_blank");
+      setCheckoutLoading(false);
+      // When user comes back to this tab after paying, auto-check subscription
+      var onFocus=function(){
+        window.removeEventListener("focus",onFocus);
+        checkSubscriptionAfterPayment();
+      };
+      window.addEventListener("focus",onFocus);
+      // Clean up listener after 30 min in case they never come back
+      setTimeout(function(){window.removeEventListener("focus",onFocus);},1800000);
+      return;
+    }
     setCheckoutErr("Checkout unavailable — please contact support.");
     setCheckoutLoading(false);
   }
