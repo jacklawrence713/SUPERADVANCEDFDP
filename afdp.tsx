@@ -2302,7 +2302,7 @@ export default function App(){
     pro_monthly:"https://buy.stripe.com/14A3cv8pu7Px7vdbeq3VC00",
     pro_yearly:"https://buy.stripe.com/fZubJ149efhZeXF0zM3VC01",
     elite_monthly:"https://buy.stripe.com/9B66oH35a6Lt8zhaam3VC02",
-    elite_yearly:"",
+    elite_yearly:"https://buy.stripe.com/cNi8wP8pu0n56r92HU3VC03",
   };
   async function handleCheckout(plan:string,billing:string){
     if(!user){setAuthMode("signup");setShowAuth(true);return;}
