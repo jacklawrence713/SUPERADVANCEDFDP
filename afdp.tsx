@@ -2301,7 +2301,7 @@ export default function App(){
   var STRIPE_LINKS:Record<string,string>={
     pro_monthly:"https://buy.stripe.com/14A3cv8pu7Px7vdbeq3VC00",
     pro_yearly:"https://buy.stripe.com/fZubJ149efhZeXF0zM3VC01",
-    elite_monthly:"",
+    elite_monthly:"https://buy.stripe.com/9B66oH35a6Lt8zhaam3VC02",
     elite_yearly:"",
   };
   async function handleCheckout(plan:string,billing:string){
