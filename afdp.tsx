@@ -2265,6 +2265,8 @@ export default function App(){
   var [impStatus,setImpStatus]=useState(null);
   var [impData,setImpData]=useState(null);
   var [impErr,setImpErr]=useState("");
+  var [checkoutLoading,setCheckoutLoading]=useState(false);
+  var [checkoutErr,setCheckoutErr]=useState("");
   var [impRoster,setImpRoster]=useState([]);
   var [manRaw,setManRaw]=useState("");
   var [manMatched,setManMatched]=useState([]);
@@ -2298,11 +2300,19 @@ export default function App(){
   function saveAndSetUser(u){try{if(u)localStorage.setItem('fdp_user_v1',JSON.stringify(u));else localStorage.removeItem('fdp_user_v1');if(u?.isPro){localStorage.removeItem('fdp_tc_v2');}}catch(e){}setUser(u);setTrackedUser(u?.email||"");if(u?.isPro)setTradeCount(0);}
   async function handleCheckout(plan:string,billing:string){
     if(!user){setAuthMode("signup");setShowAuth(true);return;}
+    setCheckoutLoading(true);setCheckoutErr("");
     try{
-      var result=await callEdgeFn("create-checkout",{plan,billing,successUrl:window.location.origin+window.location.pathname+"?checkout=success"+window.location.hash,cancelUrl:window.location.href},user.token);
-      if(result.url)window.location.href=result.url;
-      else setImpErr("Checkout unavailable — please try again or contact support.");
-    }catch(e){setImpErr("Checkout unavailable — please try again or contact support.");}
+      // Refresh session to ensure token is valid
+      var token=user.token;
+      if(authClient){
+        var {data:sess}=await authClient.auth.getSession();
+        if(sess?.session?.access_token)token=sess.session.access_token;
+      }
+      var result=await callEdgeFn("create-checkout",{plan,billing,successUrl:window.location.origin+window.location.pathname+"?checkout=success"+window.location.hash,cancelUrl:window.location.href},token);
+      if(result.url){window.location.href=result.url;}
+      else{setCheckoutErr(result.error||"Checkout unavailable — please try again or contact support.");}
+    }catch(e:any){setCheckoutErr(e?.message||"Checkout unavailable — please try again or contact support.");}
+    finally{setCheckoutLoading(false);}
   }
   var [showAuth,setShowAuth]=useState(false);
   var [authMode,setAuthMode]=useState("signup");
@@ -3430,7 +3440,8 @@ export default function App(){
           React.createElement("div",{style:{position:"absolute",top:0,right:0,background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",borderBottomLeftRadius:12,padding:"4px 14px",fontSize:10,fontWeight:800,color:"#fff"}},"MOST POPULAR"),
           React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16,marginTop:6}},React.createElement("div",null,React.createElement("div",{style:{fontWeight:900,fontSize:18,color:T.purple,marginBottom:2}},"Pro"),React.createElement("div",{style:{fontSize:12,color:T.textSub}},"7-day free trial")),React.createElement("div",{style:{textAlign:"right"}},React.createElement("div",{style:{fontWeight:900,fontSize:28}},"$2.99",React.createElement("span",{style:{fontSize:14,fontWeight:400,color:T.textSub}},"/mo")),React.createElement("div",{style:{fontSize:10,color:T.textDim}},"cancel anytime"))),
           ["Everything in Free","Full rankings - 200+ players","Live Sleeper league import","ESPN Yahoo MFL import","AI trade suggestions + analysis","Roster grades + team strategy","Power rankings + playoff odds","Market alerts - buy low sell high"].map(function(f){return React.createElement("div",{key:f,style:{display:"flex",alignItems:"flex-start",gap:10,marginBottom:7}},React.createElement("span",{style:{color:T.purple,fontSize:14,flexShrink:0,marginTop:1}},"v"),React.createElement("span",{style:{fontSize:13,color:"#fff",lineHeight:1.4}},f));}),
-          React.createElement("button",{onClick:function(){user?handleCheckout("pro","monthly"):(setAuthMode("signup"),setShowAuth(true));},style:{width:"100%",marginTop:16,padding:"14px",borderRadius:12,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",cursor:"pointer",fontWeight:800,fontSize:14}},user?"Upgrade to Pro →":"Start 7-Day Free Trial"),
+          React.createElement("button",{disabled:checkoutLoading,onClick:function(){user?handleCheckout("pro","monthly"):(setAuthMode("signup"),setShowAuth(true));},style:{width:"100%",marginTop:16,padding:"14px",borderRadius:12,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",cursor:checkoutLoading?"wait":"pointer",fontWeight:800,fontSize:14,opacity:checkoutLoading?0.7:1}},checkoutLoading?"Processing...":user?"Upgrade to Pro →":"Start 7-Day Free Trial"),
+          checkoutErr&&React.createElement("div",{style:{marginTop:8,padding:"8px 12px",background:"#ff000020",border:"1px solid #ff000044",borderRadius:8,fontSize:12,color:"#ff6b6b",textAlign:"center"}},checkoutErr),
           React.createElement("div",{style:{textAlign:"center",marginTop:8,fontSize:11,color:T.textDim}},"No credit card required - Cancel anytime")
         ),
         React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:20,padding:20,marginBottom:16}},
@@ -5966,7 +5977,7 @@ export default function App(){
               React.createElement("span",{style:{color:"#22c55e",fontWeight:700,fontSize:16}},"\u2713"),f
             );
           }),
-          isPro?React.createElement("button",{disabled:true,style:{width:"100%",marginTop:16,padding:"14px",borderRadius:12,border:"none",background:"#f9731699",color:"#fff",fontWeight:800,fontSize:15,cursor:"default"}},"✓ Current Plan"):React.createElement("button",{onClick:function(){handleCheckout("pro",billingPeriod);},style:{width:"100%",marginTop:16,padding:"14px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#f97316,#ea580c)",color:"#fff",fontWeight:800,fontSize:15,cursor:"pointer"}},"Start 7-Day Free Trial →")
+          isPro?React.createElement("button",{disabled:true,style:{width:"100%",marginTop:16,padding:"14px",borderRadius:12,border:"none",background:"#f9731699",color:"#fff",fontWeight:800,fontSize:15,cursor:"default"}},"✓ Current Plan"):React.createElement(React.Fragment,null,React.createElement("button",{disabled:checkoutLoading,onClick:function(){handleCheckout("pro",billingPeriod);},style:{width:"100%",marginTop:16,padding:"14px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#f97316,#ea580c)",color:"#fff",fontWeight:800,fontSize:15,cursor:checkoutLoading?"wait":"pointer",opacity:checkoutLoading?0.7:1}},checkoutLoading?"Processing...":"Start 7-Day Free Trial →"),checkoutErr&&React.createElement("div",{style:{marginTop:8,padding:"8px 12px",background:"#ff000020",border:"1px solid #ff000044",borderRadius:8,fontSize:12,color:"#ff6b6b",textAlign:"center"}},checkoutErr))
         ),
         // Elite plan card
         React.createElement("div",{style:{background:T.bgCard,border:"2px solid "+T.borderPurple,borderRadius:14,padding:"20px",marginBottom:24,position:"relative",overflow:"hidden"}},
