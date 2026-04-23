@@ -2300,7 +2300,7 @@ export default function App(){
   function saveAndSetUser(u){try{if(u)localStorage.setItem('fdp_user_v1',JSON.stringify(u));else localStorage.removeItem('fdp_user_v1');if(u?.isPro){localStorage.removeItem('fdp_tc_v2');}}catch(e){}setUser(u);setTrackedUser(u?.email||"");if(u?.isPro)setTradeCount(0);}
   var STRIPE_LINKS:Record<string,string>={
     pro_monthly:"https://buy.stripe.com/14A3cv8pu7Px7vdbeq3VC00",
-    pro_yearly:"https://buy.stripe.com/14A3cv8pu7Px7vdbeq3VC00",
+    pro_yearly:"https://buy.stripe.com/fZubJ149efhZeXF0zM3VC01",
     elite_monthly:"",
     elite_yearly:"",
   };
