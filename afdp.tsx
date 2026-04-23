@@ -3411,11 +3411,11 @@ export default function App(){
           );
         })()
       ),
-      !user&&React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:28,padding:"0 4px"}},
+      !isPro&&React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:28,padding:"0 4px"}},
         [["1,000+","PLAYERS RANKED"],["4","LEAGUE PLATFORMS"],["6","SCORING COMBOS"],["Daily","VALUE UPDATES"]].map(function(s){return React.createElement("div",{key:s[0],style:{textAlign:"center"}},React.createElement("div",{style:{fontWeight:900,fontSize:26,color:T.purple}},s[0]),React.createElement("div",{style:{fontSize:10,color:T.textSub,letterSpacing:1.5,fontWeight:600}},s[1]));})
       ),
       // Pricing
-      !user&&React.createElement("div",{style:{marginBottom:32}},
+      !isPro&&React.createElement("div",{style:{marginBottom:32}},
         React.createElement("div",{style:{textAlign:"center",marginBottom:20}},
           React.createElement("div",{style:{display:"inline-flex",alignItems:"center",gap:6,background:T.purpleDim,border:"1px solid "+T.purple+"44",borderRadius:20,padding:"5px 14px",fontSize:10,color:T.purpleLight,fontWeight:700,letterSpacing:1,marginBottom:12}},"PRICING"),
           React.createElement("div",{style:{fontWeight:900,fontSize:26,lineHeight:1.2,marginBottom:6}},"Simple, ",React.createElement("span",{style:{color:T.purple}},"Transparent")," Pricing"),
@@ -3447,7 +3447,7 @@ export default function App(){
         )
       ),
       // FAQ
-      !user&&React.createElement("div",{style:{marginBottom:24}},
+      !isPro&&React.createElement("div",{style:{marginBottom:24}},
         React.createElement("div",{style:{textAlign:"center",marginBottom:16}},React.createElement("div",{style:{fontWeight:900,fontSize:22,marginBottom:4}},"Frequently Asked Questions"),React.createElement("div",{style:{fontSize:12,color:T.textSub}},"Everything you need to know")),
         FAQS.map(function(f,i){
           var open=faqOpen===i;
