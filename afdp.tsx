@@ -1775,7 +1775,7 @@ function Chip(props){
   return React.createElement("button",{onClick:props.onClick,style:{padding:"8px 14px",minHeight:36,borderRadius:8,border:"1px solid "+(props.active?(props.color||"#7c4dff"):"#2e2a4a"),background:props.active?(props.color||"#7c4dff"):"transparent",color:props.active?"#fff":"#9b96b8",fontWeight:700,fontSize:12,cursor:"pointer",WebkitTapHighlightColor:"transparent"}},props.label);
 }
 
-var PLANS=[{id:"free",label:"Free",priceStr:"$0",sub:"forever"},{id:"pro",label:"Pro",priceStr:"$2.99",sub:"/mo"},{id:"elite",label:"Elite",priceStr:"$6.99",sub:"/mo"}];
+var PLANS=[{id:"free",label:"Free",priceStr:"$0",sub:"forever"},{id:"pro",label:"Pro",priceStr:"$2.99",sub:"/mo"},{id:"elite",label:"Elite",priceStr:"$9.99",sub:"/mo"}];
 var COMPARE_ROWS=[["Trade Analyzer",true,true,true],["FAAB + Draft Picks",true,true,true],["IDP Rankings",true,true,true],["Top 20 Rankings",true,true,true],["Full 200+ Rankings",false,true,true],["League Import",false,true,true],["AI Trade Suggestions",false,true,true],["Market Alerts",false,true,true],["Roster Grades",false,true,true],["Power Rankings",false,true,true],["API Access",false,false,true],["Priority Support",false,false,true],["CSV Export",false,false,true]];
 var FAQS=[{q:"What makes Fantasy Draft Pros the best dynasty trade analyzer?",a:"We combine 1,000+ player values updated daily across all positions including IDP, with FAAB budget tracking, draft pick values, and support for every major scoring format."},{q:"Is the dynasty trade calculator free?",a:"Yes! The core trade analyzer with 2026 player values is completely free — no account required. Pro features (unlimited trades, league import, full rankings) include a 7-day free trial."},{q:"Does it support IDP dynasty leagues?",a:"Absolutely. We rank DL, LB, and DB with full VBD scoring, age grades, and trade values."},{q:"Does Fantasy Draft Pros have superflex rankings?",a:"Yes — Superflex mode boosts QB values appropriately for SF leagues."},{q:"How often are player values updated?",a:"Player values are updated daily based on the latest news, injury reports, and 2026 projection data."},{q:"What league platforms are supported?",a:"Sleeper (live API), ESPN, Yahoo, and MFL — plus manual roster entry."}];
 
@@ -1850,7 +1850,7 @@ function AuthModal(props){
             React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}},React.createElement("div",{style:{fontWeight:800,fontSize:15,color:active?T.purple:T.text}},p.label),React.createElement("div",{style:{fontWeight:900,fontSize:16,color:active?T.purple:T.textSub}},p.priceStr+(p.id==="free"?"":p.sub))),
             p.id==="free"&&React.createElement("div",{style:{fontSize:12,color:T.textSub}},"Core trade analyzer + top 20 rankings"),
             p.id==="pro"&&React.createElement("div",null,React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:4}},"Full rankings, league import, AI tools"),React.createElement("span",{style:{background:T.purple,color:"#fff",fontSize:9,fontWeight:800,borderRadius:4,padding:"2px 7px"}},"MOST POPULAR")),
-            p.id==="elite"&&React.createElement("div",{style:{fontSize:12,color:T.textSub}},"Everything in Pro + API access + priority support")
+            p.id==="elite"&&React.createElement("div",{style:{fontSize:12,color:T.textSub}},"Everything in Pro + Vegas lines + priority support")
           );
         }),
         err&&React.createElement("div",{style:{fontSize:12,color:T.red,marginBottom:10,padding:"8px 12px",background:T.red+"15",borderRadius:8}},err),
@@ -3434,8 +3434,8 @@ export default function App(){
           React.createElement("div",{style:{textAlign:"center",marginTop:8,fontSize:11,color:T.textDim}},"No credit card required - Cancel anytime")
         ),
         React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:20,padding:20,marginBottom:16}},
-          React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}},React.createElement("div",null,React.createElement("div",{style:{fontWeight:900,fontSize:18,color:T.purpleLight,marginBottom:2}},"Elite"),React.createElement("div",{style:{fontSize:12,color:T.textSub}},"For serious dynasty managers")),React.createElement("div",{style:{textAlign:"right"}},React.createElement("div",{style:{fontWeight:900,fontSize:28}},"$6.99",React.createElement("span",{style:{fontSize:14,fontWeight:400,color:T.textSub}},"/mo")),React.createElement("div",{style:{fontSize:10,color:T.textDim}},"cancel anytime"))),
-          ["Everything in Pro","API access","Priority support - 24hr response","Early access to new features","Custom scoring formula builder","Export rankings to CSV"].map(function(f){return React.createElement("div",{key:f,style:{display:"flex",alignItems:"flex-start",gap:10,marginBottom:7}},React.createElement("span",{style:{color:T.purpleLight,fontSize:14,flexShrink:0,marginTop:1}},"v"),React.createElement("span",{style:{fontSize:13,color:T.textSub}},f));}),
+          React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}},React.createElement("div",null,React.createElement("div",{style:{fontWeight:900,fontSize:18,color:T.purpleLight,marginBottom:2}},"Elite"),React.createElement("div",{style:{fontSize:12,color:T.textSub}},"For serious dynasty managers")),React.createElement("div",{style:{textAlign:"right"}},React.createElement("div",{style:{fontWeight:900,fontSize:28}},"$9.99",React.createElement("span",{style:{fontSize:14,fontWeight:400,color:T.textSub}},"/mo")),React.createElement("div",{style:{fontSize:11,color:T.green,fontWeight:700}},"$99.99/yr — save 17%"))),
+          ["Everything in Pro","Vegas lines & game totals","Priority support - 24hr response","Early access to new features","Custom scoring formula builder","Export rankings to CSV"].map(function(f){return React.createElement("div",{key:f,style:{display:"flex",alignItems:"flex-start",gap:10,marginBottom:7}},React.createElement("span",{style:{color:T.purpleLight,fontSize:14,flexShrink:0,marginTop:1}},"v"),React.createElement("span",{style:{fontSize:13,color:T.textSub}},f));}),
           React.createElement("button",{onClick:function(){user?handleCheckout("elite","monthly"):(setAuthMode("signup"),setShowAuth(true));},style:{width:"100%",marginTop:14,padding:"13px",borderRadius:12,border:"1px solid "+T.borderPurple,background:"transparent",color:T.purpleLight,cursor:"pointer",fontWeight:700,fontSize:13}},user?"Upgrade to Elite →":"Start 7-Day Free Trial")
         ),
         React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,overflow:"hidden"}},
@@ -5967,6 +5967,24 @@ export default function App(){
             );
           }),
           isPro?React.createElement("button",{disabled:true,style:{width:"100%",marginTop:16,padding:"14px",borderRadius:12,border:"none",background:"#f9731699",color:"#fff",fontWeight:800,fontSize:15,cursor:"default"}},"✓ Current Plan"):React.createElement("button",{onClick:function(){handleCheckout("pro",billingPeriod);},style:{width:"100%",marginTop:16,padding:"14px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#f97316,#ea580c)",color:"#fff",fontWeight:800,fontSize:15,cursor:"pointer"}},"Start 7-Day Free Trial →")
+        ),
+        // Elite plan card
+        React.createElement("div",{style:{background:T.bgCard,border:"2px solid "+T.borderPurple,borderRadius:14,padding:"20px",marginBottom:24,position:"relative",overflow:"hidden"}},
+          React.createElement("div",{style:{position:"absolute",top:0,right:0,background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",fontWeight:800,fontSize:11,padding:"6px 14px",borderRadius:"0 14px 0 14px"}},"ELITE"),
+          React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:8}},
+            React.createElement("div",{style:{fontWeight:800,fontSize:20,color:T.purpleLight}},"Elite"),
+            React.createElement("span",{style:{background:T.purpleDim,color:T.purpleLight,fontWeight:800,fontSize:11,padding:"4px 10px",borderRadius:20}},"⚡ ELITE")
+          ),
+          React.createElement("div",{style:{fontWeight:900,fontSize:32,color:T.text,marginBottom:2}},"$9.99",React.createElement("span",{style:{fontSize:14,fontWeight:400,color:T.textSub}},"/month")),
+          React.createElement("div",{style:{marginBottom:16}},
+            React.createElement("span",{style:{fontSize:13,color:T.green,fontWeight:700}},"or $99.99/year — save 17%")
+          ),
+          ["Everything in Pro","Vegas lines & game totals","Priority support — 24hr response","Early access to new features","Custom scoring formula builder","Export rankings to CSV"].map(function(f){
+            return React.createElement("div",{key:f,style:{display:"flex",alignItems:"center",gap:10,marginBottom:10,fontSize:14,color:T.text}},
+              React.createElement("span",{style:{color:T.purpleLight,fontWeight:700,fontSize:16}},"✓"),f
+            );
+          }),
+          user&&user.plan==="elite"?React.createElement("button",{disabled:true,style:{width:"100%",marginTop:16,padding:"14px",borderRadius:12,border:"none",background:T.purpleDim,color:T.purpleLight,fontWeight:800,fontSize:15,cursor:"default"}},"✓ Current Plan"):React.createElement("button",{onClick:function(){handleCheckout("elite",billingPeriod);},style:{width:"100%",marginTop:16,padding:"14px",borderRadius:12,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",fontWeight:800,fontSize:15,cursor:"pointer"}},"Upgrade to Elite →")
         ),
         // FAQ
         React.createElement("div",{style:{background:"#eef2ff",borderRadius:14,padding:"20px",marginBottom:24}},
