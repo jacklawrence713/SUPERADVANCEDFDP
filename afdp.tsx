@@ -2229,13 +2229,13 @@ export default function App(){
     });
     return function(){subscription.unsubscribe();};
   },[]);// eslint-disable-line react-hooks/exhaustive-deps
-  // Checkout success detection
+  // Checkout success detection — auto-poll DB when redirected back from Stripe
   useEffect(function(){
     var p=new URLSearchParams(window.location.search);
     if(p.get("checkout")==="success"){
       window.history.replaceState({},"",window.location.pathname+window.location.hash);
-      // Refresh user profile from DB after successful checkout, then send welcome_pro email
-      if(authClient){authClient.auth.getSession().then(async function({data:{session}}){if(!session)return;var {data:prof}=await authClient.from("users").select("*").eq("id",session.user.id).single();if(prof){saveAndSetUser(function(u){return Object.assign({},u,{plan:prof.plan,isPro:prof.is_pro,subscriptionStatus:prof.subscription_status});});try{await callEdgeFn("send-email",{type:"welcome_pro",userId:session.user.id});}catch(e){}}})}
+      setShowPostPayment(true);
+      setTimeout(function(){checkSubscriptionAfterPayment();},1500);
     }
   },[]);// eslint-disable-line react-hooks/exhaustive-deps
   var leagueTabsRef=React.useRef<HTMLDivElement>(null);
@@ -2333,7 +2333,7 @@ export default function App(){
     if(!user){setAuthMode("signup");setShowAuth(true);return;}
     setCheckoutLoading(true);setCheckoutErr("");
     var link=STRIPE_LINKS[plan+"_"+billing]||STRIPE_LINKS[plan+"_monthly"]||"";
-    if(link){window.open(link,"_blank");setShowPostPayment(true);setCheckoutLoading(false);return;}
+    if(link){window.location.href=link;return;}
     setCheckoutErr("Checkout unavailable — please contact support.");
     setCheckoutLoading(false);
   }
@@ -3464,12 +3464,6 @@ export default function App(){
           React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16,marginTop:6}},React.createElement("div",null,React.createElement("div",{style:{fontWeight:900,fontSize:18,color:T.purple,marginBottom:2}},"Pro"),React.createElement("div",{style:{fontSize:12,color:T.textSub}},"7-day free trial")),React.createElement("div",{style:{textAlign:"right"}},React.createElement("div",{style:{fontWeight:900,fontSize:28}},"$2.99",React.createElement("span",{style:{fontSize:14,fontWeight:400,color:T.textSub}},"/mo")),React.createElement("div",{style:{fontSize:10,color:T.textDim}},"cancel anytime"))),
           ["Everything in Free","Full rankings - 200+ players","Live Sleeper league import","ESPN Yahoo MFL import","AI trade suggestions + analysis","Roster grades + team strategy","Power rankings + playoff odds","Market alerts - buy low sell high"].map(function(f){return React.createElement("div",{key:f,style:{display:"flex",alignItems:"flex-start",gap:10,marginBottom:7}},React.createElement("span",{style:{color:T.purple,fontSize:14,flexShrink:0,marginTop:1}},"v"),React.createElement("span",{style:{fontSize:13,color:"#fff",lineHeight:1.4}},f));}),
           React.createElement("button",{disabled:checkoutLoading,onClick:function(){user?handleCheckout("pro","monthly"):(setAuthMode("signup"),setShowAuth(true));},style:{width:"100%",marginTop:16,padding:"14px",borderRadius:12,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",cursor:checkoutLoading?"wait":"pointer",fontWeight:800,fontSize:14,opacity:checkoutLoading?0.7:1}},checkoutLoading?"Processing...":user?"Upgrade to Pro →":"Start 7-Day Free Trial"),
-          showPostPayment&&React.createElement("div",{style:{marginTop:10,padding:"12px",background:T.green+"18",border:"1px solid "+T.green+"44",borderRadius:10,textAlign:"center"}},
-            React.createElement("div",{style:{fontSize:13,color:T.green,fontWeight:700,marginBottom:8}},"✓ Stripe opened in a new tab"),
-            React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:10}},"Complete your purchase there, then click below to activate."),
-            React.createElement("button",{disabled:postPaymentLoading,onClick:checkSubscriptionAfterPayment,style:{width:"100%",padding:"10px",borderRadius:8,border:"none",background:postPaymentLoading?T.textDim:T.green,color:"#fff",fontWeight:700,fontSize:13,cursor:postPaymentLoading?"default":"pointer"}},postPaymentLoading?"Checking...":"I've completed payment — Activate Pro"),
-              postPaymentStatus&&React.createElement("div",{style:{marginTop:6,fontSize:11,color:postPaymentLoading?T.textSub:T.red,textAlign:"center"}},postPaymentStatus)
-          ),
           checkoutErr&&React.createElement("div",{style:{marginTop:8,padding:"8px 12px",background:"#ff000020",border:"1px solid #ff000044",borderRadius:8,fontSize:12,color:"#ff6b6b",textAlign:"center"}},checkoutErr),
           React.createElement("div",{style:{textAlign:"center",marginTop:8,fontSize:11,color:T.textDim}},"No credit card required - Cancel anytime")
         ),
