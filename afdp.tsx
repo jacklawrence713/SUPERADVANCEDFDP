@@ -2306,6 +2306,29 @@ export default function App(){
   };
   var [showPostPayment,setShowPostPayment]=useState(false);
   var [postPaymentLoading,setPostPaymentLoading]=useState(false);
+  var [postPaymentStatus,setPostPaymentStatus]=useState("");
+  async function checkSubscriptionAfterPayment(){
+    if(!authClient||!user)return;
+    setPostPaymentLoading(true);
+    setPostPaymentStatus("Checking your payment...");
+    var maxAttempts=10;
+    for(var i=0;i<maxAttempts;i++){
+      try{
+        var {data:sess}=await authClient.auth.getSession();
+        if(!sess?.session){setPostPaymentStatus("Session expired — please log in again.");setPostPaymentLoading(false);return;}
+        var {data:prof}=await authClient.from("users").select("id,plan,is_pro,subscription_status").eq("id",sess.session.user.id).single();
+        if(prof?.is_pro){
+          saveAndSetUser(Object.assign({},user,{plan:prof.plan||"pro",isPro:true,subscriptionStatus:prof.subscription_status||"active"}));
+          setShowPostPayment(false);setPostPaymentLoading(false);setPostPaymentStatus("");
+          return;
+        }
+      }catch(e){}
+      setPostPaymentStatus("Confirming with Stripe... ("+(i+1)+"/"+maxAttempts+")");
+      await new Promise(function(r){setTimeout(r,2000);});
+    }
+    setPostPaymentLoading(false);
+    setPostPaymentStatus("Payment not confirmed yet. If you completed checkout, please wait 1 minute and try again — or contact support.");
+  }
   async function handleCheckout(plan:string,billing:string){
     if(!user){setAuthMode("signup");setShowAuth(true);return;}
     setCheckoutLoading(true);setCheckoutErr("");
@@ -3444,7 +3467,8 @@ export default function App(){
           showPostPayment&&React.createElement("div",{style:{marginTop:10,padding:"12px",background:T.green+"18",border:"1px solid "+T.green+"44",borderRadius:10,textAlign:"center"}},
             React.createElement("div",{style:{fontSize:13,color:T.green,fontWeight:700,marginBottom:8}},"✓ Stripe opened in a new tab"),
             React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:10}},"Complete your purchase there, then click below to activate."),
-            React.createElement("button",{onClick:function(){saveAndSetUser(Object.assign({},user,{plan:"pro",isPro:true,subscriptionStatus:"active"}));setShowPostPayment(false);},style:{width:"100%",padding:"10px",borderRadius:8,border:"none",background:T.green,color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}},"I've completed payment — Activate Pro")
+            React.createElement("button",{disabled:postPaymentLoading,onClick:checkSubscriptionAfterPayment,style:{width:"100%",padding:"10px",borderRadius:8,border:"none",background:postPaymentLoading?T.textDim:T.green,color:"#fff",fontWeight:700,fontSize:13,cursor:postPaymentLoading?"default":"pointer"}},postPaymentLoading?"Checking...":"I've completed payment — Activate Pro"),
+              postPaymentStatus&&React.createElement("div",{style:{marginTop:6,fontSize:11,color:postPaymentLoading?T.textSub:T.red,textAlign:"center"}},postPaymentStatus)
           ),
           checkoutErr&&React.createElement("div",{style:{marginTop:8,padding:"8px 12px",background:"#ff000020",border:"1px solid #ff000044",borderRadius:8,fontSize:12,color:"#ff6b6b",textAlign:"center"}},checkoutErr),
           React.createElement("div",{style:{textAlign:"center",marginTop:8,fontSize:11,color:T.textDim}},"No credit card required - Cancel anytime")
@@ -5982,7 +6006,8 @@ export default function App(){
               React.createElement("span",{style:{color:"#22c55e",fontWeight:700,fontSize:16}},"\u2713"),f
             );
           }),
-          isPro?React.createElement("button",{disabled:true,style:{width:"100%",marginTop:16,padding:"14px",borderRadius:12,border:"none",background:"#f9731699",color:"#fff",fontWeight:800,fontSize:15,cursor:"default"}},"✓ Current Plan"):React.createElement(React.Fragment,null,React.createElement("button",{disabled:checkoutLoading,onClick:function(){handleCheckout("pro",billingPeriod);},style:{width:"100%",marginTop:16,padding:"14px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#f97316,#ea580c)",color:"#fff",fontWeight:800,fontSize:15,cursor:checkoutLoading?"wait":"pointer",opacity:checkoutLoading?0.7:1}},checkoutLoading?"Processing...":"Start 7-Day Free Trial →"),showPostPayment&&React.createElement("div",{style:{marginTop:10,padding:"12px",background:T.green+"18",border:"1px solid "+T.green+"44",borderRadius:10,textAlign:"center"}},React.createElement("div",{style:{fontSize:13,color:T.green,fontWeight:700,marginBottom:8}},"✓ Stripe opened in a new tab"),React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:10}},"Complete your purchase there, then click below to activate."),React.createElement("button",{onClick:function(){saveAndSetUser(Object.assign({},user,{plan:"pro",isPro:true,subscriptionStatus:"active"}));setShowPostPayment(false);},style:{width:"100%",padding:"10px",borderRadius:8,border:"none",background:T.green,color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}},"I've completed payment — Activate Pro")),checkoutErr&&React.createElement("div",{style:{marginTop:8,padding:"8px 12px",background:"#ff000020",border:"1px solid #ff000044",borderRadius:8,fontSize:12,color:"#ff6b6b",textAlign:"center"}},checkoutErr))
+          isPro?React.createElement("button",{disabled:true,style:{width:"100%",marginTop:16,padding:"14px",borderRadius:12,border:"none",background:"#f9731699",color:"#fff",fontWeight:800,fontSize:15,cursor:"default"}},"✓ Current Plan"):React.createElement(React.Fragment,null,React.createElement("button",{disabled:checkoutLoading,onClick:function(){handleCheckout("pro",billingPeriod);},style:{width:"100%",marginTop:16,padding:"14px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#f97316,#ea580c)",color:"#fff",fontWeight:800,fontSize:15,cursor:checkoutLoading?"wait":"pointer",opacity:checkoutLoading?0.7:1}},checkoutLoading?"Processing...":"Start 7-Day Free Trial →"),showPostPayment&&React.createElement("div",{style:{marginTop:10,padding:"12px",background:T.green+"18",border:"1px solid "+T.green+"44",borderRadius:10,textAlign:"center"}},React.createElement("div",{style:{fontSize:13,color:T.green,fontWeight:700,marginBottom:8}},"✓ Stripe opened in a new tab"),React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:10}},"Complete your purchase there, then click below to activate."),React.createElement("button",{disabled:postPaymentLoading,onClick:checkSubscriptionAfterPayment,style:{width:"100%",padding:"10px",borderRadius:8,border:"none",background:postPaymentLoading?T.textDim:T.green,color:"#fff",fontWeight:700,fontSize:13,cursor:postPaymentLoading?"default":"pointer"}},postPaymentLoading?"Checking...":"I've completed payment — Activate Pro"),
+              postPaymentStatus&&React.createElement("div",{style:{marginTop:6,fontSize:11,color:postPaymentLoading?T.textSub:T.red,textAlign:"center"}},postPaymentStatus)),checkoutErr&&React.createElement("div",{style:{marginTop:8,padding:"8px 12px",background:"#ff000020",border:"1px solid #ff000044",borderRadius:8,fontSize:12,color:"#ff6b6b",textAlign:"center"}},checkoutErr))
         ),
         // Elite plan card
         React.createElement("div",{style:{background:T.bgCard,border:"2px solid "+T.borderPurple,borderRadius:14,padding:"20px",marginBottom:24,position:"relative",overflow:"hidden"}},
