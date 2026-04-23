@@ -2298,21 +2298,19 @@ export default function App(){
   var [contactSent,setContactSent]=useState(false);
   var [user,setUser]=useState(function(){try{var s=localStorage.getItem('fdp_user_v1');if(s){var u=JSON.parse(s);setTrackedUser(u?.email||"");return u;}return null;}catch(e){return null;}});
   function saveAndSetUser(u){try{if(u)localStorage.setItem('fdp_user_v1',JSON.stringify(u));else localStorage.removeItem('fdp_user_v1');if(u?.isPro){localStorage.removeItem('fdp_tc_v2');}}catch(e){}setUser(u);setTrackedUser(u?.email||"");if(u?.isPro)setTradeCount(0);}
+  var STRIPE_LINKS:Record<string,string>={
+    pro_monthly:"https://buy.stripe.com/14A3cv8pu7Px7vdbeq3VC00",
+    pro_yearly:"https://buy.stripe.com/14A3cv8pu7Px7vdbeq3VC00",
+    elite_monthly:"",
+    elite_yearly:"",
+  };
   async function handleCheckout(plan:string,billing:string){
     if(!user){setAuthMode("signup");setShowAuth(true);return;}
     setCheckoutLoading(true);setCheckoutErr("");
-    try{
-      // Refresh session to ensure token is valid
-      var token=user.token;
-      if(authClient){
-        var {data:sess}=await authClient.auth.getSession();
-        if(sess?.session?.access_token)token=sess.session.access_token;
-      }
-      var result=await callEdgeFn("create-checkout",{plan,billing,successUrl:window.location.origin+window.location.pathname+"?checkout=success"+window.location.hash,cancelUrl:window.location.href},token);
-      if(result.url){window.location.href=result.url;}
-      else{setCheckoutErr(result.error||"Checkout unavailable — please try again or contact support.");}
-    }catch(e:any){setCheckoutErr(e?.message||"Checkout unavailable — please try again or contact support.");}
-    finally{setCheckoutLoading(false);}
+    var link=STRIPE_LINKS[plan+"_"+billing]||STRIPE_LINKS[plan+"_monthly"]||"";
+    if(link){window.location.href=link;return;}
+    setCheckoutErr("Checkout unavailable — please contact support.");
+    setCheckoutLoading(false);
   }
   var [showAuth,setShowAuth]=useState(false);
   var [authMode,setAuthMode]=useState("signup");
