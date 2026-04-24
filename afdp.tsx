@@ -1822,11 +1822,16 @@ function AuthModal(props){
         if(signInResult.error)throw signInResult.error;
         var sess=signInResult.data.session;
         var usr=signInResult.data.user;
-        // Load profile from DB
-        var profResult=await authClient!.from("users").select("name,plan,is_pro,is_admin").eq("id",usr.id).single();
-        var prof=profResult.data;
-        var admin3=isAdminEmail(usr.email||"")||prof?.is_admin||false;
-        onAuth({id:usr.id,name:prof?.name||usr.user_metadata?.name||usr.email||"",email:usr.email||"",plan:admin3?"elite":(prof?.plan||"free"),isPro:prof?.is_pro||admin3,isAdmin:admin3,token:sess.access_token});
+        var admin3=isAdminEmail(usr.email||"");
+        // Log in immediately with auth data — don't wait for DB
+        onAuth({id:usr.id,name:usr.user_metadata?.name||usr.email||"",email:usr.email||"",plan:admin3?"elite":"free",isPro:admin3,isAdmin:admin3,token:sess.access_token});
+        // Load profile from DB in background and update if found
+        authClient!.from("users").select("name,plan,is_pro,is_admin").eq("id",usr.id).single().then(function(profResult){
+          var prof=profResult.data;
+          if(!prof)return;
+          var isAdm=admin3||prof.is_admin||false;
+          onAuth({id:usr.id,name:prof.name||usr.user_metadata?.name||usr.email||"",email:usr.email||"",plan:isAdm?"elite":(prof.plan||"free"),isPro:prof.is_pro||isAdm,isAdmin:isAdm,token:sess.access_token});
+        }).catch(function(){});
       }
     } catch(e:any){
       setErr(e.message||"Something went wrong. Please try again.");
