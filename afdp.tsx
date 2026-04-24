@@ -1781,8 +1781,18 @@ var FAQS=[{q:"What makes Fantasy Draft Pros the best dynasty trade analyzer?",a:
 
 function AuthModal(props){
   var T=props.T||DARK,onClose=props.onClose,onAuth=props.onAuth,initMode=props.mode||"signup";
-  var [mode,setMode]=useState(initMode),[email,setEmail]=useState(""),[password,setPassword]=useState(""),[name,setName]=useState(""),[plan,setPlan]=useState("pro"),[step,setStep]=useState(1),[err,setErr]=useState(""),[loading,setLoading]=useState(false);
+  var [mode,setMode]=useState(initMode),[email,setEmail]=useState(""),[password,setPassword]=useState(""),[name,setName]=useState(""),[plan,setPlan]=useState("pro"),[step,setStep]=useState(1),[err,setErr]=useState(""),[loading,setLoading]=useState(false),[resetSent,setResetSent]=useState(false);
   var inp={background:T.bgInput,color:T.text,border:"1px solid "+T.border,borderRadius:10,padding:"13px 16px",fontSize:14,outline:"none",width:"100%",boxSizing:"border-box",marginBottom:12};
+  async function sendReset(){
+    if(!email.includes("@")){setErr("Enter a valid email address");return;}
+    setErr("");setLoading(true);
+    try{
+      var {error}=await authClient!.auth.resetPasswordForEmail(email,{redirectTo:"https://fantasydraftpros.com/?reset=true"});
+      if(error)throw error;
+      setResetSent(true);
+    }catch(e:any){setErr(e.message||"Something went wrong. Please try again.");}
+    finally{setLoading(false);}
+  }
   async function submit(){
     if(!email.includes("@")){setErr("Enter a valid email");return;}
     if(password.length<6){setErr("Password must be 6+ characters");return;}
@@ -1833,14 +1843,37 @@ function AuthModal(props){
         React.createElement("img",{src:logoSrc,alt:"Fantasy DraftPros",style:{height:56,width:"auto",maxWidth:240}})
       ),
       step===1&&React.createElement("div",null,
-        React.createElement("div",{style:{textAlign:"center",marginBottom:18}},React.createElement("div",{style:{fontWeight:900,fontSize:22,marginBottom:4}},mode==="signup"?"Create Account":"Welcome Back"),React.createElement("div",{style:{fontSize:13,color:T.textSub}},mode==="signup"?"Start your 7-day free trial":"Sign in to your account")),
-        React.createElement("div",{style:{display:"flex",background:T.bgInput,borderRadius:12,padding:4,marginBottom:18}},["signup","signin"].map(function(m){return React.createElement("button",{key:m,onClick:function(){setMode(m);setErr("");},style:{flex:1,padding:"9px",borderRadius:9,border:"none",cursor:"pointer",fontWeight:700,fontSize:13,background:mode===m?T.purple:"transparent",color:mode===m?"#fff":T.textSub}},m==="signup"?"Sign Up":"Sign In");})),
-        mode==="signup"&&React.createElement("input",{placeholder:"Full name",value:name,onChange:function(e){setName(e.target.value);},style:inp}),
-        React.createElement("input",{placeholder:"Email address",type:"email",value:email,onChange:function(e){setEmail(e.target.value);},style:inp}),
-        React.createElement("input",{placeholder:"Password (6+ characters)",type:"password",value:password,onChange:function(e){setPassword(e.target.value);},onKeyDown:function(e){if(e.key==="Enter")submit();},style:Object.assign({},inp,{marginBottom:err?8:16})}),
-        err&&React.createElement("div",{style:{fontSize:12,color:T.red,marginBottom:12,padding:"8px 12px",background:T.red+"15",borderRadius:8}},err),
-        React.createElement("button",{onClick:submit,disabled:loading,style:{width:"100%",padding:"14px",borderRadius:12,border:"none",cursor:"pointer",fontWeight:800,fontSize:15,background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",opacity:loading?0.7:1}},loading?"...":(mode==="signup"?"Continue":"Sign In")),
-        mode==="signin"&&React.createElement("div",{style:{textAlign:"center",marginTop:12,fontSize:12,color:T.textSub}},"No account? ",React.createElement("span",{onClick:function(){setMode("signup");setErr("");},style:{color:T.purple,cursor:"pointer",fontWeight:700}},"Sign up free"))
+        mode!=="forgot"&&React.createElement("div",{style:{textAlign:"center",marginBottom:18}},React.createElement("div",{style:{fontWeight:900,fontSize:22,marginBottom:4}},mode==="signup"?"Create Account":"Welcome Back"),React.createElement("div",{style:{fontSize:13,color:T.textSub}},mode==="signup"?"Start your 7-day free trial":"Sign in to your account")),
+        mode!=="forgot"&&React.createElement("div",{style:{display:"flex",background:T.bgInput,borderRadius:12,padding:4,marginBottom:18}},["signup","signin"].map(function(m){return React.createElement("button",{key:m,onClick:function(){setMode(m);setErr("");},style:{flex:1,padding:"9px",borderRadius:9,border:"none",cursor:"pointer",fontWeight:700,fontSize:13,background:mode===m?T.purple:"transparent",color:mode===m?"#fff":T.textSub}},m==="signup"?"Sign Up":"Sign In");})),
+        mode!=="forgot"&&mode==="signup"&&React.createElement("input",{placeholder:"Full name",value:name,onChange:function(e){setName(e.target.value);},style:inp}),
+        mode!=="forgot"&&React.createElement("input",{placeholder:"Email address",type:"email",value:email,onChange:function(e){setEmail(e.target.value);},style:inp}),
+        mode!=="forgot"&&React.createElement("input",{placeholder:"Password (6+ characters)",type:"password",value:password,onChange:function(e){setPassword(e.target.value);},onKeyDown:function(e){if(e.key==="Enter")submit();},style:Object.assign({},inp,{marginBottom:err?8:16})}),
+        mode!=="forgot"&&err&&React.createElement("div",{style:{fontSize:12,color:T.red,marginBottom:12,padding:"8px 12px",background:T.red+"15",borderRadius:8}},err),
+        mode!=="forgot"&&React.createElement("button",{onClick:submit,disabled:loading,style:{width:"100%",padding:"14px",borderRadius:12,border:"none",cursor:"pointer",fontWeight:800,fontSize:15,background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",opacity:loading?0.7:1}},loading?"...":(mode==="signup"?"Continue":"Sign In")),
+        mode==="signin"&&React.createElement("div",{style:{textAlign:"center",marginTop:12,fontSize:12,color:T.textSub}},
+          React.createElement("span",{onClick:function(){setMode("forgot");setErr("");setResetSent(false);},style:{color:T.purple,cursor:"pointer",fontWeight:700}},"Forgot password?"),
+          React.createElement("span",{style:{margin:"0 8px",color:T.textDim}},"·"),
+          "No account? ",React.createElement("span",{onClick:function(){setMode("signup");setErr("");},style:{color:T.purple,cursor:"pointer",fontWeight:700}},"Sign up free")
+        ),
+        mode==="forgot"&&React.createElement("div",null,
+          resetSent
+            ?React.createElement("div",{style:{textAlign:"center",padding:"20px 0"}},
+                React.createElement("div",{style:{fontSize:32,marginBottom:12}},"✉️"),
+                React.createElement("div",{style:{fontWeight:800,fontSize:18,marginBottom:8}},"Check your email"),
+                React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.6,marginBottom:16}},"We sent a password reset link to ",React.createElement("b",null,email),". Check your inbox and follow the link."),
+                React.createElement("button",{onClick:function(){setMode("signin");setResetSent(false);setErr("");},style:{width:"100%",padding:"12px",borderRadius:12,border:"1px solid "+T.border,background:"transparent",color:T.text,fontWeight:700,fontSize:14,cursor:"pointer"}},"Back to Sign In")
+              )
+            :React.createElement("div",null,
+                React.createElement("div",{style:{textAlign:"center",marginBottom:18}},
+                  React.createElement("div",{style:{fontWeight:900,fontSize:22,marginBottom:4}},"Reset Password"),
+                  React.createElement("div",{style:{fontSize:13,color:T.textSub}},"Enter your email and we'll send a reset link")
+                ),
+                React.createElement("input",{placeholder:"Email address",type:"email",value:email,onChange:function(e){setEmail(e.target.value);},onKeyDown:function(e){if(e.key==="Enter")sendReset();},style:Object.assign({},inp,{marginBottom:err?8:16})}),
+                err&&React.createElement("div",{style:{fontSize:12,color:T.red,marginBottom:12,padding:"8px 12px",background:T.red+"15",borderRadius:8}},err),
+                React.createElement("button",{onClick:sendReset,disabled:loading,style:{width:"100%",padding:"14px",borderRadius:12,border:"none",cursor:"pointer",fontWeight:800,fontSize:15,background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",opacity:loading?0.7:1}},loading?"Sending...":"Send Reset Link"),
+                React.createElement("div",{style:{textAlign:"center",marginTop:12,fontSize:12,color:T.textSub}},React.createElement("span",{onClick:function(){setMode("signin");setErr("");},style:{color:T.purple,cursor:"pointer",fontWeight:700}},"← Back to Sign In"))
+              )
+        )
       ),
       step===2&&React.createElement("div",null,
         React.createElement("div",{style:{textAlign:"center",marginBottom:18}},React.createElement("div",{style:{fontWeight:900,fontSize:22,marginBottom:4}},"Choose Your Plan"),React.createElement("div",{style:{fontSize:13,color:T.textSub}},"7-day free trial on all paid plans")),
