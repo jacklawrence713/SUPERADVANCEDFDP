@@ -2238,6 +2238,10 @@ export default function App(){
     window.addEventListener("resize",onResize);
     return function(){window.removeEventListener("resize",onResize);};
   },[]);
+  // Warm up Supabase on app load so auth is fast when user clicks sign in
+  useEffect(function(){
+    if(authClient)authClient.auth.getSession().catch(function(){});
+  },[]);
   // Load shared trade from URL param
   useEffect(function(){
     try{
