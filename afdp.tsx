@@ -1650,6 +1650,22 @@ const PLAYERS=[
   {name:"Dillon Thieneman",pos:"DB",age:22,team:"CHI",proj:{PPR:92,Half:92,Standard:92},adp:1.5,ktcVal:3800,note:"2026 pick 1-25 · CHI Bears · rangy safety excellent instincts"},
   {name:"CJ Allen",pos:"LB",age:22,team:"IND",proj:{PPR:112,Half:112,Standard:112},adp:2.0,ktcVal:3500,note:"2026 pick 2-21 · IND Colts · sideline-to-sideline tackling machine"},
   {name:"Anthony Hill Jr.",pos:"LB",age:22,team:"TEN",proj:{PPR:105,Half:105,Standard:105},adp:2.2,ktcVal:3200,note:"2026 pick 2-28 · TEN Titans · instinctive run stopper with pass rush upside"},
+  // 2026 Rounds 4-7 fantasy-relevant rookies
+  {name:"Cade Klubnik",pos:"QB",age:22,team:"NYJ",proj:{PPR:195,Half:195,Standard:195},adp:4.5,ktcVal:2200,note:"2026 pick 4-10 · NYJ Jets · Clemson QB dynasty developmental"},
+  {name:"Garrett Nussmeier",pos:"QB",age:22,team:"KC",proj:{PPR:185,Half:185,Standard:185},adp:5.0,ktcVal:2000,note:"2026 pick 7-31 · KC Chiefs · high-upside QB who fell — dynasty stash in Reid offense"},
+  {name:"Taylen Green",pos:"QB",age:22,team:"CLE",proj:{PPR:175,Half:175,Standard:175},adp:5.5,ktcVal:1800,note:"2026 pick 6-1 · CLE Browns · mobile QB developmental stash"},
+  {name:"Nicholas Singleton",pos:"RB",age:22,team:"TEN",proj:{PPR:145,Half:133,Standard:121},adp:3.8,ktcVal:2800,note:"2026 pick 5-25 · TEN Titans · Penn State three-down back solid landing spot"},
+  {name:"Emmett Johnson",pos:"RB",age:22,team:"KC",proj:{PPR:120,Half:110,Standard:100},adp:4.5,ktcVal:2000,note:"2026 pick 5-21 · KC Chiefs · dynamic receiver out of backfield in Reid offense"},
+  {name:"Kaytron Allen",pos:"RB",age:21,team:"WAS",proj:{PPR:115,Half:106,Standard:97},adp:4.8,ktcVal:1800,note:"2026 pick 6-7 · WAS Commanders · Penn State physical runner solid upside"},
+  {name:"Brenen Thompson",pos:"WR",age:22,team:"LAC",proj:{PPR:100,Half:92,Standard:84},adp:4.2,ktcVal:2000,note:"2026 pick 4-5 · LAC Chargers · elite speed WR deep threat"},
+  {name:"Skyler Bell",pos:"WR",age:22,team:"BUF",proj:{PPR:95,Half:87,Standard:79},adp:4.5,ktcVal:1800,note:"2026 pick 4-25 · BUF Bills · slot weapon with strong hands"},
+  {name:"Kevin Coleman Jr.",pos:"WR",age:22,team:"MIA",proj:{PPR:100,Half:92,Standard:84},adp:4.8,ktcVal:2000,note:"2026 pick 5-37 · MIA Dolphins · explosive YAC receiver Tua connection"},
+  {name:"Barion Brown",pos:"WR",age:22,team:"NO",proj:{PPR:95,Half:87,Standard:79},adp:5.0,ktcVal:1800,note:"2026 pick 6-9 · NO Saints · electric return man and receiver"},
+  {name:"C.J. Williams",pos:"WR",age:22,team:"JAX",proj:{PPR:90,Half:82,Standard:74},adp:5.2,ktcVal:1600,note:"2026 pick 6-22 · JAX Jaguars · physical possession receiver"},
+  {name:"Deion Burks",pos:"WR",age:22,team:"IND",proj:{PPR:88,Half:81,Standard:74},adp:5.5,ktcVal:1500,note:"2026 pick 7-36 · IND Colts · dynasty flier with elite athleticism"},
+  {name:"Harold Perkins Jr.",pos:"LB",age:22,team:"ATL",proj:{PPR:110,Half:110,Standard:110},adp:2.5,ktcVal:3000,note:"2026 pick 6-34 · ATL Falcons · top-rated prospect who fell · explosive pass rush upside"},
+  {name:"Kendal Daniels",pos:"LB",age:22,team:"ATL",proj:{PPR:105,Half:105,Standard:105},adp:2.8,ktcVal:2800,note:"2026 pick 4-34 · ATL Falcons · hybrid safety/LB elite athlete"},
+  {name:"Dani Dennis-Sutton",pos:"DL",age:22,team:"GB",proj:{PPR:88,Half:88,Standard:88},adp:2.8,ktcVal:2800,note:"2026 pick 4-20 · GB Packers · Penn State edge rusher high motor"},
 ];
 
 const DRAFT_PICKS=[
