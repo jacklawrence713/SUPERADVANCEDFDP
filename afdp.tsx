@@ -320,7 +320,7 @@ const PLAYERS=[
   {name:"Tua Tagovailoa",pos:"QB",age:28,team:"ATL",proj:{PPR:342,Half:342,Standard:342},adp:8.1,ktcVal:2284,note:"3,900 yds 28 TD · signed ATL 2026"},
   {name:"J.J. McCarthy",pos:"QB",age:23,team:"MIN",proj:{PPR:315,Half:315,Standard:315},adp:10.5,ktcVal:2835,note:"2026 Year 2: 3,600 yds 27 TD post-injury"},
   {name:"Brock Purdy",pos:"QB",age:27,team:"SF",proj:{PPR:338,Half:338,Standard:338},adp:8.6,ktcVal:6016,note:"4,000 yds 27 TD"},
-  {name:"Matthew Stafford",pos:"QB",age:38,team:"LAR",proj:{PPR:316,Half:316,Standard:316},adp:13.8,ktcVal:5574,note:"3,600 yds 24 TD veteran starter"},
+  {name:"Matthew Stafford",pos:"QB",age:38,team:"LAR",proj:{PPR:316,Half:316,Standard:316},adp:13.8,ktcVal:1800,note:"3,600 yds 24 TD veteran starter"},
   {name:"Kirk Cousins",pos:"QB",age:38,team:"FA",proj:{PPR:305,Half:305,Standard:305},adp:16.5,ktcVal:1811,note:"3,400 yds 22 TD"},
   {name:"Geno Smith",pos:"QB",age:35,team:"NYJ",proj:{PPR:308,Half:308,Standard:308},adp:15.9,ktcVal:2053,note:"3,500 yds 22 TD"},
   {name:"Bryce Young",pos:"QB",age:24,team:"CAR",proj:{PPR:295,Half:295,Standard:295},adp:18.8,ktcVal:4499,note:"Year 3: 3,200 yds rebound"},
@@ -482,7 +482,6 @@ const PLAYERS=[
   {name:"Troy Andersen",pos:"LB",age:25,team:"ATL",proj:{PPR:98,Half:98,Standard:98},adp:18.0,ktcVal:2500,note:"ATL LB: athletic upside"},
   {name:"Pete Werner",pos:"LB",age:27,team:"NO",proj:{PPR:95,Half:95,Standard:95},adp:18.8,ktcVal:1800,note:"NO LB: 115 tackles"},
   {name:"Nicholas Morrow",pos:"LB",age:30,team:"CHI",proj:{PPR:88,Half:88,Standard:88},adp:20.5,ktcVal:700,note:"CHI LB: 105 tackles"},
-  {name:"Mykel Williams",pos:"LB",age:23,team:"SF",proj:{PPR:85,Half:85,Standard:85},adp:21.5,ktcVal:2500,note:"Young SF LB upside"},
   // DB Wave 2 — CBs and safeties
   {name:"L'Jarius Sneed",pos:"DB",age:28,team:"FA",proj:{PPR:118,Half:118,Standard:118},adp:13.8,ktcVal:3200,note:"TEN CB: 75 tackles 5 INT"},
   {name:"Marlon Humphrey",pos:"DB",age:30,team:"BAL",proj:{PPR:115,Half:115,Standard:115},adp:14.2,ktcVal:3000,note:"BAL CB: 70 tackles 4 INT"},
@@ -576,7 +575,6 @@ const PLAYERS=[
   {name:"Nolan Smith Jr.",pos:"DL",age:24,team:"PHI",proj:{PPR:100,Half:100,Standard:100},adp:16.8,ktcVal:3200,note:"PHI edge Year 2: 9 sacks ascending"},
   {name:"Johnny Newton",pos:"DL",age:22,team:"CHI",proj:{PPR:92,Half:92,Standard:92},adp:18.5,ktcVal:3100,note:"CHI IDL Year 2: 48 tackles 7 sacks"},
   {name:"Darius Robinson",pos:"DL",age:24,team:"KC",proj:{PPR:90,Half:90,Standard:90},adp:19.0,ktcVal:2600,note:"KC versatile DL: 8 sacks year 2"},
-  {name:"Kris Jenkins Jr.",pos:"DL",age:23,team:"MIA",proj:{PPR:88,Half:88,Standard:88},adp:19.8,ktcVal:2400,note:"MIA IDL Year 2: 46 tackles 7 sacks"},
   {name:"Zion Tupuola-Fetui",pos:"DL",age:25,team:"CHI",proj:{PPR:90,Half:90,Standard:90},adp:19.5,ktcVal:2200,note:"CHI edge: 8 sacks developing"},
   {name:"Mykel Williams",pos:"DL",age:22,team:"SF",proj:{PPR:95,Half:95,Standard:95},adp:18.2,ktcVal:3500,note:"SF edge Year 2: 9 sacks explosive"},
   {name:"Shemar Turner",pos:"DL",age:24,team:"DAL",proj:{PPR:85,Half:85,Standard:85},adp:21.0,ktcVal:2000,note:"DAL IDL developing Year 2"},
@@ -641,7 +639,7 @@ const PLAYERS=[
   {name:"Clyde Edwards-Helaire",pos:"RB",age:26,team:"KC",proj:{PPR:118,Half:108,Standard:98},adp:33.0,ktcVal:600,note:"Handcuff"},
   {name:"Dontrell Hilliard",pos:"RB",age:30,team:"TEN",proj:{PPR:112,Half:103,Standard:94},adp:34.5,ktcVal:300,note:"Veteran depth"},
   {name:"Elijah Mitchell",pos:"RB",age:27,team:"SF",proj:{PPR:132,Half:121,Standard:110},adp:28.5,ktcVal:700,note:"SF handcuff to CMC"},
-  {name:"Jordan Mason",pos:"RB",age:26,team:"MIN",proj:{PPR:142,Half:130,Standard:118},adp:26.0,ktcVal:2699,note:"SF lead back candidate"},
+  {name:"Jordan Mason",pos:"RB",age:26,team:"MIN",proj:{PPR:142,Half:130,Standard:118},adp:26.0,ktcVal:2699,note:"MIN lead back candidate"},
   // WR depth
   {name:"Nico Collins",pos:"WR",age:26,team:"HOU",proj:{PPR:222,Half:205,Standard:188},adp:16.8,ktcVal:5886,note:"85 rec 1,050 yds 8 TD"},
   {name:"Khalil Shakir",pos:"WR",age:26,team:"BUF",proj:{PPR:208,Half:192,Standard:176},adp:18.5,ktcVal:4000,note:"82 rec 900 yds 7 TD"},
@@ -702,7 +700,6 @@ const PLAYERS=[
   {name:"Christian Watson",pos:"WR",age:26,team:"GB",proj:{PPR:185,Half:171,Standard:157},adp:22.5,ktcVal:3644,note:"68 rec 820 yds 7 TD"},
   {name:"Rashid Shaheed",pos:"WR",age:26,team:"SEA",proj:{PPR:178,Half:164,Standard:150},adp:23.8,ktcVal:3612,note:"Deep threat: 60 rec 820 yds"},
   {name:"Jahan Dotson",pos:"WR",age:25,team:"PHI",proj:{PPR:172,Half:158,Standard:144},adp:25.0,ktcVal:2200,note:"Year 4: 65 rec 760 yds 6 TD"},
-  {name:"Josh Palmer",pos:"WR",age:27,team:"LAC",proj:{PPR:162,Half:149,Standard:136},adp:27.2,ktcVal:600,note:"60 rec 700 yds 5 TD"},
   {name:"Alec Pierce",pos:"WR",age:26,team:"IND",proj:{PPR:155,Half:143,Standard:131},adp:28.8,ktcVal:4210,note:"Deep threat: 55 rec 720 yds"},
   {name:"Jonathan Mingo",pos:"WR",age:24,team:"CAR",proj:{PPR:158,Half:145,Standard:132},adp:27.8,ktcVal:1800,note:"Year 3: 62 rec 730 yds"},
   {name:"Marvin Mims Jr.",pos:"WR",age:24,team:"DEN",proj:{PPR:162,Half:149,Standard:136},adp:26.5,ktcVal:2500,note:"Speed: 60 rec 750 yds 6 TD"},
@@ -945,7 +942,6 @@ const PLAYERS=[
   {name:"Jaycee Horn",pos:"DB",age:27,team:"CAR",proj:{PPR:92,Half:92,Standard:92},adp:24.5,ktcVal:3200,note:"CB1 when healthy: 60 tackles 3 INT"},
   {name:"Kaiir Elam",pos:"DB",age:25,team:"BUF",proj:{PPR:78,Half:78,Standard:78},adp:34.5,ktcVal:2000,note:"CB Year 4: 52 tackles 2 INT"},
   {name:"Tyson Campbell",pos:"DB",age:27,team:"JAX",proj:{PPR:88,Half:88,Standard:88},adp:27.0,ktcVal:2200,note:"CB1: 60 tackles 3 INT"},
-  {name:"Quinyon Mitchell",pos:"DB",age:23,team:"PHI",proj:{PPR:82,Half:82,Standard:82},adp:30.5,ktcVal:2000,note:"Year 2 CB: 55 tackles 3 INT"},
   {name:"Jeremy Chinn",pos:"DB",age:27,team:"CAR",proj:{PPR:92,Half:92,Standard:92},adp:24.0,ktcVal:1500,note:"S/LB hybrid: 85 tackles 2 sacks"},
   {name:"Jourdan Lewis",pos:"DB",age:30,team:"DAL",proj:{PPR:80,Half:80,Standard:80},adp:32.0,ktcVal:700,note:"Slot CB: 55 tackles 2 INT"},
   {name:"Damontae Kazee",pos:"DB",age:31,team:"PIT",proj:{PPR:78,Half:78,Standard:78},adp:33.5,ktcVal:800,note:"FS: 58 tackles 3 INT"},
@@ -1140,7 +1136,6 @@ const PLAYERS=[
   // CB/DB depth Wave 22
   {name:"Jamel Dean",pos:"DB",age:29,team:"TB",proj:{PPR:78,Half:78,Standard:78},adp:34.5,ktcVal:1500,note:"CB: 58 tackles 3 INT press cover"},
   {name:"Bryce Hall",pos:"DB",age:28,team:"FA",proj:{PPR:68,Half:68,Standard:68},adp:41.5,ktcVal:800,note:"CB: 52 tackles 2 INT physical"},
-  {name:"Carlton Davis",pos:"DB",age:28,team:"DET",proj:{PPR:82,Half:82,Standard:82},adp:31.5,ktcVal:2200,note:"CB1: 60 tackles 3 INT"},
   {name:"Nate Hairston",pos:"DB",age:31,team:"FA",proj:{PPR:55,Half:55,Standard:55},adp:54.5,ktcVal:400,note:"Veteran CB depth"},
   {name:"Jalen Thompson",pos:"DB",age:28,team:"ARI",proj:{PPR:75,Half:75,Standard:75},adp:36.5,ktcVal:1200,note:"S: 68 tackles 2 INT"},
   {name:"Chris Banjo",pos:"DB",age:34,team:"CAR",proj:{PPR:52,Half:52,Standard:52},adp:57.0,ktcVal:200,note:"Veteran ST/S depth"},
@@ -1152,8 +1147,6 @@ const PLAYERS=[
   {name:"Mekale McKay",pos:"WR",age:32,team:"FA",proj:{PPR:52,Half:48,Standard:44},adp:58.0,ktcVal:100,note:"Big WR veteran depth"},
   // Wave 21 — 2025 IDP class + deeper DB/WR depth
   // 2025 IDP class additions
-  {name:"Shemar Turner",pos:"DL",age:23,team:"NO",proj:{PPR:78,Half:78,Standard:78},adp:34.5,ktcVal:1800,note:"2025 EDGE: 7 sacks ascending"},
-  {name:"Darius Robinson",pos:"DL",age:24,team:"KC",proj:{PPR:82,Half:82,Standard:82},adp:31.0,ktcVal:2000,note:"Versatile DL: 7 sacks 40 tackles"},
   {name:"Maason Smith",pos:"DL",age:24,team:"JAX",proj:{PPR:75,Half:75,Standard:75},adp:35.5,ktcVal:1500,note:"IDL: 35 tackles 4 sacks developing"},
   {name:"Tyleik Williams",pos:"DL",age:24,team:"WAS",proj:{PPR:72,Half:72,Standard:72},adp:38.0,ktcVal:1400,note:"IDL: 32 tackles 3 sacks Year 3"},
   {name:"Jeremiah Trotter Jr.",pos:"LB",age:23,team:"PHI",proj:{PPR:88,Half:88,Standard:88},adp:27.5,ktcVal:2000,note:"Year 2 ILB: 85 tackles 2 sacks namesake"},
@@ -1654,7 +1647,6 @@ const PLAYERS=[
   {name:"Cade Klubnik",pos:"QB",age:22,team:"NYJ",proj:{PPR:195,Half:195,Standard:195},adp:4.5,ktcVal:2200,note:"2026 pick 4-10 · NYJ Jets · Clemson QB dynasty developmental"},
   {name:"Garrett Nussmeier",pos:"QB",age:22,team:"KC",proj:{PPR:185,Half:185,Standard:185},adp:5.0,ktcVal:2000,note:"2026 pick 7-31 · KC Chiefs · high-upside QB who fell — dynasty stash in Reid offense"},
   {name:"Taylen Green",pos:"QB",age:22,team:"CLE",proj:{PPR:175,Half:175,Standard:175},adp:5.5,ktcVal:1800,note:"2026 pick 6-1 · CLE Browns · mobile QB developmental stash"},
-  {name:"Nicholas Singleton",pos:"RB",age:22,team:"TEN",proj:{PPR:145,Half:133,Standard:121},adp:3.8,ktcVal:2800,note:"2026 pick 5-25 · TEN Titans · Penn State three-down back solid landing spot"},
   {name:"Emmett Johnson",pos:"RB",age:22,team:"KC",proj:{PPR:120,Half:110,Standard:100},adp:4.5,ktcVal:2000,note:"2026 pick 5-21 · KC Chiefs · dynamic receiver out of backfield in Reid offense"},
   {name:"Kaytron Allen",pos:"RB",age:21,team:"WAS",proj:{PPR:115,Half:106,Standard:97},adp:4.8,ktcVal:1800,note:"2026 pick 6-7 · WAS Commanders · Penn State physical runner solid upside"},
   {name:"Brenen Thompson",pos:"WR",age:22,team:"LAC",proj:{PPR:100,Half:92,Standard:84},adp:4.2,ktcVal:2000,note:"2026 pick 4-5 · LAC Chargers · elite speed WR deep threat"},
@@ -1665,7 +1657,6 @@ const PLAYERS=[
   {name:"Deion Burks",pos:"WR",age:22,team:"IND",proj:{PPR:88,Half:81,Standard:74},adp:5.5,ktcVal:1500,note:"2026 pick 7-36 · IND Colts · dynasty flier with elite athleticism"},
   {name:"Harold Perkins Jr.",pos:"LB",age:22,team:"ATL",proj:{PPR:110,Half:110,Standard:110},adp:2.5,ktcVal:3000,note:"2026 pick 6-34 · ATL Falcons · top-rated prospect who fell · explosive pass rush upside"},
   {name:"Kendal Daniels",pos:"LB",age:22,team:"ATL",proj:{PPR:105,Half:105,Standard:105},adp:2.8,ktcVal:2800,note:"2026 pick 4-34 · ATL Falcons · hybrid safety/LB elite athlete"},
-  {name:"Dani Dennis-Sutton",pos:"DL",age:22,team:"GB",proj:{PPR:88,Half:88,Standard:88},adp:2.8,ktcVal:2800,note:"2026 pick 4-20 · GB Packers · Penn State edge rusher high motor"},
 ];
 
 const DRAFT_PICKS=[
