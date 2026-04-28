@@ -2286,13 +2286,20 @@ export default function App(){
   // Auth state sync with Supabase
   useEffect(function(){
     if(!authClient)return;
-    var {data:{subscription}}=authClient.auth.onAuthStateChange(async function(event,session){
+    var {data:{subscription}}=authClient.auth.onAuthStateChange(function(event,session){
       if(event==="SIGNED_OUT"||!session){saveAndSetUser(null);return;}
       if(event==="SIGNED_IN"||event==="TOKEN_REFRESHED"){
         var usr=session.user;
-        var {data:prof}=await authClient.from("users").select("*").eq("id",usr.id).single();
-        var isAdmin2=["jacklawrence713@gmail.com","theprez@yahoo.com","modgy28@hotmail.com","sbesk787@gmail.com","starrrya@yahoo.com"].includes(usr.email||"");
-        saveAndSetUser({id:usr.id,name:prof?.name||usr.user_metadata?.name||usr.email||"",email:usr.email||"",plan:isAdmin2?"elite":(prof?.plan||"free"),isPro:prof?.is_pro||isAdmin2,isAdmin:isAdmin2,token:session.access_token});
+        var isAdmin2=isAdminEmail(usr.email||"");
+        // Set user immediately from session — no DB wait
+        saveAndSetUser({id:usr.id,name:usr.user_metadata?.name||usr.email||"",email:usr.email||"",plan:isAdmin2?"elite":"free",isPro:isAdmin2,isAdmin:isAdmin2,token:session.access_token});
+        // Load profile from DB in background and update
+        authClient.from("users").select("name,plan,is_pro,is_admin").eq("id",usr.id).single().then(function(profResult){
+          var prof=profResult.data;
+          if(!prof)return;
+          var isAdm=isAdmin2||prof.is_admin||false;
+          saveAndSetUser({id:usr.id,name:prof.name||usr.user_metadata?.name||usr.email||"",email:usr.email||"",plan:isAdm?"elite":(prof.plan||"free"),isPro:prof.is_pro||isAdm,isAdmin:isAdm,token:session.access_token});
+        }).catch(function(){});
       }
     });
     return function(){subscription.unsubscribe();};
