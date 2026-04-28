@@ -13,8 +13,8 @@ const supabase = createClient(
 );
 
 Deno.serve(async (req) => {
-  const signature = req.headers.get("stripe-signature");
-  const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
+  const signature = req.headers.get("stripe-signature")?.trim();
+  const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET")?.trim();
 
   if (!signature || !webhookSecret) {
     return new Response("Missing signature", { status: 400 });
@@ -23,10 +23,10 @@ Deno.serve(async (req) => {
   let event: Stripe.Event;
   try {
     const body = await req.text();
-    event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
   } catch (err) {
     console.error("Webhook signature verification failed:", err);
-    return new Response("Invalid signature", { status: 400 });
+    return new Response(`Invalid signature: ${String(err)}`, { status: 400 });
   }
 
   try {
@@ -48,14 +48,19 @@ Deno.serve(async (req) => {
           }
         }
         if (userId) {
-          await supabase.from("users").update({
+          // Core update — these columns are guaranteed to exist
+          const { error: coreErr } = await supabase.from("users").update({
             plan,
             is_pro: true,
+          }).eq("id", userId);
+          if (coreErr) console.error("Core update failed:", coreErr);
+          // Extended update — stripe columns may not exist, fail silently
+          await supabase.from("users").update({
             stripe_customer_id: session.customer as string,
             stripe_subscription_id: session.subscription as string,
             subscription_status: "active",
             updated_at: new Date().toISOString(),
-          }).eq("id", userId);
+          }).eq("id", userId).then(() => {}).catch(() => {});
         }
         break;
       }
@@ -69,11 +74,8 @@ Deno.serve(async (req) => {
         }
         if (userId) {
           const isActive = sub.status === "active" || sub.status === "trialing";
-          await supabase.from("users").update({
-            is_pro: isActive,
-            subscription_status: sub.status,
-            updated_at: new Date().toISOString(),
-          }).eq("id", userId);
+          await supabase.from("users").update({ is_pro: isActive }).eq("id", userId);
+          await supabase.from("users").update({ subscription_status: sub.status, updated_at: new Date().toISOString() }).eq("id", userId).then(() => {}).catch(() => {});
         }
         break;
       }
@@ -86,13 +88,8 @@ Deno.serve(async (req) => {
           userId = profile?.id;
         }
         if (userId) {
-          await supabase.from("users").update({
-            plan: "free",
-            is_pro: false,
-            stripe_subscription_id: null,
-            subscription_status: "cancelled",
-            updated_at: new Date().toISOString(),
-          }).eq("id", userId);
+          await supabase.from("users").update({ plan: "free", is_pro: false }).eq("id", userId);
+          await supabase.from("users").update({ stripe_subscription_id: null, subscription_status: "cancelled", updated_at: new Date().toISOString() }).eq("id", userId).then(() => {}).catch(() => {});
         }
         break;
       }

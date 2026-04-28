@@ -2381,6 +2381,24 @@ export default function App(){
   var [showPostPayment,setShowPostPayment]=useState(false);
   var [postPaymentLoading,setPostPaymentLoading]=useState(false);
   var [postPaymentStatus,setPostPaymentStatus]=useState("");
+  var [cancelLoading,setCancelLoading]=useState(false);
+  var [cancelConfirm,setCancelConfirm]=useState(false);
+  async function handleCancelSubscription(){
+    if(!user)return;
+    setCancelLoading(true);
+    try{
+      var result=await callEdgeFn("cancel-subscription",{},user.token);
+      if(result?.success){
+        saveAndSetUser(Object.assign({},user,{plan:"free",isPro:false}));
+        setCancelConfirm(false);
+      }else{
+        alert(result?.error||"Cancellation failed — please contact support.");
+      }
+    }catch(e){
+      alert("Cancellation failed — please contact support.");
+    }
+    setCancelLoading(false);
+  }
   async function checkSubscriptionAfterPayment(){
     if(!authClient||!user)return;
     setPostPaymentLoading(true);
@@ -6059,8 +6077,16 @@ export default function App(){
           React.createElement("div",{style:{fontSize:13,color:T.textSub,marginBottom:16,display:"flex",alignItems:"center",gap:6}},
             React.createElement("span",null,"\uD83D\uDCC5"),isPro?(user?.plan||"pro")+" plan — billed "+(billingPeriod==="yearly"?"annually":"monthly"):"Free plan — no billing"
           ),
-          React.createElement("div",{style:{borderTop:"1px solid "+T.border,paddingTop:12}},
-            React.createElement("span",{onClick:function(){window.open("mailto:fantasydraftproshelp@gmail.com?subject=Cancel%20Subscription&body=Please%20cancel%20my%20Fantasy%20Draft%20Pros%20Pro%20subscription.%0A%0AEmail%3A%20"+(user&&user.email||""));},style:{fontSize:13,color:T.red,cursor:"pointer",fontWeight:600}},"Cancel Subscription")
+          isPro&&React.createElement("div",{style:{borderTop:"1px solid "+T.border,paddingTop:12}},
+            !cancelConfirm
+              ?React.createElement("span",{onClick:function(){setCancelConfirm(true);},style:{fontSize:13,color:T.red,cursor:"pointer",fontWeight:600}},"Cancel Subscription")
+              :React.createElement("div",null,
+                  React.createElement("div",{style:{fontSize:13,color:T.text,marginBottom:8}},"Are you sure? You'll lose Pro access immediately."),
+                  React.createElement("div",{style:{display:"flex",gap:8}},
+                    React.createElement("button",{onClick:handleCancelSubscription,disabled:cancelLoading,style:{flex:1,padding:"8px",borderRadius:8,border:"none",background:T.red,color:"#fff",fontWeight:700,fontSize:13,cursor:cancelLoading?"wait":"pointer",opacity:cancelLoading?0.7:1}},cancelLoading?"Cancelling...":"Yes, Cancel"),
+                    React.createElement("button",{onClick:function(){setCancelConfirm(false);},disabled:cancelLoading,style:{flex:1,padding:"8px",borderRadius:8,border:"1px solid "+T.border,background:"transparent",color:T.text,fontWeight:700,fontSize:13,cursor:"pointer"}},"Keep Pro")
+                  )
+                )
           )
         ),
         // Free plan card
