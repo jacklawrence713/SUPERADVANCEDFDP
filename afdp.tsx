@@ -2288,7 +2288,7 @@ export default function App(){
     if(!authClient)return;
     var {data:{subscription}}=authClient.auth.onAuthStateChange(function(event,session){
       if(event==="SIGNED_OUT"||!session){saveAndSetUser(null);return;}
-      if(event==="SIGNED_IN"||event==="TOKEN_REFRESHED"){
+      if(event==="SIGNED_IN"||event==="TOKEN_REFRESHED"||event==="INITIAL_SESSION"){
         var usr=session.user;
         var isAdmin2=isAdminEmail(usr.email||"");
         // Set user immediately from session — no DB wait
@@ -2406,8 +2406,10 @@ export default function App(){
   async function handleCheckout(plan:string,billing:string){
     if(!user){setAuthMode("signup");setShowAuth(true);return;}
     setCheckoutLoading(true);setCheckoutErr("");
-    function openCheckoutUrl(url:string){
-      window.open(url,"_blank");
+    // Open blank tab synchronously — browsers block window.open after any await
+    var newTab=window.open("","_blank");
+    function navigateTo(url:string){
+      if(newTab&&!newTab.closed){newTab.location.href=url;}else{window.open(url,"_blank");}
       setCheckoutLoading(false);
       var onFocus=function(){window.removeEventListener("focus",onFocus);checkSubscriptionAfterPayment();};
       window.addEventListener("focus",onFocus);
@@ -2416,15 +2418,15 @@ export default function App(){
     // Try dynamic checkout session first — embeds supabase_user_id in metadata for reliable webhook matching
     try{
       var result=await callEdgeFn("create-checkout",{plan,billing},user.token);
-      if(result?.url){openCheckoutUrl(result.url);return;}
+      if(result?.url){navigateTo(result.url);return;}
     }catch(e){}
     // Fallback: static payment links with pre-filled email for webhook email matching
     var link=STRIPE_LINKS[plan+"_"+billing]||STRIPE_LINKS[plan+"_monthly"]||"";
     if(link){
-      var fullLink=user.email?link+"?prefilled_email="+encodeURIComponent(user.email):link;
-      openCheckoutUrl(fullLink);
+      navigateTo(user.email?link+"?prefilled_email="+encodeURIComponent(user.email):link);
       return;
     }
+    if(newTab)newTab.close();
     setCheckoutErr("Checkout unavailable — please contact support.");
     setCheckoutLoading(false);
   }
