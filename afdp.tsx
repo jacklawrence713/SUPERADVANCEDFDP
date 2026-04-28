@@ -6077,6 +6077,10 @@ export default function App(){
           React.createElement("div",{style:{fontSize:13,color:T.textSub,marginBottom:16,display:"flex",alignItems:"center",gap:6}},
             React.createElement("span",null,"\uD83D\uDCC5"),isPro?(user?.plan||"pro")+" plan — billed "+(billingPeriod==="yearly"?"annually":"monthly"):"Free plan — no billing"
           ),
+          isPro&&user?.plan==="pro"&&React.createElement("div",{style:{marginBottom:12}},
+            React.createElement("button",{onClick:function(){handleCheckout("elite",billingPeriod);},disabled:checkoutLoading,style:{width:"100%",padding:"12px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#f59e0b,#d97706)",color:"#fff",fontWeight:800,fontSize:14,cursor:checkoutLoading?"wait":"pointer",opacity:checkoutLoading?0.7:1}},"⚡ Upgrade to Elite"),
+            React.createElement("div",{style:{fontSize:11,color:T.textSub,textAlign:"center",marginTop:4}},"Vegas lines, game totals & more")
+          ),
           isPro&&React.createElement("div",{style:{borderTop:"1px solid "+T.border,paddingTop:12}},
             !cancelConfirm
               ?React.createElement("span",{onClick:function(){setCancelConfirm(true);},style:{fontSize:13,color:T.red,cursor:"pointer",fontWeight:600}},"Cancel Subscription")
