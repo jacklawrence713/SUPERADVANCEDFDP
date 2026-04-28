@@ -2399,18 +2399,23 @@ export default function App(){
   async function handleCheckout(plan:string,billing:string){
     if(!user){setAuthMode("signup");setShowAuth(true);return;}
     setCheckoutLoading(true);setCheckoutErr("");
+    function openCheckoutUrl(url:string){
+      window.open(url,"_blank");
+      setCheckoutLoading(false);
+      var onFocus=function(){window.removeEventListener("focus",onFocus);checkSubscriptionAfterPayment();};
+      window.addEventListener("focus",onFocus);
+      setTimeout(function(){window.removeEventListener("focus",onFocus);},1800000);
+    }
+    // Try dynamic checkout session first — embeds supabase_user_id in metadata for reliable webhook matching
+    try{
+      var result=await callEdgeFn("create-checkout",{plan,billing},user.token);
+      if(result?.url){openCheckoutUrl(result.url);return;}
+    }catch(e){}
+    // Fallback: static payment links with pre-filled email for webhook email matching
     var link=STRIPE_LINKS[plan+"_"+billing]||STRIPE_LINKS[plan+"_monthly"]||"";
     if(link){
-      window.open(link,"_blank");
-      setCheckoutLoading(false);
-      // When user comes back to this tab after paying, auto-check subscription
-      var onFocus=function(){
-        window.removeEventListener("focus",onFocus);
-        checkSubscriptionAfterPayment();
-      };
-      window.addEventListener("focus",onFocus);
-      // Clean up listener after 30 min in case they never come back
-      setTimeout(function(){window.removeEventListener("focus",onFocus);},1800000);
+      var fullLink=user.email?link+"?prefilled_email="+encodeURIComponent(user.email):link;
+      openCheckoutUrl(fullLink);
       return;
     }
     setCheckoutErr("Checkout unavailable — please contact support.");

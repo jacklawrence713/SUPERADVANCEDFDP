@@ -12,6 +12,7 @@ const PRICE_IDS: Record<string, string> = {
   pro_monthly: Deno.env.get("STRIPE_PRICE_PRO_MONTHLY") || "",
   pro_yearly: Deno.env.get("STRIPE_PRICE_PRO_YEARLY") || "",
   elite_monthly: Deno.env.get("STRIPE_PRICE_ELITE_MONTHLY") || "",
+  elite_yearly: Deno.env.get("STRIPE_PRICE_ELITE_YEARLY") || "",
 };
 
 Deno.serve(async (req) => {
