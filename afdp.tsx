@@ -278,7 +278,7 @@ const PLAYERS=[
   {name:"Breece Hall",pos:"RB",age:25,team:"NYJ",proj:{PPR:295,Half:272,Standard:249},adp:4.5,ktcVal:6800,note:"2026: 1,500 rush 60 rec"},
   {name:"Christian McCaffrey",pos:"RB",age:30,team:"SF",proj:{PPR:278,Half:256,Standard:234},adp:6.2,ktcVal:5065,note:"2026: 1,100 rush 68 rec health risk"},
   {name:"Kyren Williams",pos:"RB",age:26,team:"LAR",proj:{PPR:285,Half:263,Standard:241},adp:5.8,ktcVal:5667,note:"2026: 1,550 rush 14 TD featured"},
-  {name:"Omarion Hampton",pos:"RB",age:22,team:"LAC",proj:{PPR:288,Half:265,Standard:242},adp:5.5,ktcVal:6618,note:"2026 Year 2: 1,400 rush 11 TD breakout"},
+  {name:"Omarion Hampton",pos:"RB",age:22,team:"LAC",proj:{PPR:288,Half:265,Standard:242},adp:5.5,ktcVal:7359,note:"2026 Year 2: 1,400 rush 11 TD breakout"},
   {name:"Jonathan Taylor",pos:"RB",age:27,team:"IND",proj:{PPR:272,Half:250,Standard:228},adp:7.5,ktcVal:7000,note:"2026: 1,350 rush 11 TD"},
   {name:"Derrick Henry",pos:"RB",age:32,team:"BAL",proj:{PPR:258,Half:241,Standard:224},adp:8.5,ktcVal:4587,note:"2026: 1,600 rush 12 TD age risk"},
   {name:"Josh Jacobs",pos:"RB",age:28,team:"GB",proj:{PPR:262,Half:241,Standard:220},adp:8.8,ktcVal:4527,note:"2026: 1,300 rush 10 TD"},
@@ -803,7 +803,7 @@ const PLAYERS=[
   {name:"Brevin Jordan",pos:"TE",age:25,team:"HOU",proj:{PPR:92,Half:84,Standard:76},adp:34.2,ktcVal:1200,note:"Handcuff: 38 rec 380 yds"},
   // 2025 NFL Draft class — Year 2 in 2026
   {name:"Kaleb Johnson",pos:"RB",age:22,team:"PIT",proj:{PPR:218,Half:200,Standard:182},adp:13.0,ktcVal:3100,note:"2026 Year 2: 1,050 rush 8 TD emerging feature back"},
-  {name:"Quinshon Judkins",pos:"RB",age:22,team:"CLE",proj:{PPR:232,Half:213,Standard:194},adp:6.5,ktcVal:5556,note:"2026 Year 2: 1,100 rush 9 TD feature back upside"},
+  {name:"Quinshon Judkins",pos:"RB",age:22,team:"CLE",proj:{PPR:232,Half:213,Standard:194},adp:6.5,ktcVal:6534,note:"2026 Year 2: 1,100 rush 9 TD feature back upside"},
   {name:"TreVeyon Henderson",pos:"RB",age:23,team:"NE",proj:{PPR:178,Half:163,Standard:148},adp:18.2,ktcVal:5583,note:"2026 Year 2: 750 rush 55 rec"},
   {name:"RJ Harvey",pos:"RB",age:23,team:"DEN",proj:{PPR:162,Half:148,Standard:134},adp:21.8,ktcVal:4112,note:"2026 Year 2: 680 rush 48 rec"},
   {name:"Tahj Brooks",pos:"RB",age:24,team:"CIN",proj:{PPR:148,Half:135,Standard:122},adp:24.8,ktcVal:1800,note:"2026 Year 2: 620 rush 5 TD"},
@@ -817,7 +817,7 @@ const PLAYERS=[
   {name:"Savion Williams",pos:"WR",age:23,team:"GB",proj:{PPR:148,Half:136,Standard:124},adp:29.8,ktcVal:1500,note:"2026 Year 2 big body: 55 rec 660 yds"},
   {name:"Chimere Dike",pos:"WR",age:24,team:"NYJ",proj:{PPR:138,Half:127,Standard:116},adp:32.0,ktcVal:2779,note:"2026 Year 2 slot: 52 rec 580 yds"},
   {name:"Jaylin Noel",pos:"WR",age:24,team:"HOU",proj:{PPR:128,Half:118,Standard:108},adp:34.8,ktcVal:2812,note:"2026 Year 2: 46 rec 540 yds"},
-  {name:"Colston Loveland",pos:"TE",age:23,team:"CHI",proj:{PPR:195,Half:179,Standard:163},adp:7.0,ktcVal:6500,note:"2026 Year 2 breakout: 78 rec 820 yds 7 TD elite receiving TE"},
+  {name:"Colston Loveland",pos:"TE",age:23,team:"CHI",proj:{PPR:195,Half:179,Standard:163},adp:7.0,ktcVal:7218,note:"2026 Year 2 breakout: 78 rec 820 yds 7 TD elite receiving TE"},
   {name:"Mason Taylor",pos:"TE",age:23,team:"NYJ",proj:{PPR:158,Half:145,Standard:132},adp:16.5,ktcVal:3700,note:"2026 Year 2: 65 rec 680 yds 5 TD elite receiving prospect"},
   // Veterans still missing
   {name:"Amari Cooper",pos:"WR",age:31,team:"FA",proj:{PPR:172,Half:158,Standard:144},adp:25.5,ktcVal:400,note:"Retired after brief LV stint 2025"},
@@ -1308,7 +1308,7 @@ const PLAYERS=[
   {name:"Paul Taulelei",pos:"TE",age:27,team:"BUF",proj:{PPR:55,Half:50,Standard:45},adp:55.0,ktcVal:400,note:"Blocking TE: 18 rec 180 yds"},
   // Wave 14 — Cam Skattebo + 2025 RB class + WR/TE/IDP depth
   // 2025 RB class additions
-  {name:"Cam Skattebo",pos:"RB",age:23,team:"NYG",proj:{PPR:252,Half:232,Standard:212},adp:6.8,ktcVal:4607,note:"2025 1st round: workhorse feature back 1,250 rush 55 rec bruising"},
+  {name:"Cam Skattebo",pos:"RB",age:23,team:"NYG",proj:{PPR:252,Half:232,Standard:212},adp:6.8,ktcVal:5479,note:"2025 1st round: workhorse feature back 1,250 rush 55 rec bruising"},
   {name:"Donovan Edwards",pos:"RB",age:23,team:"MIA",proj:{PPR:178,Half:163,Standard:148},adp:16.5,ktcVal:3200,note:"MIA backfield: 700 rush 50 rec speed"},
   {name:"Bhayshul Tuten",pos:"RB",age:23,team:"JAX",proj:{PPR:162,Half:149,Standard:136},adp:20.0,ktcVal:3615,note:"Explosive back: 650 rush 42 rec"},
   {name:"Brashard Smith",pos:"RB",age:23,team:"KC",proj:{PPR:155,Half:142,Standard:129},adp:22.5,ktcVal:1800,note:"KC depth: 580 rush 48 rec"},
