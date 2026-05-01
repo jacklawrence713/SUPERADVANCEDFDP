@@ -127,7 +127,9 @@ const DYNASTY_NEWS=[
   {id:10,ts:"Apr 9",tag:"TRADE",pos:"WR",title:"Mike Evans SF value in Year 1",body:"Evans joins the 49ers at age 32. Dynasty value reflects aging curve, but viable SF trade target in contender win-now leagues."},
 ];
 const ADMIN_EMAILS=["jacklawrence713@gmail.com","theprez@yahoo.com","modgy28@hotmail.com","sbesk787@gmail.com","starrrya@yahoo.com"];
+const FULL_ACCESS_EMAILS=["stevengroller@yahoo.com"];
 function isAdminEmail(e){return ADMIN_EMAILS.indexOf((e||"").toLowerCase().trim())!==-1;}
+function isFullAccessEmail(e){return FULL_ACCESS_EMAILS.indexOf((e||"").toLowerCase().trim())!==-1;}
 
 const SLEEPER_IDS={
 "Lamar Jackson":"4881","Josh Allen":"4984","Jalen Hurts":"6904","Patrick Mahomes":"4046",
@@ -278,16 +280,16 @@ const PLAYERS=[
   {name:"Kyren Williams",pos:"RB",age:26,team:"LAR",proj:{PPR:285,Half:263,Standard:241},adp:5.8,ktcVal:5667,note:"2026: 1,550 rush 14 TD featured"},
   {name:"Omarion Hampton",pos:"RB",age:22,team:"LAC",proj:{PPR:288,Half:265,Standard:242},adp:5.5,ktcVal:6618,note:"2026 Year 2: 1,400 rush 11 TD breakout"},
   {name:"Jonathan Taylor",pos:"RB",age:27,team:"IND",proj:{PPR:272,Half:250,Standard:228},adp:7.5,ktcVal:7000,note:"2026: 1,350 rush 11 TD"},
-  {name:"Derrick Henry",pos:"RB",age:32,team:"BAL",proj:{PPR:258,Half:241,Standard:224},adp:8.5,ktcVal:5400,note:"2026: 1,600 rush 12 TD age risk"},
+  {name:"Derrick Henry",pos:"RB",age:32,team:"BAL",proj:{PPR:258,Half:241,Standard:224},adp:8.5,ktcVal:4587,note:"2026: 1,600 rush 12 TD age risk"},
   {name:"Josh Jacobs",pos:"RB",age:28,team:"GB",proj:{PPR:262,Half:241,Standard:220},adp:8.8,ktcVal:4527,note:"2026: 1,300 rush 10 TD"},
   {name:"D'Andre Swift",pos:"RB",age:26,team:"CHI",proj:{PPR:235,Half:216,Standard:197},adp:13.5,ktcVal:3547,note:"2026: 750 rush 62 rec"},
   {name:"Ja'Marr Chase",pos:"WR",age:26,team:"CIN",proj:{PPR:362,Half:336,Standard:310},adp:1.4,ktcVal:9936,note:"2026: 135 rec 1,800 yds 18 TD elite"},
   {name:"Justin Jefferson",pos:"WR",age:27,team:"MIN",proj:{PPR:345,Half:320,Standard:295},adp:1.9,ktcVal:7996,note:"2026: 135 rec 1,620 yds 12 TD"},
   {name:"CeeDee Lamb",pos:"WR",age:27,team:"DAL",proj:{PPR:332,Half:308,Standard:284},adp:2.6,ktcVal:7701,note:"2026: 125 rec 1,560 yds 13 TD"},
   {name:"Amon-Ra St. Brown",pos:"WR",age:26,team:"DET",proj:{PPR:322,Half:298,Standard:274},adp:3.5,ktcVal:8500,note:"2026: 128 rec 1,360 yds 12 TD"},
-  {name:"Marvin Harrison Jr.",pos:"WR",age:23,team:"ARI",proj:{PPR:315,Half:292,Standard:269},adp:3.9,ktcVal:5823,note:"2026 Year 2 breakout: 110 rec 1,300 yds 12 TD"},
+  {name:"Marvin Harrison Jr.",pos:"WR",age:23,team:"ARI",proj:{PPR:315,Half:292,Standard:269},adp:3.9,ktcVal:7000,note:"2026 Year 2 breakout: 110 rec 1,300 yds 12 TD"},
   {name:"Tetairoa McMillan",pos:"WR",age:22,team:"CAR",proj:{PPR:188,Half:173,Standard:158},adp:3.8,ktcVal:7200,note:"2026 Year 2: 72 rec 820 yds 7 TD dynasty cornerstone"},
-  {name:"Travis Hunter",pos:"WR",age:22,team:"JAX",proj:{PPR:228,Half:211,Standard:194},adp:4.0,ktcVal:3955,note:"2026 Year 2 breakout: elite athlete 85 rec 960 yds 8 TD WR/CB"},
+  {name:"Travis Hunter",pos:"WR",age:22,team:"JAX",proj:{PPR:228,Half:211,Standard:194},adp:4.0,ktcVal:6000,note:"2026 Year 2 breakout: elite athlete 85 rec 960 yds 8 TD WR/CB"},
   {name:"Puka Nacua",pos:"WR",age:24,team:"LAR",proj:{PPR:270,Half:250,Standard:230},adp:3.9,ktcVal:9501,note:"2026: 102 rec 1,100 yds 8 TD"},
   {name:"A.J. Brown",pos:"WR",age:29,team:"PHI",proj:{PPR:302,Half:280,Standard:258},adp:5.4,ktcVal:6000,note:"2026: 110 rec 1,450 yds 14 TD"},
   {name:"Brandon Aiyuk",pos:"WR",age:28,team:"SF",proj:{PPR:295,Half:273,Standard:251},adp:6.0,ktcVal:3184,note:"2026: 102 rec 1,400 yds 12 TD"},
@@ -1257,7 +1259,6 @@ const PLAYERS=[
   // 2025 LB rookies
   {name:"Jihaad Campbell",pos:"LB",age:22,team:"PHI",proj:{PPR:98,Half:98,Standard:98},adp:21.5,ktcVal:3500,note:"2025 1st round: 95 tackles 3 sacks elite coverage"},
   {name:"Harold Perkins Jr.",pos:"LB",age:21,team:"FA",proj:{PPR:95,Half:95,Standard:95},adp:23.0,ktcVal:3800,note:"2025 pick: elite athleticism 90 tackles 4 sacks"},
-  {name:"Payton Wilson",pos:"LB",age:24,team:"PIT",proj:{PPR:92,Half:92,Standard:92},adp:24.5,ktcVal:3500,note:"2025: speed LB 88 tackles 3 sacks"},
   {name:"Carson Schwesinger",pos:"LB",age:23,team:"CLE",proj:{PPR:162,Half:162,Standard:162},adp:7.2,ktcVal:4250,note:"2025 Rookie DPOY · #10 pick · 160+ tackles elite IDP LB1"},
   {name:"Nick Jackson",pos:"LB",age:23,team:"ATL",proj:{PPR:80,Half:80,Standard:80},adp:32.5,ktcVal:1000,note:"2025: ILB 75 tackles 2 sacks"},
   {name:"Danny Striggow",pos:"LB",age:24,team:"DEN",proj:{PPR:72,Half:72,Standard:72},adp:38.5,ktcVal:600,note:"2025 depth LB: 65 tackles 2 sacks"},
@@ -1494,7 +1495,6 @@ const PLAYERS=[
   // IDP DL Wave 8
   {name:"Robert Quinn",pos:"DL",age:34,team:"FA",proj:{PPR:78,Half:78,Standard:78},adp:34.5,ktcVal:400,note:"Veteran EDGE: 8 sacks if active"},
   {name:"Emmanuel Ogbah",pos:"DL",age:32,team:"MIA",proj:{PPR:80,Half:80,Standard:80},adp:32.0,ktcVal:800,note:"EDGE: 7.5 sacks rotational"},
-  {name:"Dexter Lawrence II",pos:"DL",age:27,team:"NYG",proj:{PPR:98,Half:98,Standard:98},adp:20.5,ktcVal:2800,note:"IDL: 8 sacks 45 tackles disruptive"},
   {name:"Jordan Davis",pos:"DL",age:26,team:"PHI",proj:{PPR:82,Half:82,Standard:82},adp:30.5,ktcVal:1800,note:"NT Year 4: 40 tackles 4 sacks"},
   {name:"Calais Campbell",pos:"DL",age:39,team:"FA",proj:{PPR:72,Half:72,Standard:72},adp:38.0,ktcVal:300,note:"Veteran if active: 5 sacks"},
   // IDP LB Wave 8
@@ -1547,7 +1547,6 @@ const PLAYERS=[
   // IDP Wave 5 — DBs
   {name:"Justin Simmons",pos:"DB",age:32,team:"ATL",proj:{PPR:105,Half:105,Standard:105},adp:18.0,ktcVal:1000,note:"Veteran FS: 72 tackles 4 INT"},
   {name:"Kevin Byard",pos:"DB",age:32,team:"NE",proj:{PPR:102,Half:102,Standard:102},adp:19.5,ktcVal:800,note:"Veteran S: 70 tackles 4 INT"},
-  {name:"Derwin James Jr.",pos:"DB",age:29,team:"LAC",proj:{PPR:115,Half:115,Standard:115},adp:14.5,ktcVal:3000,note:"S: 90 tackles 3 sacks versatile"},
   {name:"Ronnie Harrison Jr.",pos:"DB",age:29,team:"HOU",proj:{PPR:92,Half:92,Standard:92},adp:25.5,ktcVal:900,note:"S: 75 tackles 2 INT"},
   {name:"Dax Hill",pos:"DB",age:25,team:"CIN",proj:{PPR:98,Half:98,Standard:98},adp:21.0,ktcVal:2000,note:"S: 78 tackles 3 INT Year 4"},
   {name:"Brian Branch",pos:"DB",age:24,team:"DET",proj:{PPR:102,Half:102,Standard:102},adp:19.0,ktcVal:3500,note:"S: 80 tackles 3 INT versatile"},
@@ -1655,7 +1654,6 @@ const PLAYERS=[
   {name:"Barion Brown",pos:"WR",age:22,team:"NO",proj:{PPR:95,Half:87,Standard:79},adp:5.0,ktcVal:1800,note:"2026 pick 6-9 · NO Saints · electric return man and receiver"},
   {name:"C.J. Williams",pos:"WR",age:22,team:"JAX",proj:{PPR:90,Half:82,Standard:74},adp:5.2,ktcVal:1600,note:"2026 pick 6-22 · JAX Jaguars · physical possession receiver"},
   {name:"Deion Burks",pos:"WR",age:22,team:"IND",proj:{PPR:88,Half:81,Standard:74},adp:5.5,ktcVal:1500,note:"2026 pick 7-36 · IND Colts · dynasty flier with elite athleticism"},
-  {name:"Harold Perkins Jr.",pos:"LB",age:22,team:"ATL",proj:{PPR:110,Half:110,Standard:110},adp:2.5,ktcVal:3000,note:"2026 pick 6-34 · ATL Falcons · top-rated prospect who fell · explosive pass rush upside"},
   {name:"Kendal Daniels",pos:"LB",age:22,team:"ATL",proj:{PPR:105,Half:105,Standard:105},adp:2.8,ktcVal:2800,note:"2026 pick 4-34 · ATL Falcons · hybrid safety/LB elite athlete"},
 ];
 
@@ -1835,7 +1833,8 @@ function AuthModal(props){
         if(signUpResult.data.session){
           var u=signUpResult.data.session.user;
           var admin2=isAdminEmail(u.email||"");
-          onAuth({id:u.id,name:name||u.email||"",email:u.email||"",plan:admin2?"elite":plan,isPro:plan!=="free"||admin2,isAdmin:admin2,token:signUpResult.data.session.access_token});
+          var fa2=isFullAccessEmail(u.email||"");
+          onAuth({id:u.id,name:name||u.email||"",email:u.email||"",plan:(admin2||fa2)?"elite":plan,isPro:plan!=="free"||admin2||fa2,isAdmin:admin2,token:signUpResult.data.session.access_token});
         } else {
           setErr("Check your email to confirm your account, then sign in.");
           setMode("signin");setStep(1);
@@ -1846,14 +1845,15 @@ function AuthModal(props){
         var sess=signInResult.data.session;
         var usr=signInResult.data.user;
         var admin3=isAdminEmail(usr.email||"");
+        var fa3=isFullAccessEmail(usr.email||"");
         // Log in immediately with auth data — don't wait for DB
-        onAuth({id:usr.id,name:usr.user_metadata?.name||usr.email||"",email:usr.email||"",plan:admin3?"elite":"free",isPro:admin3,isAdmin:admin3,token:sess.access_token});
+        onAuth({id:usr.id,name:usr.user_metadata?.name||usr.email||"",email:usr.email||"",plan:(admin3||fa3)?"elite":"free",isPro:admin3||fa3,isAdmin:admin3,token:sess.access_token});
         // Load profile from DB in background and update if found
         authClient!.from("users").select("name,plan,is_pro,is_admin").eq("id",usr.id).single().then(function(profResult){
           var prof=profResult.data;
           if(!prof)return;
           var isAdm=admin3||prof.is_admin||false;
-          onAuth({id:usr.id,name:prof.name||usr.user_metadata?.name||usr.email||"",email:usr.email||"",plan:isAdm?"elite":(prof.plan||"free"),isPro:prof.is_pro||isAdm,isAdmin:isAdm,token:sess.access_token});
+          onAuth({id:usr.id,name:prof.name||usr.user_metadata?.name||usr.email||"",email:usr.email||"",plan:(isAdm||fa3)?"elite":(prof.plan||"free"),isPro:prof.is_pro||isAdm||fa3,isAdmin:isAdm,token:sess.access_token});
         }).catch(function(){});
       }
     } catch(e:any){
@@ -2292,14 +2292,15 @@ export default function App(){
       if(event==="SIGNED_IN"||event==="TOKEN_REFRESHED"||event==="INITIAL_SESSION"){
         var usr=session.user;
         var isAdmin2=isAdminEmail(usr.email||"");
+        var fa4=isFullAccessEmail(usr.email||"");
         // Set user immediately from session — no DB wait
-        saveAndSetUser({id:usr.id,name:usr.user_metadata?.name||usr.email||"",email:usr.email||"",plan:isAdmin2?"elite":"free",isPro:isAdmin2,isAdmin:isAdmin2,token:session.access_token});
+        saveAndSetUser({id:usr.id,name:usr.user_metadata?.name||usr.email||"",email:usr.email||"",plan:(isAdmin2||fa4)?"elite":"free",isPro:isAdmin2||fa4,isAdmin:isAdmin2,token:session.access_token});
         // Load profile from DB in background and update
         authClient.from("users").select("name,plan,is_pro,is_admin").eq("id",usr.id).single().then(function(profResult){
           var prof=profResult.data;
           if(!prof)return;
           var isAdm=isAdmin2||prof.is_admin||false;
-          saveAndSetUser({id:usr.id,name:prof.name||usr.user_metadata?.name||usr.email||"",email:usr.email||"",plan:isAdm?"elite":(prof.plan||"free"),isPro:prof.is_pro||isAdm,isAdmin:isAdm,token:session.access_token});
+          saveAndSetUser({id:usr.id,name:prof.name||usr.user_metadata?.name||usr.email||"",email:usr.email||"",plan:(isAdm||fa4)?"elite":(prof.plan||"free"),isPro:prof.is_pro||isAdm||fa4,isAdmin:isAdm,token:session.access_token});
         }).catch(function(){});
       }
     });
