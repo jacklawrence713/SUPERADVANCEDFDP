@@ -127,7 +127,7 @@ const DYNASTY_NEWS=[
   {id:10,ts:"Apr 9",tag:"TRADE",pos:"WR",title:"Mike Evans SF value in Year 1",body:"Evans joins the 49ers at age 32. Dynasty value reflects aging curve, but viable SF trade target in contender win-now leagues."},
 ];
 const ADMIN_EMAILS=["jacklawrence713@gmail.com","theprez@yahoo.com","modgy28@hotmail.com","sbesk787@gmail.com","starrrya@yahoo.com"];
-const FULL_ACCESS_EMAILS=["stevengroller@yahoo.com"];
+const FULL_ACCESS_EMAILS=["stevengroller@yahoo.com","nzajac23@gmail.com"];
 function isAdminEmail(e){return ADMIN_EMAILS.indexOf((e||"").toLowerCase().trim())!==-1;}
 function isFullAccessEmail(e){return FULL_ACCESS_EMAILS.indexOf((e||"").toLowerCase().trim())!==-1;}
 
