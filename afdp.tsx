@@ -2504,6 +2504,7 @@ export default function App(){
   var [rankFormat,setRankFormat]=useState("SF");
   var [pvTep,setPvTep]=useState(false);
   var [sfMode,setSfMode]=useState(false);
+  var [idpMode,setIdpMode]=useState(function(){try{var s=localStorage.getItem('fdp_idp_v1');return s==="true";}catch(e){return false;}});
   var [pvPos,setPvPos]=useState("All");
   var [rankSearch,setRankSearch]=useState("");
   var [rankTeamFilter,setRankTeamFilter]=useState("All Teams");
@@ -2573,7 +2574,7 @@ export default function App(){
   var isDynasty=leagueType==="Dynasty";
   var isSF=sfMode;
   var sKey=isDynasty?"PPR":(format==="Half"?"Half":(format==="Standard"?"Standard":"PPR"));
-  var scoring=leagueType+" · "+(sfMode?"Superflex ":"")+(format==="Half"?"Half PPR":format==="Standard"?"Standard":"PPR");
+  var scoring=leagueType+" · "+(sfMode?"Superflex ":"")+(idpMode?"IDP ":"")+(format==="Half"?"Half PPR":format==="Standard"?"Standard":"PPR");
 
   var rankedPlayers=useMemo(function(){
     var bl=getBaselines(teams,isSF);
@@ -2675,7 +2676,7 @@ export default function App(){
     return list;
   },[leagueType,format,teams,budget,ffab,sKey,isDynasty,isSF,tePremium,liveProj,adminTvMult,customPPRVal]);
 
-  var tradePool=useMemo(function(){return rankedPlayers.concat(DRAFT_PICKS.map(makePick));},[rankedPlayers]);
+  var tradePool=useMemo(function(){var pl=idpMode?rankedPlayers:rankedPlayers.filter(function(p){return p.pos!=="DL"&&p.pos!=="LB"&&p.pos!=="DB";});return pl.concat(DRAFT_PICKS.map(makePick));},[rankedPlayers,idpMode]);
 
   var sleeperIdToPlayer=useMemo(function(){
     var m={};
@@ -2897,6 +2898,7 @@ export default function App(){
       var rec=lg.scoring_settings&&lg.scoring_settings.rec!=null?lg.scoring_settings.rec:null;
       if(rec===1)setFormat("PPR");else if(rec===0.5)setFormat("Half");else if(rec===0)setFormat("Standard");
       if(lg.roster_positions&&lg.roster_positions.indexOf("SUPER_FLEX")!==-1)setSfMode(true);
+      if(lg.roster_positions&&(lg.roster_positions.indexOf("IDP_FLEX")!==-1||lg.roster_positions.indexOf("DL")!==-1||lg.roster_positions.indexOf("LB")!==-1||lg.roster_positions.indexOf("DB")!==-1)){setIdpMode(true);try{localStorage.setItem('fdp_idp_v1','true');}catch(e){}}
       if(lg.settings&&(lg.settings.type===2||lg.settings.type==="2"))setLeagueType("Dynasty");
       setLeagueImportStatus("connected");if(leagueSubTab==="leagimport")setLeagueSubTab("power");
     }).catch(function(e){setLeagueImportErr(e.message||"Failed to load league");setLeagueImportStatus("error");});
@@ -3422,7 +3424,8 @@ export default function App(){
               return React.createElement("button",{key:f,onClick:function(){setFormat(f);setAnalyzed(false);setAiAnalysis("");},style:{flex:1,padding:"7px 4px",borderRadius:9,border:"1px solid "+(realActive?T.purple:T.border),background:realActive?T.purple+"22":"transparent",color:realActive?T.purpleLight:T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},f);
             }),
             React.createElement("button",{onClick:function(){setSfMode(function(v){return !v;});setAnalyzed(false);setAiAnalysis("");},style:{padding:"7px 10px",borderRadius:9,border:"1px solid "+(sfMode?"#f59e0b":T.border),background:sfMode?"#f59e0b":"transparent",color:sfMode?"#000":T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},"SF"),
-            React.createElement("button",{onClick:function(){var next=tePremium>0?0:0.5;setTePremium(next);try{localStorage.setItem('fdp_tep_v1',String(next));}catch(e){}setAnalyzed(false);setAiAnalysis("");},style:{padding:"7px 10px",borderRadius:9,border:"1px solid "+(tePremium>0?"#f59e0b":T.border),background:tePremium>0?"#f59e0b":"transparent",color:tePremium>0?"#000":T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},"TEP")
+            React.createElement("button",{onClick:function(){var next=tePremium>0?0:0.5;setTePremium(next);try{localStorage.setItem('fdp_tep_v1',String(next));}catch(e){}setAnalyzed(false);setAiAnalysis("");},style:{padding:"7px 10px",borderRadius:9,border:"1px solid "+(tePremium>0?"#f59e0b":T.border),background:tePremium>0?"#f59e0b":"transparent",color:tePremium>0?"#000":T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},"TEP"),
+            React.createElement("button",{onClick:function(){setIdpMode(function(v){var next=!v;try{localStorage.setItem('fdp_idp_v1',String(next));}catch(e){}return next;});setAnalyzed(false);setAiAnalysis("");},style:{padding:"7px 10px",borderRadius:9,border:"1px solid "+(idpMode?"#f59e0b":T.border),background:idpMode?"#f59e0b":"transparent",color:idpMode?"#000":T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},"IDP")
           )
         ),
         React.createElement("div",{style:{marginBottom:12}},
