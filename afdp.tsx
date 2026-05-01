@@ -258,7 +258,7 @@ const PLAYERS=[
   {name:"Patrick Mahomes",pos:"QB",age:31,team:"KC",proj:{PPR:425,Half:425,Standard:425},adp:2.4,ktcVal:5504,note:"2026: 4,600 yds 40 TD consistent"},
   {name:"Jayden Daniels",pos:"QB",age:26,team:"WAS",proj:{PPR:398,Half:398,Standard:398},adp:3.1,ktcVal:6304,note:"2026 Year 2 leap: 4,100 yds 32 TD"},
   {name:"Joe Burrow",pos:"QB",age:30,team:"CIN",proj:{PPR:388,Half:388,Standard:388},adp:3.9,ktcVal:5722,note:"2026: 4,800 yds 39 TD healthy"},
-  {name:"C.J. Stroud",pos:"QB",age:25,team:"HOU",proj:{PPR:375,Half:375,Standard:375},adp:5.0,ktcVal:3945,note:"2026: 4,400 yds 34 TD Year 3"},
+  {name:"C.J. Stroud",pos:"QB",age:25,team:"HOU",proj:{PPR:375,Half:375,Standard:375},adp:5.0,ktcVal:6500,note:"2026: 4,400 yds 34 TD Year 3"},
   {name:"Caleb Williams",pos:"QB",age:24,team:"CHI",proj:{PPR:368,Half:368,Standard:368},adp:6.2,ktcVal:5577,note:"2026 Year 2 breakout: 4,100 yds 31 TD"},
   {name:"Jordan Love",pos:"QB",age:28,team:"GB",proj:{PPR:352,Half:352,Standard:352},adp:9.1,ktcVal:4599,note:"2026: 4,100 yds 32 TD"},
   {name:"Drake Maye",pos:"QB",age:24,team:"NE",proj:{PPR:348,Half:348,Standard:348},adp:8.5,ktcVal:6570,note:"2026 Year 2 leap: 3,900 yds 29 TD"},
@@ -269,7 +269,7 @@ const PLAYERS=[
   {name:"Jared Goff",pos:"QB",age:32,team:"DET",proj:{PPR:345,Half:345,Standard:345},adp:10.5,ktcVal:4577,note:"2026: 4,300 yds 33 TD elite system"},
   {name:"Baker Mayfield",pos:"QB",age:32,team:"TB",proj:{PPR:322,Half:322,Standard:322},adp:12.5,ktcVal:4806,note:"2026: 3,800 yds 29 TD"},
   {name:"Cam Ward",pos:"QB",age:23,team:"TEN",proj:{PPR:335,Half:335,Standard:335},adp:11.0,ktcVal:5039,note:"2026 Year 2 breakout: 3,800 yds 29 TD"},
-  {name:"Shedeur Sanders",pos:"QB",age:23,team:"CLE",proj:{PPR:318,Half:318,Standard:318},adp:13.5,ktcVal:2306,note:"2026 Year 2: 3,500 yds 25 TD"},
+  {name:"Shedeur Sanders",pos:"QB",age:23,team:"CLE",proj:{PPR:318,Half:318,Standard:318},adp:13.5,ktcVal:3800,note:"2026 Year 2: 3,500 yds 25 TD"},
   {name:"Saquon Barkley",pos:"RB",age:29,team:"PHI",proj:{PPR:328,Half:302,Standard:276},adp:1.2,ktcVal:5604,note:"2026: 1,650 rush 13 TD age 29 workhorse"},
   {name:"Bijan Robinson",pos:"RB",age:24,team:"ATL",proj:{PPR:335,Half:310,Standard:285},adp:1.9,ktcVal:9997,note:"2026: 1,800 rush 14 TD 75 rec"},
   {name:"Jahmyr Gibbs",pos:"RB",age:24,team:"DET",proj:{PPR:328,Half:303,Standard:278},adp:2.4,ktcVal:9536,note:"2026: 1,600 rush 13 TD 70 rec"},
@@ -319,8 +319,8 @@ const PLAYERS=[
   // Additional QBs
   {name:"Justin Herbert",pos:"QB",age:28,team:"LAC",proj:{PPR:348,Half:348,Standard:348},adp:7.2,ktcVal:6826,note:"4,200 yds 30 TD"},
   {name:"Trevor Lawrence",pos:"QB",age:27,team:"JAX",proj:{PPR:355,Half:355,Standard:355},adp:6.5,ktcVal:4829,note:"4,100 yds 30 TD"},
-  {name:"Tua Tagovailoa",pos:"QB",age:28,team:"ATL",proj:{PPR:342,Half:342,Standard:342},adp:8.1,ktcVal:2284,note:"3,900 yds 28 TD · signed ATL 2026"},
-  {name:"J.J. McCarthy",pos:"QB",age:23,team:"MIN",proj:{PPR:315,Half:315,Standard:315},adp:10.5,ktcVal:2835,note:"2026 Year 2: 3,600 yds 27 TD post-injury"},
+  {name:"Tua Tagovailoa",pos:"QB",age:28,team:"ATL",proj:{PPR:342,Half:342,Standard:342},adp:8.1,ktcVal:3200,note:"3,900 yds 28 TD · signed ATL 2026"},
+  {name:"J.J. McCarthy",pos:"QB",age:23,team:"MIN",proj:{PPR:315,Half:315,Standard:315},adp:10.5,ktcVal:4200,note:"2026 Year 2: 3,600 yds 27 TD post-injury"},
   {name:"Brock Purdy",pos:"QB",age:27,team:"SF",proj:{PPR:338,Half:338,Standard:338},adp:8.6,ktcVal:6016,note:"4,000 yds 27 TD"},
   {name:"Matthew Stafford",pos:"QB",age:38,team:"LAR",proj:{PPR:316,Half:316,Standard:316},adp:13.8,ktcVal:5553,note:"3,600 yds 24 TD veteran starter"},
   {name:"Kirk Cousins",pos:"QB",age:38,team:"FA",proj:{PPR:305,Half:305,Standard:305},adp:16.5,ktcVal:1811,note:"3,400 yds 22 TD"},
@@ -342,9 +342,9 @@ const PLAYERS=[
   {name:"Javonte Williams",pos:"RB",age:26,team:"DAL",proj:{PPR:178,Half:163,Standard:148},adp:19.2,ktcVal:4593,note:"800 rush 35 rec"},
   {name:"Aaron Jones",pos:"RB",age:32,team:"MIN",proj:{PPR:172,Half:158,Standard:144},adp:20.0,ktcVal:1949,note:"600 rush 55 rec veteran"},
   {name:"Zonovan Knight",pos:"RB",age:25,team:"ARI",proj:{PPR:165,Half:151,Standard:137},adp:21.8,ktcVal:2500,note:"700 rush starter"},
-  {name:"Blake Corum",pos:"RB",age:24,team:"LAR",proj:{PPR:158,Half:144,Standard:130},adp:23.1,ktcVal:3401,note:"650 rush 5 TD"},
+  {name:"Blake Corum",pos:"RB",age:24,team:"LAR",proj:{PPR:158,Half:144,Standard:130},adp:23.1,ktcVal:3800,note:"650 rush 5 TD"},
   {name:"Kimani Vidal",pos:"RB",age:24,team:"LAC",proj:{PPR:152,Half:139,Standard:126},adp:23.8,ktcVal:1800,note:"600 rush 40 rec"},
-  {name:"Braelon Allen",pos:"RB",age:22,team:"NYJ",proj:{PPR:172,Half:158,Standard:144},adp:20.8,ktcVal:3500,note:"Year 2: 700 rush 55 rec lead back potential"},
+  {name:"Braelon Allen",pos:"RB",age:22,team:"NYJ",proj:{PPR:172,Half:158,Standard:144},adp:20.8,ktcVal:4500,note:"Year 2: 700 rush 55 rec lead back potential"},
   {name:"Keaton Mitchell",pos:"RB",age:24,team:"LAC",proj:{PPR:142,Half:130,Standard:118},adp:25.5,ktcVal:2800,note:"600 rush explosive"},
   {name:"MarShawn Lloyd",pos:"RB",age:24,team:"GB",proj:{PPR:138,Half:126,Standard:114},adp:26.2,ktcVal:2000,note:"500 rush backup"},
   {name:"Will Shipley",pos:"RB",age:23,team:"PHI",proj:{PPR:132,Half:121,Standard:110},adp:27.8,ktcVal:2000,note:"400 rush 55 rec"},
@@ -375,7 +375,7 @@ const PLAYERS=[
   {name:"Matthew Golden",pos:"WR",age:22,team:"HOU",proj:{PPR:178,Half:164,Standard:150},adp:24.8,ktcVal:3573,note:"Year 2: 65 rec 740 yds"},
   {name:"Brian Thomas Jr.",pos:"WR",age:23,team:"JAX",proj:{PPR:205,Half:190,Standard:175},adp:20.5,ktcVal:4942,note:"Year 2 ascending: 80 rec 900 yds 8 TD"},
   {name:"Courtland Sutton",pos:"WR",age:30,team:"DEN",proj:{PPR:165,Half:152,Standard:139},adp:27.2,ktcVal:3382,note:"68 rec 780 yds 6 TD"},
-  {name:"Xavier Legette",pos:"WR",age:25,team:"CAR",proj:{PPR:158,Half:145,Standard:132},adp:28.8,ktcVal:2500,note:"Year 2: 62 rec 720 yds"},
+  {name:"Xavier Legette",pos:"WR",age:25,team:"CAR",proj:{PPR:158,Half:145,Standard:132},adp:28.8,ktcVal:3500,note:"Year 2: 62 rec 720 yds"},
   {name:"Jakobi Meyers",pos:"WR",age:29,team:"JAX",proj:{PPR:152,Half:140,Standard:128},adp:30.0,ktcVal:3412,note:"72 rec 720 yds"},
   {name:"Quentin Johnston",pos:"WR",age:24,team:"LAC",proj:{PPR:145,Half:133,Standard:121},adp:31.2,ktcVal:3477,note:"60 rec 700 yds 5 TD"},
   {name:"Stefon Diggs",pos:"WR",age:32,team:"FA",proj:{PPR:178,Half:164,Standard:150},adp:24.2,ktcVal:2523,note:"Veteran: 75 rec 820 yds"},
@@ -385,11 +385,11 @@ const PLAYERS=[
   {name:"David Njoku",pos:"TE",age:29,team:"FA",proj:{PPR:168,Half:154,Standard:140},adp:13.8,ktcVal:2729,note:"65 rec 680 yds 6 TD · FA 2026"},
   {name:"Jake Ferguson",pos:"TE",age:26,team:"DAL",proj:{PPR:162,Half:148,Standard:134},adp:15.0,ktcVal:3392,note:"68 rec 700 yds 6 TD"},
   {name:"Harold Fannin Jr.",pos:"TE",age:23,team:"CLE",proj:{PPR:168,Half:154,Standard:140},adp:8.5,ktcVal:4892,note:"Year 2: 66 rec 700 yds 6 TD elite dynasty TE asset"},
-  {name:"Cade Otton",pos:"TE",age:26,team:"TB",proj:{PPR:148,Half:135,Standard:122},adp:17.8,ktcVal:1800,note:"55 rec 570 yds"},
-  {name:"Cole Kmet",pos:"TE",age:26,team:"CHI",proj:{PPR:145,Half:133,Standard:121},adp:18.2,ktcVal:2000,note:"55 rec 560 yds 5 TD"},
+  {name:"Cade Otton",pos:"TE",age:26,team:"TB",proj:{PPR:148,Half:135,Standard:122},adp:17.8,ktcVal:2800,note:"55 rec 570 yds"},
+  {name:"Cole Kmet",pos:"TE",age:26,team:"CHI",proj:{PPR:145,Half:133,Standard:121},adp:18.2,ktcVal:2800,note:"55 rec 560 yds 5 TD"},
   {name:"Pat Freiermuth",pos:"TE",age:28,team:"PIT",proj:{PPR:138,Half:126,Standard:114},adp:19.5,ktcVal:2000,note:"52 rec 540 yds 5 TD"},
   {name:"Brenton Strange",pos:"TE",age:25,team:"JAX",proj:{PPR:125,Half:114,Standard:103},adp:22.5,ktcVal:3200,note:"48 rec 470 yds"},
-  {name:"Michael Mayer",pos:"TE",age:24,team:"LV",proj:{PPR:118,Half:108,Standard:98},adp:25.0,ktcVal:2324,note:"45 rec 440 yds"},
+  {name:"Michael Mayer",pos:"TE",age:24,team:"LV",proj:{PPR:118,Half:108,Standard:98},adp:25.0,ktcVal:3200,note:"45 rec 440 yds"},
   {name:"Chig Okonkwo",pos:"TE",age:27,team:"WAS",proj:{PPR:118,Half:108,Standard:98},adp:26.0,ktcVal:2100,note:"WAS TE: 48 rec 520 yds 4 TD"},
   {name:"Dawson Knox",pos:"TE",age:28,team:"BUF",proj:{PPR:108,Half:99,Standard:90},adp:28.8,ktcVal:1500,note:"40 rec 410 yds 5 TD"},
   // Additional DLs
@@ -609,7 +609,7 @@ const PLAYERS=[
   {name:"Dak Prescott",pos:"QB",age:32,team:"DAL",proj:{PPR:298,Half:298,Standard:298},adp:13.5,ktcVal:4400,note:"3,400 yds 25 TD comeback"},
   {name:"Sam Darnold",pos:"QB",age:28,team:"SEA",proj:{PPR:302,Half:302,Standard:302},adp:14.2,ktcVal:3872,note:"3,600 yds 26 TD"},
   {name:"Will Levis",pos:"QB",age:26,team:"TEN",proj:{PPR:285,Half:285,Standard:285},adp:16.5,ktcVal:4500,note:"New starter: 3,100 yds 22 TD"},
-  {name:"Michael Penix Jr.",pos:"QB",age:25,team:"ATL",proj:{PPR:308,Half:308,Standard:308},adp:14.5,ktcVal:3136,note:"2026 starter: 3,600 yds 27 TD Year 2"},
+  {name:"Michael Penix Jr.",pos:"QB",age:25,team:"ATL",proj:{PPR:308,Half:308,Standard:308},adp:14.5,ktcVal:3800,note:"2026 starter: 3,600 yds 27 TD Year 2"},
   {name:"Aaron Rodgers",pos:"QB",age:42,team:"PIT",proj:{PPR:268,Half:268,Standard:268},adp:18.5,ktcVal:1773,note:"Veteran: 3,400 yds 24 TD"},
   {name:"Sam Howell",pos:"QB",age:25,team:"DAL",proj:{PPR:262,Half:262,Standard:262},adp:19.8,ktcVal:2200,note:"Backup/handcuff"},
   {name:"Daniel Jones",pos:"QB",age:28,team:"IND",proj:{PPR:258,Half:258,Standard:258},adp:20.5,ktcVal:4195,note:"3,000 yds 18 TD"},
@@ -620,7 +620,7 @@ const PLAYERS=[
   {name:"Nick Chubb",pos:"RB",age:30,team:"HOU",proj:{PPR:192,Half:176,Standard:160},adp:15.5,ktcVal:1500,note:"Return: 850 rush 6 TD"},
   {name:"Najee Harris",pos:"RB",age:27,team:"LAC",proj:{PPR:198,Half:182,Standard:166},adp:15.0,ktcVal:2200,note:"1,000 rush 8 TD"},
   {name:"J.K. Dobbins",pos:"RB",age:27,team:"DEN",proj:{PPR:188,Half:172,Standard:156},adp:16.5,ktcVal:2736,note:"Handcuff to Hampton"},
-  {name:"Tyjae Spears",pos:"RB",age:25,team:"TEN",proj:{PPR:182,Half:167,Standard:152},adp:17.5,ktcVal:2719,note:"600 rush 55 rec handcuff"},
+  {name:"Tyjae Spears",pos:"RB",age:25,team:"TEN",proj:{PPR:182,Half:167,Standard:152},adp:17.5,ktcVal:3500,note:"600 rush 55 rec handcuff"},
   {name:"Dameon Pierce",pos:"RB",age:25,team:"PHI",proj:{PPR:175,Half:161,Standard:147},adp:18.5,ktcVal:2000,note:"700 rush 5 TD"},
   {name:"Chuba Hubbard",pos:"RB",age:26,team:"CAR",proj:{PPR:178,Half:163,Standard:148},adp:17.8,ktcVal:3190,note:"850 rush 7 TD lead back"},
   {name:"Jerome Ford",pos:"RB",age:26,team:"CLE",proj:{PPR:172,Half:158,Standard:144},adp:19.2,ktcVal:1500,note:"600 rush 48 rec handcuff"},
@@ -630,7 +630,7 @@ const PLAYERS=[
   {name:"Roschon Johnson",pos:"RB",age:24,team:"CHI",proj:{PPR:145,Half:133,Standard:121},adp:24.8,ktcVal:1200,note:"Change-of-pace back"},
   {name:"Justice Hill",pos:"RB",age:27,team:"BAL",proj:{PPR:158,Half:145,Standard:132},adp:22.2,ktcVal:800,note:"Speed back handcuff to Henry"},
   {name:"Jaleel McLaughlin",pos:"RB",age:25,team:"DEN",proj:{PPR:148,Half:136,Standard:124},adp:24.2,ktcVal:800,note:"Pass catcher depth"},
-  {name:"Tyrone Tracy Jr.",pos:"RB",age:23,team:"NYG",proj:{PPR:168,Half:154,Standard:140},adp:19.8,ktcVal:2600,note:"Year 2: 750 rush 45 rec"},
+  {name:"Tyrone Tracy Jr.",pos:"RB",age:23,team:"NYG",proj:{PPR:168,Half:154,Standard:140},adp:19.8,ktcVal:3800,note:"Year 2: 750 rush 45 rec"},
   {name:"Samaje Perine",pos:"RB",age:30,team:"CIN",proj:{PPR:138,Half:126,Standard:114},adp:27.5,ktcVal:300,note:"Pass-catching depth"},
   {name:"Kareem Hunt",pos:"RB",age:30,team:"KC",proj:{PPR:142,Half:130,Standard:118},adp:26.5,ktcVal:1560,note:"Veteran handcuff"},
   {name:"Devin Singletary",pos:"RB",age:28,team:"HOU",proj:{PPR:148,Half:136,Standard:124},adp:24.8,ktcVal:400,note:"Backup depth"},
@@ -641,7 +641,7 @@ const PLAYERS=[
   {name:"Clyde Edwards-Helaire",pos:"RB",age:26,team:"KC",proj:{PPR:118,Half:108,Standard:98},adp:33.0,ktcVal:600,note:"Handcuff"},
   {name:"Dontrell Hilliard",pos:"RB",age:30,team:"TEN",proj:{PPR:112,Half:103,Standard:94},adp:34.5,ktcVal:300,note:"Veteran depth"},
   {name:"Elijah Mitchell",pos:"RB",age:27,team:"SF",proj:{PPR:132,Half:121,Standard:110},adp:28.5,ktcVal:700,note:"SF handcuff to CMC"},
-  {name:"Jordan Mason",pos:"RB",age:26,team:"MIN",proj:{PPR:142,Half:130,Standard:118},adp:26.0,ktcVal:2699,note:"MIN lead back candidate"},
+  {name:"Jordan Mason",pos:"RB",age:26,team:"MIN",proj:{PPR:142,Half:130,Standard:118},adp:26.0,ktcVal:3200,note:"MIN lead back candidate"},
   // WR depth
   {name:"Nico Collins",pos:"WR",age:26,team:"HOU",proj:{PPR:222,Half:205,Standard:188},adp:16.8,ktcVal:5886,note:"85 rec 1,050 yds 8 TD"},
   {name:"Khalil Shakir",pos:"WR",age:26,team:"BUF",proj:{PPR:208,Half:192,Standard:176},adp:18.5,ktcVal:4000,note:"82 rec 900 yds 7 TD"},
@@ -650,7 +650,7 @@ const PLAYERS=[
   {name:"Christian Kirk",pos:"WR",age:29,team:"HOU",proj:{PPR:168,Half:155,Standard:142},adp:24.8,ktcVal:600,note:"70 rec 780 yds 6 TD"},
   {name:"Wan'Dale Robinson",pos:"WR",age:25,team:"TEN",proj:{PPR:182,Half:168,Standard:154},adp:22.5,ktcVal:3575,note:"80 rec 820 yds"},
   {name:"Dontayvion Wicks",pos:"WR",age:25,team:"GB",proj:{PPR:175,Half:161,Standard:147},adp:23.8,ktcVal:2500,note:"Year 3: 68 rec 800 yds 6 TD"},
-  {name:"Rashod Bateman",pos:"WR",age:25,team:"BAL",proj:{PPR:162,Half:149,Standard:136},adp:26.2,ktcVal:1500,note:"65 rec 750 yds 5 TD"},
+  {name:"Rashod Bateman",pos:"WR",age:25,team:"BAL",proj:{PPR:162,Half:149,Standard:136},adp:26.2,ktcVal:2200,note:"65 rec 750 yds 5 TD"},
   {name:"Skyy Moore",pos:"WR",age:25,team:"KC",proj:{PPR:155,Half:143,Standard:131},adp:27.8,ktcVal:700,note:"60 rec 680 yds 5 TD"},
   {name:"Tyler Boyd",pos:"WR",age:30,team:"PIT",proj:{PPR:162,Half:149,Standard:136},adp:25.5,ktcVal:800,note:"Veteran slot: 72 rec 760 yds"},
   {name:"Cedric Tillman",pos:"WR",age:24,team:"CLE",proj:{PPR:148,Half:136,Standard:124},adp:28.5,ktcVal:2000,note:"62 rec 700 yds"},
@@ -683,9 +683,9 @@ const PLAYERS=[
   {name:"Brian Robinson Jr.",pos:"RB",age:26,team:"SF",proj:{PPR:195,Half:179,Standard:163},adp:16.2,ktcVal:2200,note:"900 rush 8 TD power back"},
   {name:"James Conner",pos:"RB",age:30,team:"ARI",proj:{PPR:188,Half:173,Standard:158},adp:17.0,ktcVal:2063,note:"850 rush 7 TD veteran"},
   {name:"Bucky Irving",pos:"RB",age:23,team:"TB",proj:{PPR:218,Half:200,Standard:182},adp:13.5,ktcVal:5355,note:"Year 2 feature back: 1,050 rush 60 rec"},
-  {name:"Jonathon Brooks",pos:"RB",age:23,team:"CAR",proj:{PPR:208,Half:191,Standard:174},adp:14.8,ktcVal:3200,note:"Year 2 healthy: 1,000 rush 9 TD workhorse"},
-  {name:"Jaylen Wright",pos:"RB",age:23,team:"MIA",proj:{PPR:172,Half:158,Standard:144},adp:19.5,ktcVal:2351,note:"Speed back behind Achane"},
-  {name:"Isaac Guerendo",pos:"RB",age:25,team:"SF",proj:{PPR:168,Half:154,Standard:140},adp:20.2,ktcVal:2800,note:"SF committee back"},
+  {name:"Jonathon Brooks",pos:"RB",age:23,team:"CAR",proj:{PPR:208,Half:191,Standard:174},adp:14.8,ktcVal:4200,note:"Year 2 healthy: 1,000 rush 9 TD workhorse"},
+  {name:"Jaylen Wright",pos:"RB",age:23,team:"MIA",proj:{PPR:172,Half:158,Standard:144},adp:19.5,ktcVal:3200,note:"Speed back behind Achane"},
+  {name:"Isaac Guerendo",pos:"RB",age:25,team:"SF",proj:{PPR:168,Half:154,Standard:140},adp:20.2,ktcVal:3200,note:"SF committee back"},
   {name:"Ezekiel Elliott",pos:"RB",age:31,team:"DAL",proj:{PPR:148,Half:136,Standard:124},adp:24.5,ktcVal:300,note:"Veteran backup role"},
   {name:"Eric Gray",pos:"RB",age:25,team:"NYG",proj:{PPR:152,Half:139,Standard:126},adp:23.5,ktcVal:800,note:"Pass-catcher: 55 rec 400 rush"},
   {name:"Chris Rodriguez Jr.",pos:"RB",age:25,team:"JAX",proj:{PPR:138,Half:126,Standard:114},adp:27.0,ktcVal:2487,note:"Handcuff to Robinson"},
@@ -704,7 +704,7 @@ const PLAYERS=[
   {name:"Jahan Dotson",pos:"WR",age:25,team:"PHI",proj:{PPR:172,Half:158,Standard:144},adp:25.0,ktcVal:2200,note:"Year 4: 65 rec 760 yds 6 TD"},
   {name:"Alec Pierce",pos:"WR",age:26,team:"IND",proj:{PPR:155,Half:143,Standard:131},adp:28.8,ktcVal:4210,note:"Deep threat: 55 rec 720 yds"},
   {name:"Jonathan Mingo",pos:"WR",age:24,team:"CAR",proj:{PPR:158,Half:145,Standard:132},adp:27.8,ktcVal:1800,note:"Year 3: 62 rec 730 yds"},
-  {name:"Marvin Mims Jr.",pos:"WR",age:24,team:"DEN",proj:{PPR:162,Half:149,Standard:136},adp:26.5,ktcVal:2500,note:"Speed: 60 rec 750 yds 6 TD"},
+  {name:"Marvin Mims Jr.",pos:"WR",age:24,team:"DEN",proj:{PPR:162,Half:149,Standard:136},adp:26.5,ktcVal:3000,note:"Speed: 60 rec 750 yds 6 TD"},
   {name:"Michael Wilson",pos:"WR",age:25,team:"ARI",proj:{PPR:152,Half:140,Standard:128},adp:28.5,ktcVal:3769,note:"Physical: 58 rec 660 yds"},
   {name:"Jalen Tolbert",pos:"WR",age:26,team:"MIA",proj:{PPR:142,Half:130,Standard:118},adp:31.0,ktcVal:1200,note:"55 rec 640 yds 5 TD"},
   {name:"Kendrick Bourne",pos:"WR",age:30,team:"ARI",proj:{PPR:138,Half:127,Standard:116},adp:32.2,ktcVal:700,note:"Veteran slot: 55 rec 600 yds"},
@@ -773,7 +773,7 @@ const PLAYERS=[
   {name:"DJ Chark",pos:"WR",age:29,team:"LAC",proj:{PPR:118,Half:109,Standard:100},adp:36.8,ktcVal:400,note:"Deep threat depth"},
   {name:"Josh Reynolds",pos:"WR",age:30,team:"DET",proj:{PPR:112,Half:103,Standard:94},adp:37.8,ktcVal:300,note:"Veteran depth: 42 rec 480 yds"},
   {name:"Kyle Philips",pos:"WR",age:26,team:"TEN",proj:{PPR:128,Half:118,Standard:108},adp:34.0,ktcVal:600,note:"Slot: 52 rec 560 yds"},
-  {name:"Ja'Lynn Polk",pos:"WR",age:23,team:"NE",proj:{PPR:148,Half:136,Standard:124},adp:29.8,ktcVal:2200,note:"Year 2: 58 rec 680 yds"},
+  {name:"Ja'Lynn Polk",pos:"WR",age:23,team:"NE",proj:{PPR:148,Half:136,Standard:124},adp:29.8,ktcVal:2800,note:"Year 2: 58 rec 680 yds"},
   {name:"KJ Hamler",pos:"WR",age:26,team:"DEN",proj:{PPR:108,Half:99,Standard:90},adp:38.2,ktcVal:400,note:"Speed: 38 rec 480 yds"},
   {name:"Parris Campbell",pos:"WR",age:29,team:"NYG",proj:{PPR:102,Half:93,Standard:84},adp:40.2,ktcVal:300,note:"Slot depth: 40 rec 420 yds"},
   {name:"Nelson Agholor",pos:"WR",age:32,team:"BAL",proj:{PPR:98,Half:90,Standard:82},adp:41.5,ktcVal:200,note:"Veteran depth"},
@@ -807,7 +807,7 @@ const PLAYERS=[
   {name:"TreVeyon Henderson",pos:"RB",age:23,team:"NE",proj:{PPR:178,Half:163,Standard:148},adp:18.2,ktcVal:5583,note:"2026 Year 2: 750 rush 55 rec"},
   {name:"RJ Harvey",pos:"RB",age:23,team:"DEN",proj:{PPR:162,Half:148,Standard:134},adp:21.8,ktcVal:4112,note:"2026 Year 2: 680 rush 48 rec"},
   {name:"Tahj Brooks",pos:"RB",age:24,team:"CIN",proj:{PPR:148,Half:135,Standard:122},adp:24.8,ktcVal:1800,note:"2026 Year 2: 620 rush 5 TD"},
-  {name:"Dylan Sampson",pos:"RB",age:23,team:"CLE",proj:{PPR:155,Half:142,Standard:129},adp:23.2,ktcVal:2705,note:"2026 Year 2: 650 rush 6 TD"},
+  {name:"Dylan Sampson",pos:"RB",age:23,team:"CLE",proj:{PPR:155,Half:142,Standard:129},adp:23.2,ktcVal:3500,note:"2026 Year 2: 650 rush 6 TD"},
   {name:"Damien Martinez",pos:"RB",age:23,team:"MIA",proj:{PPR:145,Half:133,Standard:121},adp:25.8,ktcVal:2500,note:"2026 Year 2: 580 rush 5 TD"},
   {name:"Emeka Egbuka",pos:"WR",age:23,team:"TB",proj:{PPR:215,Half:199,Standard:183},adp:17.5,ktcVal:5985,note:"2026 Year 2: 85 rec 970 yds 8 TD"},
   {name:"Luther Burden III",pos:"WR",age:22,team:"CHI",proj:{PPR:222,Half:205,Standard:188},adp:16.8,ktcVal:5436,note:"2026 Year 2 with Williams: 88 rec 980 yds 8 TD"},
@@ -878,15 +878,15 @@ const PLAYERS=[
   {name:"Cade Johnson",pos:"WR",age:28,team:"SEA",proj:{PPR:78,Half:72,Standard:66},adp:47.5,ktcVal:200,note:"Slot depth"},
   {name:"Lynn Bowden Jr.",pos:"WR",age:28,team:"LV",proj:{PPR:82,Half:75,Standard:68},adp:46.8,ktcVal:200,note:"Versatile depth"},
   {name:"Davion Davis",pos:"WR",age:26,team:"PHI",proj:{PPR:75,Half:69,Standard:63},adp:48.0,ktcVal:200,note:"Physical depth WR"},
-  {name:"Malachi Corley",pos:"WR",age:23,team:"NYJ",proj:{PPR:148,Half:136,Standard:124},adp:29.0,ktcVal:2200,note:"2026 Year 2: 58 rec 650 yds YAC machine"},
+  {name:"Malachi Corley",pos:"WR",age:23,team:"NYJ",proj:{PPR:148,Half:136,Standard:124},adp:29.0,ktcVal:2800,note:"2026 Year 2: 58 rec 650 yds YAC machine"},
   {name:"Calvin Austin III",pos:"WR",age:26,team:"NYG",proj:{PPR:118,Half:108,Standard:98},adp:37.0,ktcVal:1200,note:"Speed threat: 45 rec 560 yds deep ball"},
   {name:"Treylon Burks",pos:"WR",age:25,team:"WAS",proj:{PPR:112,Half:103,Standard:94},adp:39.0,ktcVal:1500,note:"Physical: 42 rec 500 yds reclamation candidate"},
   {name:"Nick Cross",pos:"DB",age:25,team:"WAS",proj:{PPR:88,Half:88,Standard:88},adp:26.0,ktcVal:1600,note:"Safety: elite athleticism IDP DB2"},
   {name:"Ricky Pearsall",pos:"WR",age:24,team:"SF",proj:{PPR:165,Half:152,Standard:139},adp:26.0,ktcVal:3843,note:"2026 Year 2: 64 rec 760 yds"},
-  {name:"Roman Wilson",pos:"WR",age:24,team:"PIT",proj:{PPR:142,Half:130,Standard:118},adp:31.2,ktcVal:2000,note:"2026 Year 2 deep threat: 52 rec 660 yds"},
+  {name:"Roman Wilson",pos:"WR",age:24,team:"PIT",proj:{PPR:142,Half:130,Standard:118},adp:31.2,ktcVal:2800,note:"2026 Year 2 deep threat: 52 rec 660 yds"},
   {name:"Devaughn Vele",pos:"WR",age:25,team:"DEN",proj:{PPR:132,Half:121,Standard:110},adp:33.8,ktcVal:1993,note:"2026 Year 2: 50 rec 600 yds"},
   {name:"Troy Franklin",pos:"WR",age:23,team:"DEN",proj:{PPR:145,Half:133,Standard:121},adp:30.8,ktcVal:3828,note:"2026 Year 2: 56 rec 680 yds"},
-  {name:"Jalen McMillan",pos:"WR",age:23,team:"TB",proj:{PPR:138,Half:127,Standard:116},adp:32.5,ktcVal:2915,note:"2026 Year 2: 52 rec 620 yds"},
+  {name:"Jalen McMillan",pos:"WR",age:23,team:"TB",proj:{PPR:138,Half:127,Standard:116},adp:32.5,ktcVal:3500,note:"2026 Year 2: 52 rec 620 yds"},
   // More 2025 rookies (Year 2 in 2026)
   {name:"Amorion Walker",pos:"WR",age:23,team:"DAL",proj:{PPR:118,Half:109,Standard:100},adp:37.0,ktcVal:2000,note:"2026 Year 2 developmental"},
   {name:"Isaac TeSlaa",pos:"WR",age:24,team:"GB",proj:{PPR:112,Half:103,Standard:94},adp:38.5,ktcVal:2800,note:"2026 Year 2: 42 rec 500 yds"},
@@ -978,7 +978,7 @@ const PLAYERS=[
   {name:"Mike Gesicki",pos:"TE",age:30,team:"CIN",proj:{PPR:115,Half:105,Standard:95},adp:24.5,ktcVal:600,note:"Receiving TE: 46 rec 490 yds 4 TD"},
   // Wave 10 — 2025 NFL Draft rookies: skill + IDP
   // 2025 RB Rookies
-  {name:"Trevor Etienne",pos:"RB",age:22,team:"CAR",proj:{PPR:182,Half:167,Standard:152},adp:15.0,ktcVal:3800,note:"CAR feature back: 800 rush 55 rec age 22"},
+  {name:"Trevor Etienne",pos:"RB",age:22,team:"CAR",proj:{PPR:182,Half:167,Standard:152},adp:15.0,ktcVal:4200,note:"CAR feature back: 800 rush 55 rec age 22"},
   {name:"Nicholas Singleton",pos:"RB",age:22,team:"PHI",proj:{PPR:168,Half:154,Standard:140},adp:18.5,ktcVal:2500,note:"Power speed combo: 700 rush depth"},
   {name:"Ollie Gordon II",pos:"RB",age:22,team:"MIA",proj:{PPR:175,Half:161,Standard:147},adp:17.0,ktcVal:3238,note:"Big back: 800 rush 40 rec"},
   // 2025 QB Rookies
@@ -1046,7 +1046,7 @@ const PLAYERS=[
   // TEs
   {name:"Gunnar Helm",pos:"TE",age:24,team:"TEN",proj:{PPR:148,Half:136,Standard:124},adp:16.5,ktcVal:3300,note:"TEN TE1: 62 rec 680 yds 5 TD ascending"},
   {name:"Darnell Washington",pos:"TE",age:24,team:"PIT",proj:{PPR:138,Half:126,Standard:114},adp:19.0,ktcVal:3000,note:"PIT TE: 52 rec 590 yds 5 TD athletic"},
-  {name:"Ja'Tavion Sanders",pos:"TE",age:23,team:"CAR",proj:{PPR:132,Half:121,Standard:110},adp:21.5,ktcVal:2200,note:"CAR TE: 48 rec 530 yds 4 TD"},
+  {name:"Ja'Tavion Sanders",pos:"TE",age:23,team:"CAR",proj:{PPR:132,Half:121,Standard:110},adp:21.5,ktcVal:3000,note:"CAR TE: 48 rec 530 yds 4 TD"},
   {name:"Ben Sinnott",pos:"TE",age:23,team:"WAS",proj:{PPR:128,Half:117,Standard:106},adp:23.0,ktcVal:2500,note:"WAS TE: 46 rec 510 yds 4 TD"},
   {name:"Jake Tonges",pos:"TE",age:24,team:"BAL",proj:{PPR:118,Half:108,Standard:98},adp:27.0,ktcVal:1600,note:"BAL TE: 42 rec 460 yds 3 TD"},
   {name:"Erick All",pos:"TE",age:24,team:"CIN",proj:{PPR:122,Half:112,Standard:102},adp:25.5,ktcVal:1700,note:"CIN TE: 45 rec 490 yds 4 TD"},
@@ -1055,7 +1055,7 @@ const PLAYERS=[
   // QBs
   {name:"Riley Leonard",pos:"QB",age:23,team:"NO",proj:{PPR:265,Half:265,Standard:265},adp:22.5,ktcVal:2200,note:"NO QB: mobile 3,200 yds 22 TD dual-threat"},
   {name:"Joe Milton",pos:"QB",age:24,team:"NE",proj:{PPR:252,Half:252,Standard:252},adp:24.5,ktcVal:1500,note:"NE QB: big arm 3,000 yds 20 TD upside"},
-  {name:"Quinn Ewers",pos:"QB",age:23,team:"MIA",proj:{PPR:248,Half:248,Standard:248},adp:25.5,ktcVal:1600,note:"MIA QB: 2,900 yds 19 TD development"},
+  {name:"Quinn Ewers",pos:"QB",age:23,team:"MIA",proj:{PPR:248,Half:248,Standard:248},adp:25.5,ktcVal:2800,note:"MIA QB: 2,900 yds 19 TD development"},
   {name:"Max Brosmer",pos:"QB",age:23,team:"MIN",proj:{PPR:238,Half:238,Standard:238},adp:27.0,ktcVal:1400,note:"MIN QB: 2,700 yds 18 TD"},
   {name:"Brady Cook",pos:"QB",age:24,team:"STL",proj:{PPR:228,Half:228,Standard:228},adp:28.5,ktcVal:600,note:"Backup QB: 2,000 yds handcuff"},
   {name:"Jameis Winston",pos:"QB",age:33,team:"FA",proj:{PPR:232,Half:232,Standard:232},adp:28.0,ktcVal:350,note:"Veteran: high-upside gunslinger FA"},
@@ -1115,7 +1115,7 @@ const PLAYERS=[
   {name:"Mike Green",pos:"DL",age:23,team:"SEA",proj:{PPR:95,Half:95,Standard:95},adp:22.5,ktcVal:3800,note:"2024 EDGE breakout: 11 sacks elite production"},
   {name:"Dani Dennis-Sutton",pos:"DL",age:22,team:"KC",proj:{PPR:82,Half:82,Standard:82},adp:30.5,ktcVal:2800,note:"2025 EDGE: 8 sacks Year 1 upside"},
   // QB prospects Wave 23
-  {name:"Jalen Milroe",pos:"QB",age:23,team:"SEA",proj:{PPR:278,Half:278,Standard:278},adp:18.5,ktcVal:2512,note:"2025 pick: mobile 3,100 yds 24 TD 450 rush"},
+  {name:"Jalen Milroe",pos:"QB",age:23,team:"SEA",proj:{PPR:278,Half:278,Standard:278},adp:18.5,ktcVal:3200,note:"2025 pick: mobile 3,100 yds 24 TD 450 rush"},
   {name:"Will Rogers",pos:"QB",age:24,team:"WAS",proj:{PPR:242,Half:242,Standard:242},adp:24.5,ktcVal:700,note:"2025 pick: accurate 2,800 yds 20 TD"},
   {name:"Preston Stone",pos:"QB",age:24,team:"ARI",proj:{PPR:235,Half:235,Standard:235},adp:26.5,ktcVal:600,note:"2025: 2,700 yds 20 TD backup"},
   {name:"Michael Pratt",pos:"QB",age:24,team:"GB",proj:{PPR:228,Half:228,Standard:228},adp:27.5,ktcVal:500,note:"2025 pick: 2,600 yds 19 TD backup"},
@@ -1243,7 +1243,7 @@ const PLAYERS=[
   {name:"Pat Bryant",pos:"WR",age:23,team:"DEN",proj:{PPR:108,Half:99,Standard:90},adp:36.5,ktcVal:2929,note:"2025 pick: 42 rec 510 yds 4 TD"},
   {name:"Malachi Fields",pos:"WR",age:23,team:"CIN",proj:{PPR:95,Half:87,Standard:79},adp:41.0,ktcVal:800,note:"2025: big WR 38 rec 460 yds"},
   {name:"Tai Felton",pos:"WR",age:23,team:"MIN",proj:{PPR:102,Half:94,Standard:86},adp:38.5,ktcVal:1000,note:"2025 speed: 40 rec 490 yds 4 TD"},
-  {name:"Dillon Gabriel",pos:"QB",age:24,team:"CLE",proj:{PPR:268,Half:268,Standard:268},adp:19.5,ktcVal:1698,note:"2025 pick: mobile 3,000 yds 22 TD"},
+  {name:"Dillon Gabriel",pos:"QB",age:24,team:"CLE",proj:{PPR:268,Half:268,Standard:268},adp:19.5,ktcVal:2500,note:"2025 pick: mobile 3,000 yds 22 TD"},
   // RB deep depth Wave 18
   {name:"Keshawn Vaughn",pos:"RB",age:28,team:"FA",proj:{PPR:68,Half:62,Standard:56},adp:51.5,ktcVal:300,note:"Veteran RB depth"},
   {name:"Master Teague",pos:"RB",age:25,team:"FA",proj:{PPR:62,Half:57,Standard:52},adp:54.5,ktcVal:300,note:"Power back depth"},
@@ -1602,13 +1602,13 @@ const PLAYERS=[
   {name:"Jalen Reagor",pos:"WR",age:27,team:"NE",proj:{PPR:108,Half:99,Standard:90},adp:39.0,ktcVal:300,note:"Return/depth role"},
   // Missing TEs
   {name:"Luke Schoonmaker",pos:"TE",age:26,team:"DAL",proj:{PPR:112,Half:103,Standard:94},adp:26.5,ktcVal:800,note:"Year 3: 44 rec 460 yds 4 TD"},
-  {name:"Dalton Kincaid",pos:"TE",age:26,team:"BUF",proj:{PPR:118,Half:108,Standard:98},adp:24.8,ktcVal:3409,note:"Receiving TE: 48 rec 500 yds"},
+  {name:"Dalton Kincaid",pos:"TE",age:26,team:"BUF",proj:{PPR:118,Half:108,Standard:98},adp:24.8,ktcVal:4500,note:"Receiving TE: 48 rec 500 yds"},
   {name:"Nate Wieting",pos:"TE",age:28,team:"DET",proj:{PPR:75,Half:69,Standard:63},adp:45.0,ktcVal:300,note:"Blocking/depth"},
   // 2026 Rookies — post-draft teams assigned (April 26 2026)
   {name:"Fernando Mendoza",pos:"QB",age:22,team:"LV",proj:{PPR:265,Half:265,Standard:265},adp:1.1,ktcVal:4753,note:"2026 #1 overall pick · LV Raiders · elite arm talent SF dynasty asset"},
   {name:"Ty Simpson",pos:"QB",age:22,team:"LAR",proj:{PPR:235,Half:235,Standard:235},adp:2.5,ktcVal:3031,note:"2026 pick 1-13 · LAR Rams · dual-threat upside"},
-  {name:"Carson Beck",pos:"QB",age:23,team:"ARI",proj:{PPR:220,Half:220,Standard:220},adp:3.5,ktcVal:2800,note:"2026 pick 3-1 · ARI Cardinals · veteran pocket passer"},
-  {name:"Drew Allar",pos:"QB",age:23,team:"PIT",proj:{PPR:210,Half:210,Standard:210},adp:3.8,ktcVal:2600,note:"2026 pick 3-12 · PIT Steelers · pocket passer solid upside"},
+  {name:"Carson Beck",pos:"QB",age:23,team:"ARI",proj:{PPR:220,Half:220,Standard:220},adp:3.5,ktcVal:3500,note:"2026 pick 3-1 · ARI Cardinals · veteran pocket passer"},
+  {name:"Drew Allar",pos:"QB",age:23,team:"PIT",proj:{PPR:210,Half:210,Standard:210},adp:3.8,ktcVal:3400,note:"2026 pick 3-12 · PIT Steelers · pocket passer solid upside"},
   {name:"Jeremiyah Love",pos:"RB",age:21,team:"ARI",proj:{PPR:270,Half:250,Standard:230},adp:1.1,ktcVal:8500,note:"2026 pick 1-3 · ARI Cardinals · elite workhorse dynasty RB1"},
   {name:"Jadarian Price",pos:"RB",age:21,team:"SEA",proj:{PPR:195,Half:180,Standard:165},adp:2.5,ktcVal:4137,note:"2026 pick 1-32 · SEA Seahawks · three-down potential great landing spot"},
   {name:"Kaelon Black",pos:"RB",age:22,team:"SF",proj:{PPR:130,Half:120,Standard:110},adp:4.5,ktcVal:2200,note:"2026 pick 3-26 · SF 49ers · dynamic in Kyle Shanahan system"},
@@ -1660,30 +1660,30 @@ const PLAYERS=[
 const DRAFT_PICKS=[
   // 2026 1st Round — KTC baseline: 1.01=7463
   {id:"p2026_1_01",name:"2026 1.01",round:1,est:7463,note:"Top overall pick · franchise cornerstone"},
-  {id:"p2026_1_02",name:"2026 1.02",round:1,est:6850,note:"Blue-chip dynasty asset"},
-  {id:"p2026_1_03",name:"2026 1.03",round:1,est:6300,note:"Premium top-3 pick"},
-  {id:"p2026_1_04",name:"2026 1.04",round:1,est:5800,note:"Top-4 dynasty value"},
-  {id:"p2026_1_05",name:"2026 1.05",round:1,est:5350,note:"Strong top-5 pick"},
-  {id:"p2026_1_06",name:"2026 1.06",round:1,est:4950,note:"Top-6 solid 1st"},
-  {id:"p2026_1_07",name:"2026 1.07",round:1,est:4600,note:"Mid 1st round"},
-  {id:"p2026_1_08",name:"2026 1.08",round:1,est:4300,note:"Mid 1st round"},
-  {id:"p2026_1_09",name:"2026 1.09",round:1,est:4050,note:"Mid-late 1st"},
-  {id:"p2026_1_10",name:"2026 1.10",round:1,est:3900,note:"Late 1st round"},
-  {id:"p2026_1_11",name:"2026 1.11",round:1,est:3750,note:"Late 1st round"},
-  {id:"p2026_1_12",name:"2026 1.12",round:1,est:3650,note:"Late 1st · last pick"},
+  {id:"p2026_1_02",name:"2026 1.02",round:1,est:6888,note:"Blue-chip dynasty asset"},
+  {id:"p2026_1_03",name:"2026 1.03",round:1,est:6313,note:"Premium top-3 pick"},
+  {id:"p2026_1_04",name:"2026 1.04",round:1,est:6060,note:"Top-4 dynasty value"},
+  {id:"p2026_1_05",name:"2026 1.05",round:1,est:5807,note:"Strong top-5 pick"},
+  {id:"p2026_1_06",name:"2026 1.06",round:1,est:5572,note:"Top-6 solid 1st"},
+  {id:"p2026_1_07",name:"2026 1.07",round:1,est:5337,note:"Mid 1st round"},
+  {id:"p2026_1_08",name:"2026 1.08",round:1,est:5102,note:"Mid 1st round"},
+  {id:"p2026_1_09",name:"2026 1.09",round:1,est:5022,note:"Mid-late 1st"},
+  {id:"p2026_1_10",name:"2026 1.10",round:1,est:4850,note:"Late 1st round"},
+  {id:"p2026_1_11",name:"2026 1.11",round:1,est:4700,note:"Late 1st round"},
+  {id:"p2026_1_12",name:"2026 1.12",round:1,est:4560,note:"Late 1st · last pick"},
   // 2026 2nd Round — KTC baseline: 2.01=3583
-  {id:"p2026_2_01",name:"2026 2.01",round:2,est:3583,note:"Top 2nd · solid dynasty value"},
-  {id:"p2026_2_02",name:"2026 2.02",round:2,est:3450,note:"Early 2nd"},
-  {id:"p2026_2_03",name:"2026 2.03",round:2,est:3320,note:"Early 2nd"},
-  {id:"p2026_2_04",name:"2026 2.04",round:2,est:3200,note:"Early-mid 2nd"},
-  {id:"p2026_2_05",name:"2026 2.05",round:2,est:3080,note:"Mid 2nd"},
-  {id:"p2026_2_06",name:"2026 2.06",round:2,est:2970,note:"Mid 2nd"},
-  {id:"p2026_2_07",name:"2026 2.07",round:2,est:2880,note:"Mid 2nd"},
-  {id:"p2026_2_08",name:"2026 2.08",round:2,est:2820,note:"Mid-late 2nd"},
-  {id:"p2026_2_09",name:"2026 2.09",round:2,est:2780,note:"Late 2nd"},
-  {id:"p2026_2_10",name:"2026 2.10",round:2,est:2750,note:"Late 2nd"},
-  {id:"p2026_2_11",name:"2026 2.11",round:2,est:2720,note:"Late 2nd"},
-  {id:"p2026_2_12",name:"2026 2.12",round:2,est:2680,note:"Late 2nd · last pick"},
+  {id:"p2026_2_01",name:"2026 2.01",round:2,est:4400,note:"Top 2nd · solid dynasty value"},
+  {id:"p2026_2_02",name:"2026 2.02",round:2,est:4200,note:"Early 2nd"},
+  {id:"p2026_2_03",name:"2026 2.03",round:2,est:4020,note:"Early 2nd"},
+  {id:"p2026_2_04",name:"2026 2.04",round:2,est:3850,note:"Early-mid 2nd"},
+  {id:"p2026_2_05",name:"2026 2.05",round:2,est:3700,note:"Mid 2nd"},
+  {id:"p2026_2_06",name:"2026 2.06",round:2,est:3560,note:"Mid 2nd"},
+  {id:"p2026_2_07",name:"2026 2.07",round:2,est:3430,note:"Mid 2nd"},
+  {id:"p2026_2_08",name:"2026 2.08",round:2,est:3320,note:"Mid-late 2nd"},
+  {id:"p2026_2_09",name:"2026 2.09",round:2,est:3220,note:"Late 2nd"},
+  {id:"p2026_2_10",name:"2026 2.10",round:2,est:3130,note:"Late 2nd"},
+  {id:"p2026_2_11",name:"2026 2.11",round:2,est:3050,note:"Late 2nd"},
+  {id:"p2026_2_12",name:"2026 2.12",round:2,est:2980,note:"Late 2nd · last pick"},
   // 2026 3rd Round — KTC baseline: 3.01=2565
   {id:"p2026_3_01",name:"2026 3.01",round:3,est:2565,note:"Early 3rd · high-upside rookie"},
   {id:"p2026_3_02",name:"2026 3.02",round:3,est:2490,note:"Early 3rd"},
@@ -2653,8 +2653,16 @@ export default function App(){
         // KTC anchor + FDP age intelligence: apply dynastyBonus on top of KTC base
         // ab=1 for prime-age players (no change), youth gets slight boost, aging gets discount
         var sfQbBoost=(isSF&&p.pos==="QB")?1.25:1;
-        var rawVal=Math.round(p.ktcVal*ab*sfQbBoost);
-        p.tradeVal=p.ktcVal?(isSF&&p.pos==="QB"?rawVal:Math.min(9999,rawVal)):formulaVal;
+        // Format adjustments: PPR boosts pass-catchers, Standard boosts RBs
+        var fmtAdj=1;
+        if(sKey==="Standard"){if(p.pos==="RB")fmtAdj=1.06;else if(p.pos==="WR")fmtAdj=0.95;else if(p.pos==="TE")fmtAdj=0.92;}
+        else if(sKey==="Half"){if(p.pos==="RB")fmtAdj=1.03;else if(p.pos==="TE")fmtAdj=0.96;}
+        // TEP boost for TEs
+        var tepAdj=(tePremium>0&&p.pos==="TE")?1.15:1;
+        // IDP boost when IDP mode active
+        var idpAdj=(idpMode&&isIDP)?1.12:1;
+        var rawVal=Math.round(p.ktcVal*ab*sfQbBoost*fmtAdj*tepAdj*idpAdj);
+        p.tradeVal=p.ktcVal?(isSF&&p.pos==="QB"?rawVal:Math.min(9999,rawVal)):Math.round(formulaVal*fmtAdj*tepAdj*idpAdj);
       } else {
         // Redraft (PPR/Half/Standard/Superflex): VBD-based with position-rank floor
         // Floor prevents depth players from cliffing to 10 when below baseline
@@ -2674,7 +2682,7 @@ export default function App(){
       }
     });
     return list;
-  },[leagueType,format,teams,budget,ffab,sKey,isDynasty,isSF,tePremium,liveProj,adminTvMult,customPPRVal]);
+  },[leagueType,format,teams,budget,ffab,sKey,isDynasty,isSF,tePremium,idpMode,liveProj,adminTvMult,customPPRVal]);
 
   var tradePool=useMemo(function(){var pl=idpMode?rankedPlayers:rankedPlayers.filter(function(p){return p.pos!=="DL"&&p.pos!=="LB"&&p.pos!=="DB";});return pl.concat(DRAFT_PICKS.map(makePick));},[rankedPlayers,idpMode]);
 
