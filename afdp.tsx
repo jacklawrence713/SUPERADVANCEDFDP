@@ -2534,7 +2534,8 @@ export default function App(){
   var [darkMode,setDarkMode]=useState(function(){try{var s=localStorage.getItem('fdp_dark_v1');return s?JSON.parse(s):true;}catch(e){return true;}});
   function toggleDarkMode(){setDarkMode(function(d){var next=!d;try{localStorage.setItem('fdp_dark_v1',JSON.stringify(next));}catch(e){}return next;});}
   // League
-  var [leagueSubTab,setLeagueSubTab]=useState("power");
+  var [leagueSubTab,setLeagueSubTab]=useState(function(){try{return localStorage.getItem('fdp_leagueSubTab')||"power";}catch(e){return"power";}});
+  var _setLeagueSubTab=setLeagueSubTab;setLeagueSubTab=function(v){_setLeagueSubTab(v);try{localStorage.setItem('fdp_leagueSubTab',v);}catch(e){}};
   var [byeWeek,setByeWeek]=useState(1);
   var [waiverSearch,setWaiverSearch]=useState("");
   var [waiverPos,setWaiverPos]=useState("All Positions");
@@ -2577,7 +2578,8 @@ export default function App(){
   var [leagueRosters,setLeagueRosters]=useState(null);
   var [leagueUsers,setLeagueUsers]=useState(null);
   // Rankings
-  var [rankSubTab,setRankSubTab]=useState("allrankings");
+  var [rankSubTab,setRankSubTab]=useState(function(){try{return localStorage.getItem('fdp_rankSubTab')||"allrankings";}catch(e){return"allrankings";}});
+  var _setRankSubTab=setRankSubTab;setRankSubTab=function(v){_setRankSubTab(v);try{localStorage.setItem('fdp_rankSubTab',v);}catch(e){}};
   var [rankPos,setRankPos]=useState("QB");
   var [rankFormat,setRankFormat]=useState("SF");
   var [pvTep,setPvTep]=useState(false);
