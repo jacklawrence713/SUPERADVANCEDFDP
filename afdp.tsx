@@ -3299,6 +3299,10 @@ export default function App(){
               )
             );
           }),
+          (team.pickDetails&&team.pickDetails.length>0)?React.createElement("div",{style:{marginTop:16}},
+            React.createElement("div",{style:{fontWeight:800,fontSize:14,color:T.textSub,marginBottom:8,paddingBottom:6,borderBottom:"1px solid "+T.border}},"Draft Picks ("+team.pickDetails.length+")"),
+            (function(){var sorted=team.pickDetails.slice().sort(function(a,b){return a.season===b.season?a.round-b.round:a.season-b.season;});return sorted.map(function(pk,idx){var ordRd=pk.round===1?"1st":pk.round===2?"2nd":pk.round===3?"3rd":pk.round+"th";var base=[0,5000,2000,1000,500,250][Math.min(pk.round,5)]||200;var estVal=Math.round(base*Math.pow(0.85,Math.max(0,pk.season-(new Date().getFullYear()))));return React.createElement("div",{key:idx,style:{display:"flex",alignItems:"center",gap:10,background:T.bgInput,border:"1px solid "+T.border,borderRadius:10,padding:"10px 12px",marginBottom:6}},React.createElement("div",{style:{width:36,height:36,borderRadius:10,background:"#818cf822",border:"1px solid #818cf844",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:900,color:"#818cf8",flexShrink:0}},pk.round),React.createElement("div",{style:{flex:1}},React.createElement("div",{style:{fontWeight:700,fontSize:13}},pk.season+" "+ordRd+" Round"),React.createElement("div",{style:{fontSize:10,color:T.textSub}},"Draft Pick")),React.createElement("div",{style:{textAlign:"right"}},React.createElement("div",{style:{fontWeight:800,fontSize:13,color:"#818cf8"}},estVal.toLocaleString()),React.createElement("div",{style:{fontSize:9,color:T.textSub}},"est. value")));});})()
+          ):null,
           React.createElement("button",{onClick:function(){setRosterViewTeam(null);},style:{width:"100%",marginTop:12,padding:"11px",borderRadius:10,border:"1px solid "+T.border,background:"transparent",color:T.textSub,cursor:"pointer",fontWeight:600,fontSize:13}},"Close")
         )
       );
