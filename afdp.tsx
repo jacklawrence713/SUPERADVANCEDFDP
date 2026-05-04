@@ -2430,7 +2430,8 @@ export default function App(){
   var [reportSubTab,setReportSubTab]=useState("dynasty");
   var [newsFilter,setNewsFilter]=useState("all");
   var [billingPeriod,setBillingPeriod]=useState("yearly");
-  var [adminSubTab,setAdminSubTab]=useState("system");
+  var [adminSubTab,setAdminSubTab]=useState(function(){try{return localStorage.getItem('fdp_adminSubTab')||"system";}catch(e){return"system";}});
+  var _setAdminSubTab=setAdminSubTab;setAdminSubTab=function(v){_setAdminSubTab(v);try{localStorage.setItem('fdp_adminSubTab',v);}catch(e){}};
   var [analyticsData,setAnalyticsData]=useState<any>(null);
   var [analyticsLoading,setAnalyticsLoading]=useState(false);
   var [adminSyncSel,setAdminSyncSel]=useState("");
