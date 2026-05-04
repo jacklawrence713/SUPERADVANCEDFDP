@@ -1736,58 +1736,58 @@ const PLAYERS=[
 ];
 
 const DRAFT_PICKS=[
-  // 2026 1st Round — KTC baseline: 1.01=7463
-  {id:"p2026_1_01",name:"2026 1.01",round:1,est:7463,note:"Top overall pick · franchise cornerstone"},
-  {id:"p2026_1_02",name:"2026 1.02",round:1,est:6888,note:"Blue-chip dynasty asset"},
-  {id:"p2026_1_03",name:"2026 1.03",round:1,est:6313,note:"Premium top-3 pick"},
-  {id:"p2026_1_04",name:"2026 1.04",round:1,est:6060,note:"Top-4 dynasty value"},
-  {id:"p2026_1_05",name:"2026 1.05",round:1,est:5807,note:"Strong top-5 pick"},
-  {id:"p2026_1_06",name:"2026 1.06",round:1,est:5572,note:"Top-6 solid 1st"},
-  {id:"p2026_1_07",name:"2026 1.07",round:1,est:5337,note:"Mid 1st round"},
-  {id:"p2026_1_08",name:"2026 1.08",round:1,est:5102,note:"Mid 1st round"},
-  {id:"p2026_1_09",name:"2026 1.09",round:1,est:5022,note:"Mid-late 1st"},
-  {id:"p2026_1_10",name:"2026 1.10",round:1,est:4850,note:"Late 1st round"},
+  // 2026 1st Round — KTC May 2026: Early=6407, Mid=5355, Late=4815
+  {id:"p2026_1_01",name:"2026 1.01",round:1,est:7100,note:"Top overall pick · franchise cornerstone"},
+  {id:"p2026_1_02",name:"2026 1.02",round:1,est:6650,note:"Blue-chip dynasty asset"},
+  {id:"p2026_1_03",name:"2026 1.03",round:1,est:6200,note:"Premium top-3 pick"},
+  {id:"p2026_1_04",name:"2026 1.04",round:1,est:5700,note:"Top-4 dynasty value"},
+  {id:"p2026_1_05",name:"2026 1.05",round:1,est:5600,note:"Strong top-5 pick"},
+  {id:"p2026_1_06",name:"2026 1.06",round:1,est:5400,note:"Mid 1st round"},
+  {id:"p2026_1_07",name:"2026 1.07",round:1,est:5300,note:"Mid 1st round"},
+  {id:"p2026_1_08",name:"2026 1.08",round:1,est:5100,note:"Mid 1st round"},
+  {id:"p2026_1_09",name:"2026 1.09",round:1,est:5000,note:"Late 1st round"},
+  {id:"p2026_1_10",name:"2026 1.10",round:1,est:4900,note:"Late 1st round"},
   {id:"p2026_1_11",name:"2026 1.11",round:1,est:4700,note:"Late 1st round"},
   {id:"p2026_1_12",name:"2026 1.12",round:1,est:4560,note:"Late 1st · last pick"},
-  // 2026 2nd Round — KTC baseline: 2.01=3583
-  {id:"p2026_2_01",name:"2026 2.01",round:2,est:4400,note:"Top 2nd · solid dynasty value"},
-  {id:"p2026_2_02",name:"2026 2.02",round:2,est:4200,note:"Early 2nd"},
-  {id:"p2026_2_03",name:"2026 2.03",round:2,est:4020,note:"Early 2nd"},
+  // 2026 2nd Round — KTC May 2026: Early=4097, Mid=3728, Late=3514
+  {id:"p2026_2_01",name:"2026 2.01",round:2,est:4300,note:"Top 2nd · solid dynasty value"},
+  {id:"p2026_2_02",name:"2026 2.02",round:2,est:4150,note:"Early 2nd"},
+  {id:"p2026_2_03",name:"2026 2.03",round:2,est:4000,note:"Early 2nd"},
   {id:"p2026_2_04",name:"2026 2.04",round:2,est:3850,note:"Early-mid 2nd"},
-  {id:"p2026_2_05",name:"2026 2.05",round:2,est:3700,note:"Mid 2nd"},
-  {id:"p2026_2_06",name:"2026 2.06",round:2,est:3560,note:"Mid 2nd"},
-  {id:"p2026_2_07",name:"2026 2.07",round:2,est:3430,note:"Mid 2nd"},
-  {id:"p2026_2_08",name:"2026 2.08",round:2,est:3320,note:"Mid-late 2nd"},
-  {id:"p2026_2_09",name:"2026 2.09",round:2,est:3220,note:"Late 2nd"},
-  {id:"p2026_2_10",name:"2026 2.10",round:2,est:3130,note:"Late 2nd"},
-  {id:"p2026_2_11",name:"2026 2.11",round:2,est:3050,note:"Late 2nd"},
-  {id:"p2026_2_12",name:"2026 2.12",round:2,est:2980,note:"Late 2nd · last pick"},
-  // 2026 3rd Round — KTC baseline: 3.01=2565
-  {id:"p2026_3_01",name:"2026 3.01",round:3,est:2565,note:"Early 3rd · high-upside rookie"},
-  {id:"p2026_3_02",name:"2026 3.02",round:3,est:2490,note:"Early 3rd"},
-  {id:"p2026_3_03",name:"2026 3.03",round:3,est:2420,note:"Early 3rd"},
-  {id:"p2026_3_04",name:"2026 3.04",round:3,est:2360,note:"Mid 3rd"},
-  {id:"p2026_3_05",name:"2026 3.05",round:3,est:2300,note:"Mid 3rd"},
-  {id:"p2026_3_06",name:"2026 3.06",round:3,est:2250,note:"Mid 3rd"},
-  {id:"p2026_3_07",name:"2026 3.07",round:3,est:2200,note:"Mid-late 3rd"},
-  {id:"p2026_3_08",name:"2026 3.08",round:3,est:2160,note:"Late 3rd"},
-  {id:"p2026_3_09",name:"2026 3.09",round:3,est:2120,note:"Late 3rd"},
-  {id:"p2026_3_10",name:"2026 3.10",round:3,est:2090,note:"Late 3rd"},
-  {id:"p2026_3_11",name:"2026 3.11",round:3,est:2060,note:"Late 3rd"},
-  {id:"p2026_3_12",name:"2026 3.12",round:3,est:2030,note:"Late 3rd · last pick"},
-  // 2026 4th Round — KTC baseline: 4.01=1919
-  {id:"p2026_4_01",name:"2026 4.01",round:4,est:1919,note:"Early 4th · lottery upside"},
-  {id:"p2026_4_02",name:"2026 4.02",round:4,est:1870,note:"Early 4th"},
-  {id:"p2026_4_03",name:"2026 4.03",round:4,est:1825,note:"Early 4th"},
-  {id:"p2026_4_04",name:"2026 4.04",round:4,est:1780,note:"Mid 4th"},
-  {id:"p2026_4_05",name:"2026 4.05",round:4,est:1740,note:"Mid 4th"},
-  {id:"p2026_4_06",name:"2026 4.06",round:4,est:1700,note:"Mid 4th"},
-  {id:"p2026_4_07",name:"2026 4.07",round:4,est:1660,note:"Mid-late 4th"},
-  {id:"p2026_4_08",name:"2026 4.08",round:4,est:1625,note:"Late 4th"},
-  {id:"p2026_4_09",name:"2026 4.09",round:4,est:1590,note:"Late 4th"},
-  {id:"p2026_4_10",name:"2026 4.10",round:4,est:1555,note:"Late 4th"},
-  {id:"p2026_4_11",name:"2026 4.11",round:4,est:1520,note:"Late 4th"},
-  {id:"p2026_4_12",name:"2026 4.12",round:4,est:1480,note:"Late 4th · last pick"},
+  {id:"p2026_2_05",name:"2026 2.05",round:2,est:3800,note:"Mid 2nd"},
+  {id:"p2026_2_06",name:"2026 2.06",round:2,est:3750,note:"Mid 2nd"},
+  {id:"p2026_2_07",name:"2026 2.07",round:2,est:3700,note:"Mid 2nd"},
+  {id:"p2026_2_08",name:"2026 2.08",round:2,est:3650,note:"Mid-late 2nd"},
+  {id:"p2026_2_09",name:"2026 2.09",round:2,est:3600,note:"Late 2nd"},
+  {id:"p2026_2_10",name:"2026 2.10",round:2,est:3550,note:"Late 2nd"},
+  {id:"p2026_2_11",name:"2026 2.11",round:2,est:3450,note:"Late 2nd"},
+  {id:"p2026_2_12",name:"2026 2.12",round:2,est:3400,note:"Late 2nd · last pick"},
+  // 2026 3rd Round — KTC May 2026: Early=2828, Mid=2652, Late=2509
+  {id:"p2026_3_01",name:"2026 3.01",round:3,est:2950,note:"Early 3rd · high-upside rookie"},
+  {id:"p2026_3_02",name:"2026 3.02",round:3,est:2850,note:"Early 3rd"},
+  {id:"p2026_3_03",name:"2026 3.03",round:3,est:2780,note:"Early 3rd"},
+  {id:"p2026_3_04",name:"2026 3.04",round:3,est:2720,note:"Early-mid 3rd"},
+  {id:"p2026_3_05",name:"2026 3.05",round:3,est:2700,note:"Mid 3rd"},
+  {id:"p2026_3_06",name:"2026 3.06",round:3,est:2660,note:"Mid 3rd"},
+  {id:"p2026_3_07",name:"2026 3.07",round:3,est:2630,note:"Mid 3rd"},
+  {id:"p2026_3_08",name:"2026 3.08",round:3,est:2600,note:"Mid-late 3rd"},
+  {id:"p2026_3_09",name:"2026 3.09",round:3,est:2560,note:"Late 3rd"},
+  {id:"p2026_3_10",name:"2026 3.10",round:3,est:2520,note:"Late 3rd"},
+  {id:"p2026_3_11",name:"2026 3.11",round:3,est:2480,note:"Late 3rd"},
+  {id:"p2026_3_12",name:"2026 3.12",round:3,est:2450,note:"Late 3rd · last pick"},
+  // 2026 4th Round
+  {id:"p2026_4_01",name:"2026 4.01",round:4,est:2200,note:"Early 4th · lottery upside"},
+  {id:"p2026_4_02",name:"2026 4.02",round:4,est:2100,note:"Early 4th"},
+  {id:"p2026_4_03",name:"2026 4.03",round:4,est:2020,note:"Early 4th"},
+  {id:"p2026_4_04",name:"2026 4.04",round:4,est:1950,note:"Mid 4th"},
+  {id:"p2026_4_05",name:"2026 4.05",round:4,est:1880,note:"Mid 4th"},
+  {id:"p2026_4_06",name:"2026 4.06",round:4,est:1820,note:"Mid 4th"},
+  {id:"p2026_4_07",name:"2026 4.07",round:4,est:1760,note:"Mid-late 4th"},
+  {id:"p2026_4_08",name:"2026 4.08",round:4,est:1700,note:"Late 4th"},
+  {id:"p2026_4_09",name:"2026 4.09",round:4,est:1650,note:"Late 4th"},
+  {id:"p2026_4_10",name:"2026 4.10",round:4,est:1600,note:"Late 4th"},
+  {id:"p2026_4_11",name:"2026 4.11",round:4,est:1550,note:"Late 4th"},
+  {id:"p2026_4_12",name:"2026 4.12",round:4,est:1500,note:"Late 4th · last pick"},
   // 2026 5th Round
   {id:"p2026_5_01",name:"2026 5.01",round:5,est:1420,note:"Early 5th · deep lottery"},
   {id:"p2026_5_02",name:"2026 5.02",round:5,est:1370,note:"Early 5th"},
@@ -1801,22 +1801,22 @@ const DRAFT_PICKS=[
   {id:"p2026_5_10",name:"2026 5.10",round:5,est:1090,note:"Late 5th"},
   {id:"p2026_5_11",name:"2026 5.11",round:5,est:1060,note:"Late 5th"},
   {id:"p2026_5_12",name:"2026 5.12",round:5,est:1030,note:"Late 5th · last pick"},
-  // Future 2027 Picks
-  {id:"p2027_1_early",name:"2027 1st Early",round:1,est:5800,note:"Future 1st · top-4 range"},
-  {id:"p2027_1_mid",name:"2027 1st Mid",round:1,est:4600,note:"Future 1st · mid range"},
-  {id:"p2027_1_late",name:"2027 1st Late",round:1,est:3700,note:"Future 1st · late range"},
-  {id:"p2027_2",name:"2027 2nd Round",round:2,est:3100,note:"Future 2nd"},
-  {id:"p2027_3",name:"2027 3rd Round",round:3,est:2300,note:"Future 3rd"},
-  {id:"p2027_4",name:"2027 4th Round",round:4,est:1700,note:"Future 4th"},
+  // Future 2027 Picks — KTC May 2026: Early=7252, Mid=5995, Late=5479
+  {id:"p2027_1_early",name:"2027 1st Early",round:1,est:7252,note:"Future 1st · top-4 range"},
+  {id:"p2027_1_mid",name:"2027 1st Mid",round:1,est:5995,note:"Future 1st · mid range"},
+  {id:"p2027_1_late",name:"2027 1st Late",round:1,est:5479,note:"Future 1st · late range"},
+  {id:"p2027_2",name:"2027 2nd Round",round:2,est:3500,note:"Future 2nd"},
+  {id:"p2027_3",name:"2027 3rd Round",round:3,est:2500,note:"Future 3rd"},
+  {id:"p2027_4",name:"2027 4th Round",round:4,est:1800,note:"Future 4th"},
   {id:"p2027_5",name:"2027 5th Round",round:5,est:1200,note:"Future 5th"},
-  // Future 2028 Picks
-  {id:"p2028_1_early",name:"2028 1st Early",round:1,est:4800,note:"Future 1st · top-4 range"},
-  {id:"p2028_1_mid",name:"2028 1st Mid",round:1,est:3800,note:"Future 1st · mid range"},
-  {id:"p2028_1_late",name:"2028 1st Late",round:1,est:3000,note:"Future 1st · late range"},
-  {id:"p2028_2",name:"2028 2nd Round",round:2,est:2500,note:"Future 2nd"},
-  {id:"p2028_3",name:"2028 3rd Round",round:3,est:1800,note:"Future 3rd"},
-  {id:"p2028_4",name:"2028 4th Round",round:4,est:1300,note:"Future 4th"},
-  {id:"p2028_5",name:"2028 5th Round",round:5,est:900,note:"Future 5th"},
+  // Future 2028 Picks — ~15% discount from 2027
+  {id:"p2028_1_early",name:"2028 1st Early",round:1,est:6164,note:"Future 1st · top-4 range"},
+  {id:"p2028_1_mid",name:"2028 1st Mid",round:1,est:5096,note:"Future 1st · mid range"},
+  {id:"p2028_1_late",name:"2028 1st Late",round:1,est:4657,note:"Future 1st · late range"},
+  {id:"p2028_2",name:"2028 2nd Round",round:2,est:2975,note:"Future 2nd"},
+  {id:"p2028_3",name:"2028 3rd Round",round:3,est:2125,note:"Future 3rd"},
+  {id:"p2028_4",name:"2028 4th Round",round:4,est:1530,note:"Future 4th"},
+  {id:"p2028_5",name:"2028 5th Round",round:5,est:1020,note:"Future 5th"},
 ];
 
 const UNQ=PLAYERS.filter(function(p,i,a){return a.findIndex(function(x){return x.name===p.name;})===i;});
@@ -1857,7 +1857,7 @@ function scarcityLabel(pr,bl){
   if(r<=0.75) return {l:"Available",c:"#10b981"};
   return {l:"Deep",c:"#4b5563"};
 }
-function makePick(pk){return Object.assign({},pk,{pos:"PICK",age:0,pts:pk.est,vbd:pk.est,tradeVal:pk.est,ag:{g:"N/A",c:"#5c5880"},tier:tierLabel(pk.round,"PICK"),scarcity:{l:"—",c:"#5c5880"},auction:pk.est,ffabVal:pk.est,rank:999,team:"—"});}
+function makePick(pk){var fdpBoost=pk.round<=1?1.05:pk.round<=2?1.03:1.0;var tv=Math.round(pk.est*fdpBoost);return Object.assign({},pk,{pos:"PICK",age:0,pts:tv,vbd:tv,tradeVal:tv,ag:{g:"N/A",c:"#5c5880"},tier:tierLabel(pk.round,"PICK"),scarcity:{l:"—",c:"#5c5880"},auction:tv,ffabVal:tv,rank:999,team:"—"});}
 
 var Avatar=React.memo(function Avatar(props){
   var hs=headshot(props.name),pc=POS_COLORS[props.pos]||"#888";
@@ -3528,13 +3528,14 @@ export default function App(){
             powerRankingTeams&&React.createElement(React.Fragment,null,
               React.createElement("select",{value:tradeRosterTeam,onChange:function(e){setTradeRosterTeam(+e.target.value);},style:{width:"100%",background:T.bgCard,color:T.text,border:"1px solid "+T.border,borderRadius:8,padding:"7px 10px",fontSize:12,marginBottom:8,outline:"none"}},
                 powerRankingTeams.map(function(t,i){return React.createElement("option",{key:i,value:i},t.name);})),
-              React.createElement("div",{style:{maxHeight:200,overflowY:"auto",display:"flex",flexDirection:"column",gap:4}},
+              React.createElement("div",{style:{maxHeight:280,overflowY:"auto",display:"flex",flexDirection:"column",gap:4}},
                 (powerRankingTeams[tradeRosterTeam]||powerRankingTeams[0]).players.filter(function(p){return !tradeA.find(function(x){return x.name===p.name;})&&!tradeB.find(function(x){return x.name===p.name;});}).map(function(p){
                   return React.createElement("button",{key:p.name,onClick:function(){setTradeA(function(prev){return prev.concat([p]);});setAnalyzed(false);setTradeRosterSide(null);},style:{display:"flex",justifyContent:"space-between",alignItems:"center",background:T.bgCard,border:"1px solid "+T.border,borderRadius:8,padding:"6px 10px",cursor:"pointer",textAlign:"left",width:"100%"}},
                     React.createElement("span",{style:{fontSize:12,fontWeight:600,color:T.text}},p.name),
                     React.createElement("span",{style:{fontSize:11,color:T.textSub}},React.createElement("span",{style:{color:POS_COLORS[p.pos]||T.textSub,marginRight:4,fontWeight:700,fontSize:10}},p.pos),(p.tradeVal||0).toLocaleString())
                   );
-                })
+                }),
+                (function(){var tm=powerRankingTeams[tradeRosterTeam]||powerRankingTeams[0];if(!tm.pickDetails||!tm.pickDetails.length)return null;var sorted=tm.pickDetails.slice().sort(function(a,b){return a.season===b.season?a.round-b.round:a.season-b.season;});return [React.createElement("div",{key:"pick-hdr-a",style:{fontSize:10,fontWeight:800,color:T.textDim,padding:"6px 4px 2px",borderTop:"1px solid "+T.border,marginTop:4}},"DRAFT PICKS")].concat(sorted.map(function(pk,idx){var ordRd=pk.round===1?"1st":pk.round===2?"2nd":pk.round===3?"3rd":pk.round+"th";var label=pk.season+" "+ordRd;var match=DRAFT_PICKS.find(function(dp){return dp.name.includes(pk.season)&&dp.round===pk.round;});var pickObj=match?makePick(match):makePick({id:"tp_"+pk.season+"_"+pk.round+"_"+idx,name:label+" Round",round:pk.round,est:Math.round([0,5000,2000,1000,500,250][Math.min(pk.round,5)]||200),note:""});if(tradeA.find(function(x){return x.name===pickObj.name;})||tradeB.find(function(x){return x.name===pickObj.name;}))return null;return React.createElement("button",{key:"pk-a-"+idx,onClick:function(){setTradeA(function(prev){return prev.concat([pickObj]);});setAnalyzed(false);setTradeRosterSide(null);},style:{display:"flex",justifyContent:"space-between",alignItems:"center",background:"#818cf811",border:"1px solid #818cf833",borderRadius:8,padding:"6px 10px",cursor:"pointer",textAlign:"left",width:"100%"}},React.createElement("span",{style:{fontSize:12,fontWeight:600,color:T.text}},pickObj.name),React.createElement("span",{style:{fontSize:11,color:"#818cf8",fontWeight:700}},(pickObj.tradeVal||0).toLocaleString()));}));})()
               )
             )
           ),
@@ -3555,13 +3556,14 @@ export default function App(){
             powerRankingTeams&&React.createElement(React.Fragment,null,
               React.createElement("select",{value:tradeRosterTeam,onChange:function(e){setTradeRosterTeam(+e.target.value);},style:{width:"100%",background:T.bgCard,color:T.text,border:"1px solid "+T.border,borderRadius:8,padding:"7px 10px",fontSize:12,marginBottom:8,outline:"none"}},
                 powerRankingTeams.map(function(t,i){return React.createElement("option",{key:i,value:i},t.name);})),
-              React.createElement("div",{style:{maxHeight:200,overflowY:"auto",display:"flex",flexDirection:"column",gap:4}},
+              React.createElement("div",{style:{maxHeight:280,overflowY:"auto",display:"flex",flexDirection:"column",gap:4}},
                 (powerRankingTeams[tradeRosterTeam]||powerRankingTeams[0]).players.filter(function(p){return !tradeA.find(function(x){return x.name===p.name;})&&!tradeB.find(function(x){return x.name===p.name;});}).map(function(p){
                   return React.createElement("button",{key:p.name,onClick:function(){setTradeB(function(prev){return prev.concat([p]);});setAnalyzed(false);setTradeRosterSide(null);},style:{display:"flex",justifyContent:"space-between",alignItems:"center",background:T.bgCard,border:"1px solid "+T.border,borderRadius:8,padding:"6px 10px",cursor:"pointer",textAlign:"left",width:"100%"}},
                     React.createElement("span",{style:{fontSize:12,fontWeight:600,color:T.text}},p.name),
                     React.createElement("span",{style:{fontSize:11,color:T.textSub}},React.createElement("span",{style:{color:POS_COLORS[p.pos]||T.textSub,marginRight:4,fontWeight:700,fontSize:10}},p.pos),(p.tradeVal||0).toLocaleString())
                   );
-                })
+                }),
+                (function(){var tm=powerRankingTeams[tradeRosterTeam]||powerRankingTeams[0];if(!tm.pickDetails||!tm.pickDetails.length)return null;var sorted=tm.pickDetails.slice().sort(function(a,b){return a.season===b.season?a.round-b.round:a.season-b.season;});return [React.createElement("div",{key:"pick-hdr-b",style:{fontSize:10,fontWeight:800,color:T.textDim,padding:"6px 4px 2px",borderTop:"1px solid "+T.border,marginTop:4}},"DRAFT PICKS")].concat(sorted.map(function(pk,idx){var ordRd=pk.round===1?"1st":pk.round===2?"2nd":pk.round===3?"3rd":pk.round+"th";var label=pk.season+" "+ordRd;var match=DRAFT_PICKS.find(function(dp){return dp.name.includes(pk.season)&&dp.round===pk.round;});var pickObj=match?makePick(match):makePick({id:"tp_"+pk.season+"_"+pk.round+"_"+idx,name:label+" Round",round:pk.round,est:Math.round([0,5000,2000,1000,500,250][Math.min(pk.round,5)]||200),note:""});if(tradeA.find(function(x){return x.name===pickObj.name;})||tradeB.find(function(x){return x.name===pickObj.name;}))return null;return React.createElement("button",{key:"pk-b-"+idx,onClick:function(){setTradeB(function(prev){return prev.concat([pickObj]);});setAnalyzed(false);setTradeRosterSide(null);},style:{display:"flex",justifyContent:"space-between",alignItems:"center",background:"#818cf811",border:"1px solid #818cf833",borderRadius:8,padding:"6px 10px",cursor:"pointer",textAlign:"left",width:"100%"}},React.createElement("span",{style:{fontSize:12,fontWeight:600,color:T.text}},pickObj.name),React.createElement("span",{style:{fontSize:11,color:"#818cf8",fontWeight:700}},(pickObj.tradeVal||0).toLocaleString()));}));})()
               )
             )
           ),
