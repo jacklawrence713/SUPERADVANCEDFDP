@@ -4060,7 +4060,7 @@ export default function App(){
                 )
               )
             ),
-            [["▦","League Rank",leaguePercentile+"th","percentile","#818cf8"],["◎","Starter Value",starterVal.toLocaleString(),"FDP value","#818cf8"],["↗","Future Value",futureVal.toLocaleString(),"youth (≤24)",T.green],["◷","Aging Risk",agingRisk,"veterans","#f97316"]].map(function(card){
+            [["▦","League Rank",leaguePercentile+(leaguePercentile%100>=11&&leaguePercentile%100<=13?"th":leaguePercentile%10===1?"st":leaguePercentile%10===2?"nd":leaguePercentile%10===3?"rd":"th"),"percentile","#818cf8"],["◎","Starter Value",starterVal.toLocaleString(),"FDP value","#818cf8"],["↗","Future Value",futureVal.toLocaleString(),"youth (≤24)",T.green],["◷","Aging Risk",agingRisk,"veterans","#f97316"]].map(function(card){
               return React.createElement("div",{key:card[1],style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:16,marginBottom:10}},
                 React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:6}},
                   React.createElement("span",{style:{fontSize:16,color:card[4]}},card[0]),
