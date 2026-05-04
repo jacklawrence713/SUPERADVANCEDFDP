@@ -1817,6 +1817,14 @@ const DRAFT_PICKS=[
   {id:"p2028_3",name:"2028 3rd Round",round:3,est:2125,note:"Future 3rd"},
   {id:"p2028_4",name:"2028 4th Round",round:4,est:1530,note:"Future 4th"},
   {id:"p2028_5",name:"2028 5th Round",round:5,est:1020,note:"Future 5th"},
+  // Future 2029 Picks — ~15% discount from 2028
+  {id:"p2029_1_early",name:"2029 1st Early",round:1,est:5239,note:"Future 1st · top-4 range"},
+  {id:"p2029_1_mid",name:"2029 1st Mid",round:1,est:4332,note:"Future 1st · mid range"},
+  {id:"p2029_1_late",name:"2029 1st Late",round:1,est:3958,note:"Future 1st · late range"},
+  {id:"p2029_2",name:"2029 2nd Round",round:2,est:2529,note:"Future 2nd"},
+  {id:"p2029_3",name:"2029 3rd Round",round:3,est:1806,note:"Future 3rd"},
+  {id:"p2029_4",name:"2029 4th Round",round:4,est:1301,note:"Future 4th"},
+  {id:"p2029_5",name:"2029 5th Round",round:5,est:867,note:"Future 5th"},
 ];
 
 const UNQ=PLAYERS.filter(function(p,i,a){return a.findIndex(function(x){return x.name===p.name;})===i;});
