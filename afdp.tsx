@@ -132,8 +132,8 @@ const DYNASTY_NEWS=[
   {id:15,ts:"Apr 10",tag:"NEWS",pos:"RB",title:"Derrick Henry aging curve watch — sell window open",body:"Henry (4,587) turns 32 in January 2027. Still producing elite numbers but the cliff is coming. Dynasty managers should sell for a young asset + pick while value remains."},
   {id:16,ts:"Apr 8",tag:"TRADE",pos:"WR",title:"Jaxon Smith-Njigba: Dynasty WR2 and rising",body:"JSN (9,794) exploded in his sophomore season in Seattle and is now the dynasty WR2. At just 23, his target share is massive. He's approaching untouchable territory — only sell for an elite haul."},
 ];
-const ADMIN_EMAILS=["jacklawrence713@gmail.com","theprez@yahoo.com","modgy28@hotmail.com","sbesk787@gmail.com","starrrya@yahoo.com"];
-const FULL_ACCESS_EMAILS=["stevengroller@yahoo.com","nzajac23@gmail.com","coryhardy22@gmail.com","heathermholdsworth@gmail.com","cssum0@hotmail.com"];
+const ADMIN_EMAILS=["jacklawrence713@gmail.com","modgy28@hotmail.com","sbesk787@gmail.com","starrrya@yahoo.com"];
+const FULL_ACCESS_EMAILS=["stevengroller@yahoo.com","nzajac23@gmail.com","coryhardy22@gmail.com","heathermholdsworth@gmail.com","cssum0@hotmail.com","theprez@yahoo.com"];
 function isAdminEmail(e){return ADMIN_EMAILS.indexOf((e||"").toLowerCase().trim())!==-1;}
 function isFullAccessEmail(e){return FULL_ACCESS_EMAILS.indexOf((e||"").toLowerCase().trim())!==-1;}
 
