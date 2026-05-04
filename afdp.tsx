@@ -2427,7 +2427,8 @@ export default function App(){
   var [espnId,setEspnId]=useState("");
   var [mflId,setMflId]=useState("");
   var [faqOpen,setFaqOpen]=useState(null);
-  var [reportSubTab,setReportSubTab]=useState("dynasty");
+  var [reportSubTab,setReportSubTab]=useState(function(){try{return localStorage.getItem('fdp_reportSubTab')||"dynasty";}catch(e){return"dynasty";}});
+  var _setReportSubTab=setReportSubTab;setReportSubTab=function(v){_setReportSubTab(v);try{localStorage.setItem('fdp_reportSubTab',v);}catch(e){}};
   var [newsFilter,setNewsFilter]=useState("all");
   var [billingPeriod,setBillingPeriod]=useState("yearly");
   var [adminSubTab,setAdminSubTab]=useState(function(){try{return localStorage.getItem('fdp_adminSubTab')||"system";}catch(e){return"system";}});
