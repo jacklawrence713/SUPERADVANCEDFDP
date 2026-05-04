@@ -5439,7 +5439,7 @@ export default function App(){
             React.createElement("span",{style:{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",color:T.textDim,fontSize:13}},"Q"),
             React.createElement("input",{value:valueTrendSearch,onChange:function(e){setValueTrendSearch(e.target.value);},placeholder:"Search tracked players...",style:Object.assign({},inpS,{paddingLeft:38})})
           ),
-          React.createElement("button",{onClick:function(){setValueTrendSearch("");},style:{width:"100%",padding:"13px",borderRadius:10,border:"none",background:"#2563eb",color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer"}},"Refresh Trends")
+          React.createElement("button",{onClick:function(){setValueTrendSearch(" ");setTimeout(function(){setValueTrendSearch("");},50);},style:{width:"100%",padding:"13px",borderRadius:10,border:"none",background:"#2563eb",color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer"}},"Refresh Trends")
         ),
         (function(){
           var display=rankedPlayers.filter(function(p){
