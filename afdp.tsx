@@ -2916,9 +2916,9 @@ export default function App(){
       fetch("https://api.sleeper.app/v1/league/"+lg.league_id+"/drafts").then(function(r){return r.ok?r.json():[];}).catch(function(){return[];})
     ]).then(function(results){
       var rosters=results[0],users=results[1],tradedPicks=results[2]||[],sleeperDb=results[3]||{},drafts=results[4]||[];
-      // Detect which seasons have completed rookie drafts
+      // Detect which seasons have completed drafts (rookie drafts have ≤10 rounds; startup drafts have 15+)
       var completedDraftSeasons=new Set();
-      drafts.forEach(function(d){if(d.status==="complete"&&d.type==="rookie")completedDraftSeasons.add(parseInt(d.season));});
+      drafts.forEach(function(d){if(d.status==="complete"){var rnds=(d.settings&&d.settings.rounds)||0;if(rnds>0&&rnds<=10)completedDraftSeasons.add(parseInt(d.season));}});
       initSleeperNameMap(sleeperDb);setSleeperRawDb(sleeperDb);
       // Build lookup maps from rankedPlayers — exact name and normalized name
       var rpByName={},rpByNorm={};
