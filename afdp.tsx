@@ -119,7 +119,7 @@ const DYNASTY_NEWS=[
   {id:2,ts:"May 1",tag:"NEWS",pos:"RB",title:"Omarion Hampton named LAC bellcow — dynasty stock rising",body:"Hampton (7,359) is the undisputed starter in Los Angeles after a dominant rookie campaign. Coaches confirmed a three-down role entering Year 2. He's a top-7 dynasty RB and climbing."},
   {id:3,ts:"May 1",tag:"NEWS",pos:"WR",title:"Travis Hunter buy-low window closing fast",body:"Hunter (6,000) flashed elite WR/CB versatility as a rookie in Jacksonville. At 22 years old with #1 overall pick pedigree, he's severely undervalued. Multiple dynasty analysts project him as a top-15 dynasty WR by midseason. Buy now."},
   {id:4,ts:"Apr 28",tag:"NEWS",pos:"TE",title:"Colston Loveland breaks out — TE3 in dynasty",body:"Loveland (7,218) posted 78 rec, 820 yds, 7 TD in his sophomore season with Chicago. At 23, he's firmly the dynasty TE3 behind Bowers and McBride. TEP leagues should value him even higher."},
-  {id:5,ts:"Apr 26",tag:"DRAFT",pos:"QB",title:"Jaxson Dart goes #2 overall — dynasty QB1 of the class",body:"LSU's Dart (6,614) lands with the ideal draft capital. Elite processing and arm talent make him the clear SF dynasty asset of this class. Start-up leagues should draft him as a top-12 QB."},
+  {id:5,ts:"Apr 26",tag:"NEWS",pos:"QB",title:"Jaxson Dart Year 2 breakout — dynasty QB1 of the 2025 class",body:"Ole Miss product Dart (6,614) is entering his second NFL season with the Giants after being selected 25th overall in the 2025 draft. Elite processing and arm talent have him primed for a sophomore leap. SF dynasty managers should target him as a top-12 QB — his value is still climbing."},
   {id:6,ts:"Apr 26",tag:"DRAFT",pos:"RB",title:"Jeremiyah Love lands in Arizona at 1-3",body:"Notre Dame RB Jeremiyah Love (8,500) goes 3rd overall to the Cardinals. Immediate dynasty RB1 — Arizona hands him a three-down role. Top-5 dynasty RB with elite speed."},
   {id:7,ts:"Apr 26",tag:"DRAFT",pos:"WR",title:"Carnell Tate lands in Tennessee at 1-4",body:"Ohio State WR Carnell Tate (6,062) goes 4th overall to the Titans. Dynasty WR1 ceiling with elite route-running. New franchise receiver in Nashville."},
   {id:8,ts:"Apr 26",tag:"DRAFT",pos:"TE",title:"Kenyon Sadiq goes 1-16 to the Jets",body:"Oregon TE Sadiq (5,570) lands in New York at pick 16. Immediate TE1 upside with elite athletic profile. Must-buy in TEP leagues."},
@@ -988,7 +988,7 @@ const PLAYERS=[
   {name:"Nicholas Singleton",pos:"RB",age:22,team:"PHI",proj:{PPR:168,Half:154,Standard:140},adp:18.5,ktcVal:2500,note:"Power speed combo: 700 rush depth"},
   {name:"Ollie Gordon II",pos:"RB",age:22,team:"MIA",proj:{PPR:175,Half:161,Standard:147},adp:17.0,ktcVal:3238,note:"Big back: 800 rush 40 rec"},
   // 2025 QB Rookies
-  {name:"Jaxson Dart",pos:"QB",age:23,team:"NYG",proj:{PPR:318,Half:318,Standard:318},adp:9.0,ktcVal:6614,note:"2025 1st round: 3,600 yds 27 TD elite arm dynasty asset"},
+  {name:"Jaxson Dart",pos:"QB",age:23,team:"NYG",proj:{PPR:318,Half:318,Standard:318},adp:9.0,ktcVal:6614,note:"2025 pick 25 (Ole Miss): Year 2 breakout 3,600 yds 27 TD elite arm dynasty asset"},
   {name:"Will Howard",pos:"QB",age:23,team:"PIT",proj:{PPR:272,Half:272,Standard:272},adp:19.5,ktcVal:2128,note:"2025 mid-round: 3,000 yds 22 TD"},
   {name:"Tyler Shough",pos:"QB",age:26,team:"NO",proj:{PPR:255,Half:255,Standard:255},adp:22.5,ktcVal:4648,note:"2025 draft: veteran passer 2,800 yds"},
   // 2025 WR Rookies
