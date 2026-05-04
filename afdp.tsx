@@ -2912,9 +2912,13 @@ export default function App(){
       fetch("https://api.sleeper.app/v1/league/"+lg.league_id+"/rosters").then(function(r){if(!r.ok)throw new Error("Failed to load rosters");return r.json();}),
       fetch("https://api.sleeper.app/v1/league/"+lg.league_id+"/users").then(function(r){if(!r.ok)throw new Error("Failed to load users");return r.json();}),
       fetch("https://api.sleeper.app/v1/league/"+lg.league_id+"/traded_picks").then(function(r){return r.ok?r.json():[];}).catch(function(){return[];}),
-      playersPromise
+      playersPromise,
+      fetch("https://api.sleeper.app/v1/league/"+lg.league_id+"/drafts").then(function(r){return r.ok?r.json():[];}).catch(function(){return[];})
     ]).then(function(results){
-      var rosters=results[0],users=results[1],tradedPicks=results[2]||[],sleeperDb=results[3]||{};
+      var rosters=results[0],users=results[1],tradedPicks=results[2]||[],sleeperDb=results[3]||{},drafts=results[4]||[];
+      // Detect which seasons have completed rookie drafts
+      var completedDraftSeasons=new Set();
+      drafts.forEach(function(d){if(d.status==="complete"&&d.type==="rookie")completedDraftSeasons.add(parseInt(d.season));});
       initSleeperNameMap(sleeperDb);setSleeperRawDb(sleeperDb);
       // Build lookup maps from rankedPlayers — exact name and normalized name
       var rpByName={},rpByNorm={};
@@ -2937,16 +2941,19 @@ export default function App(){
       // Accurate draft pick count + pick details for value calculation
       var curSeason=parseInt(lg.season)||new Date().getFullYear();
       var rounds=(lg.settings&&lg.settings.draft_rounds)||3;
-      // Find all unique future seasons referenced in traded_picks
+      // Find all unique future seasons referenced in traded_picks, excluding completed drafts
       var futureSnsSet=new Set();
-      tradedPicks.forEach(function(pk){if(parseInt(pk.season)>=curSeason)futureSnsSet.add(parseInt(pk.season));});
-      if(futureSnsSet.size===0){futureSnsSet.add(curSeason);futureSnsSet.add(curSeason+1);futureSnsSet.add(curSeason+2);}
+      tradedPicks.forEach(function(pk){var sn=parseInt(pk.season);if(sn>=curSeason&&!completedDraftSeasons.has(sn))futureSnsSet.add(sn);});
+      if(futureSnsSet.size===0){
+        if(!completedDraftSeasons.has(curSeason))futureSnsSet.add(curSeason);
+        futureSnsSet.add(curSeason+1);futureSnsSet.add(curSeason+2);
+      }
       var futureSnsList=Array.from(futureSnsSet).sort();
       // Build set of which original picks have been traded away
       var tradedAwaySet={}; // roster_id → Set of "season_round"
       var tradedToTeam={};  // roster_id → array of {round,season}
       tradedPicks.forEach(function(pk){
-        var sn=parseInt(pk.season);if(sn<curSeason)return;
+        var sn=parseInt(pk.season);if(sn<curSeason||completedDraftSeasons.has(sn))return;
         var orig=pk.roster_id,curr=pk.owner_id;if(orig===curr)return;
         if(!tradedAwaySet[orig])tradedAwaySet[orig]=new Set();
         tradedAwaySet[orig].add(sn+"_"+pk.round);
@@ -2962,7 +2969,7 @@ export default function App(){
             if(!tradedAwaySet[rid]||!tradedAwaySet[rid].has(sn+"_"+rd))details.push({round:rd,season:sn});
           }
         });
-        (tradedToTeam[rid]||[]).forEach(function(pk){details.push(pk);});
+        (tradedToTeam[rid]||[]).forEach(function(pk){if(!completedDraftSeasons.has(pk.season))details.push(pk);});
         pickDetailsByRoster[rid]=details;
       });
       var teams=rosters.map(function(r){
