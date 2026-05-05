@@ -321,7 +321,7 @@ const PLAYERS=[
   {name:"Zaire Franklin",pos:"LB",age:29,team:"IND",proj:{PPR:144,Half:144,Standard:144},adp:8.5,ktcVal:2800,note:"170 tackles"},
   {name:"Kyle Hamilton",pos:"DB",age:26,team:"BAL",proj:{PPR:142,Half:142,Standard:142},adp:8.8,ktcVal:8000,note:"108 tackles 5 INT 3 sacks"},
   {name:"Derwin James",pos:"DB",age:30,team:"LAC",proj:{PPR:136,Half:136,Standard:136},adp:9.5,ktcVal:4200,note:"110 tackles 3 INT"},
-  {name:"Sauce Gardner",pos:"DB",age:25,team:"NYJ",proj:{PPR:125,Half:125,Standard:125},adp:11.2,ktcVal:6500,note:"70 tackles 4 INT"},
+  {name:"Sauce Gardner",pos:"DB",age:25,team:"IND",proj:{PPR:125,Half:125,Standard:125},adp:11.2,ktcVal:6500,note:"70 tackles 4 INT"},
   // Additional QBs
   {name:"Justin Herbert",pos:"QB",age:28,team:"LAC",proj:{PPR:348,Half:348,Standard:348},adp:7.2,ktcVal:6826,note:"4,200 yds 30 TD"},
   {name:"Trevor Lawrence",pos:"QB",age:27,team:"JAX",proj:{PPR:355,Half:355,Standard:355},adp:6.5,ktcVal:4829,note:"4,100 yds 30 TD"},
