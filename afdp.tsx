@@ -4191,7 +4191,7 @@ export default function App(){
           React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:16,marginBottom:12}},
             React.createElement("div",{style:{display:"flex",gap:8,marginBottom:10}},
               React.createElement("input",{value:waiverSearch,onChange:function(e){setWaiverSearch(e.target.value);},placeholder:"Search players...",style:Object.assign({},inpS,{flex:1,margin:0})}),
-              React.createElement("button",{onClick:function(){if(activeLeague&&!activeLeague.league_id.startsWith("espn_")&&activeLeague.league_id!=="manual")connectLeague(activeLeague);},style:{padding:"10px 14px",borderRadius:10,border:"none",background:"#2563eb",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}},"↻ Refresh")
+              React.createElement("button",{onClick:function(){if(activeLeague){connectLeague(activeLeague);}else{setWaiverSearch(" ");setTimeout(function(){setWaiverSearch("");},50);}},style:{padding:"10px 14px",borderRadius:10,border:"none",background:"#2563eb",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}},"↻ Refresh")
             ),
             React.createElement("div",{style:{display:"flex",gap:8}},
               React.createElement("select",{value:waiverPos,onChange:function(e){setWaiverPos(e.target.value);},style:{flex:1,background:T.bgInput,color:T.text,border:"1px solid "+T.border,borderRadius:10,padding:"10px 12px",fontSize:13,outline:"none"}},
