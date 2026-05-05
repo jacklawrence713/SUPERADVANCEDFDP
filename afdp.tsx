@@ -5941,7 +5941,7 @@ export default function App(){
       React.createElement("div",{style:{position:"relative",borderBottom:"1px solid "+T.border}},
         isDesktop&&React.createElement("button",{onClick:function(){reportsTabsRef.current&&reportsTabsRef.current.scrollBy({left:-200,behavior:"smooth"});},style:{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",zIndex:2,background:T.bgCard,border:"1px solid "+T.border,borderRadius:"50%",width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:T.text,fontSize:14,padding:0}},"‹"),
         React.createElement("div",{ref:reportsTabsRef,style:{display:"flex",gap:6,padding:isDesktop?"12px 36px":"12px 16px",overflowX:"auto",WebkitOverflowScrolling:"touch",msOverflowStyle:"none",scrollbarWidth:"none"}},
-          [["dynasty","\uD83D\uDCC4","Dynasty Reports"],["news","\uD83D\uDCF0","Trending"],["stats","\uD83D\uDCCA","Live Stats"],["export","\uD83D\uDD17","Export & Share"],["upgrade","\u2728","Upgrade"],["faq","\u2753","FAQ"],["help","\uD83D\uDCA1","Help"],["contact","\u2709","Contact"]].map(function(s){
+          [["dynasty","\uD83D\uDCC4","Dynasty Reports"],["news","\uD83D\uDCF0","Trending"],["stats","\uD83D\uDCCA","Live Stats"]].concat(user&&user.isAdmin?[["export","\uD83D\uDD17","Export & Share"]]:[]).concat([["upgrade","\u2728","Upgrade"],["faq","\u2753","FAQ"],["help","\uD83D\uDCA1","Help"],["contact","\u2709","Contact"]]).map(function(s){
             var active=reportSubTab===s[0];
             var isUpgrade=s[0]==="upgrade";
             return React.createElement("button",{key:s[0],onClick:function(){setReportSubTab(s[0]);},style:{whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:6,padding:"8px 14px",borderRadius:10,border:"1px solid "+(active?T.purple:(isUpgrade?T.purple:T.border)),background:active?T.purple:(isUpgrade?"linear-gradient(135deg,"+T.purple+",#5b21b6)":"transparent"),color:(active||isUpgrade)?"#fff":T.textSub,fontWeight:700,fontSize:12,cursor:"pointer",flexShrink:0}},
@@ -6099,7 +6099,7 @@ export default function App(){
       ),
 
       // Export & Share
-      reportSubTab==="export"&&React.createElement("div",{style:{padding:"20px 16px"}},
+      reportSubTab==="export"&&user&&user.isAdmin&&React.createElement("div",{style:{padding:"20px 16px"}},
         React.createElement("div",{style:{display:"flex",alignItems:"center",gap:12,marginBottom:20}},
           React.createElement("span",{style:{fontSize:36,color:"#818cf8",flexShrink:0,lineHeight:1}},"\uD83D\uDD17"),
           React.createElement("div",{style:{fontWeight:900,fontSize:28,color:T.text,lineHeight:1.1}},"Export & Share")
