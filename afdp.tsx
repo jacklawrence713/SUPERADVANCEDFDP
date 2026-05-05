@@ -661,7 +661,7 @@ const PLAYERS=[
   {name:"Tyler Boyd",pos:"WR",age:30,team:"PIT",proj:{PPR:162,Half:149,Standard:136},adp:25.5,ktcVal:800,note:"Veteran slot: 72 rec 760 yds"},
   {name:"Cedric Tillman",pos:"WR",age:24,team:"CLE",proj:{PPR:148,Half:136,Standard:124},adp:28.5,ktcVal:2000,note:"62 rec 700 yds"},
   {name:"Tutu Atwell",pos:"WR",age:26,team:"MIA",proj:{PPR:152,Half:140,Standard:128},adp:28.0,ktcVal:1200,note:"Speed receiver: 58 rec 720 yds"},
-  {name:"Diontae Johnson",pos:"WR",age:29,team:"PHI",proj:{PPR:158,Half:146,Standard:134},adp:26.8,ktcVal:800,note:"Signed 1yr with PHI · 68 rec 720 yds"},
+  {name:"Diontae Johnson",pos:"WR",age:29,team:"FA",proj:{PPR:158,Half:146,Standard:134},adp:26.8,ktcVal:800,note:"Unsigned FA · 68 rec 720 yds"},
   {name:"Darius Slayton",pos:"WR",age:28,team:"NYG",proj:{PPR:148,Half:136,Standard:124},adp:29.2,ktcVal:600,note:"60 rec 720 yds 5 TD"},
   {name:"Elijah Moore",pos:"WR",age:25,team:"CLE",proj:{PPR:145,Half:133,Standard:121},adp:30.5,ktcVal:1000,note:"58 rec 660 yds"},
   {name:"Adam Thielen",pos:"WR",age:35,team:"FA",proj:{PPR:138,Half:127,Standard:116},adp:32.0,ktcVal:400,note:"Veteran slot: 60 rec 620 yds"},
@@ -761,7 +761,7 @@ const PLAYERS=[
   {name:"Chase Brown",pos:"RB",age:24,team:"CIN",proj:{PPR:195,Half:179,Standard:163},adp:15.5,ktcVal:4858,note:"Year 3 breakout: 950 rush 55 rec"},
   {name:"Rico Dowdle",pos:"RB",age:27,team:"PIT",proj:{PPR:215,Half:198,Standard:181},adp:13.8,ktcVal:3147,note:"Lead back: 1,050 rush 7 TD"},
   {name:"Alvin Kamara",pos:"RB",age:30,team:"NO",proj:{PPR:198,Half:182,Standard:166},adp:16.2,ktcVal:2370,note:"Veteran: 750 rush 65 rec"},
-  {name:"Kenneth Gainwell",pos:"RB",age:26,team:"CAR",proj:{PPR:148,Half:136,Standard:124},adp:24.0,ktcVal:2832,note:"Signed with CAR · committee back: 500 rush 45 rec"},
+  {name:"Kenneth Gainwell",pos:"RB",age:26,team:"TB",proj:{PPR:148,Half:136,Standard:124},adp:24.0,ktcVal:2832,note:"Committee back: 500 rush 45 rec"},
   {name:"Kyle Monangai",pos:"RB",age:23,team:"CHI",proj:{PPR:158,Half:145,Standard:132},adp:22.5,ktcVal:3765,note:"Year 2: 650 rush 5 TD"},
   {name:"Eno Benjamin",pos:"RB",age:26,team:"ARI",proj:{PPR:108,Half:99,Standard:90},adp:37.0,ktcVal:600,note:"Pass-catching depth"},
   {name:"D'Onta Foreman",pos:"RB",age:28,team:"CHI",proj:{PPR:118,Half:108,Standard:98},adp:32.5,ktcVal:400,note:"Power back depth"},
@@ -1102,7 +1102,7 @@ const PLAYERS=[
   {name:"Evan Engram",pos:"TE",age:31,team:"DEN",proj:{PPR:195,Half:179,Standard:163},adp:11.5,ktcVal:1902,note:"Volume: 88 rec 950 yds 7 TD PPR monster"},
   // More notable WRs Wave 24
   {name:"Gabe Davis",pos:"WR",age:28,team:"FA",proj:{PPR:148,Half:136,Standard:124},adp:29.0,ktcVal:800,note:"Big play: 52 rec 660 yds 6 TD"},
-  {name:"Romeo Doubs",pos:"WR",age:26,team:"JAX",proj:{PPR:162,Half:149,Standard:136},adp:25.5,ktcVal:3113,note:"Signed 4yr/$70M with JAX · 65 rec 740 yds 6 TD"},
+  {name:"Romeo Doubs",pos:"WR",age:26,team:"NE",proj:{PPR:162,Half:149,Standard:136},adp:25.5,ktcVal:3113,note:"65 rec 740 yds 6 TD"},
   // More RB Wave 24
   {name:"Sean Tucker",pos:"RB",age:25,team:"TB",proj:{PPR:135,Half:124,Standard:113},adp:29.5,ktcVal:3179,note:"TB committee: 520 rush 48 rec"},
   // More TE Wave 24
