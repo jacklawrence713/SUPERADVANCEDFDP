@@ -360,7 +360,7 @@ const PLAYERS=[
   // Additional WRs
   {name:"Jaylen Waddle",pos:"WR",age:28,team:"DEN",proj:{PPR:265,Half:245,Standard:225},adp:10.4,ktcVal:5500,note:"Year 5: 100 rec 1,050 yds"},
   {name:"Chris Olave",pos:"WR",age:26,team:"NO",proj:{PPR:258,Half:238,Standard:218},adp:11.4,ktcVal:6500,note:"95 rec 1,120 yds 7 TD"},
-  {name:"George Pickens",pos:"WR",age:24,team:"PIT",proj:{PPR:252,Half:233,Standard:214},adp:12.2,ktcVal:6736,note:"85 rec 1,080 yds 9 TD · franchise tagged PIT $27.3M"},
+  {name:"George Pickens",pos:"WR",age:24,team:"DAL",proj:{PPR:252,Half:233,Standard:214},adp:12.2,ktcVal:6736,note:"85 rec 1,080 yds 9 TD · traded to DAL, signed franchise tag $27.3M"},
   {name:"Jaxon Smith-Njigba",pos:"WR",age:23,team:"SEA",proj:{PPR:268,Half:248,Standard:228},adp:1.8,ktcVal:9794,note:"Year 3: 108 rec 1,200 yds 9 TD dynasty WR1"},
   {name:"Malik Nabers",pos:"WR",age:22,team:"NYG",proj:{PPR:262,Half:242,Standard:222},adp:8.5,ktcVal:7712,note:"Year 2: 98 rec 1,050 yds 9 TD ascending"},
   {name:"Zay Flowers",pos:"WR",age:25,team:"BAL",proj:{PPR:242,Half:224,Standard:206},adp:13.8,ktcVal:5500,note:"88 rec 1,000 yds 8 TD"},
@@ -431,7 +431,7 @@ const PLAYERS=[
   {name:"Dre Greenlaw",pos:"LB",age:28,team:"DEN",proj:{PPR:130,Half:130,Standard:130},adp:12.5,ktcVal:2200,note:"132 tackles 3 sacks"},
   {name:"Matt Milano",pos:"LB",age:31,team:"BUF",proj:{PPR:128,Half:128,Standard:128},adp:13.2,ktcVal:1500,note:"125 tackles 2 INT"},
   {name:"Christian Harris",pos:"LB",age:26,team:"HOU",proj:{PPR:125,Half:125,Standard:125},adp:14.2,ktcVal:2800,note:"130 tackles 3 sacks"},
-  {name:"Demario Davis",pos:"LB",age:36,team:"NO",proj:{PPR:122,Half:122,Standard:122},adp:15.2,ktcVal:1000,note:"Veteran: 128 tackles 3 sacks"},
+  {name:"Demario Davis",pos:"LB",age:36,team:"NYJ",proj:{PPR:122,Half:122,Standard:122},adp:15.2,ktcVal:1000,note:"Veteran: 128 tackles 3 sacks · signed 2yr/$22M with NYJ"},
   {name:"De'Vondre Campbell",pos:"LB",age:33,team:"CLE",proj:{PPR:118,Half:118,Standard:118},adp:16.5,ktcVal:1200,note:"120 tackles 2 INT"},
   {name:"Eric Kendricks",pos:"LB",age:33,team:"LAC",proj:{PPR:115,Half:115,Standard:115},adp:17.8,ktcVal:1000,note:"Veteran: 115 tackles"},
   {name:"Myjai Sanders",pos:"LB",age:27,team:"CIN",proj:{PPR:112,Half:112,Standard:112},adp:18.8,ktcVal:2000,note:"110 tackles 4 sacks"},
@@ -985,7 +985,7 @@ const PLAYERS=[
   // Wave 10 — 2025 NFL Draft rookies: skill + IDP
   // 2025 RB Rookies
   {name:"Trevor Etienne",pos:"RB",age:22,team:"CAR",proj:{PPR:182,Half:167,Standard:152},adp:15.0,ktcVal:4200,note:"CAR feature back: 800 rush 55 rec age 22"},
-  {name:"Nicholas Singleton",pos:"RB",age:22,team:"PHI",proj:{PPR:168,Half:154,Standard:140},adp:18.5,ktcVal:2500,note:"Power speed combo: 700 rush depth"},
+  {name:"Nicholas Singleton",pos:"RB",age:22,team:"TEN",proj:{PPR:168,Half:154,Standard:140},adp:18.5,ktcVal:2500,note:"2026 draft pick · TEN Titans · power speed combo"},
   {name:"Ollie Gordon II",pos:"RB",age:22,team:"MIA",proj:{PPR:175,Half:161,Standard:147},adp:17.0,ktcVal:3238,note:"Big back: 800 rush 40 rec"},
   // 2025 QB Rookies
   {name:"Jaxson Dart",pos:"QB",age:23,team:"NYG",proj:{PPR:318,Half:318,Standard:318},adp:9.0,ktcVal:6614,note:"2025 pick 25 (Ole Miss): Year 2 breakout 3,600 yds 27 TD elite arm dynasty asset"},
@@ -1063,7 +1063,7 @@ const PLAYERS=[
   {name:"Joe Milton",pos:"QB",age:24,team:"NE",proj:{PPR:252,Half:252,Standard:252},adp:24.5,ktcVal:1500,note:"NE QB: big arm 3,000 yds 20 TD upside"},
   {name:"Quinn Ewers",pos:"QB",age:23,team:"MIA",proj:{PPR:248,Half:248,Standard:248},adp:25.5,ktcVal:2800,note:"MIA QB: 2,900 yds 19 TD development"},
   {name:"Max Brosmer",pos:"QB",age:23,team:"MIN",proj:{PPR:238,Half:238,Standard:238},adp:27.0,ktcVal:1400,note:"MIN QB: 2,700 yds 18 TD"},
-  {name:"Brady Cook",pos:"QB",age:24,team:"STL",proj:{PPR:228,Half:228,Standard:228},adp:28.5,ktcVal:600,note:"Backup QB: 2,000 yds handcuff"},
+  {name:"Brady Cook",pos:"QB",age:24,team:"NYJ",proj:{PPR:228,Half:228,Standard:228},adp:28.5,ktcVal:600,note:"Backup QB: 2,000 yds handcuff"},
   {name:"Jameis Winston",pos:"QB",age:33,team:"FA",proj:{PPR:232,Half:232,Standard:232},adp:28.0,ktcVal:350,note:"Veteran: high-upside gunslinger FA"},
   {name:"Tyrod Taylor",pos:"QB",age:36,team:"FA",proj:{PPR:195,Half:195,Standard:195},adp:35.0,ktcVal:100,note:"Veteran FA: spot starter only"},
   // IDP — DL
@@ -1119,7 +1119,7 @@ const PLAYERS=[
   {name:"Brandon Jordan",pos:"DL",age:26,team:"GB",proj:{PPR:72,Half:72,Standard:72},adp:38.0,ktcVal:1200,note:"EDGE: 6 sacks ascending"},
   // IDP 2025 additions
   {name:"Mike Green",pos:"DL",age:23,team:"SEA",proj:{PPR:95,Half:95,Standard:95},adp:22.5,ktcVal:3800,note:"2024 EDGE breakout: 11 sacks elite production"},
-  {name:"Dani Dennis-Sutton",pos:"DL",age:22,team:"KC",proj:{PPR:82,Half:82,Standard:82},adp:30.5,ktcVal:2800,note:"2025 EDGE: 8 sacks Year 1 upside"},
+  {name:"Dani Dennis-Sutton",pos:"DL",age:22,team:"GB",proj:{PPR:82,Half:82,Standard:82},adp:30.5,ktcVal:2800,note:"2026 pick 4-20 · GB Packers · long athletic EDGE rusher"},
   // QB prospects Wave 23
   {name:"Jalen Milroe",pos:"QB",age:23,team:"SEA",proj:{PPR:278,Half:278,Standard:278},adp:18.5,ktcVal:3200,note:"2025 pick: mobile 3,100 yds 24 TD 450 rush"},
   {name:"Will Rogers",pos:"QB",age:24,team:"WAS",proj:{PPR:242,Half:242,Standard:242},adp:24.5,ktcVal:700,note:"2025 pick: accurate 2,800 yds 20 TD"},
@@ -1247,7 +1247,7 @@ const PLAYERS=[
   {name:"Taywan Taylor",pos:"WR",age:31,team:"FA",proj:{PPR:55,Half:50,Standard:45},adp:57.0,ktcVal:150,note:"Veteran speed depth"},
   // 2025 WR rookies Wave 18
   {name:"Pat Bryant",pos:"WR",age:23,team:"DEN",proj:{PPR:108,Half:99,Standard:90},adp:36.5,ktcVal:2929,note:"2025 pick: 42 rec 510 yds 4 TD"},
-  {name:"Malachi Fields",pos:"WR",age:23,team:"CIN",proj:{PPR:95,Half:87,Standard:79},adp:41.0,ktcVal:800,note:"2025: big WR 38 rec 460 yds"},
+  {name:"Malachi Fields",pos:"WR",age:22,team:"NYG",proj:{PPR:105,Half:96,Standard:87},adp:3.8,ktcVal:3000,note:"2026 pick 3-10 · NYG Giants · big-bodied WR with upside"},
   {name:"Tai Felton",pos:"WR",age:23,team:"MIN",proj:{PPR:102,Half:94,Standard:86},adp:38.5,ktcVal:1000,note:"2025 speed: 40 rec 490 yds 4 TD"},
   {name:"Dillon Gabriel",pos:"QB",age:24,team:"CLE",proj:{PPR:268,Half:268,Standard:268},adp:19.5,ktcVal:2500,note:"2025 pick: mobile 3,000 yds 22 TD"},
   // RB deep depth Wave 18
@@ -1325,7 +1325,7 @@ const PLAYERS=[
   {name:"Royce Freeman",pos:"RB",age:29,team:"FA",proj:{PPR:88,Half:81,Standard:74},adp:44.0,ktcVal:300,note:"Veteran power back: 350 rush"},
   // WR 2025 class + missing current
   {name:"Jalen Royals",pos:"WR",age:23,team:"ARI",proj:{PPR:138,Half:127,Standard:116},adp:30.5,ktcVal:2000,note:"2025 pick: 55 rec 640 yds 5 TD"},
-  {name:"Barion Brown",pos:"WR",age:22,team:"BUF",proj:{PPR:125,Half:115,Standard:105},adp:33.5,ktcVal:1500,note:"Speed: 48 rec 580 yds return threat"},
+  {name:"Barion Brown",pos:"WR",age:22,team:"NO",proj:{PPR:125,Half:115,Standard:105},adp:33.5,ktcVal:1800,note:"2026 draft pick · NO Saints · speed and return threat"},
   {name:"Ainias Smith",pos:"WR",age:24,team:"PHI",proj:{PPR:112,Half:103,Standard:94},adp:36.5,ktcVal:700,note:"Slot: 44 rec 510 yds 4 TD"},
   {name:"Dorian Singer",pos:"WR",age:24,team:"TB",proj:{PPR:108,Half:99,Standard:90},adp:37.5,ktcVal:600,note:"Route runner: 42 rec 490 yds"},
   {name:"Dontay Demus Jr.",pos:"WR",age:24,team:"BAL",proj:{PPR:95,Half:87,Standard:79},adp:41.5,ktcVal:500,note:"Big WR: 38 rec 440 yds 4 TD"},
@@ -1502,7 +1502,7 @@ const PLAYERS=[
   {name:"Robert Quinn",pos:"DL",age:34,team:"FA",proj:{PPR:78,Half:78,Standard:78},adp:34.5,ktcVal:400,note:"Veteran EDGE: 8 sacks if active"},
   {name:"Emmanuel Ogbah",pos:"DL",age:32,team:"MIA",proj:{PPR:80,Half:80,Standard:80},adp:32.0,ktcVal:800,note:"EDGE: 7.5 sacks rotational"},
   {name:"Jordan Davis",pos:"DL",age:26,team:"PHI",proj:{PPR:82,Half:82,Standard:82},adp:30.5,ktcVal:1800,note:"NT Year 4: 40 tackles 4 sacks"},
-  {name:"Calais Campbell",pos:"DL",age:39,team:"FA",proj:{PPR:72,Half:72,Standard:72},adp:38.0,ktcVal:300,note:"Veteran if active: 5 sacks"},
+  {name:"Calais Campbell",pos:"DL",age:39,team:"BAL",proj:{PPR:72,Half:72,Standard:72},adp:38.0,ktcVal:300,note:"Veteran: 5 sacks · signed 1yr/$5.5M with BAL"},
   // IDP LB Wave 8
   {name:"Denzel Perryman",pos:"LB",age:33,team:"LV",proj:{PPR:98,Half:98,Standard:98},adp:21.0,ktcVal:700,note:"Thumper: 100 tackles 2 sacks"},
   {name:"Devin White",pos:"LB",age:27,team:"PHI",proj:{PPR:100,Half:100,Standard:100},adp:20.5,ktcVal:1500,note:"Speed: 98 tackles 3 sacks"},
@@ -1627,7 +1627,6 @@ const PLAYERS=[
   {name:"De'Zhaun Stribling",pos:"WR",age:22,team:"SF",proj:{PPR:120,Half:110,Standard:100},adp:2.8,ktcVal:3800,note:"2026 pick 2-1 · SF 49ers · elite athleticism Shanahan system upside"},
   {name:"Germie Bernard",pos:"WR",age:22,team:"PIT",proj:{PPR:112,Half:103,Standard:94},adp:3.2,ktcVal:3200,note:"2026 pick 2-15 · PIT Steelers · slot receiver solid route runner"},
   {name:"Zachariah Branch",pos:"WR",age:21,team:"ATL",proj:{PPR:108,Half:99,Standard:90},adp:3.5,ktcVal:3500,note:"2026 pick 3-15 · ATL Falcons · explosive speedster with Tua upside"},
-  {name:"Malachi Fields",pos:"WR",age:22,team:"NYG",proj:{PPR:105,Half:96,Standard:87},adp:3.8,ktcVal:3000,note:"2026 pick 3-10 · NYG Giants · big-bodied WR with upside"},
   {name:"Antonio Williams",pos:"WR",age:22,team:"WAS",proj:{PPR:100,Half:92,Standard:84},adp:4.0,ktcVal:1686,note:"2026 pick 3-7 · WAS Commanders · depth flier with upside"},
   {name:"Kenyon Sadiq",pos:"TE",age:22,team:"NYJ",proj:{PPR:118,Half:108,Standard:98},adp:1.3,ktcVal:4327,note:"2026 pick 1-16 · NYJ Jets · top TE prospect elite upside"},
   {name:"Eli Stowers",pos:"TE",age:23,team:"PHI",proj:{PPR:105,Half:96,Standard:87},adp:2.5,ktcVal:3400,note:"2026 pick 2-22 · PHI Eagles · great landing spot in Dallas Goedert role"},
@@ -1701,7 +1700,6 @@ const PLAYERS=[
   {name:"Brenen Thompson",pos:"WR",age:22,team:"LAC",proj:{PPR:100,Half:92,Standard:84},adp:4.2,ktcVal:2000,note:"2026 pick 4-5 · LAC Chargers · elite speed WR deep threat"},
   {name:"Skyler Bell",pos:"WR",age:22,team:"BUF",proj:{PPR:95,Half:87,Standard:79},adp:4.5,ktcVal:1800,note:"2026 pick 4-25 · BUF Bills · slot weapon with strong hands"},
   {name:"Kevin Coleman Jr.",pos:"WR",age:22,team:"MIA",proj:{PPR:100,Half:92,Standard:84},adp:4.8,ktcVal:2000,note:"2026 pick 5-37 · MIA Dolphins · explosive YAC receiver Tua connection"},
-  {name:"Barion Brown",pos:"WR",age:22,team:"NO",proj:{PPR:95,Half:87,Standard:79},adp:5.0,ktcVal:1800,note:"2026 pick 6-9 · NO Saints · electric return man and receiver"},
   {name:"C.J. Williams",pos:"WR",age:22,team:"JAX",proj:{PPR:90,Half:82,Standard:74},adp:5.2,ktcVal:1600,note:"2026 pick 6-22 · JAX Jaguars · physical possession receiver"},
   {name:"Deion Burks",pos:"WR",age:22,team:"IND",proj:{PPR:88,Half:81,Standard:74},adp:5.5,ktcVal:1500,note:"2026 pick 7-36 · IND Colts · dynasty flier with elite athleticism"},
   {name:"Kendal Daniels",pos:"LB",age:22,team:"ATL",proj:{PPR:105,Half:105,Standard:105},adp:2.8,ktcVal:2800,note:"2026 pick 4-34 · ATL Falcons · hybrid safety/LB elite athlete"},
@@ -1714,7 +1712,6 @@ const PLAYERS=[
   {name:"Bryce Lance",pos:"WR",age:22,team:"NO",proj:{PPR:78,Half:72,Standard:66},adp:5.5,ktcVal:1100,note:"2026 pick 4-36 · NO Saints · deep threat receiver"},
   {name:"Matthew Hibner",pos:"TE",age:23,team:"BAL",proj:{PPR:75,Half:69,Standard:63},adp:5.5,ktcVal:1200,note:"2026 pick 4-33 · BAL Ravens · athletic TE in run-heavy offense"},
   {name:"Reggie Virgil",pos:"WR",age:22,team:"ARI",proj:{PPR:80,Half:73,Standard:66},adp:5.2,ktcVal:1300,note:"2026 pick 5-3 · ARI Cardinals · dynamic playmaker"},
-  {name:"Nicholas Singleton",pos:"RB",age:22,team:"TEN",proj:{PPR:105,Half:97,Standard:89},adp:5.0,ktcVal:1600,note:"2026 pick 5-25 · TEN Titans · Penn State power back with breakaway speed"},
   {name:"Kendrick Law",pos:"WR",age:22,team:"DET",proj:{PPR:78,Half:72,Standard:66},adp:5.5,ktcVal:1200,note:"2026 pick 5-28 · DET Lions · speedster in high-powered offense"},
   {name:"Adam Randall",pos:"RB",age:22,team:"BAL",proj:{PPR:90,Half:83,Standard:76},adp:5.5,ktcVal:1300,note:"2026 pick 5-34 · BAL Ravens · versatile Clemson back"},
   {name:"Cyrus Allen",pos:"WR",age:22,team:"KC",proj:{PPR:78,Half:72,Standard:66},adp:5.5,ktcVal:1200,note:"2026 pick 5-36 · KC Chiefs · dynasty stash in Reid offense"},
@@ -1728,7 +1725,6 @@ const PLAYERS=[
   // 2026 Rounds 4-7 — additional IDP
   {name:"Gracen Halton",pos:"DL",age:22,team:"SF",proj:{PPR:68,Half:68,Standard:68},adp:4.5,ktcVal:1500,note:"2026 pick 4-7 · SF 49ers · powerful interior DT"},
   {name:"Jimmy Rolder",pos:"LB",age:22,team:"DET",proj:{PPR:72,Half:72,Standard:72},adp:4.5,ktcVal:1400,note:"2026 pick 4-18 · DET Lions · instinctive tackling LB"},
-  {name:"Dani Dennis-Sutton",pos:"DL",age:22,team:"GB",proj:{PPR:68,Half:68,Standard:68},adp:4.8,ktcVal:1400,note:"2026 pick 4-20 · GB Packers · long athletic EDGE rusher"},
   {name:"Wade Woodaz",pos:"LB",age:22,team:"HOU",proj:{PPR:70,Half:70,Standard:70},adp:4.8,ktcVal:1300,note:"2026 pick 4-23 · HOU Texans · versatile LB with coverage skills"},
   {name:"Trey Moore",pos:"DL",age:22,team:"MIA",proj:{PPR:65,Half:65,Standard:65},adp:5.0,ktcVal:1200,note:"2026 pick 4-30 · MIA Dolphins · high-motor EDGE rusher"},
   {name:"LT Overton",pos:"DL",age:22,team:"DAL",proj:{PPR:62,Half:62,Standard:62},adp:5.5,ktcVal:1100,note:"2026 pick 4-37 · DAL Cowboys · raw athletic EDGE with upside"},
