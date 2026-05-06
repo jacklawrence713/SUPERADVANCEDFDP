@@ -2612,6 +2612,7 @@ export default function App(){
   var [rankSubTab,setRankSubTab]=useState(function(){try{return localStorage.getItem('fdp_rankSubTab')||"allrankings";}catch(e){return"allrankings";}});
   var _setRankSubTab=setRankSubTab;setRankSubTab=function(v){_setRankSubTab(v);try{localStorage.setItem('fdp_rankSubTab',v);}catch(e){}};
   var [rankPos,setRankPos]=useState("QB");
+  var [rookieClassYear,setRookieClassYear]=useState("2026");
   var [rankFormat,setRankFormat]=useState("SF");
   var [pvTep,setPvTep]=useState(false);
   var [sfMode,setSfMode]=useState(false);
@@ -5346,10 +5347,30 @@ export default function App(){
 
       // ROOKIE PICKS
       rankSubTab==="rookie"&&React.createElement("div",{style:{padding:"16px"}},
-        React.createElement("div",{style:{fontWeight:900,fontSize:22,marginBottom:2}},"2025 Rookie Class"),
-        React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:16}},"Player grades, draft capital & dynasty upside"),
+        React.createElement("div",{style:{fontWeight:900,fontSize:22,marginBottom:2}},"Rookie Class Grades"),
+        React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:12}},"Player grades, draft capital & dynasty upside"),
+        React.createElement("div",{style:{display:"flex",gap:8,marginBottom:16}},
+          [["2026","2026 Rookies"],["2025","2025 (Year 2)"]].map(function(yr){
+            var active=rookieClassYear===yr[0];
+            return React.createElement("button",{key:yr[0],onClick:function(){setRookieClassYear(yr[0]);},style:{padding:"8px 18px",borderRadius:10,border:"1px solid "+(active?T.purple:T.border),background:active?T.purple:"transparent",color:active?"#fff":T.textSub,fontWeight:700,fontSize:13,cursor:"pointer"}},yr[1]);
+          })
+        ),
         (function(){
-          var ROOKIE_GRADES=[
+          var ROOKIE_2026=[
+            {name:"Jeremiyah Love",pos:"RB",team:"ARI",grade:"A+",dc:"1.03 OA",fit:"A",note:"Elite three-down workhorse, immediate RB1 upside at 21",color:T.green},
+            {name:"Fernando Mendoza",pos:"QB",team:"LV",grade:"A",dc:"1.01 OA",fit:"A-",note:"#1 overall pick, elite arm talent, SF dynasty cornerstone",color:"#22c55e"},
+            {name:"Carnell Tate",pos:"WR",team:"TEN",grade:"A",dc:"1.04 OA",fit:"A-",note:"Dynasty WR1 ceiling, elite route runner, top-5 pick",color:"#22c55e"},
+            {name:"Jordyn Tyson",pos:"WR",team:"NO",grade:"A-",dc:"1.08 OA",fit:"B+",note:"Big-play vertical threat, explosive after the catch",color:"#86efac"},
+            {name:"Makai Lemon",pos:"WR",team:"PHI",grade:"A-",dc:"1.20 OA",fit:"A",note:"Elite athleticism in Philly's offense, dynasty WR2 upside",color:"#86efac"},
+            {name:"Jadarian Price",pos:"RB",team:"SEA",grade:"A-",dc:"1.32 OA",fit:"A",note:"Three-down back for Super Bowl champs, elite landing spot",color:"#86efac"},
+            {name:"Kenyon Sadiq",pos:"TE",team:"NYJ",grade:"B+",dc:"1.16 OA",fit:"A-",note:"Top TE prospect with elite upside, immediate target share",color:"#f59e0b"},
+            {name:"KC Concepcion",pos:"WR",team:"CLE",grade:"B+",dc:"1.24 OA",fit:"B",note:"Explosive slot weapon, could be WR1 for developing offense",color:"#f59e0b"},
+            {name:"Ty Simpson",pos:"QB",team:"LAR",grade:"B+",dc:"1.13 OA",fit:"B+",note:"Dual-threat upside in McVay system, SF dynasty stash",color:"#f59e0b"},
+            {name:"Carson Beck",pos:"QB",team:"ARI",grade:"B",dc:"3.01 OA",fit:"B",note:"Veteran pocket passer, lower ceiling but safe floor",color:"#fbbf24"},
+            {name:"Jonah Coleman",pos:"RB",team:"DEN",grade:"B",dc:"4.08 OA",fit:"B+",note:"Explosive workhorse RB, value pick with starting upside",color:"#fbbf24"},
+            {name:"Sonny Styles",pos:"LB",team:"WAS",grade:"A",dc:"1.07 OA",fit:"A",note:"IDP elite — coverage and pass rush, LB1 dynasty ceiling",color:"#22c55e"},
+          ];
+          var ROOKIE_2025=[
             {name:"Ashton Jeanty",pos:"RB",team:"LV",grade:"A+",dc:"1.2 OA",fit:"A",note:"Elite rushing prospect, workhorse upside, immediate starter",color:T.green},
             {name:"Travis Hunter",pos:"WR",team:"JAX",grade:"A+",dc:"2.2 OA",fit:"A",note:"Two-way star, elite WR upside, dynasty WR1 potential",color:T.green},
             {name:"Cam Ward",pos:"QB",team:"TEN",grade:"A",dc:"1.1 OA",fit:"B+",note:"Elite arm talent, SF league must-have, Year 2 leap expected",color:"#22c55e"},
@@ -5363,6 +5384,7 @@ export default function App(){
             {name:"Harold Fannin Jr.",pos:"TE",team:"CLE",grade:"B",dc:"2.45 OA",fit:"B+",note:"Dominant college production, developing QB is key risk",color:"#fbbf24"},
             {name:"Cam Skattebo",pos:"RB",team:"NYG",grade:"B",dc:"1.87 OA",fit:"B",note:"Physical runner, role TBD behind committee, value pick",color:"#fbbf24"},
           ];
+          var ROOKIE_GRADES=rookieClassYear==="2026"?ROOKIE_2026:ROOKIE_2025;
           return React.createElement("div",null,
             React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:12,background:T.bgCard,border:"1px solid "+T.border,borderRadius:10,padding:"8px 10px"}},
               [["Grade","Dynasty potential"],["DC","Draft capital"],["Fit","Team fit"]].map(function(l){return React.createElement("div",{key:l[0],style:{textAlign:"center"}},React.createElement("div",{style:{fontWeight:700,fontSize:11,color:T.purpleLight}},l[0]),React.createElement("div",{style:{fontSize:9,color:T.textDim}},l[1]));})
