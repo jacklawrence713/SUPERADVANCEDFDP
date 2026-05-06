@@ -3664,6 +3664,34 @@ export default function App(){
               React.createElement("div",{style:{background:T.bgCard,borderRadius:10,padding:12,border:"1px solid "+T.border,textAlign:"center"}},React.createElement("div",{style:{fontSize:9,color:T.textSub,letterSpacing:1,marginBottom:4}},"GIVES"),React.createElement("div",{style:{fontWeight:900,fontSize:24,color:T.purple}},tvA.toFixed(0))),
               React.createElement("div",{style:{background:T.bgCard,borderRadius:10,padding:12,border:"1px solid "+T.border,textAlign:"center"}},React.createElement("div",{style:{fontSize:9,color:T.textSub,letterSpacing:1,marginBottom:4}},"GETS"),React.createElement("div",{style:{fontWeight:900,fontSize:24,color:T.purpleLight}},tvB.toFixed(0)))
             ),
+            React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginTop:10}},
+              React.createElement("div",null,
+                tradeA.map(function(p){var pAg=ageGrade(p.pos,p.age||0);var pTier=tierLabel(p.posRank||99,p.pos);return React.createElement("div",{key:p.name,style:{display:"flex",alignItems:"center",gap:6,marginBottom:6,background:T.bgCard,borderRadius:8,padding:"6px 8px",border:"1px solid "+T.border}},
+                  React.createElement(Avatar,{name:p.name,pos:p.pos,size:24}),
+                  React.createElement("div",{style:{flex:1,minWidth:0}},
+                    React.createElement("div",{style:{fontWeight:700,fontSize:11,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
+                    React.createElement("div",{style:{fontSize:9,color:T.textSub}},p.pos+(p.age?" · "+p.age:""))
+                  ),
+                  React.createElement("div",{style:{textAlign:"right",flexShrink:0}},
+                    React.createElement("div",{style:{fontWeight:800,fontSize:11,color:T.purple}},(p.tradeVal||0).toLocaleString()),
+                    React.createElement("div",{style:{fontSize:8,color:pAg.c,fontWeight:700}},pAg.g+" · T"+pTier.t)
+                  )
+                );})
+              ),
+              React.createElement("div",null,
+                tradeB.map(function(p){var pAg=ageGrade(p.pos,p.age||0);var pTier=tierLabel(p.posRank||99,p.pos);return React.createElement("div",{key:p.name,style:{display:"flex",alignItems:"center",gap:6,marginBottom:6,background:T.bgCard,borderRadius:8,padding:"6px 8px",border:"1px solid "+T.border}},
+                  React.createElement(Avatar,{name:p.name,pos:p.pos,size:24}),
+                  React.createElement("div",{style:{flex:1,minWidth:0}},
+                    React.createElement("div",{style:{fontWeight:700,fontSize:11,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
+                    React.createElement("div",{style:{fontSize:9,color:T.textSub}},p.pos+(p.age?" · "+p.age:""))
+                  ),
+                  React.createElement("div",{style:{textAlign:"right",flexShrink:0}},
+                    React.createElement("div",{style:{fontWeight:800,fontSize:11,color:T.purpleLight}},(p.tradeVal||0).toLocaleString()),
+                    React.createElement("div",{style:{fontSize:8,color:pAg.c,fontWeight:700}},pAg.g+" · T"+pTier.t)
+                  )
+                );})
+              )
+            ),
             aiAnalysis&&React.createElement("div",{style:{marginTop:12,background:darkMode?"#1a1035":"#f5f3ff",border:"1px solid "+T.borderPurple,borderRadius:12,padding:"12px 14px"}},
               React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,marginBottom:6}},
                 React.createElement("span",{style:{fontSize:13,color:T.purple}},"✦"),
@@ -5099,7 +5127,7 @@ export default function App(){
           return rankedPlayers.filter(function(p){return p.pos!=="K"&&p.pos!=="DST"&&(pvPos==="All"||p.pos===pvPos)&&(!user||user.isPro||p.rank<=FREE_RANK_LIMIT);}).slice().sort(function(a,b){return pvVal(b)-pvVal(a);}).map(function(p){
             var gs=getGameScript(p.team,oddsData);
             var displayVal=pvVal(p);
-            return React.createElement("div",{key:p.name,style:{display:"grid",gridTemplateColumns:"44px 1fr 96px",padding:"10px 16px",borderBottom:"1px solid "+T.border,alignItems:"center",gap:4}},
+            return React.createElement("div",{key:p.name,onClick:function(){setTradeB([p]);setTradeA([]);setAnalyzed(false);setTab("trade");},style:{display:"grid",gridTemplateColumns:"44px 1fr 96px",padding:"10px 16px",borderBottom:"1px solid "+T.border,alignItems:"center",gap:4,cursor:"pointer"}},
               React.createElement(Avatar,{name:p.name,pos:p.pos,size:34}),
               React.createElement("div",null,
                 React.createElement("div",{style:{fontWeight:700,fontSize:14,color:T.text,marginBottom:3}},p.name),
@@ -5109,7 +5137,10 @@ export default function App(){
                   gs&&React.createElement("span",{style:{fontSize:9,fontWeight:700,color:gs.color,background:gs.color+"18",border:"1px solid "+gs.color+"33",borderRadius:4,padding:"1px 5px"}},gs.script.toUpperCase())
                 )
               ),
-              React.createElement("div",{style:{textAlign:"right",fontWeight:800,fontSize:15,color:T.purpleLight}},displayVal.toLocaleString())
+              React.createElement("div",{style:{textAlign:"right"}},
+                React.createElement("div",{style:{fontWeight:800,fontSize:15,color:T.purpleLight}},displayVal.toLocaleString()),
+                React.createElement("div",{style:{fontSize:9,color:T.purple,fontWeight:600}},"Tap to trade")
+              )
             );
           });
         })(),
@@ -5168,7 +5199,7 @@ export default function App(){
           filtered=filtered.slice().sort(function(a,b){return b.tradeVal-a.tradeVal;});
           return filtered.filter(function(_,i){return !user||user.isPro||i<FREE_RANK_LIMIT;}).map(function(p,i){
             var gs=getGameScript(p.team,oddsData);
-            return React.createElement("div",{key:p.name,style:{display:"grid",gridTemplateColumns:"44px 1fr 52px",padding:"12px 16px",borderBottom:"1px solid "+T.border,alignItems:"center"}},
+            return React.createElement("div",{key:p.name,onClick:function(){setTradeB([p]);setTradeA([]);setAnalyzed(false);setTab("trade");},style:{display:"grid",gridTemplateColumns:"44px 1fr 52px",padding:"12px 16px",borderBottom:"1px solid "+T.border,alignItems:"center",cursor:"pointer"}},
               React.createElement("div",{style:{fontWeight:800,fontSize:13,color:T.textDim}},i+1),
               React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10}},
                 React.createElement(Avatar,{name:p.name,pos:p.pos,size:36}),
@@ -5183,7 +5214,8 @@ export default function App(){
               ),
               React.createElement("div",{style:{textAlign:"right"}},
                 React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text}},p.team),
-                React.createElement("div",{style:{fontSize:9,color:T.textSub}},p.pos)
+                React.createElement("div",{style:{fontSize:9,color:T.textSub}},p.pos),
+                React.createElement("div",{style:{fontSize:8,color:T.purple,fontWeight:600,marginTop:2}},"Tap to trade")
               )
             );
           });
@@ -5444,9 +5476,10 @@ export default function App(){
                     React.createElement("span",null,"· "+x.p.team+" · Age "+x.p.age)
                   )
                 ),
-                React.createElement("div",{style:{textAlign:"right",flexShrink:0}},
+                React.createElement("div",{style:{textAlign:"right",flexShrink:0,display:"flex",flexDirection:"column",alignItems:"flex-end",gap:2}},
                   React.createElement("div",{style:{fontWeight:800,fontSize:14,color:T.text}},x.p.tradeVal.toLocaleString()),
-                  React.createElement("div",{style:{fontSize:11,fontWeight:700,color:dirColor,display:"flex",alignItems:"center",gap:3,justifyContent:"flex-end"}},arrow," ",x.signal)
+                  React.createElement("div",{style:{fontSize:11,fontWeight:700,color:dirColor,display:"flex",alignItems:"center",gap:3}},arrow," ",x.signal),
+                  React.createElement("button",{onClick:function(){setTradeB([x.p]);setTradeA([]);setAnalyzed(false);setTab("trade");},style:{fontSize:9,fontWeight:700,color:T.purple,background:"none",border:"1px solid "+T.purple+"66",borderRadius:4,padding:"2px 6px",cursor:"pointer",marginTop:2}},"Trade →")
                 )
               );
             }));
