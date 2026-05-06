@@ -2685,6 +2685,7 @@ export default function App(){
   var [liveProj,setLiveProj]=useState(function(){try{var s=localStorage.getItem('fdp_lp_v1');if(s){var d=JSON.parse(s);if(Date.now()-d.ts<86400000)return d;}return null;}catch(e){return null;}});
   var [liveProjLoading,setLiveProjLoading]=useState(false);
   var [tradeAddPending,setTradeAddPending]=useState(null as any);
+  var [pvSearch,setPvSearch]=useState("");
 
   var T=darkMode?DARK:LIGHT;
   var isPro=user&&user.isPro;
@@ -5382,7 +5383,8 @@ export default function App(){
           ),
           React.createElement("div",{style:{display:"flex",gap:6,marginTop:8,flexWrap:"wrap"}},
             ["All","QB","RB","WR","TE","DL","LB","DB"].map(function(pos){var active=pvPos===pos;return React.createElement("button",{key:pos,onClick:function(){setPvPos(pos);},style:{padding:"5px 12px",borderRadius:8,border:"1px solid "+(active?T.purple:T.border),background:active?T.purple:"transparent",color:active?"#fff":T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},pos);})
-          )
+          ),
+          React.createElement("input",{value:pvSearch,onChange:function(e){setPvSearch(e.target.value);},placeholder:"Search players...",style:Object.assign({},inpS,{marginTop:8})})
         ),
         React.createElement("div",{style:{display:"grid",gridTemplateColumns:"44px 1fr 96px",padding:"10px 16px",borderTop:"1px solid "+T.border,borderBottom:"1px solid "+T.border,marginTop:12,background:T.bgInput,gap:4}},
           React.createElement("div",null),
@@ -5407,7 +5409,7 @@ export default function App(){
             var rv=cfg.pk*Math.pow(cfg.dc,(p.posRank||1)-1);
             return Math.round(Math.max(100,Math.min(9999,rv*ab)));
           }
-          return rankedPlayers.filter(function(p){return p.pos!=="K"&&p.pos!=="DST"&&(pvPos==="All"||p.pos===pvPos)&&(!user||user.isPro||p.rank<=FREE_RANK_LIMIT);}).slice().sort(function(a,b){return pvVal(b)-pvVal(a);}).map(function(p,idx){
+          return rankedPlayers.filter(function(p){return p.pos!=="K"&&p.pos!=="DST"&&(pvPos==="All"||p.pos===pvPos)&&(!pvSearch||p.name.toLowerCase().includes(pvSearch.toLowerCase()))&&(!user||user.isPro||p.rank<=FREE_RANK_LIMIT);}).slice().sort(function(a,b){return pvVal(b)-pvVal(a);}).map(function(p,idx){
             var gs=getGameScript(p.team,oddsData);
             var displayVal=pvVal(p);
             var pvAg=ageGrade(p.pos,p.age);
