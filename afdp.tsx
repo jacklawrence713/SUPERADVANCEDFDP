@@ -3795,6 +3795,35 @@ export default function App(){
             )
           )
         ),
+        tradeA.length===0&&tradeB.length===0&&!analyzed&&React.createElement("div",{style:{marginTop:16}},
+          React.createElement("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}},
+            React.createElement("div",{style:{fontSize:11,fontWeight:800,color:T.textDim,letterSpacing:1}},"TRADE BLOCK"),
+            tradeBlock.length>0&&React.createElement("button",{onClick:function(){setTradeBlock([]);try{localStorage.setItem('fdp_tb_v1','[]');}catch(e){}},style:{fontSize:10,color:T.red,background:"none",border:"none",cursor:"pointer",fontWeight:700}},"Clear All")
+          ),
+          tradeBlock.length===0?React.createElement("div",{style:{background:T.bgCard,border:"1px dashed "+T.border,borderRadius:12,padding:"20px 16px",textAlign:"center"}},
+            React.createElement("div",{style:{fontSize:22,marginBottom:6}},"🔄"),
+            React.createElement("div",{style:{fontSize:12,color:T.textSub,fontWeight:600}},"No players on the trade block"),
+            React.createElement("div",{style:{fontSize:10,color:T.textDim,marginTop:4}},"Mark players from Rankings with the 🔄 button")
+          ):React.createElement("div",{style:{display:"flex",flexDirection:"column",gap:6}},
+            tradeBlock.map(function(name){
+              var p=rankedPlayers.find(function(rp){return rp.name===name;});
+              if(!p)return null;
+              var ag=ageGrade(p.pos,p.age||0);
+              return React.createElement("div",{key:name,style:{display:"flex",alignItems:"center",gap:8,background:T.bgCard,border:"1px solid "+T.border,borderRadius:10,padding:"8px 10px"}},
+                React.createElement(Avatar,{name:p.name,pos:p.pos,size:28}),
+                React.createElement("div",{style:{flex:1,minWidth:0}},
+                  React.createElement("div",{style:{fontWeight:700,fontSize:12,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
+                  React.createElement("div",{style:{fontSize:9,color:T.textSub}},React.createElement("span",{style:{color:POS_COLORS[p.pos]||T.textSub,fontWeight:700}},p.pos)," · ",p.team," · ",React.createElement("span",{style:{color:ag.c}},ag.g))
+                ),
+                React.createElement("div",{style:{textAlign:"right",flexShrink:0}},
+                  React.createElement("div",{style:{fontWeight:800,fontSize:12,color:T.purple}},(p.tradeVal||0).toLocaleString())
+                ),
+                React.createElement("button",{onClick:function(){addToTrade(p);},style:{padding:"4px 10px",borderRadius:8,border:"1px solid "+T.purple+"44",background:T.purple+"18",color:T.purpleLight,fontWeight:700,fontSize:10,cursor:"pointer",flexShrink:0}},"Add →"),
+                React.createElement("button",{onClick:function(){setTradeBlock(function(tb){var n=tb.filter(function(x){return x!==name;});try{localStorage.setItem('fdp_tb_v1',JSON.stringify(n));}catch(e){}return n;});},style:{padding:"4px 6px",borderRadius:8,border:"1px solid "+T.border,background:"none",color:T.textDim,fontWeight:700,fontSize:10,cursor:"pointer",flexShrink:0}},"✕")
+              );
+            })
+          )
+        ),
         analyzed&&(tradeA.length>0||tradeB.length>0)&&(function(){
           var v=verdict();
           return React.createElement("div",{style:{marginTop:14,background:T.bgInput,borderRadius:14,padding:16,border:"1px solid "+v.c+"33"}},
@@ -5612,7 +5641,8 @@ export default function App(){
             var rAg=ageGrade(p.pos,p.age);
             var rTier=tierLabel(p.posRank||99,p.pos);
             var isWatched=watchlist.indexOf(p.name)!==-1;
-            return React.createElement("div",{key:p.name,onClick:function(){addToTrade(p);},style:{display:"grid",gridTemplateColumns:"32px 1fr 80px 28px",padding:"10px 16px",borderBottom:"1px solid "+T.border,alignItems:"center",cursor:"pointer"}},
+            var isOnBlock=tradeBlock.indexOf(p.name)!==-1;
+            return React.createElement("div",{key:p.name,onClick:function(){addToTrade(p);},style:{display:"grid",gridTemplateColumns:"32px 1fr 80px 52px",padding:"10px 16px",borderBottom:"1px solid "+T.border,alignItems:"center",cursor:"pointer"}},
               React.createElement("div",{style:{fontWeight:800,fontSize:13,color:i<3?T.gold:T.textDim}},i+1),
               React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10}},
                 React.createElement(Avatar,{name:p.name,pos:p.pos,size:36}),
@@ -5631,7 +5661,10 @@ export default function App(){
                 React.createElement("div",{style:{fontWeight:800,fontSize:14,color:T.purpleLight}},(p.tradeVal||0).toLocaleString()),
                 React.createElement("div",{style:{fontSize:9,color:T.textSub}},p.pts.toFixed(1)+" pts")
               ),
-              React.createElement("button",{onClick:function(e){e.stopPropagation();var pName=p.name;var pVal=p.tradeVal;setWatchlist(function(w){var has=w.indexOf(pName)!==-1;var n=has?w.filter(function(x){return x!==pName;}):w.concat([pName]);try{localStorage.setItem('fdp_wl_v1',JSON.stringify(n));}catch(e){}return n;});if(!isWatched){setWatchlistSnapshots(function(s){var n=Object.assign({},s);if(!(pName in n)){n[pName]=pVal;try{localStorage.setItem('fdp_wls_v1',JSON.stringify(n));}catch(e){}}return n;});}},style:{background:"none",border:"none",cursor:"pointer",color:isWatched?T.gold:T.textDim,fontSize:16,padding:0,lineHeight:1}},isWatched?"★":"☆")
+              React.createElement("div",{style:{display:"flex",gap:4,alignItems:"center"}},
+                React.createElement("button",{onClick:function(e){e.stopPropagation();var pName=p.name;var pVal=p.tradeVal;setWatchlist(function(w){var has=w.indexOf(pName)!==-1;var n=has?w.filter(function(x){return x!==pName;}):w.concat([pName]);try{localStorage.setItem('fdp_wl_v1',JSON.stringify(n));}catch(e){}return n;});if(!isWatched){setWatchlistSnapshots(function(s){var n=Object.assign({},s);if(!(pName in n)){n[pName]=pVal;try{localStorage.setItem('fdp_wls_v1',JSON.stringify(n));}catch(e){}}return n;});}},style:{background:"none",border:"none",cursor:"pointer",color:isWatched?T.gold:T.textDim,fontSize:16,padding:0,lineHeight:1}},isWatched?"★":"☆"),
+                React.createElement("button",{onClick:function(e){e.stopPropagation();var pName=p.name;setTradeBlock(function(tb){var has=tb.indexOf(pName)!==-1;var n=has?tb.filter(function(x){return x!==pName;}):tb.concat([pName]);try{localStorage.setItem('fdp_tb_v1',JSON.stringify(n));}catch(e){}return n;});},style:{background:"none",border:"none",cursor:"pointer",color:isOnBlock?"#f97316":T.textDim,fontSize:13,padding:0,lineHeight:1}},isOnBlock?"🔄":"↔")
+              )
             );
           });
         })(),
