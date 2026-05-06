@@ -5439,11 +5439,11 @@ export default function App(){
             ),
             React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:10,padding:"10px 12px"}},
               React.createElement("div",{style:{fontSize:9,color:T.textSub,fontWeight:700,marginBottom:4}},"ROSTER SLOTS"),
-              React.createElement("input",{type:"number",value:auctionTeams,onChange:function(e){setAuctionTeams(+e.target.value||10);},style:{background:"transparent",color:T.text,border:"none",fontSize:20,fontWeight:900,width:"100%",outline:"none"}})
+              React.createElement("input",{type:"number",value:auctionTeams,min:1,onChange:function(e){setAuctionTeams(Math.max(1,+e.target.value||1));},style:{background:"transparent",color:T.text,border:"none",fontSize:20,fontWeight:900,width:"100%",outline:"none"}})
             ),
             React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:10,padding:"10px 12px"}},
               React.createElement("div",{style:{fontSize:9,color:T.textSub,fontWeight:700,marginBottom:4}},"LEAGUE TEAMS"),
-              React.createElement("input",{type:"number",value:draftLeagueSize,min:2,max:20,onChange:function(e){setDraftLeagueSize(Math.max(2,Math.min(20,+e.target.value||12)));},style:{background:"transparent",color:T.text,border:"none",fontSize:20,fontWeight:900,width:"100%",outline:"none"}})
+              React.createElement("input",{type:"number",value:draftLeagueSize,min:1,max:32,onChange:function(e){setDraftLeagueSize(Math.max(1,Math.min(32,+e.target.value||1)));},style:{background:"transparent",color:T.text,border:"none",fontSize:20,fontWeight:900,width:"100%",outline:"none"}})
             )
           ),
           // Budget bar + stats
