@@ -4163,7 +4163,44 @@ export default function App(){
                 React.createElement("div",{style:{fontWeight:900,fontSize:28,color:card[4],marginBottom:2}},card[2]),
                 React.createElement("div",{style:{fontSize:11,color:T.textSub}},card[3])
               );
-            })
+            }),
+            (function(){
+              var myPlrs=(team.players&&team.players.length>0?team.players:rankedPlayers.slice(0,15)).filter(function(p){return p.pos!=="DST"&&p.pos!=="K"&&p.pos!=="PICK";});
+              var tips=[];
+              // Sell candidates — aging or post-prime players on the roster
+              var sellCands=myPlrs.filter(function(p){var hi=PRIME[p.pos]?PRIME[p.pos][1]:30;return (p.age||25)>hi&&(p.tradeVal||0)>=1500;}).sort(function(a,b){return (b.tradeVal||0)-(a.tradeVal||0);}).slice(0,3);
+              if(sellCands.length>0) tips.push({type:"Sell",color:T.red,icon:"↘",players:sellCands,reason:mode==="REBUILD"?"Move aging assets for picks and youth":"Sell before the value cliff hits"});
+              // Buy targets — young high-upside players NOT on roster
+              var rosterNames=new Set(myPlrs.map(function(p){return p.name;}));
+              var buyCands=rankedPlayers.filter(function(p){return !rosterNames.has(p.name)&&["QB","RB","WR","TE"].includes(p.pos)&&(p.age||25)<(PRIME[p.pos]?PRIME[p.pos][0]:25)+1&&(p.tradeVal||0)>=2000&&(p.posRank||99)<=15;}).sort(function(a,b){return (b.tradeVal||0)-(a.tradeVal||0);}).slice(0,3);
+              if(buyCands.length>0) tips.push({type:"Buy",color:T.green,icon:"↗",players:buyCands,reason:mode==="COMPETE"?"Add a championship piece":"Invest in long-term value"});
+              // Hold — prime-age stars on roster
+              var holdCands=myPlrs.filter(function(p){var lo=PRIME[p.pos]?PRIME[p.pos][0]:25;var hi=PRIME[p.pos]?PRIME[p.pos][1]:30;return (p.age||25)>=lo&&(p.age||25)<=hi&&(p.tradeVal||0)>=3000;}).sort(function(a,b){return (b.tradeVal||0)-(a.tradeVal||0);}).slice(0,3);
+              if(holdCands.length>0) tips.push({type:"Hold",color:"#818cf8",icon:"●",players:holdCands,reason:"In their prime — don't sell unless overpaid"});
+              return React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:14,padding:16,marginTop:4}},
+                React.createElement("div",{style:{fontWeight:800,fontSize:15,marginBottom:12}},"Actionable Advice"),
+                tips.map(function(tip){
+                  return React.createElement("div",{key:tip.type,style:{marginBottom:14}},
+                    React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,marginBottom:8}},
+                      React.createElement("span",{style:{color:tip.color,fontWeight:900,fontSize:14}},tip.icon),
+                      React.createElement("span",{style:{fontWeight:800,fontSize:13,color:tip.color}},tip.type),
+                      React.createElement("span",{style:{fontSize:11,color:T.textSub}}," — "+tip.reason)
+                    ),
+                    tip.players.map(function(p){
+                      return React.createElement("div",{key:p.name,onClick:function(){setTradeB(tip.type==="Buy"?[p]:[]);setTradeA(tip.type==="Sell"?[p]:[]);setAnalyzed(false);setTab("trade");},style:{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",background:T.bgInput,borderRadius:8,marginBottom:4,cursor:"pointer"}},
+                        React.createElement(Avatar,{name:p.name,pos:p.pos,size:28}),
+                        React.createElement("div",{style:{flex:1}},
+                          React.createElement("div",{style:{fontWeight:700,fontSize:12}},p.name),
+                          React.createElement("div",{style:{fontSize:10,color:T.textSub}},p.pos+" · "+p.team+" · Age "+(p.age||"?"))
+                        ),
+                        React.createElement("div",{style:{fontWeight:800,fontSize:12,color:T.purpleLight}},(p.tradeVal||0).toLocaleString())
+                      );
+                    })
+                  );
+                }),
+                tips.length===0&&React.createElement("div",{style:{fontSize:12,color:T.textSub,textAlign:"center",padding:16}},"Import your league roster for personalized advice")
+              );
+            })()
           );
         })()
       ),
