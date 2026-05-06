@@ -3747,7 +3747,28 @@ export default function App(){
                 React.createElement("span",{style:{color:T.purple,fontWeight:700,fontSize:12,flexShrink:0}},"Load →")
               );
             });
-          })()
+          })(),
+          React.createElement("div",{style:{marginTop:16}},
+            React.createElement("div",{style:{fontSize:11,fontWeight:800,color:T.textDim,letterSpacing:1,marginBottom:10}},"TOP DYNASTY ASSETS — TAP TO TRADE"),
+            React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}},
+              ["QB","RB","WR","TE"].map(function(pos){
+                var top=rankedPlayers.find(function(p){return p.pos===pos;});
+                if(!top)return null;
+                var ag=ageGrade(top.pos,top.age||0);
+                return React.createElement("div",{key:pos,onClick:function(){addToTrade(top);},style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"10px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:8}},
+                  React.createElement(Avatar,{name:top.name,pos:top.pos,size:32}),
+                  React.createElement("div",{style:{flex:1,minWidth:0}},
+                    React.createElement("div",{style:{fontSize:9,fontWeight:800,color:POS_COLORS[pos]||T.textSub,letterSpacing:0.5}},pos+"1"),
+                    React.createElement("div",{style:{fontWeight:700,fontSize:11,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},top.name.split(" ").pop()),
+                    React.createElement("div",{style:{fontSize:9,color:T.textSub,display:"flex",gap:3}},
+                      React.createElement("span",{style:{color:T.purpleLight,fontWeight:700}},(top.tradeVal||0).toLocaleString()),
+                      React.createElement("span",{style:{color:ag.c}},ag.g)
+                    )
+                  )
+                );
+              })
+            )
+          )
         ),
         analyzed&&(tradeA.length>0||tradeB.length>0)&&(function(){
           var v=verdict();
@@ -6564,15 +6585,25 @@ export default function App(){
             scored.sort(function(a,b){return b.pts-a.pts;});
             return scored.slice(0,25).map(function(item,idx){
               var p=item.player;
-              return React.createElement("div",{key:item.pid,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:10,padding:"10px 14px",marginBottom:6,display:"flex",alignItems:"center",gap:10}},
+              var ag=ageGrade(p.pos,p.age||0);
+              return React.createElement("div",{key:item.pid,onClick:function(){addToTrade(p);},style:{background:T.bgCard,border:"1px solid "+(idx<3?T.gold+"44":T.border),borderRadius:10,padding:"10px 14px",marginBottom:6,display:"flex",alignItems:"center",gap:10,cursor:"pointer"}},
                 React.createElement("div",{style:{width:24,fontWeight:900,fontSize:12,color:idx<3?T.gold:T.textDim,flexShrink:0,textAlign:"center"}},"#"+(idx+1)),
                 React.createElement(Avatar,{name:p.name,pos:p.pos,size:34}),
-                React.createElement(PBadge,{pos:p.pos}),
-                React.createElement("div",{style:{flex:1}},
-                  React.createElement("div",{style:{fontWeight:700,fontSize:13}},p.name),
-                  React.createElement("div",{style:{fontSize:10,color:T.textSub}},p.team+" · "+p.pos)
+                React.createElement("div",{style:{flex:1,minWidth:0}},
+                  React.createElement("div",{style:{fontWeight:700,fontSize:13,display:"flex",alignItems:"center",gap:4}},
+                    React.createElement("span",null,p.name),
+                    React.createElement(PBadge,{pos:p.pos})
+                  ),
+                  React.createElement("div",{style:{fontSize:10,color:T.textSub,display:"flex",gap:4,alignItems:"center"}},
+                    React.createElement("span",null,p.team),
+                    React.createElement("span",{style:{color:ag.c,fontWeight:700}},ag.g),
+                    React.createElement("span",{style:{color:T.purpleLight}},(p.tradeVal||0).toLocaleString()+" val")
+                  )
                 ),
-                React.createElement("div",{style:{fontWeight:900,fontSize:16,color:idx<3?T.gold:T.purpleLight}},item.pts.toFixed(1)," pts")
+                React.createElement("div",{style:{textAlign:"right",flexShrink:0}},
+                  React.createElement("div",{style:{fontWeight:900,fontSize:16,color:idx<3?T.gold:T.purpleLight}},item.pts.toFixed(1)),
+                  React.createElement("div",{style:{fontSize:9,color:T.textDim}},"pts")
+                )
               );
             });
           })()
