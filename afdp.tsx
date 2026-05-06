@@ -6174,27 +6174,57 @@ export default function App(){
           var aWins=diff>0;
           var vc=fair?T.green:aWins?T.gold:T.red;
           var vt=fair?"Fair Trade":aWins?"You won ("+pct.toFixed(0)+"%)":"You overpaid ("+pct.toFixed(0)+"%)";
+          // Calculate current values for comparison
+          var curA=entry.sideA.reduce(function(s,p){var cur=rankedPlayers.find(function(x){return x.name===p.name;});return s+(cur?cur.tradeVal:p.val||0);},0);
+          var curB=entry.sideB.reduce(function(s,p){var cur=rankedPlayers.find(function(x){return x.name===p.name;});return s+(cur?cur.tradeVal:p.val||0);},0);
+          var valShift=curB-curA-(entry.tvB-entry.tvA);
+          var shiftLabel=valShift>200?"Trade improved":valShift<-200?"Trade worsened":"Holding steady";
+          var shiftColor=valShift>200?T.green:valShift<-200?T.red:T.textSub;
           return React.createElement("div",{key:entry.id,style:{background:T.bgCard,border:"1px solid "+(fair?T.green+"44":aWins?T.gold+"44":T.red+"44"),borderRadius:12,padding:"14px",marginBottom:10}},
             React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}},
               React.createElement("div",{style:{fontWeight:800,fontSize:13,color:vc}},vt),
-              React.createElement("div",{style:{fontSize:11,color:T.textDim}},entry.date+(entry.scoring?" · "+entry.scoring:"")+" · saved values")
+              React.createElement("div",{style:{fontSize:10,color:T.textDim}},entry.date+(entry.scoring?" · "+entry.scoring:""))
             ),
             React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr auto 1fr",gap:8,alignItems:"start"}},
               React.createElement("div",null,
                 React.createElement("div",{style:{fontSize:9,fontWeight:700,color:T.textSub,letterSpacing:1,marginBottom:4}},"YOU GAVE"),
-                entry.sideA.map(function(p){return React.createElement("div",{key:p.name,style:{fontSize:11,fontWeight:600,marginBottom:3,display:"flex",alignItems:"center",gap:4}},
-                  React.createElement("span",{style:{color:POS_COLORS[p.pos]||T.textSub,fontSize:9,fontWeight:700,flexShrink:0}},p.pos),p.name
-                );}),
+                entry.sideA.map(function(p){
+                  var cur=rankedPlayers.find(function(x){return x.name===p.name;});
+                  var curVal=cur?cur.tradeVal:0;
+                  var savedVal=p.val||0;
+                  var delta=curVal-savedVal;
+                  return React.createElement("div",{key:p.name,style:{fontSize:11,fontWeight:600,marginBottom:3,display:"flex",alignItems:"center",gap:4}},
+                    React.createElement("span",{style:{color:POS_COLORS[p.pos]||T.textSub,fontSize:9,fontWeight:700,flexShrink:0}},p.pos),
+                    React.createElement("span",{style:{flex:1}},p.name),
+                    curVal>0&&delta!==0&&React.createElement("span",{style:{fontSize:8,fontWeight:700,color:delta>0?T.green:T.red}},(delta>0?"+":"")+delta)
+                  );
+                }),
                 React.createElement("div",{style:{fontSize:12,fontWeight:900,color:T.purple,marginTop:4}},entry.tvA.toLocaleString())
               ),
               React.createElement("div",{style:{fontSize:14,color:T.textDim,marginTop:12,textAlign:"center"}},"⇄"),
               React.createElement("div",null,
                 React.createElement("div",{style:{fontSize:9,fontWeight:700,color:T.textSub,letterSpacing:1,marginBottom:4}},"YOU GOT"),
-                entry.sideB.map(function(p){return React.createElement("div",{key:p.name,style:{fontSize:11,fontWeight:600,marginBottom:3,display:"flex",alignItems:"center",gap:4}},
-                  React.createElement("span",{style:{color:POS_COLORS[p.pos]||T.textSub,fontSize:9,fontWeight:700,flexShrink:0}},p.pos),p.name
-                );}),
+                entry.sideB.map(function(p){
+                  var cur=rankedPlayers.find(function(x){return x.name===p.name;});
+                  var curVal=cur?cur.tradeVal:0;
+                  var savedVal=p.val||0;
+                  var delta=curVal-savedVal;
+                  return React.createElement("div",{key:p.name,style:{fontSize:11,fontWeight:600,marginBottom:3,display:"flex",alignItems:"center",gap:4}},
+                    React.createElement("span",{style:{color:POS_COLORS[p.pos]||T.textSub,fontSize:9,fontWeight:700,flexShrink:0}},p.pos),
+                    React.createElement("span",{style:{flex:1}},p.name),
+                    curVal>0&&delta!==0&&React.createElement("span",{style:{fontSize:8,fontWeight:700,color:delta>0?T.green:T.red}},(delta>0?"+":"")+delta)
+                  );
+                }),
                 React.createElement("div",{style:{fontSize:12,fontWeight:900,color:T.purpleLight,marginTop:4}},entry.tvB.toLocaleString())
               )
+            ),
+            React.createElement("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:10,paddingTop:8,borderTop:"1px solid "+T.border}},
+              React.createElement("div",{style:{fontSize:10,fontWeight:700,color:shiftColor}},shiftLabel+(Math.abs(valShift)>200?" ("+(valShift>0?"+":"")+valShift+")":"")),
+              React.createElement("button",{onClick:function(){
+                var loadA=entry.sideA.map(function(p){return rankedPlayers.find(function(x){return x.name===p.name;})||p;});
+                var loadB=entry.sideB.map(function(p){return rankedPlayers.find(function(x){return x.name===p.name;})||p;});
+                setTradeA(loadA);setTradeB(loadB);setAnalyzed(false);setTab("trade");
+              },style:{padding:"4px 12px",borderRadius:6,border:"1px solid "+T.purple+"44",background:T.purple+"11",color:T.purpleLight,fontWeight:700,fontSize:10,cursor:"pointer"}},"Re-analyze →")
             )
           );
         })
@@ -6202,14 +6232,20 @@ export default function App(){
 
       // FOOTER
       React.createElement("div",{style:{padding:"32px 20px 16px",borderTop:"1px solid "+T.border,textAlign:"center",marginTop:8}},
-        React.createElement("div",{style:{display:"flex",justifyContent:"center",alignItems:"center",gap:8,marginBottom:10}},
+        React.createElement("div",{style:{display:"flex",justifyContent:"center",alignItems:"center",gap:8,marginBottom:12}},
           LogoSvg,
-          React.createElement("span",{style:{fontSize:12,color:T.textSub}},"© 2026 Fantasy Draft Pros · All rights reserved")
+          React.createElement("span",{style:{fontWeight:800,fontSize:14,color:T.text}},"Fantasy Draft Pros")
         ),
-        React.createElement("div",{style:{display:"flex",justifyContent:"center",gap:24,marginBottom:16}},
-          [["f","Facebook"],["@","Instagram"],["T","TikTok"]].map(function(s){return React.createElement("div",{key:s[1],style:{width:32,height:32,borderRadius:"50%",background:T.bgCard,border:"1px solid "+T.border,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:13,color:T.textSub,fontWeight:700}},s[0]);})
+        React.createElement("div",{style:{display:"flex",justifyContent:"center",gap:16,marginBottom:12}},
+          [["Trade","trade"],["Rankings","rankings"],["Reports","reports"]].map(function(l){return React.createElement("span",{key:l[0],onClick:function(){setTab(l[1]);window.scrollTo(0,0);},style:{fontSize:12,color:T.purple,cursor:"pointer",fontWeight:600}},l[0]);})
         ),
-        React.createElement("div",{style:{fontSize:10,color:T.textDim,lineHeight:1.6}},"Player values powered by Fantasy Draft Pros. Not affiliated with",React.createElement("br",null),"Sleeper, ESPN, or Yahoo. For entertainment only.")
+        React.createElement("div",{style:{display:"flex",justifyContent:"center",gap:8,marginBottom:14}},
+          React.createElement("button",{onClick:function(){window.open("https://twitter.com/intent/tweet?url="+encodeURIComponent("https://fantasydraftpros.com")+"&text="+encodeURIComponent("Best dynasty fantasy football trade analyzer!"),"_blank");},style:{width:34,height:34,borderRadius:"50%",background:T.bgCard,border:"1px solid "+T.border,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:13,color:T.textSub,fontWeight:700}},"X"),
+          React.createElement("button",{onClick:function(){window.open("https://reddit.com/submit?url="+encodeURIComponent("https://fantasydraftpros.com"),"_blank");},style:{width:34,height:34,borderRadius:"50%",background:T.bgCard,border:"1px solid "+T.border,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:12,color:T.textSub,fontWeight:700}},"r/"),
+          React.createElement("button",{onClick:function(){navigator.clipboard.writeText("https://fantasydraftpros.com");},style:{width:34,height:34,borderRadius:"50%",background:T.bgCard,border:"1px solid "+T.border,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:13,color:T.textSub}},"🔗")
+        ),
+        React.createElement("div",{style:{fontSize:10,color:T.textDim,lineHeight:1.6,marginBottom:4}},"© 2026 Fantasy Draft Pros · All rights reserved"),
+        React.createElement("div",{style:{fontSize:9,color:T.textDim,lineHeight:1.5}},"Player values powered by FDP. Not affiliated with Sleeper, ESPN, or Yahoo. For entertainment only.")
       )
     ),
 
