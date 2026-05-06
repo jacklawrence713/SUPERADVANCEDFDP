@@ -1499,7 +1499,7 @@ const PLAYERS=[
   {name:"Matt Ammendola",pos:"K",age:29,team:"ARI",proj:{PPR:118,Half:118,Standard:118},adp:10.5,ktcVal:300,note:"Depth K: 84% FG%"},
   // IDP DL Wave 8
   {name:"Robert Quinn",pos:"DL",age:34,team:"FA",proj:{PPR:78,Half:78,Standard:78},adp:34.5,ktcVal:400,note:"Veteran EDGE: 8 sacks if active"},
-  {name:"Emmanuel Ogbah",pos:"DL",age:32,team:"MIA",proj:{PPR:80,Half:80,Standard:80},adp:32.0,ktcVal:800,note:"EDGE: 7.5 sacks rotational"},
+  {name:"Emmanuel Ogbah",pos:"DL",age:32,team:"JAX",proj:{PPR:80,Half:80,Standard:80},adp:32.0,ktcVal:800,note:"Signed JAX 1yr/$3.25M · EDGE: 7.5 sacks"},
   {name:"Jordan Davis",pos:"DL",age:26,team:"PHI",proj:{PPR:82,Half:82,Standard:82},adp:30.5,ktcVal:1800,note:"NT Year 4: 40 tackles 4 sacks"},
   {name:"Calais Campbell",pos:"DL",age:39,team:"BAL",proj:{PPR:72,Half:72,Standard:72},adp:38.0,ktcVal:300,note:"Veteran: 5 sacks · signed 1yr/$5.5M with BAL"},
   // IDP LB Wave 8
@@ -1539,7 +1539,7 @@ const PLAYERS=[
   {name:"Tanner Mordecai",pos:"QB",age:27,team:"MIA",proj:{PPR:192,Half:192,Standard:192},adp:34.5,ktcVal:300,note:"Deep backup"},
   {name:"Chris Streveler",pos:"QB",age:30,team:"NYJ",proj:{PPR:188,Half:188,Standard:188},adp:35.5,ktcVal:200,note:"Mobile emergency backup"},
   // IDP Wave 5 — elite and rising pass rushers
-  {name:"Jaelan Phillips",pos:"DL",age:26,team:"CAR",proj:{PPR:105,Half:105,Standard:105},adp:14.5,ktcVal:2500,note:"EDGE: 10 sacks when healthy · 4yr/$120M CAR"},
+  {name:"Jaelan Phillips",pos:"DL",age:26,team:"CAR",proj:{PPR:105,Half:105,Standard:105},adp:14.5,ktcVal:2500,note:"Signed CAR 4yr/$120M · EDGE: traded MIA→PHI→CAR"},
   {name:"Zach Harrison",pos:"DL",age:25,team:"NYG",proj:{PPR:90,Half:90,Standard:90},adp:27.0,ktcVal:1500,note:"Interior rush: 8 sacks"},
   {name:"Brenton Cox Jr.",pos:"DL",age:25,team:"PHI",proj:{PPR:88,Half:88,Standard:88},adp:29.5,ktcVal:1500,note:"Edge rotational: 7 sacks"},
   // IDP Wave 5 — LBs
