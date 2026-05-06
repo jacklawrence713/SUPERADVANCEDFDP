@@ -3066,16 +3066,30 @@ export default function App(){
     if(pct<8){lines.push("This is a fair trade — both sides exchange roughly equal value within the standard 8% threshold.");}
     else if(diff>0){lines.push("Team B wins this trade by "+pct.toFixed(0)+"%. Team A is overpaying for what they receive.");}
     else{lines.push("Team A wins this trade by "+pct.toFixed(0)+"%. Team B is giving up too much value.");}
+    // Consolidation analysis — fewer pieces = dynasty advantage
+    var aTotal=sA.length,bTotal=sB.length;
+    if(aTotal>bTotal+1){lines.push("Consolidation edge: Team B gets "+aTotal+" assets for "+bTotal+" — in dynasty, the side getting fewer, better players usually wins long-term.");}
+    else if(bTotal>aTotal+1){lines.push("Consolidation edge: Team A gets "+bTotal+" assets for "+aTotal+" — acquiring the best player in a trade is a dynasty principle.");}
     if(aPlrs.length>0&&bPlrs.length>0){
       var aAge=+(aPlrs.reduce(function(s,p){return s+(p.age||25);},0)/aPlrs.length).toFixed(0);
       var bAge=+(bPlrs.reduce(function(s,p){return s+(p.age||25);},0)/bPlrs.length).toFixed(0);
       if(aAge>bAge+2){lines.push("You're moving older assets (avg age "+aAge+") for younger pieces (avg "+bAge+") — solid dynasty value exchange.");}
       else if(bAge>aAge+2){lines.push("Incoming players average age "+bAge+" vs "+aAge+" outgoing. Win-now move — good if you're contending.");}
+      // Window analysis
+      var youngCount=bPlrs.filter(function(p){return (p.age||25)<=24;}).length;
+      var primeCount=bPlrs.filter(function(p){var lo=PRIME[p.pos]?PRIME[p.pos][0]:25;var hi=PRIME[p.pos]?PRIME[p.pos][1]:30;return (p.age||25)>=lo&&(p.age||25)<=hi;}).length;
+      if(youngCount>=2){lines.push("Rebuilder move: you're acquiring "+youngCount+" players aged 24 or under. Great for long-term dynasty value.");}
+      else if(primeCount>=2){lines.push("Win-now move: "+primeCount+" incoming players are in their prime window. Push for a championship.");}
     }
     var oldRbs=aPlrs.filter(function(p){return p.pos==="RB"&&(p.age||25)>=30;});
     if(oldRbs.length>0){lines.push("Risk flag: "+oldRbs.map(function(p){return p.name;}).join(" & ")+" "+( oldRbs.length>1?"are":"is")+" 30+ at RB — steep production cliff ahead.");}
+    var oldRbsIn=bPlrs.filter(function(p){return p.pos==="RB"&&(p.age||25)>=29;});
+    if(oldRbsIn.length>0){lines.push("Caution: acquiring "+oldRbsIn.map(function(p){return p.name+"("+p.age+")";}).join(", ")+" — RBs 29+ carry significant injury and decline risk.");}
     if(aPicks.length>bPicks.length){var ep=aPicks.length-bPicks.length;lines.push("You're adding "+ep+" extra pick"+(ep>1?"s":"")+" — speculative upside, best for rebuilders.");}
     else if(bPicks.length>aPicks.length){var ep2=bPicks.length-aPicks.length;lines.push("You're landing "+ep2+" extra pick"+(ep2>1?"s":"")+" — future capital secured.");}
+    // Position stacking warning
+    var bPosCounts={};bPlrs.forEach(function(p){bPosCounts[p.pos]=(bPosCounts[p.pos]||0)+1;});
+    Object.keys(bPosCounts).forEach(function(pos){if(bPosCounts[pos]>=2){lines.push("You're acquiring "+bPosCounts[pos]+" "+pos+"s in one trade — make sure you have roster spots and aren't over-investing in one position.");}});
     var eliteIn=bPlrs.filter(function(p){return p.posRank&&p.posRank<=5;});
     if(eliteIn.length>0){lines.push("You're acquiring "+eliteIn.map(function(p){return p.name;}).join(" & ")+", an elite top-5 asset at their position. That's a significant win.");}
     var qbIn=bPlrs.filter(function(p){return p.pos==="QB";});
@@ -3123,6 +3137,12 @@ export default function App(){
     if(topIncoming){
       var similar=rankedPlayers.filter(function(p){return p.pos===topIncoming.pos&&p.name!==topIncoming.name&&Math.abs((p.tradeVal||0)-(topIncoming.tradeVal||0))<500;}).slice(0,2);
       if(similar.length>0){lines.push("Comparable to "+topIncoming.name+": "+similar.map(function(p){return p.name+"("+p.tradeVal+")";}).join(", ")+" — consider these alternatives.");}
+    }
+    // QB scarcity warning in SF
+    if(isSF){
+      var qbOut2=tradeA.filter(function(p){return p.pos==="QB";});
+      var qbIn2=tradeB.filter(function(p){return p.pos==="QB";});
+      if(qbOut2.length>qbIn2.length){lines.push("SF alert: you're trading away a QB without getting one back. QB scarcity in Superflex makes them premium — ensure you have depth.");}
     }
     if(lines.length===0){lines.push("Both teams are exchanging similar-value assets. Look for youth (under 25) or picks to maximize long-term dynasty value.");}
     return lines.join(" • ");
