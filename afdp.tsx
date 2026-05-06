@@ -6474,6 +6474,96 @@ export default function App(){
                 ),
                 React.createElement("div",{style:{fontSize:11,fontWeight:800,color:T.purple}},drafted.length+" picks")
               ),
+              // Draft Advice Panel
+              drafted.length>0&&(function(){
+                var spent=drafted.reduce(function(s,d){return s+(d.price||0);},0);
+                var remaining=draftBudget-spent;
+                var slotsLeft=draftRosterSize-drafted.length;
+                if(slotsLeft<=0)return React.createElement("div",{style:{margin:"0 16px 12px",background:T.green+"18",border:"1px solid "+T.green+"44",borderRadius:12,padding:"12px 14px",textAlign:"center"}},
+                  React.createElement("div",{style:{fontWeight:800,fontSize:14,color:T.green}},"Roster Complete!"),
+                  React.createElement("div",{style:{fontSize:11,color:T.textSub,marginTop:4}},"You drafted "+drafted.length+" players for $"+spent)
+                );
+                var maxBid=slotsLeft>1?remaining-(slotsLeft-1):remaining;
+                // Analyze roster composition
+                var myPosCts={QB:0,RB:0,WR:0,TE:0};
+                drafted.forEach(function(d){var rp=rankedPlayers.find(function(p){return p.name===d.name;});if(rp&&myPosCts.hasOwnProperty(rp.pos))myPosCts[rp.pos]++;});
+                // Ideal targets based on roster size
+                var idealRatio=draftRosterSize>=18?{QB:2,RB:5,WR:5,TE:2}:draftRosterSize>=14?{QB:2,RB:4,WR:4,TE:2}:{QB:1,RB:3,WR:3,TE:1};
+                var needs=[];
+                ["QB","RB","WR","TE"].forEach(function(pos){
+                  var gap=idealRatio[pos]-myPosCts[pos];
+                  if(gap>0)needs.push({pos:pos,gap:gap,have:myPosCts[pos],ideal:idealRatio[pos]});
+                });
+                needs.sort(function(a,b){return b.gap-a.gap;});
+                // Find best value targets within budget
+                var targets=[];
+                var avgPerSlot=slotsLeft>0?Math.round(remaining/slotsLeft):0;
+                needs.forEach(function(n){
+                  var posAvail=rankedPlayers.filter(function(p){return p.pos===n.pos&&!drafted.find(function(d){return d.name===p.name;});}).sort(function(a,b){return b.tradeVal-a.tradeVal;});
+                  // Best available at this position
+                  var best=posAvail[0];
+                  // Value pick — high value but maybe affordable
+                  var valuePick=posAvail.find(function(p,idx){return idx>=3&&idx<=12;});
+                  if(best)targets.push({player:best,reason:"Best "+n.pos+" available",type:"premium",need:n.gap+" more "+n.pos+(n.gap>1?"s":"")+" needed"});
+                  if(valuePick&&valuePick!==best)targets.push({player:valuePick,reason:"Value "+n.pos+" — stretch budget",type:"value",need:n.gap+" more "+n.pos+(n.gap>1?"s":"")+" needed"});
+                });
+                // If budget is tight, suggest bargains
+                if(remaining<avgPerSlot*slotsLeft*0.6&&slotsLeft>2){
+                  var bargains=rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0&&!drafted.find(function(d){return d.name===p.name;})&&p.posRank>=10&&p.posRank<=25;}).sort(function(a,b){return (b.pts/(b.tradeVal||1))-(a.pts/(a.tradeVal||1));}).slice(0,2);
+                  bargains.forEach(function(p){targets.push({player:p,reason:"Budget-friendly — high pts/value",type:"bargain",need:"Save budget"});});
+                }
+                // Deduplicate
+                var seen={};targets=targets.filter(function(t){if(seen[t.player.name])return false;seen[t.player.name]=true;return true;});
+                targets=targets.slice(0,5);
+                if(targets.length===0)return null;
+                return React.createElement("div",{style:{margin:"0 16px 12px",background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:14,padding:"12px 14px"}},
+                  React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,marginBottom:8}},
+                    React.createElement("span",{style:{fontSize:16}},"🎯"),
+                    React.createElement("div",null,
+                      React.createElement("div",{style:{fontSize:11,fontWeight:800,color:T.purpleLight,letterSpacing:0.5}},"DRAFT ADVISOR"),
+                      React.createElement("div",{style:{fontSize:9,color:T.textDim}},"$"+remaining+" left · "+slotsLeft+" slots · ~$"+avgPerSlot+"/pick")
+                    )
+                  ),
+                  // Roster composition mini bar
+                  React.createElement("div",{style:{display:"flex",gap:8,marginBottom:10}},
+                    ["QB","RB","WR","TE"].map(function(pos){
+                      var have=myPosCts[pos];
+                      var ideal=idealRatio[pos];
+                      var full=have>=ideal;
+                      return React.createElement("div",{key:pos,style:{flex:1,textAlign:"center"}},
+                        React.createElement("div",{style:{fontSize:9,fontWeight:800,color:POS_COLORS[pos]||T.textSub}},pos),
+                        React.createElement("div",{style:{fontSize:12,fontWeight:900,color:full?T.green:have>0?T.gold:T.red}},have+"/"+ideal),
+                        React.createElement("div",{style:{height:3,borderRadius:2,background:T.border,marginTop:2,overflow:"hidden"}},
+                          React.createElement("div",{style:{width:Math.min(100,Math.round(have/Math.max(1,ideal)*100))+"%",height:"100%",background:full?T.green:T.gold,borderRadius:2}})
+                        )
+                      );
+                    })
+                  ),
+                  // Suggested targets
+                  React.createElement("div",{style:{display:"flex",flexDirection:"column",gap:6}},
+                    targets.map(function(t){
+                      var p=t.player;
+                      var typeColor=t.type==="premium"?T.purple:t.type==="value"?"#60a5fa":"#22c55e";
+                      var typeLabel=t.type==="premium"?"PRIORITY":t.type==="value"?"VALUE":"BARGAIN";
+                      return React.createElement("div",{key:p.name,style:{display:"flex",alignItems:"center",gap:8,background:T.bgInput,borderRadius:10,padding:"8px 10px",border:"1px solid "+typeColor+"33"}},
+                        React.createElement(Avatar,{name:p.name,pos:p.pos,size:28}),
+                        React.createElement("div",{style:{flex:1,minWidth:0}},
+                          React.createElement("div",{style:{display:"flex",alignItems:"center",gap:4}},
+                            React.createElement("span",{style:{fontWeight:700,fontSize:12,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
+                            React.createElement("span",{style:{fontSize:7,fontWeight:800,color:typeColor,background:typeColor+"18",borderRadius:4,padding:"1px 4px"}},typeLabel)
+                          ),
+                          React.createElement("div",{style:{fontSize:9,color:T.textSub}},t.reason+" · ",React.createElement("span",{style:{color:POS_COLORS[p.pos]||T.textSub,fontWeight:700}},p.pos+p.posRank)," · ",t.need)
+                        ),
+                        React.createElement("div",{style:{textAlign:"right",flexShrink:0}},
+                          React.createElement("div",{style:{fontWeight:800,fontSize:11,color:T.purpleLight}},(p.tradeVal||0).toLocaleString()),
+                          React.createElement("div",{style:{fontSize:9,color:T.textSub}},p.pts.toFixed(1)+" pts")
+                        ),
+                        React.createElement("button",{onClick:function(){var price=prompt("Draft price for "+p.name+"?","1");if(price===null)return;setDrafted(function(d){return [{name:p.name,price:+price||0}].concat(d);});},style:{padding:"4px 10px",borderRadius:8,border:"1px solid "+T.purple,background:T.purple,color:"#fff",fontWeight:700,fontSize:10,cursor:"pointer",flexShrink:0}},"Draft")
+                      );
+                    })
+                  )
+                );
+              })(),
               React.createElement("div",{style:{padding:"0 16px 8px"}},
                 React.createElement("input",{value:draftKitSearch,onChange:function(e){setDraftKitSearch(e.target.value);},placeholder:"Search players...",style:Object.assign({},inpS)})
               ),
