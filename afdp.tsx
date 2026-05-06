@@ -2633,6 +2633,7 @@ export default function App(){
   var [aiSuggestions,setAiSuggestions]=useState("");
   var [valueTrendsPos,setValueTrendsPos]=useState("QB");
   var [trendingFilter,setTrendingFilter]=useState("all");
+  var [trendingPosFilter,setTrendingPosFilter]=useState("All");
   var [marketFilter,setMarketFilter]=useState("buylow");
   var [marketPos,setMarketPos]=useState("All Positions");
   var [marketSearch,setMarketSearch]=useState("");
@@ -6169,10 +6170,18 @@ export default function App(){
             ),
             React.createElement("button",{style:{width:36,height:36,borderRadius:10,border:"1px solid "+T.border,background:T.bgInput,cursor:"pointer",color:T.textSub,fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}},"o")
           ),
-          React.createElement("div",{style:{display:"flex",gap:8,marginBottom:12}},
+          React.createElement("div",{style:{display:"flex",gap:6,marginBottom:8,flexWrap:"wrap"}},
             [["all","All"],["rising","Rising"],["falling","Falling"]].map(function(f){
               var active=trendingFilter===f[0];
-              return React.createElement("button",{key:f[0],onClick:function(){setTrendingFilter(f[0]);},style:{padding:"7px 14px",borderRadius:20,border:"1px solid "+(active?T.purple:T.border),background:active?T.purple:"transparent",color:active?"#fff":T.textSub,fontWeight:700,fontSize:12,cursor:"pointer"}},f[1]);
+              var fc=f[0]==="rising"?T.green:f[0]==="falling"?T.red:T.purple;
+              return React.createElement("button",{key:f[0],onClick:function(){setTrendingFilter(f[0]);},style:{padding:"7px 14px",borderRadius:20,border:"1px solid "+(active?fc:T.border),background:active?fc:"transparent",color:active?"#fff":T.textSub,fontWeight:700,fontSize:12,cursor:"pointer"}},f[1]);
+            })
+          ),
+          React.createElement("div",{style:{display:"flex",gap:5,marginBottom:12,flexWrap:"wrap"}},
+            ["All","QB","RB","WR","TE"].map(function(pos){
+              var active=trendingPosFilter===pos;
+              var pc=POS_COLORS[pos]||T.purple;
+              return React.createElement("button",{key:pos,onClick:function(){setTrendingPosFilter(pos);},style:{padding:"5px 12px",borderRadius:16,border:"1px solid "+(active?pc:T.border),background:active?pc+"22":"transparent",color:active?pc:T.textDim,fontWeight:700,fontSize:11,cursor:"pointer"}},pos);
             })
           ),
           React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,marginBottom:16,fontSize:12,color:T.textSub}},
@@ -6198,6 +6207,7 @@ export default function App(){
               return {p:p,signal:signal,dir:dir,score:entering?5:youngStar?4:breakout?3:leaving?2:agingElite?1:0};
             }).filter(function(x){return x.score>0;}).sort(function(a,b){return b.score-a.score;});
             if(trendingFilter!=="all") trendPlayers=trendPlayers.filter(function(x){return x.dir===trendingFilter;});
+            if(trendingPosFilter!=="All") trendPlayers=trendPlayers.filter(function(x){return x.p.pos===trendingPosFilter;});
             return trendPlayers.length===0?React.createElement("div",{style:{textAlign:"center",padding:"32px 0"}},
               React.createElement("div",{style:{fontSize:32,color:T.textDim,marginBottom:12}},"~"),
               React.createElement("div",{style:{fontWeight:700,fontSize:16,color:T.textSub,marginBottom:6}},"No trending players for this filter"),
