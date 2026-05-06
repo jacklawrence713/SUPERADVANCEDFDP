@@ -3860,7 +3860,11 @@ export default function App(){
                   React.createElement(Avatar,{name:p.name,pos:p.pos,size:24}),
                   React.createElement("div",{style:{flex:1,minWidth:0,position:"relative"}},
                     React.createElement("div",{style:{fontWeight:700,fontSize:11,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
-                    React.createElement("div",{style:{fontSize:9,color:T.textSub}},p.pos+(p.age?" · "+p.age:""))
+                    React.createElement("div",{style:{fontSize:9,color:T.textSub,display:"flex",alignItems:"center",gap:3}},
+                      React.createElement("span",{style:{color:POS_COLORS[p.pos]||T.textSub,fontWeight:700}},p.pos+(p.posRank?p.posRank:"")),
+                      p.age&&React.createElement("span",null,"· "+p.age),
+                      p.team&&React.createElement("span",{style:{color:T.textDim}},p.team)
+                    )
                   ),
                   React.createElement("div",{style:{textAlign:"right",flexShrink:0,position:"relative"}},
                     React.createElement("div",{style:{fontWeight:800,fontSize:11,color:T.purple}},(p.tradeVal||0).toLocaleString()),
@@ -3875,7 +3879,11 @@ export default function App(){
                   React.createElement(Avatar,{name:p.name,pos:p.pos,size:24}),
                   React.createElement("div",{style:{flex:1,minWidth:0,position:"relative"}},
                     React.createElement("div",{style:{fontWeight:700,fontSize:11,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
-                    React.createElement("div",{style:{fontSize:9,color:T.textSub}},p.pos+(p.age?" · "+p.age:""))
+                    React.createElement("div",{style:{fontSize:9,color:T.textSub,display:"flex",alignItems:"center",gap:3}},
+                      React.createElement("span",{style:{color:POS_COLORS[p.pos]||T.textSub,fontWeight:700}},p.pos+(p.posRank?p.posRank:"")),
+                      p.age&&React.createElement("span",null,"· "+p.age),
+                      p.team&&React.createElement("span",{style:{color:T.textDim}},p.team)
+                    )
                   ),
                   React.createElement("div",{style:{textAlign:"right",flexShrink:0,position:"relative"}},
                     React.createElement("div",{style:{fontWeight:800,fontSize:11,color:T.purpleLight}},(p.tradeVal||0).toLocaleString()),
@@ -4808,6 +4816,27 @@ export default function App(){
               )
             )
           ),
+          // Hidden Gems — young, high-upside waiver adds
+          (function(){
+            var gems=availablePlayers.filter(function(p){return (p.age||25)<=25&&(p.tradeVal||0)>=800&&(p.pts||0)>=80&&["QB","RB","WR","TE"].indexOf(p.pos)>=0;}).slice(0,4);
+            if(gems.length===0)return null;
+            return React.createElement("div",{style:{background:"linear-gradient(135deg,#1e1040,#0f172a)",border:"1px solid "+T.borderPurple,borderRadius:14,padding:"12px 14px",marginBottom:12}},
+              React.createElement("div",{style:{fontSize:10,fontWeight:800,color:T.gold,letterSpacing:1,marginBottom:8}},"💎 HIDDEN GEMS — YOUNG UPSIDE"),
+              React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}},
+                gems.map(function(p){
+                  var gAg=ageGrade(p.pos,p.age);
+                  return React.createElement("div",{key:p.name,onClick:function(){addToTrade(p);},style:{background:T.bgCard+"88",borderRadius:10,padding:"8px 10px",cursor:"pointer",display:"flex",alignItems:"center",gap:8}},
+                    React.createElement(Avatar,{name:p.name,pos:p.pos,size:28}),
+                    React.createElement("div",{style:{flex:1,minWidth:0}},
+                      React.createElement("div",{style:{fontWeight:700,fontSize:11,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
+                      React.createElement("div",{style:{fontSize:9,color:T.textSub}},React.createElement("span",{style:{color:POS_COLORS[p.pos],fontWeight:700}},p.pos+p.posRank)," · ",p.age," · ",React.createElement("span",{style:{color:gAg.c}},gAg.g))
+                    ),
+                    React.createElement("div",{style:{fontSize:10,fontWeight:800,color:T.purpleLight,flexShrink:0}},(p.tradeVal||0).toLocaleString())
+                  );
+                })
+              )
+            );
+          })(),
           availablePlayers.slice(0,50).map(function(p){
             var wAg=ageGrade(p.pos,p.age);var wAb=dynastyBonus(p.pos,p.age);
             var wCurve=wAb>1?"Rising":wAb>=0.95?"Peak":"Declining";
@@ -5233,11 +5262,25 @@ export default function App(){
       leagueSubTab==="alerts"&&React.createElement("div",{style:{padding:"16px"}},
         React.createElement("div",{style:{fontWeight:900,fontSize:22,marginBottom:4}},"Market Alerts"),
         React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:16}},"Buy low, sell high opportunities"),
-        [["Buy Low",rankedPlayers.filter(function(p){return p.age<27&&p.posRank>8&&(p.pos==="RB"||p.pos==="WR");}).slice(0,5),T.green],
-         ["Sell High",rankedPlayers.filter(function(p){return p.age>30&&p.tradeVal>0;}).slice(0,5),T.red]
-        ].map(function(section){
+        (function(){
+          // Buy Low — young players ranked lower than talent warrants
+          var buyLow=rankedPlayers.filter(function(p){return (p.age||25)<27&&p.posRank>8&&p.posRank<=30&&["RB","WR","QB","TE"].indexOf(p.pos)>=0&&(p.tradeVal||0)>=1000;}).slice(0,5).map(function(p){
+            var reason=(p.age||25)<=23?"Elite age profile — hasn't hit prime yet":p.posRank<=15?"Ranked "+p.pos+p.posRank+" but trading below ceiling":"Young and ascending — buy before breakout";
+            return Object.assign({},p,{reason:reason});
+          });
+          // Sell High — aging players with value to extract
+          var sellHigh=rankedPlayers.filter(function(p){return (p.age||25)>=29&&(p.tradeVal||0)>=1500&&["RB","WR","QB","TE"].indexOf(p.pos)>=0;}).slice(0,5).map(function(p){
+            var hi=PRIME[p.pos]?PRIME[p.pos][1]:30;
+            var reason=(p.age||25)>hi?"Past prime window — value will decline":p.pos==="RB"&&(p.age||25)>=28?"RB cliff approaching — sell before drop":"Veteran value — maximize return now";
+            return Object.assign({},p,{reason:reason});
+          });
+          return [["Buy Low",buyLow,T.green,"↗"],["Sell High",sellHigh,T.red,"↘"]];
+        })().map(function(section){
           return React.createElement("div",{key:section[0],style:{marginBottom:20}},
-            React.createElement("div",{style:{fontWeight:800,fontSize:16,marginBottom:10,color:section[2]}},section[0]+" Targets"),
+            React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,marginBottom:10}},
+              React.createElement("span",{style:{fontWeight:900,fontSize:16,color:section[2]}},section[3]),
+              React.createElement("span",{style:{fontWeight:800,fontSize:16,color:section[2]}},section[0]+" Targets")
+            ),
             section[1].map(function(p){
               var ag=ageGrade(p.pos,p.age);
               return React.createElement("div",{key:p.name,onClick:function(){addToTrade(p);},style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"12px 14px",marginBottom:8,display:"flex",alignItems:"center",gap:10,cursor:"pointer"}},
@@ -5249,7 +5292,8 @@ export default function App(){
                     React.createElement("span",null,p.team),
                     React.createElement("span",{style:{color:ag.c,fontWeight:700}},ag.g),
                     React.createElement("span",null,"Age "+p.age)
-                  )
+                  ),
+                  p.reason&&React.createElement("div",{style:{fontSize:9,color:section[2],marginTop:2,fontWeight:600}},p.reason)
                 ),
                 React.createElement("div",{style:{textAlign:"right"}},
                   React.createElement("div",{style:{fontWeight:800,fontSize:14,color:section[2]}},section[0]==="Buy Low"?"BUY":"SELL"),
