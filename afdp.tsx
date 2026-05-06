@@ -123,7 +123,7 @@ const DYNASTY_NEWS=[
   {id:25,ts:"May 7",tag:"NEWS",pos:"TE",title:"Isaiah Likely signs massive deal with Giants — TE1 upside",body:"Likely (4,147) inked a 3yr/$40M deal with New York and immediately becomes the NYG TE1. With Russell Wilson and a new-look offense, Likely has top-8 TE upside in 2026. Buy in TEP leagues while his value hasn't caught up to his role."},
   {id:26,ts:"May 7",tag:"NEWS",pos:"RB",title:"Bijan Robinson reclaims dynasty RB1 — 9,999 FDP value",body:"Robinson (9,999) has reclaimed the #1 overall dynasty spot, edging out JSN (9,995) and Chase (9,980). At just 24 with a locked-in three-down role in Atlanta, he's the safest dynasty asset. Hold at all costs — he's untouchable."},
   {id:27,ts:"May 7",tag:"TRADE",pos:"WR",title:"Dynasty buy-low targets: MHJ, Travis Hunter & Ricky Pearsall",body:"Marvin Harrison Jr. (7,000) is a screaming buy — a 23-year-old entering Year 3 after a strong sophomore campaign in Arizona. Travis Hunter (6,000) is even cheaper for a #1 overall pick with generational athleticism entering Year 2. Ricky Pearsall (4,434) steps into SF's WR1 role with Aiyuk and Kittle gone. All three should be valued significantly higher by September."},
-  {id:28,ts:"May 7",tag:"NEWS",pos:"RB",title:"Year 2 breakout RBs: Bucky Irving & Chase Brown + rookie Jadarian Price",body:"Irving (5,717) is the locked-in TB feature back at 23 entering Year 2. Chase Brown (5,710) owns the CIN backfield entering Year 3. Rookie Jadarian Price (5,463) could open as SEA's lead back with Charbonnet recovering from a torn ACL. Irving and Brown are dynasty RB2s with RB1 upside — buy before OTA hype inflates their price. Price is a top-3 dynasty rookie RB."},
+  {id:28,ts:"May 7",tag:"NEWS",pos:"RB",title:"Young RB studs: Bucky Irving, Chase Brown & rookie Jadarian Price",body:"Irving (5,717) is the locked-in TB feature back at 23 entering Year 3 after a strong sophomore campaign. Chase Brown (5,710) owns the CIN backfield entering Year 4 as an established starter. Rookie Jadarian Price (5,463) could open as SEA's lead back with Charbonnet recovering from a torn ACL. Irving and Brown are dynasty RB2s with RB1 upside. Price is a top-3 dynasty rookie RB."},
   {id:29,ts:"May 7",tag:"TRADE",pos:"WR",title:"Sell-high window: D.J. Moore, Courtland Sutton & aging vets",body:"D.J. Moore (4,783) is 28 and declining in Buffalo. Courtland Sutton (3,963) turns 31 this season with Waddle now in Denver. Both are prime sell-high candidates — move them for young assets or 2027 picks while value remains. The same goes for any RB over 29 — the cliff comes fast."},
   {id:30,ts:"May 7",tag:"NEWS",pos:"QB",title:"Jaxson Dart leads Year 2 QB breakout class",body:"Dart (6,614) threw for 2,272 yds and 24 total TD as a rookie despite injuries. With NYG's new coaching staff and weapons, he's poised for a massive sophomore leap. Cam Ward (5,039) and Shedeur Sanders (3,800) round out the Year 2 QB class — all three are just 23 with enormous SF dynasty ceilings. Buy before the season."},
   {id:17,ts:"May 6",tag:"NEWS",pos:"WR",title:"George Pickens signs $27.3M franchise tag with Dallas",body:"Pickens (6,614) is locked into the Cowboys for 2026 after signing his franchise tag. Coming off a career-best 93 rec, 1,429 yds Pro Bowl season, he's the clear WR1 in Dallas. Cowboys insist there's zero interest in trading him. Buy as a WR1 at a slight discount."},
@@ -3659,6 +3659,32 @@ export default function App(){
           color:(tradeA.length>0||tradeB.length>0)?"#fff":T.textDim}},
           (!isPro&&tradeCount>=FREE_TRADE_LIMIT)?"Unlock Unlimited Trades":"Analyze Trade"
         ),
+        tradeA.length===0&&tradeB.length===0&&!analyzed&&React.createElement("div",{style:{marginTop:16}},
+          React.createElement("div",{style:{fontSize:11,fontWeight:800,color:T.textDim,letterSpacing:1,marginBottom:10}},"POPULAR TRADES — TAP TO LOAD"),
+          (function(){
+            var suggestions=[
+              {a:["Bijan Robinson"],b:["Ja'Marr Chase","2026 2nd Round"],desc:"Elite RB for elite WR + pick"},
+              {a:["CeeDee Lamb"],b:["Omarion Hampton","Garrett Wilson"],desc:"WR1 for young RB + WR2"},
+              {a:["Travis Hunter"],b:["Ricky Pearsall","2026 1st Round"],desc:"Buy-low on Hunter"},
+              {a:["D.J. Moore"],b:["2026 1st Round"],desc:"Sell aging WR for draft capital"},
+              {a:["Breece Hall"],b:["Bucky Irving","2027 2nd Round"],desc:"RB swap + future pick"},
+            ];
+            return suggestions.map(function(s,idx){
+              return React.createElement("button",{key:idx,onClick:function(){
+                var findP=function(name){return rankedPlayers.find(function(p){return p.name===name;})||DRAFT_PICKS.find(function(dp){return dp.name===name;})||null;};
+                var pA=s.a.map(findP).filter(Boolean).map(function(p){return p.tradeVal!=null?p:makePick(p);});
+                var pB=s.b.map(findP).filter(Boolean).map(function(p){return p.tradeVal!=null?p:makePick(p);});
+                setTradeA(pA);setTradeB(pB);setAnalyzed(false);
+              },style:{width:"100%",display:"flex",alignItems:"center",gap:10,background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"10px 14px",marginBottom:6,cursor:"pointer",textAlign:"left"}},
+                React.createElement("div",{style:{flex:1}},
+                  React.createElement("div",{style:{fontWeight:700,fontSize:12,color:T.text}},s.a.join(" + ")+" ⇄ "+s.b.join(" + ")),
+                  React.createElement("div",{style:{fontSize:10,color:T.textSub,marginTop:2}},s.desc)
+                ),
+                React.createElement("span",{style:{color:T.purple,fontWeight:700,fontSize:12,flexShrink:0}},"Load →")
+              );
+            });
+          })()
+        ),
         analyzed&&(tradeA.length>0||tradeB.length>0)&&(function(){
           var v=verdict();
           return React.createElement("div",{style:{marginTop:14,background:T.bgInput,borderRadius:14,padding:16,border:"1px solid "+v.c+"33"}},
@@ -5224,22 +5250,28 @@ export default function App(){
             var rv=cfg.pk*Math.pow(cfg.dc,(p.posRank||1)-1);
             return Math.round(Math.max(100,Math.min(9999,rv*ab)));
           }
-          return rankedPlayers.filter(function(p){return p.pos!=="K"&&p.pos!=="DST"&&(pvPos==="All"||p.pos===pvPos)&&(!user||user.isPro||p.rank<=FREE_RANK_LIMIT);}).slice().sort(function(a,b){return pvVal(b)-pvVal(a);}).map(function(p){
+          return rankedPlayers.filter(function(p){return p.pos!=="K"&&p.pos!=="DST"&&(pvPos==="All"||p.pos===pvPos)&&(!user||user.isPro||p.rank<=FREE_RANK_LIMIT);}).slice().sort(function(a,b){return pvVal(b)-pvVal(a);}).map(function(p,idx){
             var gs=getGameScript(p.team,oddsData);
             var displayVal=pvVal(p);
+            var pvAg=ageGrade(p.pos,p.age);
             return React.createElement("div",{key:p.name,onClick:function(){setTradeB([p]);setTradeA([]);setAnalyzed(false);setTab("trade");},style:{display:"grid",gridTemplateColumns:"44px 1fr 96px",padding:"10px 16px",borderBottom:"1px solid "+T.border,alignItems:"center",gap:4,cursor:"pointer"}},
-              React.createElement(Avatar,{name:p.name,pos:p.pos,size:34}),
+              React.createElement("div",{style:{position:"relative"}},
+                React.createElement(Avatar,{name:p.name,pos:p.pos,size:34}),
+                React.createElement("div",{style:{position:"absolute",top:-3,left:-3,background:T.bgCard,border:"1px solid "+T.border,borderRadius:4,padding:"0 3px",fontSize:8,fontWeight:800,color:T.textDim}},idx+1)
+              ),
               React.createElement("div",null,
                 React.createElement("div",{style:{fontWeight:700,fontSize:14,color:T.text,marginBottom:3}},p.name),
                 React.createElement("div",{style:{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap"}},
                   React.createElement(PBadge,{pos:p.pos}),
                   React.createElement("span",{style:{fontSize:11,color:T.textSub,fontWeight:600}},p.team),
+                  p.age&&React.createElement("span",{style:{fontSize:10,color:T.textDim}},p.age),
+                  React.createElement("span",{style:{fontSize:9,fontWeight:700,color:pvAg.c}},pvAg.g),
                   gs&&React.createElement("span",{style:{fontSize:9,fontWeight:700,color:gs.color,background:gs.color+"18",border:"1px solid "+gs.color+"33",borderRadius:4,padding:"1px 5px"}},gs.script.toUpperCase())
                 )
               ),
               React.createElement("div",{style:{textAlign:"right"}},
                 React.createElement("div",{style:{fontWeight:800,fontSize:15,color:T.purpleLight}},displayVal.toLocaleString()),
-                React.createElement("div",{style:{fontSize:9,color:T.purple,fontWeight:600}},"Tap to trade")
+                React.createElement("div",{style:{fontSize:9,color:T.textSub}},p.pts.toFixed(1)+" pts")
               )
             );
           });
@@ -5878,6 +5910,36 @@ export default function App(){
               React.createElement("div",{style:{fontSize:14,color:T.textSub}},"Loading draft board...")
             )
           :React.createElement("div",null,
+              // Best Available bar
+              (function(){
+                var avail=rankedPlayers.filter(function(p){return drafted.indexOf(p.name)===-1&&["QB","RB","WR","TE"].indexOf(p.pos)>=0;});
+                avail.sort(function(a,b){return b.tradeVal-a.tradeVal;});
+                var bestByPos={};
+                avail.forEach(function(p){if(!bestByPos[p.pos])bestByPos[p.pos]=p;});
+                return React.createElement("div",{style:{margin:"0 16px 12px",background:"linear-gradient(135deg,#1e1040,#0f172a)",border:"1px solid "+T.borderPurple,borderRadius:14,padding:"12px 14px"}},
+                  React.createElement("div",{style:{fontSize:10,fontWeight:800,color:T.purpleLight,letterSpacing:1,marginBottom:8}},"BEST AVAILABLE"),
+                  React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6}},
+                    ["QB","RB","WR","TE"].map(function(pos){
+                      var bp=bestByPos[pos];
+                      if(!bp)return React.createElement("div",{key:pos,style:{textAlign:"center",opacity:0.4}},React.createElement("div",{style:{fontSize:9,fontWeight:700,color:POS_COLORS[pos]||T.textSub}},pos),React.createElement("div",{style:{fontSize:10,color:T.textDim}},"—"));
+                      return React.createElement("div",{key:pos,onClick:function(){setDrafted(function(d){return [bp.name].concat(d);});},style:{textAlign:"center",cursor:"pointer",background:T.bgCard+"88",borderRadius:8,padding:"6px 4px"}},
+                        React.createElement("div",{style:{fontSize:9,fontWeight:800,color:POS_COLORS[pos]||T.textSub,letterSpacing:0.5,marginBottom:2}},pos),
+                        React.createElement(Avatar,{name:bp.name,pos:bp.pos,size:28}),
+                        React.createElement("div",{style:{fontSize:10,fontWeight:700,color:T.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",marginTop:2}},bp.name.split(" ").pop()),
+                        React.createElement("div",{style:{fontSize:9,color:T.purpleLight,fontWeight:700}},(bp.tradeVal||0).toLocaleString())
+                      );
+                    })
+                  )
+                );
+              })(),
+              // Round tracker
+              drafted.length>0&&React.createElement("div",{style:{margin:"0 16px 10px",display:"flex",alignItems:"center",gap:8}},
+                React.createElement("div",{style:{fontSize:11,fontWeight:700,color:T.textSub}},"Round "+(Math.floor(drafted.length/teams)+1)+", Pick "+(drafted.length%teams+1)),
+                React.createElement("div",{style:{flex:1,height:4,background:T.border,borderRadius:4,overflow:"hidden"}},
+                  React.createElement("div",{style:{width:Math.min(100,(drafted.length%teams)/Math.max(1,teams)*100)+"%",height:"100%",background:T.purple,borderRadius:4}})
+                ),
+                React.createElement("div",{style:{fontSize:11,fontWeight:800,color:T.purple}},drafted.length+" picks")
+              ),
               React.createElement("div",{style:{padding:"0 16px 8px"}},
                 React.createElement("input",{value:draftKitSearch,onChange:function(e){setDraftKitSearch(e.target.value);},placeholder:"Search players...",style:Object.assign({},inpS)})
               ),
@@ -5885,15 +5947,24 @@ export default function App(){
                 return (draftKitPos==="All Positions"||p.pos===draftKitPos)&&(!draftKitSearch||p.name.toLowerCase().includes(draftKitSearch.toLowerCase()));
               }).slice().sort(function(a,b){return b.tradeVal-a.tradeVal;}).slice(0,40).map(function(p){
                 var isDrafted=drafted.indexOf(p.name)!==-1;
+                var dAg=ageGrade(p.pos,p.age);
                 return React.createElement("div",{key:p.name,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:10,padding:"10px 14px",marginBottom:5,margin:"0 16px 6px",display:"flex",alignItems:"center",gap:10,opacity:isDrafted?0.4:1}},
                   React.createElement("span",{style:{fontWeight:700,fontSize:11,color:T.textDim,width:24,flexShrink:0}},"#"+p.posRank),
                   React.createElement(Avatar,{name:p.name,pos:p.pos,size:30}),
                   React.createElement(PBadge,{pos:p.pos,rank:p.posRank}),
                   React.createElement("div",{style:{flex:1,minWidth:0}},
                     React.createElement("div",{style:{fontWeight:700,fontSize:13,color:isDrafted?T.textDim:T.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
-                    React.createElement("div",{style:{fontSize:10,color:T.textSub}},p.team+(p.age?" · Age "+p.age:""))
+                    React.createElement("div",{style:{display:"flex",alignItems:"center",gap:4,fontSize:10,color:T.textSub}},
+                      React.createElement("span",null,p.team),
+                      p.age&&React.createElement("span",null,"· "+p.age),
+                      React.createElement("span",{style:{color:dAg.c,fontWeight:700}},dAg.g)
+                    )
                   ),
-                  React.createElement("button",{onClick:function(){setDrafted(function(d){return isDrafted?d.filter(function(x){return x!==p.name;}):[p.name].concat(d);});},style:{padding:"6px 12px",borderRadius:8,border:"1px solid "+(isDrafted?T.border:T.purple),background:isDrafted?"transparent":T.purple,color:isDrafted?T.textDim:"#fff",fontWeight:700,fontSize:11,cursor:"pointer",flexShrink:0}},isDrafted?"Undraft":"Draft")
+                  React.createElement("div",{style:{textAlign:"right",flexShrink:0,marginRight:4}},
+                    React.createElement("div",{style:{fontWeight:800,fontSize:12,color:T.purple}},(p.tradeVal||0).toLocaleString()),
+                    React.createElement("div",{style:{fontSize:9,color:T.textSub}},p.pts.toFixed(1)+" pts")
+                  ),
+                  React.createElement("button",{onClick:function(){setDrafted(function(d){return isDrafted?d.filter(function(x){return x!==p.name;}):[p.name].concat(d);});},style:{padding:"6px 12px",borderRadius:8,border:"1px solid "+(isDrafted?T.border:T.purple),background:isDrafted?"transparent":T.purple,color:isDrafted?T.textDim:"#fff",fontWeight:700,fontSize:11,cursor:"pointer",flexShrink:0}},isDrafted?"Undo":"Draft")
                 );
               })
             )
