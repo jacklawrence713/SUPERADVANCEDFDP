@@ -886,7 +886,7 @@ const PLAYERS=[
   {name:"Malachi Corley",pos:"WR",age:23,team:"CLE",proj:{PPR:148,Half:136,Standard:124},adp:29.0,ktcVal:2800,note:"Signed CLE · 58 rec 650 yds YAC machine"},
   {name:"Calvin Austin III",pos:"WR",age:26,team:"NYG",proj:{PPR:118,Half:108,Standard:98},adp:37.0,ktcVal:1875,note:"Speed threat: 45 rec 560 yds deep ball"},
   {name:"Treylon Burks",pos:"WR",age:25,team:"WAS",proj:{PPR:112,Half:103,Standard:94},adp:39.0,ktcVal:1820,note:"Physical: 42 rec 500 yds reclamation candidate"},
-  {name:"Nick Cross",pos:"DB",age:25,team:"WAS",proj:{PPR:88,Half:88,Standard:88},adp:26.0,ktcVal:1600,note:"Safety: elite athleticism IDP DB2"},
+  {name:"Nick Cross",pos:"DB",age:25,team:"WAS",proj:{PPR:88,Half:88,Standard:88},adp:26.0,ktcVal:1600,note:"Signed WAS 2yr/$14M · S: 120 tackles elite volume"},
   {name:"Ricky Pearsall",pos:"WR",age:24,team:"SF",proj:{PPR:165,Half:152,Standard:139},adp:26.0,ktcVal:4434,note:"2026 Year 2: 64 rec 760 yds"},
   {name:"Roman Wilson",pos:"WR",age:24,team:"PIT",proj:{PPR:142,Half:130,Standard:118},adp:31.2,ktcVal:2800,note:"2026 Year 2 deep threat: 52 rec 660 yds"},
   {name:"Devaughn Vele",pos:"WR",age:25,team:"DEN",proj:{PPR:132,Half:121,Standard:110},adp:33.8,ktcVal:1993,note:"2026 Year 2: 50 rec 600 yds"},
@@ -1056,24 +1056,24 @@ const PLAYERS=[
   {name:"Jake Tonges",pos:"TE",age:24,team:"BAL",proj:{PPR:118,Half:108,Standard:98},adp:27.0,ktcVal:2771,note:"BAL TE: 42 rec 460 yds 3 TD"},
   {name:"Erick All",pos:"TE",age:24,team:"CIN",proj:{PPR:122,Half:112,Standard:102},adp:25.5,ktcVal:1700,note:"CIN TE: 45 rec 490 yds 4 TD"},
   {name:"Brock Wright",pos:"TE",age:26,team:"DET",proj:{PPR:118,Half:108,Standard:98},adp:25.0,ktcVal:1800,note:"DET TE: 45 rec 480 yds 4 TD"},
-  {name:"Darren Waller",pos:"TE",age:32,team:"NYG",proj:{PPR:112,Half:103,Standard:94},adp:32.0,ktcVal:700,note:"Veteran: 40 rec 440 yds 3 TD injury risk"},
+  {name:"Darren Waller",pos:"TE",age:32,team:"MIA",proj:{PPR:112,Half:103,Standard:94},adp:32.0,ktcVal:700,note:"Traded NYG→MIA · 24 rec 283 yds 6 TD in 9 games"},
   // QBs
   {name:"Riley Leonard",pos:"QB",age:23,team:"NO",proj:{PPR:265,Half:265,Standard:265},adp:22.5,ktcVal:2200,note:"NO QB: mobile 3,200 yds 22 TD dual-threat"},
   {name:"Joe Milton",pos:"QB",age:24,team:"NE",proj:{PPR:252,Half:252,Standard:252},adp:24.5,ktcVal:1500,note:"NE QB: big arm 3,000 yds 20 TD upside"},
   {name:"Quinn Ewers",pos:"QB",age:23,team:"MIA",proj:{PPR:248,Half:248,Standard:248},adp:25.5,ktcVal:2800,note:"MIA QB: 2,900 yds 19 TD development"},
   {name:"Max Brosmer",pos:"QB",age:23,team:"MIN",proj:{PPR:238,Half:238,Standard:238},adp:27.0,ktcVal:1400,note:"MIN QB: 2,700 yds 18 TD"},
   {name:"Brady Cook",pos:"QB",age:24,team:"NYJ",proj:{PPR:228,Half:228,Standard:228},adp:28.5,ktcVal:600,note:"Backup QB: 2,000 yds handcuff"},
-  {name:"Jameis Winston",pos:"QB",age:33,team:"FA",proj:{PPR:232,Half:232,Standard:232},adp:28.0,ktcVal:350,note:"Veteran: high-upside gunslinger FA"},
-  {name:"Tyrod Taylor",pos:"QB",age:36,team:"FA",proj:{PPR:195,Half:195,Standard:195},adp:35.0,ktcVal:100,note:"Veteran FA: spot starter only"},
+  {name:"Jameis Winston",pos:"QB",age:33,team:"NYG",proj:{PPR:232,Half:232,Standard:232},adp:28.0,ktcVal:350,note:"Signed NYG 2yr/$8M · veteran backup"},
+  {name:"Tyrod Taylor",pos:"QB",age:36,team:"GB",proj:{PPR:195,Half:195,Standard:195},adp:35.0,ktcVal:100,note:"Signed GB May 2026 · veteran backup to Love"},
   // IDP — DL
-  {name:"Josh Sweat",pos:"DL",age:29,team:"PHI",proj:{PPR:105,Half:105,Standard:105},adp:18.0,ktcVal:1800,note:"PHI EDGE: 10 sacks 14 TFL"},
+  {name:"Josh Sweat",pos:"DL",age:29,team:"ARI",proj:{PPR:105,Half:105,Standard:105},adp:18.0,ktcVal:1800,note:"Signed ARI 4yr/$76.4M · EDGE: 10 sacks 14 TFL"},
   {name:"Tuli Tuipulotu",pos:"DL",age:23,team:"LAC",proj:{PPR:98,Half:98,Standard:98},adp:20.5,ktcVal:3500,note:"LAC DL: 9 sacks 12 TFL explosive"},
   {name:"Alim McNeill",pos:"DL",age:25,team:"DET",proj:{PPR:88,Half:88,Standard:88},adp:26.0,ktcVal:2000,note:"DET IDL: 7 sacks 48 tackles interior"},
   // IDP — LB
   {name:"Nick Bolton",pos:"LB",age:26,team:"KC",proj:{PPR:135,Half:135,Standard:135},adp:11.5,ktcVal:2200,note:"KC ILB: 140 tackles 3 sacks elite volume"},
   {name:"Jalon Walker",pos:"LB",age:22,team:"ATL",proj:{PPR:105,Half:105,Standard:105},adp:17.5,ktcVal:3500,note:"ATL 2025 1st round LB: 10 sacks upside"},
-  {name:"Daiyan Henley",pos:"LB",age:27,team:"TEN",proj:{PPR:118,Half:118,Standard:118},adp:14.5,ktcVal:1800,note:"TEN LB: 125 tackles 3 sacks solid"},
-  {name:"Ernest Jones",pos:"LB",age:26,team:"TEN",proj:{PPR:122,Half:122,Standard:122},adp:13.5,ktcVal:2000,note:"TEN ILB: 130 tackles 2 sacks"},
+  {name:"Daiyan Henley",pos:"LB",age:27,team:"LAC",proj:{PPR:118,Half:118,Standard:118},adp:14.5,ktcVal:1800,note:"LAC LB: 103 tackles 3.5 sacks 2 INT"},
+  {name:"Ernest Jones",pos:"LB",age:26,team:"SEA",proj:{PPR:122,Half:122,Standard:122},adp:13.5,ktcVal:2000,note:"Traded to SEA Oct 2024 · ILB: 130 tackles 2 sacks"},
   {name:"Andrew Van Ginkel",pos:"LB",age:30,team:"MIA",proj:{PPR:108,Half:108,Standard:108},adp:16.5,ktcVal:1200,note:"MIA LB: 8.5 sacks 15 TFL pass rush"},
   {name:"Cedric Gray",pos:"LB",age:23,team:"CAR",proj:{PPR:112,Half:112,Standard:112},adp:15.5,ktcVal:2000,note:"CAR LB: 120 tackles 3 sacks in Year 1"},
   {name:"SirVocea Dennis",pos:"LB",age:24,team:"PIT",proj:{PPR:102,Half:102,Standard:102},adp:18.5,ktcVal:1600,note:"PIT LB: 108 tackles 2 sacks"},
@@ -1097,7 +1097,7 @@ const PLAYERS=[
   {name:"Zavier Scott",pos:"WR",age:23,team:"LAC",proj:{PPR:145,Half:133,Standard:121},adp:30.0,ktcVal:1900,note:"LAC WR: 52 rec 640 yds 5 TD speed"},
   // Wave 24 — missing starters + IDP depth sweep
   // Missing starters
-  {name:"DeAndre Hopkins",pos:"WR",age:33,team:"BAL",proj:{PPR:188,Half:173,Standard:158},adp:22.5,ktcVal:616,note:"Veteran: 72 rec 840 yds 7 TD jump-ball"},
+  {name:"DeAndre Hopkins",pos:"WR",age:33,team:"FA",proj:{PPR:148,Half:136,Standard:124},adp:30.0,ktcVal:400,note:"UFA from BAL · 22 rec 330 yds in 2025 · aging veteran"},
   {name:"Evan Engram",pos:"TE",age:31,team:"DEN",proj:{PPR:195,Half:179,Standard:163},adp:11.5,ktcVal:2159,note:"Volume: 88 rec 950 yds 7 TD PPR monster"},
   // More notable WRs Wave 24
   {name:"Gabe Davis",pos:"WR",age:28,team:"FA",proj:{PPR:148,Half:136,Standard:124},adp:29.0,ktcVal:800,note:"Big play: 52 rec 660 yds 6 TD"},
@@ -1112,8 +1112,8 @@ const PLAYERS=[
   {name:"Vita Vea",pos:"DL",age:30,team:"TB",proj:{PPR:85,Half:85,Standard:85},adp:29.0,ktcVal:1500,note:"Elite NT: 7 sacks 50 tackles run stopper"},
   {name:"Arik Armstead",pos:"DL",age:32,team:"JAX",proj:{PPR:78,Half:78,Standard:78},adp:34.0,ktcVal:800,note:"Versatile IDL: 7 sacks 42 tackles"},
   {name:"Justin Madubuike",pos:"DL",age:28,team:"BAL",proj:{PPR:92,Half:92,Standard:92},adp:24.5,ktcVal:2200,note:"IDL: 8.5 sacks 48 tackles ascending"},
-  {name:"Javon Kinlaw",pos:"DL",age:28,team:"NYJ",proj:{PPR:78,Half:78,Standard:78},adp:34.5,ktcVal:1000,note:"IDL: 7 sacks when healthy"},
-  {name:"Quinton Jefferson",pos:"DL",age:32,team:"SEA",proj:{PPR:72,Half:72,Standard:72},adp:38.5,ktcVal:600,note:"IDL veteran: 6 sacks 38 tackles"},
+  {name:"Javon Kinlaw",pos:"DL",age:28,team:"WAS",proj:{PPR:78,Half:78,Standard:78},adp:34.5,ktcVal:1000,note:"Signed WAS 3yr/$45M · IDL: 7 sacks when healthy"},
+  {name:"Quinton Jefferson",pos:"DL",age:32,team:"FA",proj:{PPR:62,Half:62,Standard:62},adp:46.0,ktcVal:400,note:"Released by DET Nov 2025 · unsigned FA"},
   {name:"Kris Jenkins Jr.",pos:"DL",age:24,team:"BUF",proj:{PPR:82,Half:82,Standard:82},adp:31.0,ktcVal:2200,note:"Year 2 IDL: 7 sacks ascending"},
   {name:"Brandon Jordan",pos:"DL",age:26,team:"GB",proj:{PPR:72,Half:72,Standard:72},adp:38.0,ktcVal:1200,note:"EDGE: 6 sacks ascending"},
   // IDP 2025 additions
@@ -1141,10 +1141,10 @@ const PLAYERS=[
   {name:"Micah Kiser",pos:"LB",age:30,team:"LAR",proj:{PPR:72,Half:72,Standard:72},adp:38.5,ktcVal:600,note:"ILB: 70 tackles 1 sack"},
   {name:"Brandon Copeland",pos:"LB",age:34,team:"FA",proj:{PPR:58,Half:58,Standard:58},adp:51.0,ktcVal:200,note:"Veteran LB/EDGE depth"},
   // CB/DB depth Wave 22
-  {name:"Jamel Dean",pos:"DB",age:29,team:"TB",proj:{PPR:78,Half:78,Standard:78},adp:34.5,ktcVal:1500,note:"CB: 58 tackles 3 INT press cover"},
+  {name:"Jamel Dean",pos:"DB",age:29,team:"PIT",proj:{PPR:78,Half:78,Standard:78},adp:34.5,ktcVal:1500,note:"Signed PIT 3yr/$36.75M · CB: 58 tackles 3 INT"},
   {name:"Bryce Hall",pos:"DB",age:28,team:"FA",proj:{PPR:68,Half:68,Standard:68},adp:41.5,ktcVal:800,note:"CB: 52 tackles 2 INT physical"},
   {name:"Nate Hairston",pos:"DB",age:31,team:"FA",proj:{PPR:55,Half:55,Standard:55},adp:54.5,ktcVal:400,note:"Veteran CB depth"},
-  {name:"Jalen Thompson",pos:"DB",age:28,team:"ARI",proj:{PPR:75,Half:75,Standard:75},adp:36.5,ktcVal:1200,note:"S: 68 tackles 2 INT"},
+  {name:"Jalen Thompson",pos:"DB",age:28,team:"DAL",proj:{PPR:75,Half:75,Standard:75},adp:36.5,ktcVal:1200,note:"Signed DAL 3yr/$33M · S: 68 tackles 2 INT"},
   {name:"Chris Banjo",pos:"DB",age:34,team:"CAR",proj:{PPR:52,Half:52,Standard:52},adp:57.0,ktcVal:200,note:"Veteran ST/S depth"},
   // RB veteran depth Wave 22
   {name:"Trey Sermon",pos:"RB",age:26,team:"FA",proj:{PPR:68,Half:62,Standard:56},adp:51.5,ktcVal:300,note:"Powerful back: 280 rush depth"},
