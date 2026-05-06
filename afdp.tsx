@@ -214,7 +214,7 @@ const SLEEPER_IDS={
 "Konata Mumpfield":"12718",
 "Calvin Austin III":"8125","Treylon Burks":"8135","Nick Cross":"8392","Audric Estime":"11579","Isaiah Bond":"12503",
 "Bucky Irving":"11578","Chase Brown":"11580","Ricky Pearsall":"11621","Emeka Egbuka":"12514","Luther Burden III":"12519","Jaxson Dart":"12508","Cam Ward":"12522","Shedeur Sanders":"12524","Cam Skattebo":"12481","Quinshon Judkins":"12512","TreVeyon Henderson":"12529","Colston Loveland":"12517","Jonathon Brooks":"11582","Isaac Guerendo":"11583","Tyrone Tracy Jr.":"11584","Rico Dowdle":"7037","Chuba Hubbard":"7607","Chase Claypool":"6843","Nico Collins":"6945","Khalil Shakir":"8116","Jameson Williams":"8148","Christian Watson":"8113","Dontayvion Wicks":"9505","Jayden Higgins":"12484","Savion Williams":"12482",
-"George Kittle":"4217","Colston Loveland":"12517","Mason Taylor":"12498","Kyle Pitts":"7553",
+"George Kittle":"4217","Mason Taylor":"12498","Kyle Pitts":"7553",
 "Evan Engram":"4066","Dalton Kincaid":"10236","Tucker Kraft":"9484","Isaiah Likely":"8131",
 "Juwan Johnson":"7002","Zach Ertz":"1339","Theo Johnson":"11597","Dalton Schultz":"5001",
 "Hunter Henry":"3214","Oronde Gadsden II":"12493","Terrance Ferguson":"12487","AJ Barner":"11603"};
@@ -2686,6 +2686,7 @@ export default function App(){
   var [liveProjLoading,setLiveProjLoading]=useState(false);
   var [tradeAddPending,setTradeAddPending]=useState(null as any);
   var [pvSearch,setPvSearch]=useState("");
+  var [reportTagFilter,setReportTagFilter]=useState("All");
 
   var T=darkMode?DARK:LIGHT;
   var isPro=user&&user.isPro;
@@ -3351,28 +3352,48 @@ export default function App(){
       var _filtered=rankedPlayers.filter(function(p){return p.pos!=="DST"&&p.pos!=="K";});
       var prt=powerRankingTeams||LEAGUE_TEAMS.map(function(t,i){var pls=_filtered.slice(i*22,i*22+22);return Object.assign({},t,{players:pls});});
       var team=prt[rosterViewTeam]||{name:"",players:[],faab:null,picks:0};
-      var rosterPlayers=team.players||[];
+      var rosterPlayers=(team.players||[]).slice().sort(function(a,b){return(b.tradeVal||0)-(a.tradeVal||0);});
+      var rTotalVal=rosterPlayers.reduce(function(s,p){return s+(p.tradeVal||0);},0);
+      var rPosTotals={QB:0,RB:0,WR:0,TE:0};rosterPlayers.forEach(function(p){if(rPosTotals.hasOwnProperty(p.pos))rPosTotals[p.pos]+=(p.tradeVal||0);});
       return React.createElement("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.92)",zIndex:500,overflowY:"auto",padding:16}},
         React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:20,padding:20,maxWidth:460,margin:"0 auto"}},
-          React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}},
+          React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}},
             React.createElement("div",null,
               React.createElement("div",{style:{fontWeight:900,fontSize:18}},team.name),
               React.createElement("div",{style:{fontSize:11,color:T.textSub,marginTop:2}},rosterPlayers.length+" players"+(team.faab!=null?" · $"+team.faab+" FAAB":"")+(team.picks?" · "+team.picks+" picks":""))
             ),
             React.createElement("button",{onClick:function(){setRosterViewTeam(null);},style:{background:"none",border:"none",color:T.textDim,cursor:"pointer",fontSize:22,lineHeight:1}},"×")
           ),
+          React.createElement("div",{style:{background:T.bgInput,borderRadius:12,padding:"10px 14px",marginBottom:12}},
+            React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}},
+              React.createElement("span",{style:{fontSize:11,fontWeight:700,color:T.textSub}},"Total Roster Value"),
+              React.createElement("span",{style:{fontWeight:900,fontSize:16,color:T.purpleLight}},rTotalVal.toLocaleString())
+            ),
+            React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6}},
+              ["QB","RB","WR","TE"].map(function(pos){return React.createElement("div",{key:pos,style:{textAlign:"center",background:T.bgCard,borderRadius:8,padding:"6px 4px"}},
+                React.createElement("div",{style:{fontSize:9,fontWeight:800,color:POS_COLORS[pos]||T.textSub}},pos),
+                React.createElement("div",{style:{fontWeight:800,fontSize:12,color:T.text}},rPosTotals[pos]>=1000?(rPosTotals[pos]/1000).toFixed(1)+"k":rPosTotals[pos])
+              );})
+            )
+          ),
           rosterPlayers.map(function(p){
+            var rAg=ageGrade(p.pos,p.age);
             return React.createElement("div",{key:p.name,style:{display:"flex",alignItems:"center",gap:10,background:T.bgInput,border:"1px solid "+T.border,borderRadius:10,padding:"10px 12px",marginBottom:6}},
               React.createElement(Avatar,{name:p.name,pos:p.pos,size:36}),
               React.createElement(PBadge,{pos:p.pos}),
-              React.createElement("div",{style:{flex:1}},
-                React.createElement("div",{style:{fontWeight:700,fontSize:13}},p.name),
-                React.createElement("div",{style:{fontSize:10,color:T.textSub}},p.team+" · Age "+p.age+" · "+(p.tier&&p.tier.t?p.tier.t+" · ":"")+("#"+p.posRank+" "+p.pos))
+              React.createElement("div",{style:{flex:1,minWidth:0}},
+                React.createElement("div",{style:{fontWeight:700,fontSize:13,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
+                React.createElement("div",{style:{fontSize:10,color:T.textSub,display:"flex",gap:3,alignItems:"center",flexWrap:"wrap"}},
+                  React.createElement("span",null,p.team),
+                  p.age&&React.createElement("span",null,"· "+p.age),
+                  React.createElement("span",{style:{color:rAg.c,fontWeight:700,fontSize:9}},rAg.g),
+                  React.createElement("span",{style:{color:T.textDim}},("#"+p.posRank+" "+p.pos))
+                )
               ),
-              React.createElement("div",{style:{textAlign:"right"}},
-                React.createElement("div",{style:{fontWeight:800,fontSize:13,color:T.purpleLight}},(p.tradeVal||0).toLocaleString()),
-                React.createElement("div",{style:{fontSize:9,color:T.textSub}},"value")
-              )
+              React.createElement("div",{style:{textAlign:"right",flexShrink:0}},
+                React.createElement("div",{style:{fontWeight:800,fontSize:13,color:T.purpleLight}},(p.tradeVal||0).toLocaleString())
+              ),
+              React.createElement("button",{onClick:function(){setRosterViewTeam(null);addToTrade(p);},style:{padding:"4px 8px",borderRadius:6,border:"1px solid "+T.purple+"44",background:T.purple+"11",color:T.purpleLight,fontWeight:700,fontSize:9,cursor:"pointer",flexShrink:0}},"Trade")
             );
           }),
           (team.pickDetails&&team.pickDetails.length>0)?React.createElement("div",{style:{marginTop:16}},
@@ -6341,12 +6362,15 @@ export default function App(){
           ),
           tradeHistory.length>0&&React.createElement("button",{onClick:function(){if(window.confirm("Clear all trade history?")){{try{localStorage.removeItem('fdp_th_v1');}catch(e){}setTradeHistory([]);}}},style:{fontSize:11,color:T.red,background:"none",border:"none",cursor:"pointer",fontWeight:600}},"Clear All")
         ),
+        tradeHistory.length>2&&React.createElement("div",{style:{marginBottom:12}},
+          React.createElement("input",{value:histSearch,onChange:function(e){setHistSearch(e.target.value);},placeholder:"Search trades by player name...",style:Object.assign({},inpS)})
+        ),
         tradeHistory.length===0&&React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"48px 20px",textAlign:"center"}},
           React.createElement("div",{style:{fontSize:44,marginBottom:12}},"📋"),
           React.createElement("div",{style:{fontWeight:700,fontSize:17,marginBottom:6}},"No Saved Trades"),
           React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.6}},"Analyze a trade and hit \"Save Trade\" to build your history")
         ),
-        tradeHistory.map(function(entry,idx){
+        tradeHistory.filter(function(entry){if(!histSearch)return true;var q=histSearch.toLowerCase();return entry.sideA.concat(entry.sideB).some(function(p){return p.name.toLowerCase().includes(q);});}).map(function(entry,idx){
           var diff=entry.tvA-entry.tvB;
           var pct=entry.tvB>0?Math.abs(diff/entry.tvB)*100:0;
           var fair=pct<8;
@@ -6453,7 +6477,10 @@ export default function App(){
             React.createElement("div",{style:{fontSize:12,color:T.textSub,marginTop:4}},"2026 Offseason Edition · Updated May 2026")
           )
         ),
-        React.createElement("div",{style:{fontSize:14,color:T.textSub,lineHeight:1.6,marginBottom:20}},"Key dynasty value insights heading into the 2026 season"),
+        React.createElement("div",{style:{fontSize:14,color:T.textSub,lineHeight:1.6,marginBottom:12}},"Key dynasty value insights heading into the 2026 season"),
+        React.createElement("div",{style:{display:"flex",gap:6,flexWrap:"wrap",marginBottom:16}},
+          ["All","QB","RB","WR","TE","IDP","PICK","TREND"].map(function(tag){var active=reportTagFilter===tag;return React.createElement("button",{key:tag,onClick:function(){setReportTagFilter(tag);},style:{padding:"6px 14px",borderRadius:20,border:"1px solid "+(active?T.purple:T.border),background:active?T.purple:"transparent",color:active?"#fff":T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},tag);})
+        ),
         [
           {tag:"QB",tagColor:"#818cf8",title:"Josh Allen remains QB1 — but the youth wave is coming",body:"Allen (7,675) holds the dynasty QB1 throne at age 30 with elite dual-threat production. But the real story is the next generation: Jayden Daniels (6,312) is the QB2 in SF after a stellar sophomore leap, Drake Maye (6,627) is ascending fast in New England, and Bo Nix (4,942) has quietly emerged as a top-10 dynasty QB in Denver. Meanwhile, C.J. Stroud (6,500) rebounded to cement himself as Houston's franchise cornerstone. Buy these young QBs now — their ceilings are QB1 overall."},
           {tag:"QB",tagColor:"#818cf8",title:"2025 Rookie QBs entering Year 2: Dart, Ward & Sanders",body:"Jaxson Dart (6,614) is the crown jewel of the 2025 class — elite processing, arm talent, and the highest dynasty ceiling of any sophomore QB. Cam Ward (5,039) established himself as Tennessee's franchise QB and enters Year 2 with a firm grip on the job. Shedeur Sanders (3,800) showed flashes in Cleveland but needs more weapons — buy-low in SF. All three are just 23 years old with massive dynasty upside."},
@@ -6470,7 +6497,7 @@ export default function App(){
           {tag:"RB",tagColor:"#34d399",title:"Sell-high window: aging RBs before the cliff",body:"Derrick Henry (4,792) at 32, Aaron Jones (2,632) at 32, and Alvin Kamara (2,536) at 30 are all on borrowed time. If you own any RB 29+, this offseason is your last chance to get meaningful value. Move them for 2027 picks or young assets. The cliff comes fast at RB — don't be the last one holding."},
           {tag:"TE",tagColor:"#f59e0b",title:"TEP dynasty: the top 6 TEs are all under 27",body:"Bowers (8,149), McBride (7,790), Loveland (6,641), Warren (6,342), Fannin (5,560), and LaPorta (5,500) — all under 27. The TE landscape has undergone a generational shift. If you're still relying on Kelce (2,874), Kittle (4,049), or Andrews (3,360), sell for youth. In TEP leagues, these young TEs are worth even more."},
           {tag:"TREND",tagColor:"#06b6d4",title:"2026 UDFAs worth a taxi squad spot",body:"Diego Pavia (QB, BAL) is a SF deep stash behind Lamar. Robert Henry Jr. (RB, WAS) was RB7 pre-draft with 6.9 YPC. Desmond Reid (RB, BUF) is explosive but tiny. Caullin Lacy (WR, NYJ) was a 1,300-yd producer in college. All are free adds — drop your worst taxi player for one of these lottery tickets."}
-        ].map(function(r){
+        ].filter(function(r){return reportTagFilter==="All"||r.tag===reportTagFilter;}).map(function(r){
           // Extract first player from body
           var rpMatch=r.body.match(/^([A-Z][a-z'-]+(?:\s+[A-Z][a-z'-]+)+)\s*\(/);
           var rpPlayer=rpMatch?rankedPlayers.find(function(p){return p.name===rpMatch[1];}):null;
