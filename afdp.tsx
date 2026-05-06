@@ -117,7 +117,7 @@ const FREE_TRADE_LIMIT=5;
 const DYNASTY_NEWS=[
   {id:24,ts:"May 7",tag:"NEWS",pos:"RB",title:"2026 UDFAs: Robert Henry Jr. and Desmond Reid lead the class",body:"The UDFA class has several dynasty stashes. Robert Henry Jr. (600) signed with Washington and was RB7 of this class pre-draft with 6.9 YPC. Desmond Reid (500) signed with Buffalo — explosive but 5-6, 174 lbs limits his ceiling. Diego Pavia (800) is a Superflex stash in Baltimore behind Lamar. Add all three to your taxi squad."},
   {id:25,ts:"May 7",tag:"NEWS",pos:"TE",title:"Isaiah Likely signs massive deal with Giants — TE1 upside",body:"Likely (4,147) inked a 3yr/$40M deal with New York and immediately becomes the NYG TE1. With Russell Wilson and a new-look offense, Likely has top-8 TE upside in 2026. Buy in TEP leagues while his value hasn't caught up to his role."},
-  {id:26,ts:"May 7",tag:"NEWS",pos:"RB",title:"Bijan Robinson reclaims dynasty RB1 — 9,999 KTC value",body:"Robinson (9,999) has reclaimed the #1 overall dynasty spot on KeepTradeCut, edging out JSN (9,995) and Chase (9,980). At just 24 with a locked-in three-down role in Atlanta, he's the safest dynasty asset. Hold at all costs — he's untouchable."},
+  {id:26,ts:"May 7",tag:"NEWS",pos:"RB",title:"Bijan Robinson reclaims dynasty RB1 — 9,999 FDP value",body:"Robinson (9,999) has reclaimed the #1 overall dynasty spot, edging out JSN (9,995) and Chase (9,980). At just 24 with a locked-in three-down role in Atlanta, he's the safest dynasty asset. Hold at all costs — he's untouchable."},
   {id:27,ts:"May 7",tag:"TRADE",pos:"WR",title:"Dynasty buy-low targets: MHJ, Travis Hunter & Ricky Pearsall",body:"Marvin Harrison Jr. (7,000) is a screaming buy — a 23-year-old who posted 1,300 yds and 12 TD in Year 2. Travis Hunter (6,000) is even cheaper for a #1 overall pick with generational athleticism. Ricky Pearsall (4,434) steps into SF's WR1 role with Aiyuk and Kittle gone. All three should be valued significantly higher by September."},
   {id:28,ts:"May 7",tag:"NEWS",pos:"RB",title:"Year 2 breakout RBs: Bucky Irving, Chase Brown & Jadarian Price",body:"Irving (5,717) is the locked-in TB feature back at 23. Chase Brown (5,710) owns the CIN backfield entering Year 3. Jadarian Price (5,463) could open as SEA's lead back with Charbonnet recovering from a torn ACL. All three are dynasty RB2s with RB1 upside — buy before OTA hype inflates their price."},
   {id:29,ts:"May 7",tag:"TRADE",pos:"WR",title:"Sell-high window: D.J. Moore, Courtland Sutton & aging vets",body:"D.J. Moore (4,783) is 28 and declining in Buffalo. Courtland Sutton (3,963) turns 31 this season with Waddle now in Denver. Both are prime sell-high candidates — move them for young assets or 2027 picks while value remains. The same goes for any RB over 29 — the cliff comes fast."},
@@ -4246,13 +4246,21 @@ export default function App(){
             )
           ),
           availablePlayers.slice(0,50).map(function(p){
+            var wAg=ageGrade(p.pos,p.age);var wAb=dynastyBonus(p.pos,p.age);
+            var wCurve=wAb>1?"Rising":wAb>=0.95?"Peak":"Declining";
+            var wCurveC=wAb>1?T.green:wAb>=0.95?"#60a5fa":T.red;
             return React.createElement("div",{key:p.name,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"12px 14px",marginBottom:8,display:"flex",alignItems:"center",gap:10}},
               React.createElement(Avatar,{name:p.name,pos:p.pos,size:40}),
-              React.createElement("div",{style:{flex:1}},
+              React.createElement("div",{style:{flex:1,minWidth:0}},
                 React.createElement("div",{style:{fontWeight:700,fontSize:13}},p.name),
-                React.createElement("div",{style:{fontSize:11,color:T.textSub}},p.pos+" · "+p.team+" · Age "+p.age)
+                React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,fontSize:11,color:T.textSub,flexWrap:"wrap"}},
+                  React.createElement(PBadge,{pos:p.pos,rank:p.posRank}),
+                  React.createElement("span",null,p.team+" · Age "+p.age),
+                  React.createElement("span",{style:{color:wAg.c,fontWeight:700}},wAg.g),
+                  React.createElement("span",{style:{color:wCurveC,fontWeight:600,fontSize:10}},wCurve)
+                )
               ),
-              React.createElement("div",{style:{textAlign:"right"}},
+              React.createElement("div",{style:{textAlign:"right",flexShrink:0}},
                 React.createElement("div",{style:{fontSize:12,color:T.purple,fontWeight:700}},(p.tradeVal||0).toLocaleString()),
                 React.createElement("div",{style:{fontSize:11,color:T.green}},p.pts.toFixed(1)+" proj")
               )
@@ -5506,12 +5514,16 @@ export default function App(){
             if(marketFilter==="rising")return p.age<lo+1&&p.posRank<=12&&p.tradeVal>=1500;
             return ab<0.85||p.age>hi+3;
           }).slice(0,8).map(function(p){
+            var pAb=dynastyBonus(p.pos,p.age);var pAg=ageGrade(p.pos,p.age);var pTier=tierLabel(p.posRank,p.pos);
             return React.createElement("div",{key:p.name,style:{background:T.bgCard,border:"2px solid "+catColor+"33",borderRadius:16,padding:16,margin:"0 16px 10px"}},
               React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}},
-                React.createElement("div",null,
-                  React.createElement("div",{style:{fontWeight:800,fontSize:17,color:T.text,marginBottom:4}},p.name),
-                  React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,fontSize:12,color:T.textSub}},
-                    React.createElement(PBadge,{pos:p.pos}),React.createElement("span",null,"·"),React.createElement("span",{style:{fontWeight:600}},p.team)
+                React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10}},
+                  React.createElement(Avatar,{name:p.name,pos:p.pos,size:40}),
+                  React.createElement("div",null,
+                    React.createElement("div",{style:{fontWeight:800,fontSize:17,color:T.text,marginBottom:4}},p.name),
+                    React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,fontSize:12,color:T.textSub}},
+                      React.createElement(PBadge,{pos:p.pos}),React.createElement("span",null,"·"),React.createElement("span",{style:{fontWeight:600}},p.team),React.createElement("span",null,"·"),React.createElement("span",null,"Age "+p.age)
+                    )
                   )
                 ),
                 React.createElement("div",{style:{background:catColor+"22",color:catColor,fontWeight:800,fontSize:11,borderRadius:20,padding:"4px 10px",flexShrink:0,border:"1px solid "+catColor+"44"}},signalLabel(p))
@@ -5520,16 +5532,25 @@ export default function App(){
                 React.createElement("div",{style:{fontSize:11,color:T.textSub,marginBottom:2}},"Trade Value"),
                 React.createElement("div",{style:{fontWeight:800,fontSize:22,color:T.purpleLight,marginBottom:10}},p.tradeVal.toLocaleString())
               ),
-              React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,paddingTop:10,borderTop:"1px solid "+T.border}},
+              React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,paddingTop:10,borderTop:"1px solid "+T.border}},
                 React.createElement("div",null,
                   React.createElement("div",{style:{fontSize:11,color:T.textSub,marginBottom:3}},"Proj Pts"),
                   React.createElement("div",{style:{fontWeight:700,fontSize:14,color:T.text}},p.pts.toFixed(1))
                 ),
                 React.createElement("div",null,
-                  React.createElement("div",{style:{fontSize:11,color:T.textSub,marginBottom:3}},"Position Rank"),
+                  React.createElement("div",{style:{fontSize:11,color:T.textSub,marginBottom:3}},"Pos Rank"),
                   React.createElement("div",{style:{fontWeight:700,fontSize:14,color:T.text}},"#"+p.posRank)
+                ),
+                React.createElement("div",null,
+                  React.createElement("div",{style:{fontSize:11,color:T.textSub,marginBottom:3}},"Age Grade"),
+                  React.createElement("div",{style:{fontWeight:700,fontSize:14,color:pAg.c}},pAg.g)
+                ),
+                React.createElement("div",null,
+                  React.createElement("div",{style:{fontSize:11,color:T.textSub,marginBottom:3}},"Tier"),
+                  React.createElement("div",{style:{fontWeight:700,fontSize:14,color:pTier.c}},"T"+pTier.t)
                 )
-              )
+              ),
+              React.createElement("button",{onClick:function(){setTradeB([p]);setTradeA([]);setAnalyzed(false);setTab("trade");},style:{width:"100%",marginTop:10,padding:"8px 0",borderRadius:8,border:"1px solid "+T.purple,background:T.purple+"18",color:T.purple,fontWeight:700,fontSize:12,cursor:"pointer"}},"Analyze Trade →")
             );
           });
         })()
@@ -5562,19 +5583,27 @@ export default function App(){
               var trendUp=pts[pts.length-1]>pts[0];
               var lineColor=trendUp?T.green:T.red;
               var svgPts=pts.map(function(v,i){var x=i*(w/(pts.length-1));var y=h-(v-mn)/(mx-mn||1)*h;return x+","+y;}).join(" ");
-              return React.createElement("div",{key:p.name,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"12px 14px",marginBottom:8,display:"flex",alignItems:"center",gap:10}},
-                React.createElement(Avatar,{name:p.name,pos:p.pos,size:36}),
-                React.createElement("div",{style:{flex:1}},
-                  React.createElement("div",{style:{fontWeight:700,fontSize:13}},p.name),
-                  React.createElement("div",{style:{fontSize:10,color:T.textSub}},"#"+p.posRank+" "+p.pos+" · "+p.team)
+              var vtAg=ageGrade(p.pos,p.age);var vtTier=tierLabel(p.posRank,p.pos);
+              return React.createElement("div",{key:p.name,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"12px 14px",marginBottom:8}},
+                React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10,marginBottom:8}},
+                  React.createElement(Avatar,{name:p.name,pos:p.pos,size:36}),
+                  React.createElement("div",{style:{flex:1}},
+                    React.createElement("div",{style:{fontWeight:700,fontSize:13}},p.name),
+                    React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,fontSize:10,color:T.textSub}},
+                      React.createElement(PBadge,{pos:p.pos,rank:p.posRank}),
+                      React.createElement("span",null,p.team+" · Age "+p.age),
+                      React.createElement("span",{style:{color:vtAg.c,fontWeight:700}},vtAg.g),
+                      React.createElement("span",{style:{color:vtTier.c,fontWeight:700}},"T"+vtTier.t)
+                    )
+                  ),
+                  React.createElement("div",{style:{textAlign:"right",flexShrink:0,minWidth:52}},
+                    React.createElement("div",{style:{fontWeight:800,fontSize:13,color:T.purpleLight}},p.tradeVal.toLocaleString()),
+                    React.createElement("div",{style:{fontSize:10,fontWeight:700,color:trendUp?T.green:T.red}},(trendUp?"↑":"↓")+Math.abs(pts[pts.length-1]-pts[0]).toLocaleString())
+                  )
                 ),
-                React.createElement("svg",{width:w,height:h,style:{flexShrink:0}},
+                React.createElement("svg",{width:"100%",height:h,viewBox:"0 0 "+w+" "+h,preserveAspectRatio:"none",style:{display:"block"}},
                   React.createElement("polyline",{points:svgPts,fill:"none",stroke:lineColor,strokeWidth:2,strokeLinejoin:"round"}),
                   React.createElement("circle",{cx:pts.length-1?(pts.length-1)*(w/(pts.length-1)):0,cy:h-(pts[pts.length-1]-mn)/(mx-mn||1)*h,r:3,fill:lineColor})
-                ),
-                React.createElement("div",{style:{textAlign:"right",flexShrink:0,minWidth:52}},
-                  React.createElement("div",{style:{fontWeight:800,fontSize:13,color:T.purpleLight}},p.tradeVal.toLocaleString()),
-                  React.createElement("div",{style:{fontSize:10,fontWeight:700,color:trendUp?T.green:T.red}},(trendUp?"↑":"↓")+Math.abs(pts[pts.length-1]-pts[0]).toLocaleString())
                 )
               );
             })
@@ -6094,7 +6123,7 @@ export default function App(){
             React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.6}},r.body)
           );
         }),
-        React.createElement("div",{style:{fontSize:11,color:T.textDim,textAlign:"center",paddingTop:8}},"Reports reflect dynasty consensus as of May 2026. Values sourced from KTC-adjusted rankings.")
+        React.createElement("div",{style:{fontSize:11,color:T.textDim,textAlign:"center",paddingTop:8}},"Reports reflect dynasty consensus as of May 2026. Values sourced from FDP dynasty rankings.")
       ),
       // Player News — Sleeper Trending
       reportSubTab==="news"&&React.createElement("div",{style:{padding:"20px 16px"}},
@@ -6485,7 +6514,7 @@ export default function App(){
         [
           {icon:"⚖️",title:"Using the Trade Analyzer",steps:["Go to the Trade tab","Select your league type (Dynasty/Redraft) and scoring format","Search for and add players to Team A and Team B","Optionally add FAAB dollars or draft picks","Hit Analyze Trade to see the verdict and value breakdown"]},
           {icon:"🏈",title:"Importing Your League",steps:["Go to the League tab (Pro required)","Choose your platform: Sleeper, ESPN, or Yahoo","For Sleeper: enter your username and select your league","For ESPN: enter your League ID, year, and session cookies","Your rosters and team data will sync automatically"]},
-          {icon:"📊",title:"Reading Player Values",steps:["Values are based on KTC dynasty rankings adjusted for age and scoring format","Toggle SF to boost QB values for Superflex leagues","Toggle TEP to boost TE values for TE Premium leagues","Use the Rankings tab to see full position-by-position values","Tier 1 = elite, Tier 5 = borderline starter"]},
+          {icon:"📊",title:"Reading Player Values",steps:["Values are based on FDP dynasty rankings adjusted for age and scoring format","Toggle SF to boost QB values for Superflex leagues","Toggle TEP to boost TE values for TE Premium leagues","Use the Rankings tab to see full position-by-position values","Tier 1 = elite, Tier 5 = borderline starter"]},
           {icon:"🔄",title:"Sharing a Trade",steps:["Build your trade in the Trade Analyzer","Click Analyze Trade then Share Trade","Copy the link to send anyone — it auto-loads the trade","Or share directly to X/Twitter or WhatsApp"]},
           {icon:"⭐",title:"Pro Features",steps:["Upgrade to Pro for unlimited trades and full rankings","Pro unlocks league import, power rankings, waiver wire, and lineup optimizer","Go to Reports → Upgrade to see all Pro features and pricing"]}
         ].map(function(section){
