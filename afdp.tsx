@@ -1047,7 +1047,7 @@ const PLAYERS=[
   {name:"Jaylin Lane",pos:"WR",age:23,team:"PHI",proj:{PPR:145,Half:133,Standard:121},adp:30.0,ktcVal:1800,note:"PHI WR: 50 rec 620 yds 5 TD upside"},
   {name:"Arian Smith",pos:"WR",age:23,team:"CHI",proj:{PPR:148,Half:136,Standard:124},adp:29.5,ktcVal:2100,note:"CHI speed WR: 52 rec 680 yds 5 TD"},
   {name:"Xavier Hutchinson",pos:"WR",age:25,team:"HOU",proj:{PPR:142,Half:130,Standard:118},adp:31.5,ktcVal:1500,note:"HOU slot: 58 rec 610 yds 4 TD"},
-  {name:"Joshua Palmer",pos:"WR",age:27,team:"LAC",proj:{PPR:162,Half:149,Standard:136},adp:27.2,ktcVal:1600,note:"LAC WR: 60 rec 700 yds 5 TD"},
+  {name:"Joshua Palmer",pos:"WR",age:27,team:"LAC",proj:{PPR:162,Half:149,Standard:136},adp:27.2,ktcVal:1926,note:"LAC WR: 60 rec 700 yds 5 TD"},
   // TEs
   {name:"Gunnar Helm",pos:"TE",age:24,team:"TEN",proj:{PPR:148,Half:136,Standard:124},adp:16.5,ktcVal:3300,note:"TEN TE1: 62 rec 680 yds 5 TD ascending"},
   {name:"Darnell Washington",pos:"TE",age:24,team:"PIT",proj:{PPR:138,Half:126,Standard:114},adp:19.0,ktcVal:3000,note:"PIT TE: 52 rec 590 yds 5 TD athletic"},
@@ -1594,7 +1594,7 @@ const PLAYERS=[
   {name:"Joey Porter Jr.",pos:"DB",age:25,team:"PIT",proj:{PPR:98,Half:98,Standard:98},adp:21.5,ktcVal:2200,note:"CB: 64 tackles 3 INT Year 3"},
   // Missing RBs
   {name:"Audric Estime",pos:"RB",age:23,team:"NO",proj:{PPR:162,Half:148,Standard:134},adp:21.5,ktcVal:3000,note:"Year 2: 700 rush 5 TD power back"},
-  {name:"Alex Mattison",pos:"RB",age:28,team:"MIN",proj:{PPR:155,Half:142,Standard:129},adp:23.5,ktcVal:600,note:"Lead back if healthy"},
+  {name:"Alex Mattison",pos:"RB",age:28,team:"FA",proj:{PPR:155,Half:142,Standard:129},adp:23.5,ktcVal:987,note:"FA · unsigned after MIA release"},
   {name:"Abram Smith",pos:"RB",age:26,team:"NO",proj:{PPR:108,Half:99,Standard:90},adp:36.8,ktcVal:500,note:"Committee depth back"},
   {name:"Latavius Murray",pos:"RB",age:34,team:"FA",proj:{PPR:82,Half:75,Standard:68},adp:47.5,ktcVal:150,note:"Veteran depth"},
   {name:"Jakob Johnson",pos:"RB",age:29,team:"LV",proj:{PPR:72,Half:66,Standard:60},adp:50.0,ktcVal:300,note:"FB/utility role"},
