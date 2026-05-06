@@ -4080,27 +4080,39 @@ export default function App(){
             // Elite concentration — top 3 players' share of total value
             var top3Val=sorted.slice(0,3).reduce(function(s,p){return s+(p.tradeVal||0);},0);
             var concPct=totalVal>0?top3Val/totalVal:0;
-            // League-relative value (compare to median team)
+            // League-relative value — rank and ratio vs median
             var allTeamVals=(powerRankingTeams||[]).map(function(t){return (t.totalVal||0);}).sort(function(a,b){return b-a;});
             var medianVal=allTeamVals.length>0?allTeamVals[Math.floor(allTeamVals.length/2)]:totalVal;
+            var maxVal=allTeamVals.length>0?allTeamVals[0]:totalVal;
             var valRatio=medianVal>0?totalVal/medianVal:1;
+            var valRank=allTeamVals.indexOf(totalVal)+1; // 1 = highest value team
+            if(valRank===0)valRank=allTeamVals.length; // fallback
+            var teamCount=allTeamVals.length||12;
+            var topThird=valRank<=Math.ceil(teamCount/3);
+            var botThird=valRank>Math.floor(teamCount*2/3);
             // Scoring system: positive = win-now, negative = rebuilding
             var score=0;
-            // Age signals
-            score+=(wAvgAge-26.5)*4; // older = more positive (win-now)
-            score+=oldPct*20; // lots of 30+ pushes win-now
-            score-=youngPct*20; // lots of u25 pushes rebuilding
-            // Value signals
-            if(valRatio>1.15)score+=8; // top-tier roster
-            if(valRatio<0.85)score-=8; // below-median roster
+            // Age signals (capped to not overwhelm value)
+            score+=Math.min(8,Math.max(-8,(wAvgAge-26.5)*3)); // older = more positive (win-now)
+            score+=oldPct*12; // lots of 30+ pushes win-now
+            score-=youngPct*12; // lots of u25 pushes rebuilding
+            // Value signals — strongest factor, best teams should contend/win-now
+            if(valRank===1)score+=16; // #1 value team is contending or win-now
+            else if(valRank===2)score+=12;
+            else if(topThird)score+=8;
+            else if(botThird)score-=10;
+            if(valRatio>1.3)score+=6; // significantly above median
+            else if(valRatio<0.75)score-=6; // significantly below
             // Star power
-            if(stars>=3)score+=6; // stacked with stars = contending
-            if(stars===0)score-=6; // no stars = rebuilding
-            // Concentration — top-heavy rosters with old stars = sell window
-            if(concPct>0.5&&oldPct>0.2)score+=4;
+            if(stars>=4)score+=8;
+            else if(stars>=2)score+=4;
+            else if(stars===0)score-=6; // no stars = rebuilding
+            // Concentration — top-heavy rosters with old stars = sell window closing
+            if(concPct>0.5&&oldPct>0.2)score+=3;
             // Young stars are the hallmark of a rising team
             var youngStars=plrs.filter(function(p){return (p.age||25)<25&&(p.tradeVal||0)>=4000;}).length;
-            if(youngStars>=2)score-=6;
+            if(youngStars>=3)score-=4; // very young elite core = still rising
+            else if(youngStars>=2&&!topThird)score-=4; // young stars on a weaker team = rising
             // Classify
             if(score<=-12)return {label:"Rebuilding",color:"#60a5fa",icon:"🔨",desc:"Young core, building for the future"};
             if(score<=-4)return {label:"Rising",color:"#22d3ee",icon:"📈",desc:"Young talent emerging, window opening"};
