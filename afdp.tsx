@@ -1085,7 +1085,7 @@ const PLAYERS=[
   {name:"Jordan Battle",pos:"DB",age:24,team:"CIN",proj:{PPR:92,Half:92,Standard:92},adp:22.5,ktcVal:1800,note:"CIN S: 85 tackles 2 INT ascending"},
   {name:"Taron Johnson",pos:"DB",age:29,team:"LV",proj:{PPR:95,Half:95,Standard:95},adp:21.5,ktcVal:1500,note:"LV CB: 3 INT 75 tackles slot cover"},
   {name:"Tykee Smith",pos:"DB",age:25,team:"PHI",proj:{PPR:88,Half:88,Standard:88},adp:25.0,ktcVal:1800,note:"PHI S: 82 tackles 2 INT versatile"},
-  {name:"Alohi Gilman",pos:"DB",age:28,team:"LAC",proj:{PPR:88,Half:88,Standard:88},adp:26.0,ktcVal:1000,note:"LAC S: 80 tackles 2 INT solid starter"},
+  {name:"Alohi Gilman",pos:"DB",age:28,team:"BAL",proj:{PPR:88,Half:88,Standard:88},adp:26.0,ktcVal:1000,note:"Traded to BAL (Oweh deal) · S: 80 tackles 2 INT"},
   // Wave 28 — additional missing + value corrections
   {name:"KeAndre Lambert-Smith",pos:"WR",age:24,team:"PHI",proj:{PPR:158,Half:145,Standard:132},adp:25.0,ktcVal:2800,note:"PHI WR: 58 rec 720 yds 5 TD speed"},
   // Wave 27 — additional missing players
@@ -1555,12 +1555,12 @@ const PLAYERS=[
   {name:"Ronnie Harrison Jr.",pos:"DB",age:29,team:"HOU",proj:{PPR:92,Half:92,Standard:92},adp:25.5,ktcVal:900,note:"S: 75 tackles 2 INT"},
   {name:"Dax Hill",pos:"DB",age:25,team:"CIN",proj:{PPR:98,Half:98,Standard:98},adp:21.0,ktcVal:2000,note:"S: 78 tackles 3 INT Year 4"},
   {name:"Brian Branch",pos:"DB",age:24,team:"DET",proj:{PPR:102,Half:102,Standard:102},adp:19.0,ktcVal:3500,note:"S: 80 tackles 3 INT versatile"},
-  {name:"Nate Hobbs",pos:"DB",age:27,team:"LV",proj:{PPR:88,Half:88,Standard:88},adp:29.5,ktcVal:1200,note:"CB/S: 68 tackles 2 INT"},
+  {name:"Nate Hobbs",pos:"DB",age:27,team:"SF",proj:{PPR:88,Half:88,Standard:88},adp:29.5,ktcVal:1200,note:"Signed SF 1yr/$4.5M · CB: 68 tackles 2 INT"},
   {name:"Kader Kohou",pos:"DB",age:28,team:"MIA",proj:{PPR:85,Half:85,Standard:85},adp:31.5,ktcVal:900,note:"CB: 62 tackles 3 INT"},
   {name:"Diontae Spencer",pos:"DB",age:32,team:"CAR",proj:{PPR:72,Half:72,Standard:72},adp:45.0,ktcVal:300,note:"Veteran S depth"},
   // Wave 5 — notable missing skill players
   {name:"Calvin Ridley",pos:"WR",age:30,team:"TEN",proj:{PPR:205,Half:189,Standard:173},adp:19.5,ktcVal:2233,note:"Veteran: 78 rec 900 yds 8 TD bounce-back"},
-  {name:"Donovan Peoples-Jones",pos:"WR",age:27,team:"CLE",proj:{PPR:162,Half:149,Standard:136},adp:26.5,ktcVal:2000,note:"62 rec 780 yds 6 TD deep threat"},
+  {name:"Donovan Peoples-Jones",pos:"WR",age:27,team:"FA",proj:{PPR:95,Half:87,Standard:79},adp:42.0,ktcVal:400,note:"Released by NO Aug 2025 · unsigned FA"},
   {name:"Jelani Woods",pos:"TE",age:26,team:"NYJ",proj:{PPR:115,Half:105,Standard:95},adp:25.5,ktcVal:800,note:"Athletic: 44 rec 480 yds 5 TD"},
   {name:"Connor Heyward",pos:"TE",age:32,team:"PIT",proj:{PPR:88,Half:81,Standard:74},adp:38.0,ktcVal:300,note:"Utility: 35 rec 350 yds"},
   {name:"Irv Smith Jr.",pos:"TE",age:28,team:"CIN",proj:{PPR:98,Half:90,Standard:82},adp:32.5,ktcVal:600,note:"Backup: 40 rec 410 yds"},
@@ -1585,9 +1585,9 @@ const PLAYERS=[
   // IDP Wave 4 — more LBs
   {name:"Cam Curl",pos:"LB",age:26,team:"WAS",proj:{PPR:105,Half:105,Standard:105},adp:18.0,ktcVal:2200,note:"Hybrid LB/S: 100 tackles 2 INT"},
   {name:"Derek Stingley Jr.",pos:"DB",age:25,team:"HOU",proj:{PPR:110,Half:110,Standard:110},adp:15.5,ktcVal:3500,note:"CB: 68 tackles 5 INT"},
-  {name:"Stephon Gilmore",pos:"DB",age:35,team:"DAL",proj:{PPR:88,Half:88,Standard:88},adp:30.0,ktcVal:800,note:"Veteran CB: 55 tackles 3 INT"},
+  {name:"Stephon Gilmore",pos:"DB",age:35,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Retired April 2026 · DPOY 2019"},
   {name:"Denzel Ward",pos:"DB",age:28,team:"CLE",proj:{PPR:102,Half:102,Standard:102},adp:18.5,ktcVal:2500,note:"CB: 62 tackles 4 INT"},
-  {name:"Eli Apple",pos:"DB",age:30,team:"CAR",proj:{PPR:88,Half:88,Standard:88},adp:30.5,ktcVal:700,note:"CB: 58 tackles 2 INT"},
+  {name:"Eli Apple",pos:"DB",age:30,team:"SF",proj:{PPR:88,Half:88,Standard:88},adp:30.5,ktcVal:700,note:"Signed SF futures Jan 2026 · CB: 58 tackles 2 INT"},
   {name:"Trayvon Mullen",pos:"DB",age:28,team:"LV",proj:{PPR:85,Half:85,Standard:85},adp:32.0,ktcVal:800,note:"CB: 55 tackles 2 INT"},
   {name:"Trent McDuffie",pos:"DB",age:25,team:"LAR",proj:{PPR:108,Half:108,Standard:108},adp:16.5,ktcVal:3800,note:"CB: 68 tackles 4 INT elite · traded to LAR"},
   {name:"Kelee Ringo",pos:"DB",age:23,team:"PHI",proj:{PPR:92,Half:92,Standard:92},adp:26.0,ktcVal:2000,note:"Year 3 CB: 60 tackles 3 INT upside"},
