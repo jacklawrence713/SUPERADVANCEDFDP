@@ -4092,28 +4092,29 @@ export default function App(){
             var botThird=valRank>Math.floor(teamCount*2/3);
             // Scoring system: positive = win-now, negative = rebuilding
             var score=0;
-            // Age signals (capped to not overwhelm value)
-            score+=Math.min(8,Math.max(-8,(wAvgAge-26.5)*3)); // older = more positive (win-now)
-            score+=oldPct*12; // lots of 30+ pushes win-now
-            score-=youngPct*12; // lots of u25 pushes rebuilding
+            var isTop3=valRank<=3;
+            // Age signals — reduced for top-3 teams (young + valuable = Rising, not Rebuilding)
+            var ageCap=isTop3?4:8;
+            score+=Math.min(ageCap,Math.max(-ageCap,(wAvgAge-26.5)*3));
+            score+=oldPct*(isTop3?6:12);
+            score-=youngPct*(isTop3?6:12);
             // Value signals — strongest factor, best teams should contend/win-now
-            if(valRank===1)score+=18; // #1 value team is contending or win-now
+            if(valRank===1)score+=18;
             else if(valRank===2)score+=14;
-            else if(valRank===3)score+=11; // top 3 should lean contending
+            else if(valRank===3)score+=11;
             else if(topThird)score+=8;
             else if(botThird)score-=10;
-            if(valRatio>1.3)score+=6; // significantly above median
-            else if(valRatio<0.75)score-=6; // significantly below
+            if(valRatio>1.3)score+=6;
+            else if(valRatio<0.75)score-=6;
             // Star power
             if(stars>=4)score+=8;
             else if(stars>=2)score+=4;
-            else if(stars===0)score-=6; // no stars = rebuilding
+            else if(stars===0&&!isTop3)score-=6;
             // Concentration — top-heavy rosters with old stars = sell window closing
             if(concPct>0.5&&oldPct>0.2)score+=3;
-            // Young stars are the hallmark of a rising team
+            // Young stars — only penalize non-top-3 teams
             var youngStars=plrs.filter(function(p){return (p.age||25)<25&&(p.tradeVal||0)>=4000;}).length;
-            if(youngStars>=3)score-=4; // very young elite core = still rising
-            else if(youngStars>=2&&!topThird)score-=4; // young stars on a weaker team = rising
+            if(!isTop3&&youngStars>=2)score-=4;
             // Classify
             if(score<=-12)return {label:"Rebuilding",color:"#60a5fa",icon:"🔨",desc:"Young core, building for the future"};
             if(score<=-4)return {label:"Rising",color:"#22d3ee",icon:"📈",desc:"Young talent emerging, window opening"};
