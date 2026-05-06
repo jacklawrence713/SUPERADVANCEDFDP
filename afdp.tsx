@@ -2636,7 +2636,7 @@ export default function App(){
   var [marketPos,setMarketPos]=useState("All Positions");
   var [marketSearch,setMarketSearch]=useState("");
   var [valueTrendSearch,setValueTrendSearch]=useState("");
-  var [pickYear,setPickYear]=useState("2026 Draft");
+  var [pickYear,setPickYear]=useState("2026");
   var [draftKitLoaded,setDraftKitLoaded]=useState(true);
   var [draftKitPos,setDraftKitPos]=useState("All Positions");
   var [draftKitSearch,setDraftKitSearch]=useState("");
@@ -5583,23 +5583,103 @@ export default function App(){
 
       // ROOKIE PICKS
       rankSubTab==="rookie"&&React.createElement("div",{style:{padding:"16px"}},
-        React.createElement("div",{style:{fontWeight:900,fontSize:22,marginBottom:2}},"Rookie Pick Values"),
-        React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:16}},"Trade values for draft picks"),
-        React.createElement("div",{style:{fontWeight:800,fontSize:16,marginBottom:10}},"2026 Pick Values"),
-        DRAFT_PICKS.map(function(pk){
-          var tierC=pk.round===1?"#f1c40f":pk.round===2?"#818cf8":"#4b5563";
-          return React.createElement("div",{key:pk.id,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"13px 16px",marginBottom:8,display:"flex",alignItems:"center",gap:12}},
-            React.createElement("div",{style:{width:40,height:40,borderRadius:10,background:tierC+"22",border:"1px solid "+tierC+"44",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:11,color:tierC,flexShrink:0,textAlign:"center"}},"R"+pk.round),
-            React.createElement("div",{style:{flex:1}},
-              React.createElement("div",{style:{fontWeight:700,fontSize:14}},pk.name),
-              React.createElement("div",{style:{fontSize:11,color:T.textSub,marginTop:2}},pk.note)
+        React.createElement("div",{style:{display:"flex",alignItems:"center",gap:12,marginBottom:4}},
+          React.createElement("div",{style:{width:44,height:44,borderRadius:12,background:"#f1c40f22",border:"1px solid #f1c40f44",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}},
+            React.createElement("span",{style:{fontSize:22,color:"#f1c40f"}},"★")
+          ),
+          React.createElement("div",null,
+            React.createElement("div",{style:{fontWeight:900,fontSize:22}},"Rookie Draft Board"),
+            React.createElement("div",{style:{fontSize:12,color:T.textSub}},"2026 & 2025 NFL rookies with dynasty values")
+          )
+        ),
+        React.createElement("div",{style:{display:"flex",gap:8,marginTop:12,marginBottom:16}},
+          ["2026 Rookies","2025 Rookies","Pick Values"].map(function(label){
+            var val=label==="2026 Rookies"?"2026":label==="2025 Rookies"?"2025":"picks";
+            var active=pickYear===val;
+            return React.createElement("button",{key:val,onClick:function(){setPickYear(val);},style:{padding:"8px 16px",borderRadius:20,border:"1px solid "+(active?T.purple:T.border),background:active?T.purple:"transparent",color:active?"#fff":T.textSub,fontWeight:700,fontSize:12,cursor:"pointer"}},label);
+          })
+        ),
+        (pickYear==="2026"||pickYear==="2025")&&(function(){
+          var yr=pickYear;
+          var rookies=rankedPlayers.filter(function(p){return p.note&&p.note.indexOf(yr+" pick")>=0||p.note&&p.note.indexOf(yr+" #")>=0;});
+          // Parse pick number from note for sorting
+          rookies=rookies.map(function(p){
+            var m=p.note.match(new RegExp(yr+"\\s+(?:pick\\s+|#)(\\d+)(?:-(\\d+))?"));
+            var pickNum=m?parseInt(m[1])*100+(m[2]?parseInt(m[2]):0):9999;
+            return Object.assign({},p,{_pickNum:pickNum,_pickLabel:m?(m[2]?m[1]+"."+String(m[2]).padStart(2,"0"):"#"+m[1]):""});
+          }).sort(function(a,b){return a._pickNum-b._pickNum;});
+          // Group by round
+          var rounds={};
+          rookies.forEach(function(p){
+            var rd=p._pickNum<200?"1st Round":p._pickNum<300?"2nd Round":p._pickNum<400?"3rd Round":p._pickNum<500?"4th Round":"Later Rounds";
+            if(!rounds[rd])rounds[rd]=[];
+            rounds[rd].push(p);
+          });
+          var rdKeys=Object.keys(rounds);
+          return React.createElement("div",null,
+            React.createElement("div",{style:{background:T.purpleDim,border:"1px solid "+T.borderPurple,borderRadius:12,padding:"12px 16px",marginBottom:14,display:"flex",justifyContent:"space-between",alignItems:"center"}},
+              React.createElement("div",null,
+                React.createElement("div",{style:{fontSize:11,fontWeight:700,color:T.textSub}},yr+" ROOKIE CLASS"),
+                React.createElement("div",{style:{fontWeight:900,fontSize:18,color:T.purpleLight}},rookies.length+" players")
+              ),
+              React.createElement("div",{style:{textAlign:"right"}},
+                React.createElement("div",{style:{fontSize:11,fontWeight:700,color:T.textSub}},"TOTAL VALUE"),
+                React.createElement("div",{style:{fontWeight:900,fontSize:18,color:T.gold}},rookies.reduce(function(s,p){return s+(p.tradeVal||0);},0).toLocaleString())
+              )
             ),
-            React.createElement("div",{style:{textAlign:"right"}},
-              React.createElement("div",{style:{fontWeight:800,fontSize:15,color:tierC}},pk.est+" val"),
-              React.createElement("div",{style:{fontSize:9,color:T.textSub,marginTop:2}},pk.round===1?"1st Round":pk.round===2?"2nd Round":"3rd Round")
+            rdKeys.map(function(rd){
+              var tierC=rd==="1st Round"?"#f1c40f":rd==="2nd Round"?"#818cf8":rd==="3rd Round"?"#60a5fa":"#4b5563";
+              return React.createElement("div",{key:rd,style:{marginBottom:16}},
+                React.createElement("div",{style:{fontSize:11,fontWeight:800,color:tierC,letterSpacing:1,marginBottom:8,paddingBottom:6,borderBottom:"1px solid "+tierC+"33"}},rd.toUpperCase()+" ("+rounds[rd].length+" players)"),
+                rounds[rd].map(function(p,i){
+                  var ag=ageGrade(p.pos,p.age);
+                  return React.createElement("div",{key:p.name,onClick:function(){addToTrade(p);},style:{background:T.bgCard,border:"1px solid "+(i===0&&rd==="1st Round"?tierC+"66":T.border),borderRadius:12,padding:"12px 14px",marginBottom:6,display:"flex",alignItems:"center",gap:10,cursor:"pointer"}},
+                    React.createElement("div",{style:{width:32,textAlign:"center",flexShrink:0}},
+                      p._pickLabel?React.createElement("div",{style:{fontWeight:900,fontSize:11,color:tierC,lineHeight:1.2}},p._pickLabel):React.createElement("div",{style:{fontWeight:800,fontSize:11,color:T.textDim}},i+1)
+                    ),
+                    React.createElement(Avatar,{name:p.name,pos:p.pos,size:36}),
+                    React.createElement("div",{style:{flex:1,minWidth:0}},
+                      React.createElement("div",{style:{fontWeight:700,fontSize:13,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
+                      React.createElement("div",{style:{display:"flex",alignItems:"center",gap:4,fontSize:10,color:T.textSub,flexWrap:"wrap"}},
+                        React.createElement(PBadge,{pos:p.pos}),
+                        React.createElement("span",null,p.team),
+                        React.createElement("span",null,"· "+p.age),
+                        React.createElement("span",{style:{color:ag.c,fontWeight:700}},ag.g)
+                      )
+                    ),
+                    React.createElement("div",{style:{textAlign:"right",flexShrink:0}},
+                      React.createElement("div",{style:{fontWeight:800,fontSize:14,color:T.purpleLight}},(p.tradeVal||0).toLocaleString()),
+                      React.createElement("div",{style:{fontSize:9,color:T.textSub}},p.pts.toFixed(1)+" pts")
+                    )
+                  );
+                })
+              );
+            }),
+            rookies.length===0&&React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"32px 20px",textAlign:"center"}},
+              React.createElement("div",{style:{fontSize:32,marginBottom:8}},"📋"),
+              React.createElement("div",{style:{fontWeight:700,fontSize:14}},"No "+yr+" rookies found"),
+              React.createElement("div",{style:{fontSize:12,color:T.textSub,marginTop:4}},"Rookie data will be added as picks are announced")
             )
           );
-        })
+        })(),
+        pickYear==="picks"&&React.createElement("div",null,
+          React.createElement("div",{style:{fontWeight:800,fontSize:16,marginBottom:10}},"Draft Pick Trade Values"),
+          React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:14}},"Use these for the trade analyzer — add picks to either side"),
+          DRAFT_PICKS.map(function(pk){
+            var tierC=pk.round===1?"#f1c40f":pk.round===2?"#818cf8":"#4b5563";
+            return React.createElement("div",{key:pk.id,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"13px 16px",marginBottom:8,display:"flex",alignItems:"center",gap:12}},
+              React.createElement("div",{style:{width:40,height:40,borderRadius:10,background:tierC+"22",border:"1px solid "+tierC+"44",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:11,color:tierC,flexShrink:0,textAlign:"center"}},"R"+pk.round),
+              React.createElement("div",{style:{flex:1}},
+                React.createElement("div",{style:{fontWeight:700,fontSize:14}},pk.name),
+                React.createElement("div",{style:{fontSize:11,color:T.textSub,marginTop:2}},pk.note)
+              ),
+              React.createElement("div",{style:{textAlign:"right"}},
+                React.createElement("div",{style:{fontWeight:800,fontSize:15,color:tierC}},pk.est+" val"),
+                React.createElement("div",{style:{fontSize:9,color:T.textSub,marginTop:2}},pk.round===1?"1st Round":pk.round===2?"2nd Round":"3rd Round")
+              )
+            );
+          })
+        )
       ),
 
       // VEGAS LINES
