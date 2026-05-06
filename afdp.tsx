@@ -715,7 +715,7 @@ const PLAYERS=[
   {name:"Jalen Tolbert",pos:"WR",age:26,team:"MIA",proj:{PPR:142,Half:130,Standard:118},adp:31.0,ktcVal:2241,note:"55 rec 640 yds 5 TD"},
   {name:"Kendrick Bourne",pos:"WR",age:30,team:"ARI",proj:{PPR:138,Half:127,Standard:116},adp:32.2,ktcVal:700,note:"Veteran slot: 55 rec 600 yds"},
   {name:"Isaiah McKenzie",pos:"WR",age:29,team:"BUF",proj:{PPR:128,Half:118,Standard:108},adp:34.2,ktcVal:400,note:"Slot/return: 48 rec 520 yds"},
-  {name:"Andrei Iosivas",pos:"WR",age:25,team:"CIN",proj:{PPR:132,Half:121,Standard:110},adp:33.5,ktcVal:1800,note:"Deep threat: 48 rec 600 yds"},
+  {name:"Andrei Iosivas",pos:"WR",age:25,team:"CIN",proj:{PPR:132,Half:121,Standard:110},adp:33.5,ktcVal:1961,note:"Deep threat: 48 rec 600 yds"},
   {name:"Bryce Ford-Wheaton",pos:"WR",age:25,team:"NYG",proj:{PPR:128,Half:118,Standard:108},adp:34.0,ktcVal:700,note:"Big body: 50 rec 580 yds"},
   {name:"Javon Baker",pos:"WR",age:24,team:"NE",proj:{PPR:118,Half:109,Standard:100},adp:36.0,ktcVal:1326,note:"Year 2: 44 rec 520 yds"},
   {name:"Jamari Thrash",pos:"WR",age:24,team:"CLE",proj:{PPR:122,Half:112,Standard:102},adp:35.2,ktcVal:600,note:"Speed: 45 rec 550 yds"},
