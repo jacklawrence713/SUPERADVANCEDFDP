@@ -3626,8 +3626,8 @@ export default function App(){
     // Dynasty Value Ticker (all tabs)
     React.createElement("div",{style:{overflow:"hidden",background:darkMode?"#0a0818":"#f8f7ff",borderBottom:"1px solid "+T.border,padding:"6px 0"}},
       React.createElement("style",null,"@keyframes fdp-ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}"),
-      React.createElement("div",{style:{display:"flex",gap:20,animation:"fdp-ticker 30s linear infinite",width:"max-content"}},
-        rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;}).slice(0,20).concat(rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;}).slice(0,20)).map(function(p,i){
+      React.createElement("div",{style:{display:"flex",gap:20,animation:"fdp-ticker 60s linear infinite",width:"max-content"}},
+        rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;}).slice(0,50).concat(rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;}).slice(0,50)).map(function(p,i){
           var pc=POS_COLORS[p.pos]||T.purple;
           return React.createElement("div",{key:p.name+"-t-"+i,style:{display:"flex",alignItems:"center",gap:5,flexShrink:0}},
             React.createElement("span",{style:{fontSize:9,fontWeight:800,color:pc}},p.pos),
