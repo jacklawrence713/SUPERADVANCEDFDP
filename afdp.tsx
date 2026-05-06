@@ -1599,7 +1599,7 @@ const PLAYERS=[
   {name:"Latavius Murray",pos:"RB",age:34,team:"FA",proj:{PPR:82,Half:75,Standard:68},adp:47.5,ktcVal:150,note:"Veteran depth"},
   {name:"Jakob Johnson",pos:"RB",age:29,team:"LV",proj:{PPR:72,Half:66,Standard:60},adp:50.0,ktcVal:300,note:"FB/utility role"},
   // Missing WRs
-  {name:"Adonai Mitchell",pos:"WR",age:23,team:"IND",proj:{PPR:188,Half:174,Standard:160},adp:21.5,ktcVal:3500,note:"Year 2 leap: 72 rec 820 yds 7 TD"},
+  {name:"Adonai Mitchell",pos:"WR",age:23,team:"NYJ",proj:{PPR:188,Half:174,Standard:160},adp:21.5,ktcVal:3500,note:"Traded to NYJ (Sauce Gardner deal) · Year 2 leap: 72 rec 820 yds 7 TD"},
   {name:"Luke McCaffrey",pos:"WR",age:25,team:"WAS",proj:{PPR:175,Half:161,Standard:147},adp:24.5,ktcVal:2500,note:"Versatile slot: 68 rec 760 yds"},
   {name:"Demario Douglas",pos:"WR",age:26,team:"NE",proj:{PPR:162,Half:149,Standard:136},adp:27.0,ktcVal:2528,note:"Slot: 64 rec 720 yds YAC machine"},
   {name:"Jauan Jennings",pos:"WR",age:29,team:"FA",proj:{PPR:158,Half:145,Standard:132},adp:27.5,ktcVal:2945,note:"Released SF · unsigned FA · red zone target"},
