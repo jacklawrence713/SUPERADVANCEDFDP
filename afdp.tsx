@@ -5413,7 +5413,7 @@ export default function App(){
             React.createElement("div",{style:{fontSize:12,color:darkMode?"#93c5fd":"#1e40af",lineHeight:1.6}},"Adjustments are temporary overlays on base values. They react to injuries, role changes, and transactions, and reset during nightly rebuilds. Base rankings remain stable.")
           ),
           (function(){
-            var bl=getBaselines(leagueTeams,sfEnabled);
+            var bl=getBaselines(teams,isSF);
             var trendPlayers=rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].includes(p.pos);}).map(function(p){
               var ab=dynastyBonus(p.pos,p.age);
               var lo=PRIME[p.pos]?PRIME[p.pos][0]:25;
@@ -5977,7 +5977,7 @@ export default function App(){
           var ag1=ageGrade(compareP1.pos,compareP1.age),ag2=ageGrade(compareP2.pos,compareP2.age);
           var t1=tierLabel(compareP1.posRank,compareP1.pos),t2=tierLabel(compareP2.posRank,compareP2.pos);
           var ab1=dynastyBonus(compareP1.pos,compareP1.age),ab2=dynastyBonus(compareP2.pos,compareP2.age);
-          var bl=getBaselines(leagueTeams,sfEnabled);
+          var bl=getBaselines(teams,isSF);
           var sc1=scarcityLabel(compareP1.posRank,bl[compareP1.pos]||12),sc2=scarcityLabel(compareP2.posRank,bl[compareP2.pos]||12);
           var diff=compareP1.tradeVal-compareP2.tradeVal;
           var pct=Math.max(compareP1.tradeVal,compareP2.tradeVal)>0?Math.abs(diff)/Math.max(compareP1.tradeVal,compareP2.tradeVal)*100:0;
