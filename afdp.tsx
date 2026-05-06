@@ -5399,7 +5399,7 @@ export default function App(){
         var spent=myNoms.reduce(function(s,n){return s+n.price;},0);
         var remaining=auctionBudget-spent;
         var mySlots=myNoms.length;
-        var rosterSize=Math.max(1,auctionTeams);
+        var rosterSize=Math.max(1,+auctionTeams||1);
         var slotsLeft=Math.max(0,rosterSize-mySlots);
         var maxBid=slotsLeft>1?remaining-(slotsLeft-1):remaining;
         var avgPerSlot=slotsLeft>0?Math.round(remaining/slotsLeft):0;
@@ -5435,15 +5435,15 @@ export default function App(){
           React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:12}},
             React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:10,padding:"10px 12px"}},
               React.createElement("div",{style:{fontSize:9,color:T.textSub,fontWeight:700,marginBottom:4}},"BUDGET ($)"),
-              React.createElement("input",{type:"number",value:auctionBudget,min:1,onChange:function(e){setAuctionBudget(Math.max(1,+e.target.value||1));},style:{background:"transparent",color:T.text,border:"none",fontSize:20,fontWeight:900,width:"100%",outline:"none"}})
+              React.createElement("input",{type:"number",value:auctionBudget===""?"":auctionBudget,min:1,onChange:function(e){setAuctionBudget(e.target.value===""?"":+e.target.value);},onBlur:function(){setAuctionBudget(function(v){return Math.max(1,+v||1);});},style:{background:"transparent",color:T.text,border:"none",fontSize:20,fontWeight:900,width:"100%",outline:"none"}})
             ),
             React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:10,padding:"10px 12px"}},
               React.createElement("div",{style:{fontSize:9,color:T.textSub,fontWeight:700,marginBottom:4}},"ROSTER SLOTS"),
-              React.createElement("input",{type:"number",value:auctionTeams,min:1,onChange:function(e){setAuctionTeams(Math.max(1,+e.target.value||1));},style:{background:"transparent",color:T.text,border:"none",fontSize:20,fontWeight:900,width:"100%",outline:"none"}})
+              React.createElement("input",{type:"number",value:auctionTeams===""?"":auctionTeams,min:1,onChange:function(e){setAuctionTeams(e.target.value===""?"":+e.target.value);},onBlur:function(){setAuctionTeams(function(v){return Math.max(1,+v||1);});},style:{background:"transparent",color:T.text,border:"none",fontSize:20,fontWeight:900,width:"100%",outline:"none"}})
             ),
             React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:10,padding:"10px 12px"}},
               React.createElement("div",{style:{fontSize:9,color:T.textSub,fontWeight:700,marginBottom:4}},"LEAGUE TEAMS"),
-              React.createElement("input",{type:"number",value:draftLeagueSize,min:1,max:32,onChange:function(e){setDraftLeagueSize(Math.max(1,Math.min(32,+e.target.value||1)));},style:{background:"transparent",color:T.text,border:"none",fontSize:20,fontWeight:900,width:"100%",outline:"none"}})
+              React.createElement("input",{type:"number",value:draftLeagueSize===""?"":draftLeagueSize,min:1,max:32,onChange:function(e){setDraftLeagueSize(e.target.value===""?"":+e.target.value);},onBlur:function(){setDraftLeagueSize(function(v){return Math.max(1,Math.min(32,+v||1));});},style:{background:"transparent",color:T.text,border:"none",fontSize:20,fontWeight:900,width:"100%",outline:"none"}})
             )
           ),
           // Budget bar + stats
