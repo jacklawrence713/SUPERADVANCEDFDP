@@ -5433,6 +5433,20 @@ export default function App(){
         ),
         isDesktop&&React.createElement("button",{onClick:function(){rankingTabsRef.current&&rankingTabsRef.current.scrollBy({left:200,behavior:"smooth"});},style:{position:"absolute",right:0,top:"50%",transform:"translateY(-50%)",zIndex:2,background:T.bgCard,border:"1px solid "+T.border,borderRadius:"50%",width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:T.text,fontSize:14,padding:0}},"›")
       ),
+      // Dynasty Stock Ticker
+      React.createElement("div",{style:{overflow:"hidden",background:darkMode?"#0a0818":"#f8f7ff",borderBottom:"1px solid "+T.border,padding:"6px 0"}},
+        React.createElement("style",null,"@keyframes fdp-ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}"),
+        React.createElement("div",{style:{display:"flex",gap:20,animation:"fdp-ticker 30s linear infinite",width:"max-content"}},
+          rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;}).slice(0,20).concat(rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;}).slice(0,20)).map(function(p,i){
+            var pc=POS_COLORS[p.pos]||T.purple;
+            return React.createElement("div",{key:p.name+"-"+i,style:{display:"flex",alignItems:"center",gap:5,flexShrink:0}},
+              React.createElement("span",{style:{fontSize:9,fontWeight:800,color:pc}},p.pos),
+              React.createElement("span",{style:{fontSize:11,fontWeight:700,color:T.text}},p.name.split(" ").pop()),
+              React.createElement("span",{style:{fontSize:11,fontWeight:800,color:T.purpleLight}},(p.tradeVal||0).toLocaleString())
+            );
+          })
+        )
+      ),
 
       // PLAYER VALUES (image 1 — FDP Value table with 7D Change)
       rankSubTab==="playervalues"&&React.createElement("div",{style:{paddingBottom:16}},
@@ -5448,6 +5462,29 @@ export default function App(){
             ["All","QB","RB","WR","TE","DL","LB","DB"].map(function(pos){var active=pvPos===pos;return React.createElement("button",{key:pos,onClick:function(){setPvPos(pos);},style:{padding:"5px 12px",borderRadius:8,border:"1px solid "+(active?T.purple:T.border),background:active?T.purple:"transparent",color:active?"#fff":T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},pos);})
           ),
           React.createElement("input",{value:pvSearch,onChange:function(e){setPvSearch(e.target.value);},placeholder:"Search players...",style:Object.assign({},inpS,{marginTop:8})})
+        ),
+        pvPos==="All"&&!pvSearch&&React.createElement("div",{style:{margin:"12px 16px 0",background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:12,padding:"12px 14px"}},
+          React.createElement("div",{style:{fontSize:10,fontWeight:800,color:T.textSub,letterSpacing:1,marginBottom:8}},"POSITIONAL SCARCITY — VALUE DROPOFF"),
+          React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6}},
+            ["QB","RB","WR","TE"].map(function(pos){
+              var posPlrs=rankedPlayers.filter(function(p){return p.pos===pos;}).sort(function(a,b){return b.tradeVal-a.tradeVal;});
+              var v1=posPlrs[0]?posPlrs[0].tradeVal:0;
+              var v5=posPlrs[4]?posPlrs[4].tradeVal:0;
+              var v12=posPlrs[11]?posPlrs[11].tradeVal:0;
+              var dropoff=v1>0?Math.round((1-v12/v1)*100):0;
+              var pc=POS_COLORS[pos]||T.purple;
+              return React.createElement("div",{key:pos,style:{textAlign:"center"}},
+                React.createElement("div",{style:{fontSize:11,fontWeight:800,color:pc,marginBottom:4}},pos),
+                React.createElement("div",{style:{height:40,display:"flex",alignItems:"flex-end",justifyContent:"center",gap:2,marginBottom:4}},
+                  React.createElement("div",{style:{width:10,height:40,background:pc,borderRadius:"3px 3px 0 0",opacity:1}}),
+                  React.createElement("div",{style:{width:10,height:v1>0?Math.max(6,Math.round(v5/v1*40)):6,background:pc,borderRadius:"3px 3px 0 0",opacity:0.6}}),
+                  React.createElement("div",{style:{width:10,height:v1>0?Math.max(4,Math.round(v12/v1*40)):4,background:pc,borderRadius:"3px 3px 0 0",opacity:0.3}})
+                ),
+                React.createElement("div",{style:{fontSize:8,color:T.textDim}},"#1 → #12"),
+                React.createElement("div",{style:{fontSize:10,fontWeight:800,color:dropoff>60?T.red:dropoff>40?T.gold:T.green}},"-"+dropoff+"%")
+              );
+            })
+          )
         ),
         React.createElement("div",{style:{display:"grid",gridTemplateColumns:"44px 1fr 96px",padding:"10px 16px",borderTop:"1px solid "+T.border,borderBottom:"1px solid "+T.border,marginTop:12,background:T.bgInput,gap:4}},
           React.createElement("div",null),
