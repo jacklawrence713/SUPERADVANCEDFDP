@@ -4056,19 +4056,57 @@ export default function App(){
           var badgeText=i<3?"#000":T.textSub;
           var record=powerRankingTeams?(team.wins||0)+"-"+(team.losses||0):(team.record||"0-0");
           var playerCount=powerRankingTeams?(team.players||[]).length:(team.players||0);
-          // Dynasty window calculation
+          // Dynasty window calculation — weighted by value, star power, roster composition
           var dWin=(function(){
             if(!powerRankingTeams||!team.players||team.players.length===0)return null;
             var plrs=team.players;
-            var avgAge=plrs.reduce(function(s,p){return s+(p.age||25);},0)/plrs.length;
+            var totalVal=plrs.reduce(function(s,p){return s+(p.tradeVal||0);},0);
+            // Sort by value — top players matter more
+            var sorted=plrs.slice().sort(function(a,b){return (b.tradeVal||0)-(a.tradeVal||0);});
+            var starters=sorted.slice(0,Math.min(10,sorted.length));
+            var bench=sorted.slice(10);
+            // Weighted avg age — starters count 2x
+            var wSum=0,wCnt=0;
+            starters.forEach(function(p){wSum+=(p.age||25)*2;wCnt+=2;});
+            bench.forEach(function(p){wSum+=(p.age||25);wCnt+=1;});
+            var wAvgAge=wCnt>0?wSum/wCnt:25;
+            // Age buckets
             var u25=plrs.filter(function(p){return (p.age||25)<25;}).length;
-            var o30=plrs.filter(function(p){return (p.age||25)>30;}).length;
+            var o30=plrs.filter(function(p){return (p.age||25)>=30;}).length;
             var youngPct=u25/plrs.length;
             var oldPct=o30/plrs.length;
-            if(avgAge<25.5||youngPct>0.5)return {label:"Rebuilding",color:"#60a5fa",icon:"🔨"};
-            if(avgAge>28||oldPct>0.35)return {label:"Win Now",color:"#f59e0b",icon:"🏆"};
-            if(avgAge<=26.5&&youngPct>0.3)return {label:"Rising",color:T.green,icon:"📈"};
-            return {label:"Contending",color:T.green,icon:"⚡"};
+            // Star power — count of players with tradeVal >= 5000
+            var stars=plrs.filter(function(p){return (p.tradeVal||0)>=5000;}).length;
+            // Elite concentration — top 3 players' share of total value
+            var top3Val=sorted.slice(0,3).reduce(function(s,p){return s+(p.tradeVal||0);},0);
+            var concPct=totalVal>0?top3Val/totalVal:0;
+            // League-relative value (compare to median team)
+            var allTeamVals=(powerRankingTeams||[]).map(function(t){return (t.totalVal||0);}).sort(function(a,b){return b-a;});
+            var medianVal=allTeamVals.length>0?allTeamVals[Math.floor(allTeamVals.length/2)]:totalVal;
+            var valRatio=medianVal>0?totalVal/medianVal:1;
+            // Scoring system: positive = win-now, negative = rebuilding
+            var score=0;
+            // Age signals
+            score+=(wAvgAge-26.5)*4; // older = more positive (win-now)
+            score+=oldPct*20; // lots of 30+ pushes win-now
+            score-=youngPct*20; // lots of u25 pushes rebuilding
+            // Value signals
+            if(valRatio>1.15)score+=8; // top-tier roster
+            if(valRatio<0.85)score-=8; // below-median roster
+            // Star power
+            if(stars>=3)score+=6; // stacked with stars = contending
+            if(stars===0)score-=6; // no stars = rebuilding
+            // Concentration — top-heavy rosters with old stars = sell window
+            if(concPct>0.5&&oldPct>0.2)score+=4;
+            // Young stars are the hallmark of a rising team
+            var youngStars=plrs.filter(function(p){return (p.age||25)<25&&(p.tradeVal||0)>=4000;}).length;
+            if(youngStars>=2)score-=6;
+            // Classify
+            if(score<=-12)return {label:"Rebuilding",color:"#60a5fa",icon:"🔨",desc:"Young core, building for the future"};
+            if(score<=-4)return {label:"Rising",color:"#22d3ee",icon:"📈",desc:"Young talent emerging, window opening"};
+            if(score<=4)return {label:"Retooling",color:"#a78bfa",icon:"🔧",desc:"Mix of vets and youth, pivoting"};
+            if(score<=12)return {label:"Contending",color:T.green,icon:"⚡",desc:"Competitive roster, championship window open"};
+            return {label:"Win Now",color:"#f59e0b",icon:"🏆",desc:"All-in roster, maximize this window"};
           })();
           return React.createElement("div",{key:team.name+i,style:{background:T.bgCard,border:"1px solid "+(i===0?T.borderPurple:T.border),borderRadius:14,padding:16,marginBottom:10}},
             React.createElement("div",{style:{display:"flex",alignItems:"flex-start",gap:12,marginBottom:12}},
@@ -4079,7 +4117,7 @@ export default function App(){
               React.createElement("div",{style:{flex:1}},
                 React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:4}},
                   React.createElement("span",{style:{fontWeight:800,fontSize:15}},team.name),
-                  dWin&&React.createElement("span",{style:{fontSize:9,fontWeight:800,color:dWin.color,background:dWin.color+"18",border:"1px solid "+dWin.color+"33",borderRadius:12,padding:"2px 8px"}},dWin.icon+" "+dWin.label)
+                  dWin&&React.createElement("span",{title:dWin.desc,style:{fontSize:9,fontWeight:800,color:dWin.color,background:dWin.color+"18",border:"1px solid "+dWin.color+"33",borderRadius:12,padding:"2px 8px",cursor:"help"}},dWin.icon+" "+dWin.label)
                 ),
                 powerRankingTeams&&team.owner&&React.createElement("div",{style:{fontSize:11,color:T.textSub,marginBottom:2}},team.owner),
                 React.createElement("div",{style:{fontSize:11,color:T.textSub,display:"flex",gap:8,alignItems:"center"}},
