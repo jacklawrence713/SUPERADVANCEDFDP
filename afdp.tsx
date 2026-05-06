@@ -303,7 +303,7 @@ const PLAYERS=[
   {name:"Drake London",pos:"WR",age:25,team:"ATL",proj:{PPR:285,Half:264,Standard:243},adp:7.2,ktcVal:7500,note:"2026: 112 rec 1,200 yds 11 TD"},
   {name:"Garrett Wilson",pos:"WR",age:25,team:"NYJ",proj:{PPR:278,Half:258,Standard:238},adp:8.8,ktcVal:6425,note:"2026: 100 rec 1,120 yds 9 TD"},
   {name:"Rashee Rice",pos:"WR",age:25,team:"KC",proj:{PPR:272,Half:252,Standard:232},adp:9.5,ktcVal:6019,note:"2026: 95 rec 1,080 yds 10 TD"},
-  {name:"Tyreek Hill",pos:"WR",age:33,team:"FA",proj:{PPR:265,Half:245,Standard:225},adp:10.2,ktcVal:2342,note:"2026: 100 rec 1,150 yds 8 TD declining age"},
+  {name:"Tyreek Hill",pos:"WR",age:33,team:"FA",proj:{PPR:265,Half:245,Standard:225},adp:10.2,ktcVal:2675,note:"2026: 100 rec 1,150 yds 8 TD declining age"},
   {name:"DK Metcalf",pos:"WR",age:28,team:"PIT",proj:{PPR:268,Half:249,Standard:230},adp:10.5,ktcVal:4498,note:"2026: 90 rec 1,150 yds 10 TD"},
   {name:"Rome Odunze",pos:"WR",age:23,team:"CHI",proj:{PPR:262,Half:243,Standard:224},adp:11.2,ktcVal:6500,note:"2026 Year 2 leap: 95 rec 1,050 yds 9 TD"},
   {name:"Brock Bowers",pos:"TE",age:24,team:"LV",proj:{PPR:252,Half:232,Standard:212},adp:2.8,ktcVal:8100,note:"2026 Year 2: 125 rec 1,380 yds generational"},
@@ -368,8 +368,8 @@ const PLAYERS=[
   {name:"Josh Downs",pos:"WR",age:24,team:"IND",proj:{PPR:235,Half:217,Standard:199},adp:14.9,ktcVal:4387,note:"Year 3: 95 rec 980 yds"},
   {name:"Ladd McConkey",pos:"WR",age:25,team:"LAC",proj:{PPR:232,Half:214,Standard:196},adp:15.5,ktcVal:6099,note:"88 rec 940 yds"},
   {name:"DeVonta Smith",pos:"WR",age:29,team:"PHI",proj:{PPR:228,Half:211,Standard:194},adp:16.0,ktcVal:5838,note:"88 rec 1,000 yds 7 TD"},
-  {name:"Mike Evans",pos:"WR",age:32,team:"SF",proj:{PPR:225,Half:208,Standard:191},adp:16.5,ktcVal:3100,note:"84 rec 1,050 yds 12 TD"},
-  {name:"Michael Pittman Jr.",pos:"WR",age:28,team:"PIT",proj:{PPR:218,Half:201,Standard:184},adp:17.8,ktcVal:3550,note:"88 rec 950 yds 7 TD"},
+  {name:"Mike Evans",pos:"WR",age:32,team:"SF",proj:{PPR:225,Half:208,Standard:191},adp:16.5,ktcVal:4115,note:"84 rec 1,050 yds 12 TD"},
+  {name:"Michael Pittman Jr.",pos:"WR",age:28,team:"PIT",proj:{PPR:218,Half:201,Standard:184},adp:17.8,ktcVal:4182,note:"88 rec 950 yds 7 TD"},
   {name:"D.J. Moore",pos:"WR",age:28,team:"BUF",proj:{PPR:215,Half:199,Standard:183},adp:18.2,ktcVal:4783,note:"80 rec 920 yds"},
   {name:"Xavier Worthy",pos:"WR",age:23,team:"KC",proj:{PPR:210,Half:194,Standard:178},adp:19.0,ktcVal:4151,note:"Year 2: 72 rec 890 yds 9 TD"},
   {name:"Tank Dell",pos:"WR",age:25,team:"HOU",proj:{PPR:205,Half:189,Standard:173},adp:19.8,ktcVal:3500,note:"75 rec 850 yds 7 TD"},
@@ -1098,11 +1098,11 @@ const PLAYERS=[
   {name:"Zavier Scott",pos:"WR",age:23,team:"LAC",proj:{PPR:145,Half:133,Standard:121},adp:30.0,ktcVal:1900,note:"LAC WR: 52 rec 640 yds 5 TD speed"},
   // Wave 24 — missing starters + IDP depth sweep
   // Missing starters
-  {name:"DeAndre Hopkins",pos:"WR",age:33,team:"BAL",proj:{PPR:188,Half:173,Standard:158},adp:22.5,ktcVal:500,note:"Veteran: 72 rec 840 yds 7 TD jump-ball"},
+  {name:"DeAndre Hopkins",pos:"WR",age:33,team:"BAL",proj:{PPR:188,Half:173,Standard:158},adp:22.5,ktcVal:616,note:"Veteran: 72 rec 840 yds 7 TD jump-ball"},
   {name:"Evan Engram",pos:"TE",age:31,team:"DEN",proj:{PPR:195,Half:179,Standard:163},adp:11.5,ktcVal:2159,note:"Volume: 88 rec 950 yds 7 TD PPR monster"},
   // More notable WRs Wave 24
   {name:"Gabe Davis",pos:"WR",age:28,team:"FA",proj:{PPR:148,Half:136,Standard:124},adp:29.0,ktcVal:800,note:"Big play: 52 rec 660 yds 6 TD"},
-  {name:"Romeo Doubs",pos:"WR",age:26,team:"NE",proj:{PPR:162,Half:149,Standard:136},adp:25.5,ktcVal:3113,note:"65 rec 740 yds 6 TD"},
+  {name:"Romeo Doubs",pos:"WR",age:26,team:"NE",proj:{PPR:162,Half:149,Standard:136},adp:25.5,ktcVal:4140,note:"65 rec 740 yds 6 TD"},
   // More RB Wave 24
   {name:"Sean Tucker",pos:"RB",age:25,team:"TB",proj:{PPR:135,Half:124,Standard:113},adp:29.5,ktcVal:3179,note:"TB committee: 520 rush 48 rec"},
   // More TE Wave 24
