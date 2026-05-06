@@ -4544,6 +4544,102 @@ export default function App(){
                 }),
                 tips.length===0&&React.createElement("div",{style:{fontSize:12,color:T.textSub,textAlign:"center",padding:16}},"Import your league roster for personalized advice")
               );
+            })(),
+            // League Trade Finder
+            powerRankingTeams&&powerRankingTeams.length>1&&(function(){
+              var myTeam=powerRankingTeams[adviceTeam]||powerRankingTeams[0];
+              if(!myTeam.players||myTeam.players.length===0)return null;
+              var myPlrs=myTeam.players.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;});
+              // Identify my needs (positions with low depth or value)
+              var myPosCts={QB:0,RB:0,WR:0,TE:0};var myPosVal={QB:0,RB:0,WR:0,TE:0};
+              myPlrs.forEach(function(p){myPosCts[p.pos]++;myPosVal[p.pos]+=(p.tradeVal||0);});
+              var myNeeds=[];
+              if(myPosCts.QB<2||myPosVal.QB<4000)myNeeds.push("QB");
+              if(myPosCts.RB<4||myPosVal.RB<8000)myNeeds.push("RB");
+              if(myPosCts.WR<4||myPosVal.WR<8000)myNeeds.push("WR");
+              if(myPosCts.TE<2||myPosVal.TE<3000)myNeeds.push("TE");
+              // Identify my sell candidates (aging, post-prime, surplus positions)
+              var mySells=myPlrs.filter(function(p){
+                var hi=PRIME[p.pos]?PRIME[p.pos][1]:30;
+                return (p.age||25)>=hi&&(p.tradeVal||0)>=1000;
+              }).concat(myPlrs.filter(function(p){
+                return myPosCts[p.pos]>=4&&(p.tradeVal||0)>=1000&&(p.tradeVal||0)<myPosVal[p.pos]*0.3;
+              })).sort(function(a,b){return (b.tradeVal||0)-(a.tradeVal||0);});
+              // Dedupe sells
+              var sellSeen={};mySells=mySells.filter(function(p){if(sellSeen[p.name])return false;sellSeen[p.name]=true;return true;});
+              // Find trades with other teams
+              var trades=[];
+              powerRankingTeams.forEach(function(otherTeam,oi){
+                if(oi===adviceTeam||!otherTeam.players||otherTeam.players.length===0)return;
+                var theirPlrs=otherTeam.players.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;});
+                var theirPosCts={QB:0,RB:0,WR:0,TE:0};
+                theirPlrs.forEach(function(p){theirPosCts[p.pos]++;});
+                var theirNeeds=[];
+                if(theirPosCts.QB<2)theirNeeds.push("QB");
+                if(theirPosCts.RB<4)theirNeeds.push("RB");
+                if(theirPosCts.WR<4)theirNeeds.push("WR");
+                if(theirPosCts.TE<2)theirNeeds.push("TE");
+                // Find players I want from them (fill my needs)
+                myNeeds.forEach(function(needPos){
+                  var targets=theirPlrs.filter(function(p){return p.pos===needPos&&(p.tradeVal||0)>=1500;}).sort(function(a,b){return (b.tradeVal||0)-(a.tradeVal||0);});
+                  if(targets.length===0)return;
+                  var target=targets[0];
+                  // Find what I can offer that fills their need
+                  var offer=null;
+                  theirNeeds.forEach(function(tn){
+                    if(offer)return;
+                    offer=mySells.find(function(p){return p.pos===tn&&Math.abs((p.tradeVal||0)-(target.tradeVal||0))<(target.tradeVal||1)*0.35;});
+                  });
+                  if(!offer)offer=mySells.find(function(p){return Math.abs((p.tradeVal||0)-(target.tradeVal||0))<(target.tradeVal||1)*0.3;});
+                  if(!offer||offer.name===target.name)return;
+                  var diff=Math.abs((offer.tradeVal||0)-(target.tradeVal||0));
+                  var fairness=Math.max(offer.tradeVal||0,target.tradeVal||0)>0?diff/Math.max(offer.tradeVal||0,target.tradeVal||0):1;
+                  if(fairness>0.35)return;
+                  trades.push({team:otherTeam.name,give:offer,get:target,diff:diff,fairness:fairness,fillsNeed:needPos});
+                });
+              });
+              trades.sort(function(a,b){return a.fairness-b.fairness;});
+              trades=trades.slice(0,5);
+              if(trades.length===0)return null;
+              return React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:14,padding:16,marginTop:14}},
+                React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:12}},
+                  React.createElement("span",{style:{fontSize:18}},"🔍"),
+                  React.createElement("div",null,
+                    React.createElement("div",{style:{fontWeight:800,fontSize:15}},"Trade Finder"),
+                    React.createElement("div",{style:{fontSize:10,color:T.textSub}},"Fair trades with league mates based on team needs")
+                  )
+                ),
+                trades.map(function(tr,ti){
+                  var pctFair=Math.round((1-tr.fairness)*100);
+                  return React.createElement("div",{key:ti,style:{background:T.bgInput,borderRadius:12,padding:"12px",marginBottom:8,border:"1px solid "+T.border}},
+                    React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}},
+                      React.createElement("span",{style:{fontSize:11,fontWeight:700,color:T.textSub}},tr.team),
+                      React.createElement("span",{style:{fontSize:9,fontWeight:800,color:pctFair>=85?T.green:pctFair>=70?T.gold:T.textSub,background:(pctFair>=85?T.green:pctFair>=70?T.gold:T.textSub)+"18",borderRadius:6,padding:"2px 6px"}},pctFair+"% fair")
+                    ),
+                    React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 30px 1fr",gap:6,alignItems:"center"}},
+                      React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6}},
+                        React.createElement(Avatar,{name:tr.give.name,pos:tr.give.pos,size:24}),
+                        React.createElement("div",null,
+                          React.createElement("div",{style:{fontSize:11,fontWeight:700}},tr.give.name),
+                          React.createElement("div",{style:{fontSize:9,color:T.textSub}},tr.give.pos+" · "+(tr.give.tradeVal||0).toLocaleString())
+                        )
+                      ),
+                      React.createElement("div",{style:{textAlign:"center",fontSize:12,color:T.textDim}},"⇄"),
+                      React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6}},
+                        React.createElement(Avatar,{name:tr.get.name,pos:tr.get.pos,size:24}),
+                        React.createElement("div",null,
+                          React.createElement("div",{style:{fontSize:11,fontWeight:700}},tr.get.name),
+                          React.createElement("div",{style:{fontSize:9,color:T.textSub}},tr.get.pos+" · "+(tr.get.tradeVal||0).toLocaleString())
+                        )
+                      )
+                    ),
+                    React.createElement("div",{style:{display:"flex",gap:6,marginTop:8}},
+                      React.createElement("span",{style:{fontSize:9,color:T.green,background:T.green+"18",borderRadius:4,padding:"2px 6px",fontWeight:700}},"Fills "+tr.fillsNeed+" need"),
+                      React.createElement("button",{onClick:function(){var giveP=rankedPlayers.find(function(p){return p.name===tr.give.name;})||tr.give;var getP=rankedPlayers.find(function(p){return p.name===tr.get.name;})||tr.get;setTradeA([giveP]);setTradeB([getP]);setAnalyzed(false);setTab("trade");},style:{fontSize:9,fontWeight:700,color:T.purpleLight,background:T.purple+"18",border:"1px solid "+T.purple+"33",borderRadius:4,padding:"2px 8px",cursor:"pointer",marginLeft:"auto"}},"Analyze →")
+                    )
+                  );
+                })
+              );
             })()
           );
         })()
@@ -4958,8 +5054,27 @@ export default function App(){
           var confColor=margin>8?T.green:margin>3?T.gold:T.textSub;
           var gs1=getGameScript(sitP1.team,oddsData);
           var gs2=getGameScript(sitP2.team,oddsData);
+          // Floor/ceiling estimates (±variance based on position)
+          var variance={QB:0.18,RB:0.28,WR:0.26,TE:0.30,DL:0.25,LB:0.22,DB:0.25};
+          var p1var=variance[sitP1.pos]||0.25;var p2var=variance[sitP2.pos]||0.25;
+          var p1floor=+(p1pts*(1-p1var)).toFixed(1),p1ceil=+(p1pts*(1+p1var)).toFixed(1);
+          var p2floor=+(p2pts*(1-p2var)).toFixed(1),p2ceil=+(p2pts*(1+p2var)).toFixed(1);
+          // Game script boost
+          var gs1Boost=gs1?(gs1.script==="smash"?1.08:gs1.script==="favorable"?1.04:gs1.script==="neutral"?1:gs1.script==="tough"?0.96:0.92):1;
+          var gs2Boost=gs2?(gs2.script==="smash"?1.08:gs2.script==="favorable"?1.04:gs2.script==="neutral"?1:gs2.script==="tough"?0.96:0.92):1;
+          // Reasons
+          var reasons=[];
+          if(Math.abs(p1pts-p2pts)>2)reasons.push(starter.name+" projects "+(margin)+" more pts in "+sitFormat);
+          if(gs1Boost!==1||gs2Boost!==1){var betterGS=gs1Boost>gs2Boost?sitP1:gs2Boost>gs1Boost?sitP2:null;if(betterGS)reasons.push(betterGS.name+" has a better game script matchup");}
+          if(starter.posRank<sitter.posRank)reasons.push(starter.name+" is ranked higher at "+starter.pos+" (#"+starter.posRank+" vs #"+sitter.posRank+")");
+          var starterCeil=starter===sitP1?p1ceil:p2ceil;var sitterCeil=sitter===sitP1?p1ceil:p2ceil;
+          if(starterCeil>sitterCeil)reasons.push(starter.name+" has a higher ceiling ("+starterCeil+" vs "+sitterCeil+")");
+          var starterFloor=starter===sitP1?p1floor:p2floor;var sitterFloor=sitter===sitP1?p1floor:p2floor;
+          if(starterFloor>sitterFloor)reasons.push(starter.name+" has a safer floor ("+starterFloor+" vs "+sitterFloor+")");
           var rows=[
             ["Proj Pts ("+sitFormat+")",p1pts.toFixed(1),p2pts.toFixed(1),false],
+            ["Floor",p1floor,p2floor,false],
+            ["Ceiling",p1ceil,p2ceil,false],
             ["Trade Value",(sitP1.tradeVal||0).toLocaleString(),(sitP2.tradeVal||0).toLocaleString(),false],
             ["Position Rank","#"+(sitP1.posRank||"—"),"#"+(sitP2.posRank||"—"),true],
             ["Age",sitP1.age,sitP2.age,true],
@@ -4970,9 +5085,16 @@ export default function App(){
               React.createElement("div",{style:{fontSize:13,color:T.textSub,marginBottom:6}},"START"),
               React.createElement("div",{style:{fontWeight:900,fontSize:28,color:T.purple,marginBottom:4}},starter.name),
               React.createElement("div",{style:{fontSize:13,color:T.textSub,marginBottom:12}},starter.pos+" · "+starter.team),
-              React.createElement("div",{style:{display:"inline-flex",alignItems:"center",gap:8,background:confColor+"22",border:"1px solid "+confColor+"44",borderRadius:20,padding:"6px 16px"}},
+              React.createElement("div",{style:{display:"inline-flex",alignItems:"center",gap:8,background:confColor+"22",border:"1px solid "+confColor+"44",borderRadius:20,padding:"6px 16px",marginBottom:reasons.length>0?12:0}},
                 React.createElement("span",{style:{fontWeight:700,fontSize:13,color:confColor}},confidence+" Edge"),
                 React.createElement("span",{style:{fontSize:13,color:T.textSub}},"+"+margin+" projected pts")
+              ),
+              reasons.length>0&&React.createElement("div",{style:{textAlign:"left",maxWidth:320,margin:"0 auto"}},
+                React.createElement("div",{style:{fontSize:9,fontWeight:800,color:T.textDim,letterSpacing:1,marginBottom:6}},"WHY "+starter.name.split(" ").pop().toUpperCase()+"?"),
+                reasons.slice(0,4).map(function(r,ri){return React.createElement("div",{key:ri,style:{display:"flex",alignItems:"flex-start",gap:6,marginBottom:4}},
+                  React.createElement("span",{style:{color:T.green,fontSize:10,marginTop:1}},"✓"),
+                  React.createElement("span",{style:{fontSize:11,color:T.textSub}},r)
+                );})
               )
             ),
             React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:16,marginBottom:14}},
@@ -6809,6 +6931,40 @@ export default function App(){
                 );
               })
             ),
+            // Visual stat bars
+            (function(){
+              var maxVal=Math.max(compareP1.tradeVal,compareP2.tradeVal,1);
+              var maxPts=Math.max(compareP1.pts,compareP2.pts,1);
+              var bars=[
+                {label:"Dynasty Value",v1:compareP1.tradeVal,v2:compareP2.tradeVal,max:maxVal,fmt:function(v){return v.toLocaleString();}},
+                {label:"Projected Pts",v1:compareP1.pts,v2:compareP2.pts,max:maxPts,fmt:function(v){return v.toFixed(1);}},
+                {label:"Age Curve",v1:ab1*100,v2:ab2*100,max:Math.max(ab1,ab2,1)*100,fmt:function(v){return v>=100?"+"+Math.round(v-100)+"%":"-"+Math.round(100-v)+"%";}},
+                {label:"Pos Rank",v1:Math.max(1,50-(compareP1.posRank||50)),v2:Math.max(1,50-(compareP2.posRank||50)),max:49,fmt:function(v){return "#"+Math.max(1,50-Math.round(v));}}
+              ];
+              return React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"14px 16px",marginBottom:12}},
+                React.createElement("div",{style:{fontSize:10,fontWeight:800,color:T.textDim,letterSpacing:1,marginBottom:10}},"HEAD-TO-HEAD"),
+                bars.map(function(b){
+                  var pct1=b.max>0?Math.round(b.v1/b.max*100):0;
+                  var pct2=b.max>0?Math.round(b.v2/b.max*100):0;
+                  var w1=b.v1>b.v2;
+                  return React.createElement("div",{key:b.label,style:{marginBottom:10}},
+                    React.createElement("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:3}},
+                      React.createElement("span",{style:{fontSize:10,fontWeight:700,color:w1?T.purple:T.textSub}},b.fmt(b.v1)),
+                      React.createElement("span",{style:{fontSize:9,color:T.textDim,fontWeight:600}},b.label),
+                      React.createElement("span",{style:{fontSize:10,fontWeight:700,color:!w1?T.purple:T.textSub}},b.fmt(b.v2))
+                    ),
+                    React.createElement("div",{style:{display:"flex",gap:3,height:8}},
+                      React.createElement("div",{style:{flex:1,display:"flex",justifyContent:"flex-end"}},
+                        React.createElement("div",{style:{width:pct1+"%",height:"100%",background:w1?T.purple:T.textDim+"44",borderRadius:"4px 0 0 4px",transition:"width 0.3s"}})
+                      ),
+                      React.createElement("div",{style:{flex:1}},
+                        React.createElement("div",{style:{width:pct2+"%",height:"100%",background:!w1?T.purple:T.textDim+"44",borderRadius:"0 4px 4px 0",transition:"width 0.3s"}})
+                      )
+                    )
+                  );
+                })
+              );
+            })(),
             React.createElement("div",{style:{background:verdictColor+"18",border:"1px solid "+verdictColor+"44",borderRadius:12,padding:"12px 16px",textAlign:"center",marginBottom:10}},
               React.createElement("div",{style:{fontSize:11,color:T.textSub,fontWeight:700,marginBottom:4}},"DYNASTY VERDICT"),
               React.createElement("div",{style:{fontWeight:800,fontSize:15,color:verdictColor}},verdictText)
