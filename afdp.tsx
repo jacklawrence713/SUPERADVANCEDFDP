@@ -4097,8 +4097,9 @@ export default function App(){
             score+=oldPct*12; // lots of 30+ pushes win-now
             score-=youngPct*12; // lots of u25 pushes rebuilding
             // Value signals — strongest factor, best teams should contend/win-now
-            if(valRank===1)score+=16; // #1 value team is contending or win-now
-            else if(valRank===2)score+=12;
+            if(valRank===1)score+=18; // #1 value team is contending or win-now
+            else if(valRank===2)score+=14;
+            else if(valRank===3)score+=11; // top 3 should lean contending
             else if(topThird)score+=8;
             else if(botThird)score-=10;
             if(valRatio>1.3)score+=6; // significantly above median
