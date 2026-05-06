@@ -770,7 +770,6 @@ const PLAYERS=[
   {name:"Salvon Ahmed",pos:"RB",age:27,team:"MIA",proj:{PPR:98,Half:90,Standard:82},adp:40.0,ktcVal:400,note:"Speed depth back"},
   {name:"Ronnie Rivers",pos:"RB",age:28,team:"LAR",proj:{PPR:98,Half:90,Standard:82},adp:40.5,ktcVal:400,note:"Pass-catching depth"},
   // WR wave 3
-  {name:"Nathaniel Dell",pos:"WR",age:25,team:"HOU",proj:{PPR:192,Half:177,Standard:162},adp:21.2,ktcVal:3200,note:"YAC threat: 78 rec 880 yds 6 TD"},
   {name:"Parker Washington",pos:"WR",age:24,team:"JAX",proj:{PPR:155,Half:143,Standard:131},adp:28.2,ktcVal:4400,note:"Slot: 60 rec 660 yds"},
   {name:"Jalin Hyatt",pos:"WR",age:24,team:"NYG",proj:{PPR:148,Half:136,Standard:124},adp:29.5,ktcVal:1800,note:"Deep threat: 55 rec 680 yds"},
   {name:"Keenan Allen",pos:"WR",age:33,team:"LAC",proj:{PPR:162,Half:149,Standard:136},adp:27.0,ktcVal:2055,note:"Veteran slot: 68 rec 720 yds"},
