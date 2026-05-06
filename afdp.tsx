@@ -4092,12 +4092,28 @@ export default function App(){
                 })
               );
             })(),
+            powerRankingTeams&&team.players&&team.players.length>0&&(function(){
+              // Roster needs — find weakest positions
+              var posCts={QB:0,RB:0,WR:0,TE:0};
+              team.players.forEach(function(p){if(posCts.hasOwnProperty(p.pos))posCts[p.pos]++;});
+              var needs=[];
+              if(posCts.QB<2)needs.push("QB");
+              if(posCts.RB<4)needs.push("RB");
+              if(posCts.WR<4)needs.push("WR");
+              if(posCts.TE<2)needs.push("TE");
+              if(needs.length===0)return null;
+              return React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,marginBottom:8,flexWrap:"wrap"}},
+                React.createElement("span",{style:{fontSize:9,fontWeight:800,color:T.textDim,letterSpacing:0.5}},"NEEDS:"),
+                needs.map(function(pos){return React.createElement("span",{key:pos,style:{fontSize:9,fontWeight:800,color:"#f97316",background:"#f9731618",border:"1px solid #f9731633",borderRadius:6,padding:"2px 6px"}},pos);})
+              );
+            })(),
             team.faab!=null&&React.createElement("div",{style:{background:T.bgInput,borderRadius:8,padding:"10px 12px",marginBottom:12}},
               React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:2}},"FAAB Remaining"),
               React.createElement("div",{style:{fontWeight:800,fontSize:18}},"$"+team.faab)
             ),
             React.createElement("div",{style:{display:"flex",gap:8,marginTop:team.faab!=null?0:12}},
               React.createElement("button",{onClick:function(){setRosterViewTeam(i);},style:{flex:1,padding:"11px",borderRadius:10,border:"1px solid "+T.border,background:"transparent",color:T.purple,fontWeight:700,fontSize:13,cursor:"pointer"}},"View Roster"),
+              powerRankingTeams&&React.createElement("button",{onClick:function(){setTradeRosterTeam(i);setTradeRosterSide("B");setTab("trade");},title:"Start trade with this team",style:{padding:"11px 14px",borderRadius:10,border:"1px solid "+T.purple+"44",background:T.purple+"18",color:T.purpleLight,fontWeight:700,fontSize:13,cursor:"pointer"}},"Trade ⇄"),
               powerRankingTeams&&React.createElement("button",{onClick:function(){downloadGradeCard(team);},title:"Download Roster Grade Card",style:{padding:"11px 14px",borderRadius:10,border:"1px solid "+T.border,background:T.bgInput,color:T.textSub,fontWeight:700,fontSize:13,cursor:"pointer"}},"⬇ Grade")
             )
           );
