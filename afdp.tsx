@@ -4549,8 +4549,11 @@ export default function App(){
           var wrs=teamPlrs.filter(function(p){return p.pos==="WR";});
           var tes=teamPlrs.filter(function(p){return p.pos==="TE";});
           var sortP=function(arr){return arr.slice().sort(function(a,b){return b.pts-a.pts;});};
-          var curSlots=[["QB",qbs[0]||null],["RB",rbs[0]||null],["RB",rbs[1]||null],["WR",wrs[0]||null],["WR",wrs[1]||null],["TE",tes[0]||null]];
-          var optSlots=[["QB",sortP(qbs)[0]||null],["RB",sortP(rbs)[0]||null],["RB",sortP(rbs)[1]||null],["WR",sortP(wrs)[0]||null],["WR",sortP(wrs)[1]||null],["TE",sortP(tes)[0]||null]];
+          var flexPool=[].concat(sortP(rbs).slice(2),sortP(wrs).slice(2),sortP(tes).slice(1)).sort(function(a,b){return b.pts-a.pts;});
+          var curFlex=flexPool[0]||null;
+          var optFlex=flexPool[0]||null;
+          var curSlots=[["QB",qbs[0]||null],["RB",rbs[0]||null],["RB",rbs[1]||null],["WR",wrs[0]||null],["WR",wrs[1]||null],["TE",tes[0]||null],["FLEX",curFlex]];
+          var optSlots=[["QB",sortP(qbs)[0]||null],["RB",sortP(rbs)[0]||null],["RB",sortP(rbs)[1]||null],["WR",sortP(wrs)[0]||null],["WR",sortP(wrs)[1]||null],["TE",sortP(tes)[0]||null],["FLEX",optFlex]];
           var bench=teamPlrs.filter(function(p){return !curSlots.find(function(s){return s[1]&&s[1].name===p.name;});}).slice(0,5);
           var curPts=curSlots.reduce(function(s,sl){return s+(sl[1]?sl[1].pts:0);},0);
           var optPts=optSlots.reduce(function(s,sl){return s+(sl[1]?sl[1].pts:0);},0);
@@ -4835,6 +4838,30 @@ export default function App(){
                 React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:2}},"Edge goes to"),
                 React.createElement("div",{style:{fontWeight:900,fontSize:16,color:T.purple}},winner.name)
               )
+            ),
+            (Array.isArray(t1.players)&&Array.isArray(t2.players))&&React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:16,marginTop:10}},
+              React.createElement("div",{style:{fontWeight:800,fontSize:14,marginBottom:10,color:T.purple}},"Position Breakdown"),
+              ["QB","RB","WR","TE"].map(function(pos){
+                var v1=t1.players.filter(function(p){return p.pos===pos;}).reduce(function(s,p){return s+(p.tradeVal||0);},0);
+                var v2=t2.players.filter(function(p){return p.pos===pos;}).reduce(function(s,p){return s+(p.tradeVal||0);},0);
+                var mx=Math.max(v1,v2,1);
+                var pc=POS_COLORS[pos]||"#888";
+                return React.createElement("div",{key:pos,style:{marginBottom:10}},
+                  React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}},
+                    React.createElement("span",{style:{fontWeight:700,fontSize:12,color:v1>=v2?pc:T.textSub}},v1>=1000?(v1/1000).toFixed(1)+"k":v1),
+                    React.createElement("span",{style:{fontWeight:800,fontSize:11,color:pc}},pos),
+                    React.createElement("span",{style:{fontWeight:700,fontSize:12,color:v2>=v1?pc:T.textSub}},v2>=1000?(v2/1000).toFixed(1)+"k":v2)
+                  ),
+                  React.createElement("div",{style:{display:"flex",gap:4,height:6}},
+                    React.createElement("div",{style:{flex:1,display:"flex",justifyContent:"flex-end"}},
+                      React.createElement("div",{style:{width:Math.round(v1/mx*100)+"%",height:"100%",background:v1>=v2?pc:T.border,borderRadius:"4px 0 0 4px"}})
+                    ),
+                    React.createElement("div",{style:{flex:1}},
+                      React.createElement("div",{style:{width:Math.round(v2/mx*100)+"%",height:"100%",background:v2>=v1?pc:T.border,borderRadius:"0 4px 4px 0"}})
+                    )
+                  )
+                );
+              })
             )
           );
         })()
@@ -4872,16 +4899,21 @@ export default function App(){
           return React.createElement("div",{key:section[0],style:{marginBottom:20}},
             React.createElement("div",{style:{fontWeight:800,fontSize:16,marginBottom:10,color:section[2]}},section[0]+" Targets"),
             section[1].map(function(p){
-              return React.createElement("div",{key:p.name,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"12px 14px",marginBottom:8,display:"flex",alignItems:"center",gap:10}},
+              var ag=ageGrade(p.pos,p.age);
+              return React.createElement("div",{key:p.name,onClick:function(){addToTrade(p);},style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"12px 14px",marginBottom:8,display:"flex",alignItems:"center",gap:10,cursor:"pointer"}},
                 React.createElement(Avatar,{name:p.name,pos:p.pos,size:32}),
                 React.createElement(PBadge,{pos:p.pos,rank:p.posRank}),
                 React.createElement("div",{style:{flex:1}},
                   React.createElement("div",{style:{fontWeight:700,fontSize:13}},p.name),
-                  React.createElement("div",{style:{fontSize:11,color:T.textSub}},p.team+" | Age "+p.age)
+                  React.createElement("div",{style:{fontSize:11,color:T.textSub,display:"flex",gap:4,alignItems:"center"}},
+                    React.createElement("span",null,p.team),
+                    React.createElement("span",{style:{color:ag.c,fontWeight:700}},ag.g),
+                    React.createElement("span",null,"Age "+p.age)
+                  )
                 ),
                 React.createElement("div",{style:{textAlign:"right"}},
                   React.createElement("div",{style:{fontWeight:800,fontSize:14,color:section[2]}},section[0]==="Buy Low"?"BUY":"SELL"),
-                  React.createElement("div",{style:{fontSize:11,color:T.textSub}},"val "+p.tradeVal)
+                  React.createElement("div",{style:{fontSize:11,color:T.purpleLight,fontWeight:700}},p.tradeVal.toLocaleString())
                 )
               );
             })
