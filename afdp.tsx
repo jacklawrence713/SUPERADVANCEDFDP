@@ -5365,21 +5365,30 @@ export default function App(){
 
       // IDP
       rankSubTab==="idp"&&React.createElement("div",{style:{padding:"16px"}},
-        React.createElement("div",{style:{fontWeight:900,fontSize:22,marginBottom:12}},"IDP Rankings"),
+        React.createElement("div",{style:{fontWeight:900,fontSize:22,marginBottom:4}},"IDP Rankings"),
+        React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:12}},"Dynasty values for defensive players · Tap to trade"),
         React.createElement("div",{style:{display:"flex",gap:6,flexWrap:"wrap",marginBottom:12}},
-          ["DL","LB","DB"].map(function(p){return React.createElement("button",{key:p,onClick:function(){setRankIdpPos(p);},style:{padding:"6px 16px",borderRadius:20,border:"1px solid "+(rankIdpPos===p?(POS_COLORS[p]||T.purple):T.border),background:rankIdpPos===p?(POS_COLORS[p]||T.purple)+"22":"transparent",color:rankIdpPos===p?(POS_COLORS[p]||T.purple):T.textSub,fontWeight:700,fontSize:12,cursor:"pointer"}},p);})
+          ["DL","LB","DB"].map(function(p){return React.createElement("button",{key:p,onClick:function(){setRankIdpPos(p);},style:{padding:"8px 18px",borderRadius:20,border:"1px solid "+(rankIdpPos===p?(POS_COLORS[p]||T.purple):T.border),background:rankIdpPos===p?(POS_COLORS[p]||T.purple)+"22":"transparent",color:rankIdpPos===p?(POS_COLORS[p]||T.purple):T.textSub,fontWeight:700,fontSize:13,cursor:"pointer"}},p);})
         ),
-        rankedPlayers.filter(function(p){return p.pos===rankIdpPos;}).map(function(p){
-          return React.createElement("div",{key:p.name,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"10px 14px",marginBottom:6,display:"flex",alignItems:"center",gap:10}},
-            React.createElement("span",{style:{fontWeight:800,fontSize:12,color:POS_COLORS[rankIdpPos]||T.purple,width:28,flexShrink:0}},rankIdpPos+(p.posRank)),
-            React.createElement(Avatar,{name:p.name,pos:p.pos,size:32}),
-            React.createElement("div",{style:{flex:1}},
+        rankedPlayers.filter(function(p){return p.pos===rankIdpPos;}).map(function(p,i){
+          var idpAg=ageGrade(p.pos,p.age);
+          var idpTier=tierLabel(p.posRank||99,p.pos);
+          return React.createElement("div",{key:p.name,onClick:function(){setTradeB([p]);setTradeA([]);setAnalyzed(false);setTab("trade");},style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"12px 14px",marginBottom:6,display:"flex",alignItems:"center",gap:10,cursor:"pointer"}},
+            React.createElement("div",{style:{fontWeight:800,fontSize:12,color:i<3?(POS_COLORS[rankIdpPos]||T.gold):T.textDim,width:24,flexShrink:0,textAlign:"center"}},i+1),
+            React.createElement(Avatar,{name:p.name,pos:p.pos,size:36}),
+            React.createElement("div",{style:{flex:1,minWidth:0}},
               React.createElement("div",{style:{fontWeight:700,fontSize:13}},p.name),
-              React.createElement("div",{style:{fontSize:10,color:T.textSub}},p.team+(p.age?" | Age "+p.age:"")+" | "+p.note)
+              React.createElement("div",{style:{display:"flex",alignItems:"center",gap:4,fontSize:10,color:T.textSub,flexWrap:"wrap"}},
+                React.createElement("span",{style:{fontWeight:600}},p.team),
+                p.age&&React.createElement("span",null,"· "+p.age),
+                React.createElement("span",{style:{color:idpAg.c,fontWeight:700}},idpAg.g),
+                React.createElement("span",{style:{color:idpTier.c,fontWeight:700,fontSize:9,background:idpTier.c+"18",borderRadius:4,padding:"0 4px"}},idpTier.t)
+              ),
+              p.note&&React.createElement("div",{style:{fontSize:9,color:T.textDim,marginTop:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.note)
             ),
-            React.createElement("div",{style:{textAlign:"right"}},
-              React.createElement("div",{style:{fontWeight:800,fontSize:14,color:T.purpleLight}},p.tradeVal),
-              React.createElement("div",{style:{fontSize:9,color:p.ag.c,fontWeight:700}},p.ag.g)
+            React.createElement("div",{style:{textAlign:"right",flexShrink:0}},
+              React.createElement("div",{style:{fontWeight:800,fontSize:14,color:T.purpleLight}},(p.tradeVal||0).toLocaleString()),
+              React.createElement("div",{style:{fontSize:9,color:T.textSub}},p.pts.toFixed(1)+" pts")
             )
           );
         })
@@ -6145,9 +6154,13 @@ export default function App(){
                 );
               })
             ),
-            React.createElement("div",{style:{background:verdictColor+"18",border:"1px solid "+verdictColor+"44",borderRadius:12,padding:"12px 16px",textAlign:"center"}},
+            React.createElement("div",{style:{background:verdictColor+"18",border:"1px solid "+verdictColor+"44",borderRadius:12,padding:"12px 16px",textAlign:"center",marginBottom:10}},
               React.createElement("div",{style:{fontSize:11,color:T.textSub,fontWeight:700,marginBottom:4}},"DYNASTY VERDICT"),
               React.createElement("div",{style:{fontWeight:800,fontSize:15,color:verdictColor}},verdictText)
+            ),
+            React.createElement("div",{style:{display:"flex",gap:8}},
+              React.createElement("button",{onClick:function(){setTradeA([compareP1]);setTradeB([compareP2]);setAnalyzed(false);setTab("trade");},style:{flex:1,padding:"10px",borderRadius:10,border:"1px solid "+T.purple,background:T.purple+"18",color:T.purpleLight,fontWeight:700,fontSize:12,cursor:"pointer"}},"Analyze as Trade →"),
+              React.createElement("button",{onClick:function(){var tmp1=compareP1,tmp2=compareP2;setCompareP1(tmp2);setCompareP2(tmp1);setCompareS1(tmp2.name);setCompareS2(tmp1.name);},style:{padding:"10px 14px",borderRadius:10,border:"1px solid "+T.border,background:T.bgInput,color:T.textSub,fontWeight:700,fontSize:12,cursor:"pointer"}},"Swap")
             )
           );
         })()
@@ -6292,12 +6305,19 @@ export default function App(){
           {tag:"TE",tagColor:"#f59e0b",title:"TEP dynasty: the top 6 TEs are all under 27",body:"Bowers (8,149), McBride (7,790), Loveland (6,641), Warren (6,342), Fannin (5,560), and LaPorta (5,500) — all under 27. The TE landscape has undergone a generational shift. If you're still relying on Kelce (2,874), Kittle (4,049), or Andrews (3,360), sell for youth. In TEP leagues, these young TEs are worth even more."},
           {tag:"TREND",tagColor:"#06b6d4",title:"2026 UDFAs worth a taxi squad spot",body:"Diego Pavia (QB, BAL) is a SF deep stash behind Lamar. Robert Henry Jr. (RB, WAS) was RB7 pre-draft with 6.9 YPC. Desmond Reid (RB, BUF) is explosive but tiny. Caullin Lacy (WR, NYJ) was a 1,300-yd producer in college. All are free adds — drop your worst taxi player for one of these lottery tickets."}
         ].map(function(r){
+          // Extract first player from body
+          var rpMatch=r.body.match(/^([A-Z][a-z'-]+(?:\s+[A-Z][a-z'-]+)+)\s*\(/);
+          var rpPlayer=rpMatch?rankedPlayers.find(function(p){return p.name===rpMatch[1];}):null;
           return React.createElement("div",{key:r.title,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:16,marginBottom:10}},
             React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:8}},
               React.createElement("span",{style:{background:r.tagColor+"22",color:r.tagColor,fontWeight:800,fontSize:11,padding:"3px 10px",borderRadius:20}},r.tag),
-              React.createElement("div",{style:{fontWeight:800,fontSize:15,color:T.text}},r.title)
+              React.createElement("div",{style:{fontWeight:800,fontSize:15,color:T.text,flex:1}},r.title)
             ),
-            React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.6}},r.body)
+            React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.6}},r.body),
+            rpPlayer&&React.createElement("button",{onClick:function(){setTradeB([rpPlayer]);setTradeA([]);setAnalyzed(false);setTab("trade");},style:{marginTop:8,display:"flex",alignItems:"center",gap:6,padding:"6px 12px",borderRadius:8,border:"1px solid "+T.purple+"44",background:T.purple+"11",color:T.purpleLight,fontWeight:700,fontSize:11,cursor:"pointer"}},
+              React.createElement(Avatar,{name:rpPlayer.name,pos:rpPlayer.pos,size:20}),
+              "Analyze "+rpPlayer.name+" Trade →"
+            )
           );
         }),
         React.createElement("div",{style:{fontSize:11,color:T.textDim,textAlign:"center",paddingTop:8}},"Reports reflect dynasty consensus as of May 2026. Values sourced from FDP dynasty rankings.")
