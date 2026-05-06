@@ -794,7 +794,7 @@ const PLAYERS=[
   // TE wave 3
   {name:"Dalton Schultz",pos:"TE",age:29,team:"HOU",proj:{PPR:112,Half:103,Standard:94},adp:26.8,ktcVal:2627,note:"Veteran: 46 rec 470 yds 4 TD"},
   {name:"Tyler Higbee",pos:"TE",age:31,team:"LAR",proj:{PPR:102,Half:93,Standard:84},adp:30.8,ktcVal:1200,note:"42 rec 430 yds 4 TD"},
-  {name:"Jonnu Smith",pos:"TE",age:30,team:"FA",proj:{PPR:108,Half:99,Standard:90},adp:28.8,ktcVal:1200,note:"42 rec 440 yds 5 TD · released PIT 2026"},
+  {name:"Jonnu Smith",pos:"TE",age:30,team:"FA",proj:{PPR:108,Half:99,Standard:90},adp:28.8,ktcVal:1453,note:"42 rec 440 yds 5 TD · released PIT 2026"},
   {name:"Mo Alie-Cox",pos:"TE",age:31,team:"IND",proj:{PPR:88,Half:81,Standard:74},adp:36.8,ktcVal:300,note:"Blocking/red zone depth"},
   {name:"Marcedes Lewis",pos:"TE",age:40,team:"GB",proj:{PPR:75,Half:69,Standard:63},adp:42.0,ktcVal:200,note:"Veteran blocker"},
   {name:"CJ Uzomah",pos:"TE",age:33,team:"NYJ",proj:{PPR:82,Half:75,Standard:68},adp:38.5,ktcVal:300,note:"Veteran blocking TE"},
