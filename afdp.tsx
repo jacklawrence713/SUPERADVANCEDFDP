@@ -4215,6 +4215,64 @@ export default function App(){
                 })
               )
             ),
+            (function(){
+              var totalVal=myPlayers.reduce(function(s,p){return s+(p.tradeVal||0);},0);
+              var avgAge=myPlayers.length>0?myPlayers.reduce(function(s,p){return s+(p.age||25);},0)/myPlayers.length:0;
+              var primeCount=myPlayers.filter(function(p){var lo=PRIME[p.pos]?PRIME[p.pos][0]:25;var hi=PRIME[p.pos]?PRIME[p.pos][1]:30;return (p.age||25)>=lo&&(p.age||25)<=hi;}).length;
+              var youngCount=myPlayers.filter(function(p){return (p.age||25)<(PRIME[p.pos]?PRIME[p.pos][0]:25);}).length;
+              var oldCount=myPlayers.filter(function(p){return (p.age||25)>(PRIME[p.pos]?PRIME[p.pos][1]:30);}).length;
+              var windowLabel=primeCount>=myPlayers.length*0.5?"Contending":youngCount>=myPlayers.length*0.5?"Rebuilding":"Transitioning";
+              var windowColor=windowLabel==="Contending"?T.green:windowLabel==="Rebuilding"?"#60a5fa":T.gold;
+              var posGrades=["QB","RB","WR","TE"].map(function(pos){
+                var posPlrs=myPlayers.filter(function(p){return p.pos===pos;});
+                var posVal=posPlrs.reduce(function(s,p){return s+(p.tradeVal||0);},0);
+                var best=posPlrs.length>0?posPlrs[0]:null;
+                var grade=pos==="QB"?(posVal>=10000?"A+":posVal>=7000?"A":posVal>=4000?"B":"C")
+                  :pos==="TE"?(posVal>=8000?"A+":posVal>=5000?"A":posVal>=2500?"B":"C")
+                  :(posVal>=20000?"A+":posVal>=14000?"A":posVal>=8000?"B":"C");
+                var gc=grade.startsWith("A")?T.green:grade==="B"?"#60a5fa":T.gold;
+                return {pos:pos,grade:grade,gc:gc,val:posVal,best:best,count:posPlrs.length};
+              });
+              return React.createElement("div",null,
+                React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:14,padding:16,marginBottom:16}},
+                  React.createElement("div",{style:{fontWeight:700,fontSize:14,marginBottom:12}},"Dynasty Window"),
+                  React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:12}},
+                    React.createElement("div",{style:{textAlign:"center"}},
+                      React.createElement("div",{style:{fontWeight:900,fontSize:22,color:T.green}},youngCount),
+                      React.createElement("div",{style:{fontSize:10,color:T.textSub}},"Pre-Prime")
+                    ),
+                    React.createElement("div",{style:{textAlign:"center"}},
+                      React.createElement("div",{style:{fontWeight:900,fontSize:22,color:T.purple}},primeCount),
+                      React.createElement("div",{style:{fontSize:10,color:T.textSub}},"In Prime")
+                    ),
+                    React.createElement("div",{style:{textAlign:"center"}},
+                      React.createElement("div",{style:{fontWeight:900,fontSize:22,color:T.red}},oldCount),
+                      React.createElement("div",{style:{fontSize:10,color:T.textSub}},"Post-Prime")
+                    )
+                  ),
+                  React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",background:windowColor+"15",border:"1px solid "+windowColor+"44",borderRadius:10}},
+                    React.createElement("div",null,
+                      React.createElement("div",{style:{fontWeight:800,fontSize:15,color:windowColor}},windowLabel),
+                      React.createElement("div",{style:{fontSize:11,color:T.textSub}},"Avg age: "+avgAge.toFixed(1)+" · Total value: "+totalVal.toLocaleString())
+                    ),
+                    React.createElement("div",{style:{fontWeight:900,fontSize:20,color:windowColor}},totalVal>=120000?"A+":totalVal>=100000?"A":totalVal>=85000?"A-":totalVal>=70000?"B+":totalVal>=58000?"B":totalVal>=47000?"B-":"C")
+                  )
+                ),
+                React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:14,padding:16,marginBottom:16}},
+                  React.createElement("div",{style:{fontWeight:700,fontSize:14,marginBottom:12}},"Positional Strength"),
+                  posGrades.map(function(pg){
+                    return React.createElement("div",{key:pg.pos,style:{display:"flex",alignItems:"center",gap:10,marginBottom:10,paddingBottom:10,borderBottom:"1px solid "+T.border}},
+                      React.createElement("div",{style:{width:36,height:36,borderRadius:8,background:pg.gc+"18",border:"1px solid "+pg.gc+"44",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:14,color:pg.gc,flexShrink:0}},pg.grade),
+                      React.createElement("div",{style:{flex:1}},
+                        React.createElement("div",{style:{fontWeight:700,fontSize:13}},pg.pos+" ("+pg.count+")"),
+                        pg.best&&React.createElement("div",{style:{fontSize:11,color:T.textSub}},"Best: "+pg.best.name+" ("+(pg.best.tradeVal||0).toLocaleString()+")")
+                      ),
+                      React.createElement("div",{style:{fontWeight:800,fontSize:13,color:T.purpleLight}},pg.val.toLocaleString())
+                    );
+                  })
+                )
+              );
+            })(),
             React.createElement("div",{style:{marginBottom:16}},
               React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:6,fontWeight:600}},"Check Bye Week"),
               React.createElement("input",{type:"number",value:byeWeek,onChange:function(e){setByeWeek(Number(e.target.value));},style:{background:T.bgInput,color:T.text,border:"1px solid "+T.border,borderRadius:10,padding:"10px 14px",fontSize:13,outline:"none",width:"60px"}})
