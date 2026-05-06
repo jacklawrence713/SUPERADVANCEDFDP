@@ -3631,7 +3631,7 @@ export default function App(){
           var pc=POS_COLORS[p.pos]||T.purple;
           return React.createElement("div",{key:p.name+"-t-"+i,style:{display:"flex",alignItems:"center",gap:5,flexShrink:0}},
             React.createElement("span",{style:{fontSize:9,fontWeight:800,color:pc}},p.pos),
-            React.createElement("span",{style:{fontSize:11,fontWeight:700,color:T.text}},p.name.split(" ").pop()),
+            React.createElement("span",{style:{fontSize:11,fontWeight:700,color:T.text}},(function(){var parts=p.name.split(" ");var last=parts[parts.length-1];var suffixes=["Jr.","Jr","II","III","IV","V","Sr.","Sr"];if(parts.length>=3&&suffixes.indexOf(last)>=0)return parts[parts.length-2]+" "+last;return last;})()),
             React.createElement("span",{style:{fontSize:11,fontWeight:800,color:T.purpleLight}},(p.tradeVal||0).toLocaleString())
           );
         })
