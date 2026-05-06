@@ -2616,7 +2616,7 @@ export default function App(){
   var [rankSubTab,setRankSubTab]=useState(function(){try{return localStorage.getItem('fdp_rankSubTab')||"allrankings";}catch(e){return"allrankings";}});
   var _setRankSubTab=setRankSubTab;setRankSubTab=function(v){_setRankSubTab(v);try{localStorage.setItem('fdp_rankSubTab',v);}catch(e){}};
   var [rankPos,setRankPos]=useState("QB");
-  var [rookieClassYear,setRookieClassYear]=useState("2026");
+
   var [rankFormat,setRankFormat]=useState("SF");
   var [pvTep,setPvTep]=useState(false);
   var [sfMode,setSfMode]=useState(false);
@@ -5351,121 +5351,23 @@ export default function App(){
 
       // ROOKIE PICKS
       rankSubTab==="rookie"&&React.createElement("div",{style:{padding:"16px"}},
-        React.createElement("div",{style:{fontWeight:900,fontSize:22,marginBottom:2}},"Rookie Class Grades"),
-        React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:12}},"Player grades, draft capital & dynasty upside"),
-        React.createElement("div",{style:{display:"flex",gap:8,marginBottom:16}},
-          [["2026","2026 Rookies"],["2025","2025 (Year 2)"]].map(function(yr){
-            var active=rookieClassYear===yr[0];
-            return React.createElement("button",{key:yr[0],onClick:function(){setRookieClassYear(yr[0]);},style:{padding:"8px 18px",borderRadius:10,border:"1px solid "+(active?T.purple:T.border),background:active?T.purple:"transparent",color:active?"#fff":T.textSub,fontWeight:700,fontSize:13,cursor:"pointer"}},yr[1]);
-          })
-        ),
-        (function(){
-          var ROOKIE_2026=[
-            {name:"Jeremiyah Love",pos:"RB",team:"ARI",grade:"A+",dc:"1.03 OA",fit:"A",note:"Elite three-down workhorse, immediate RB1 upside at 21",color:T.green},
-            {name:"Fernando Mendoza",pos:"QB",team:"LV",grade:"A",dc:"1.01 OA",fit:"A-",note:"#1 overall pick, elite arm talent, SF dynasty cornerstone",color:"#22c55e"},
-            {name:"Carnell Tate",pos:"WR",team:"TEN",grade:"A",dc:"1.04 OA",fit:"A-",note:"Dynasty WR1 ceiling, elite route runner, top-5 pick",color:"#22c55e"},
-            {name:"Jordyn Tyson",pos:"WR",team:"NO",grade:"A-",dc:"1.08 OA",fit:"B+",note:"Big-play vertical threat, explosive after the catch",color:"#86efac"},
-            {name:"Makai Lemon",pos:"WR",team:"PHI",grade:"A-",dc:"1.20 OA",fit:"A",note:"Elite athleticism in Philly's offense, dynasty WR2 upside",color:"#86efac"},
-            {name:"Jadarian Price",pos:"RB",team:"SEA",grade:"A-",dc:"1.32 OA",fit:"A",note:"Three-down back for Super Bowl champs, elite landing spot",color:"#86efac"},
-            {name:"Kenyon Sadiq",pos:"TE",team:"NYJ",grade:"B+",dc:"1.16 OA",fit:"A-",note:"Top TE prospect with elite upside, immediate target share",color:"#f59e0b"},
-            {name:"KC Concepcion",pos:"WR",team:"CLE",grade:"B+",dc:"1.24 OA",fit:"B",note:"Explosive slot weapon, could be WR1 for developing offense",color:"#f59e0b"},
-            {name:"Ty Simpson",pos:"QB",team:"LAR",grade:"B+",dc:"1.13 OA",fit:"B+",note:"Dual-threat upside in McVay system, SF dynasty stash",color:"#f59e0b"},
-            {name:"Carson Beck",pos:"QB",team:"ARI",grade:"B",dc:"3.01 OA",fit:"B",note:"Veteran pocket passer, lower ceiling but safe floor",color:"#fbbf24"},
-            {name:"Jonah Coleman",pos:"RB",team:"DEN",grade:"B",dc:"4.08 OA",fit:"B+",note:"Explosive workhorse RB, value pick with starting upside",color:"#fbbf24"},
-            {name:"Sonny Styles",pos:"LB",team:"WAS",grade:"A",dc:"1.07 OA",fit:"A",note:"IDP elite — coverage and pass rush, LB1 dynasty ceiling",color:"#22c55e"},
-          ];
-          var ROOKIE_2025=[
-            {name:"Ashton Jeanty",pos:"RB",team:"LV",grade:"A+",dc:"1.2 OA",fit:"A",note:"Elite rushing prospect, workhorse upside, immediate starter",color:T.green},
-            {name:"Travis Hunter",pos:"WR",team:"JAX",grade:"A+",dc:"2.2 OA",fit:"A",note:"Two-way star, elite WR upside, dynasty WR1 potential",color:T.green},
-            {name:"Cam Ward",pos:"QB",team:"TEN",grade:"A",dc:"1.1 OA",fit:"B+",note:"Elite arm talent, SF league must-have, Year 2 leap expected",color:"#22c55e"},
-            {name:"Tetairoa McMillan",pos:"WR",team:"CAR",grade:"A",dc:"1.1 OA",fit:"A-",note:"Massive target share, elite size/athleticism combo",color:"#22c55e"},
-            {name:"Omarion Hampton",pos:"RB",team:"LAC",grade:"A-",dc:"1.22 OA",fit:"B+",note:"Three-down back, great landing spot, immediate contributor",color:"#86efac"},
-            {name:"Tyler Warren",pos:"TE",team:"IND",grade:"A-",dc:"1.25 OA",fit:"A",note:"Rare TE prospect, top-5 dynasty TE upside within 2 years",color:"#86efac"},
-            {name:"Shedeur Sanders",pos:"QB",team:"CLE",grade:"B+",dc:"1.5 OA",fit:"B",note:"Elite accuracy, landing spot concern, SF value buy-low",color:"#f59e0b"},
-            {name:"Quinshon Judkins",pos:"RB",team:"CLE",grade:"B+",dc:"2.5 OA",fit:"B",note:"Power runner, committee risk early, long-term upside",color:"#f59e0b"},
-            {name:"Emeka Egbuka",pos:"WR",team:"TB",grade:"B+",dc:"1.28 OA",fit:"B+",note:"Slot demon, elite route runner, Evans heir apparent",color:"#f59e0b"},
-            {name:"Luther Burden III",pos:"WR",team:"CHI",grade:"B",dc:"2.39 OA",fit:"A",note:"Perfect landing spot, upside play at price",color:"#fbbf24"},
-            {name:"Harold Fannin Jr.",pos:"TE",team:"CLE",grade:"B",dc:"2.45 OA",fit:"B+",note:"Dominant college production, developing QB is key risk",color:"#fbbf24"},
-            {name:"Cam Skattebo",pos:"RB",team:"NYG",grade:"B",dc:"1.87 OA",fit:"B",note:"Physical runner, role TBD behind committee, value pick",color:"#fbbf24"},
-          ];
-          var ROOKIE_GRADES=rookieClassYear==="2026"?ROOKIE_2026:ROOKIE_2025;
-          return React.createElement("div",null,
-            React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:12,background:T.bgCard,border:"1px solid "+T.border,borderRadius:10,padding:"8px 10px"}},
-              [["Grade","Dynasty potential"],["DC","Draft capital"],["Fit","Team fit"]].map(function(l){return React.createElement("div",{key:l[0],style:{textAlign:"center"}},React.createElement("div",{style:{fontWeight:700,fontSize:11,color:T.purpleLight}},l[0]),React.createElement("div",{style:{fontSize:9,color:T.textDim}},l[1]));})
+        React.createElement("div",{style:{fontWeight:900,fontSize:22,marginBottom:2}},"Rookie Pick Values"),
+        React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:16}},"Trade values for draft picks"),
+        React.createElement("div",{style:{fontWeight:800,fontSize:16,marginBottom:10}},"2026 Pick Values"),
+        DRAFT_PICKS.map(function(pk){
+          var tierC=pk.round===1?"#f1c40f":pk.round===2?"#818cf8":"#4b5563";
+          return React.createElement("div",{key:pk.id,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"13px 16px",marginBottom:8,display:"flex",alignItems:"center",gap:12}},
+            React.createElement("div",{style:{width:40,height:40,borderRadius:10,background:tierC+"22",border:"1px solid "+tierC+"44",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:11,color:tierC,flexShrink:0,textAlign:"center"}},"R"+pk.round),
+            React.createElement("div",{style:{flex:1}},
+              React.createElement("div",{style:{fontWeight:700,fontSize:14}},pk.name),
+              React.createElement("div",{style:{fontSize:11,color:T.textSub,marginTop:2}},pk.note)
             ),
-            ROOKIE_GRADES.map(function(r){
-              var p=rankedPlayers.find(function(x){return x.name===r.name;});
-              return React.createElement("div",{key:r.name,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"13px 14px",marginBottom:8}},
-                React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10}},
-                  p&&React.createElement(Avatar,{name:r.name,pos:r.pos,size:40}),
-                  React.createElement("div",{style:{flex:1}},
-                    React.createElement("div",{style:{fontWeight:800,fontSize:14}},r.name),
-                    React.createElement("div",{style:{fontSize:11,color:T.textSub}},r.team+" · "+r.pos+(r.dc?" · Pick "+r.dc:""))
-                  ),
-                  React.createElement("div",{style:{width:40,height:40,borderRadius:10,background:r.color+"22",border:"2px solid "+r.color+"66",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:16,color:r.color,flexShrink:0}},r.grade)
-                ),
-                React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginTop:10}},
-                  [["Draft Capital",r.dc,T.gold],["Team Fit",r.fit,T.cyan],["Dynasty Val",p?p.tradeVal.toLocaleString():"N/A",T.purple]].map(function(s){
-                    return React.createElement("div",{key:s[0],style:{background:T.bgInput,borderRadius:8,padding:"7px 6px",textAlign:"center"}},
-                      React.createElement("div",{style:{fontSize:9,color:T.textSub,marginBottom:2}},s[0]),
-                      React.createElement("div",{style:{fontWeight:800,fontSize:13,color:s[2]}},s[1])
-                    );
-                  })
-                ),
-                React.createElement("div",{style:{fontSize:11,color:T.textSub,marginTop:8,lineHeight:1.5,borderTop:"1px solid "+T.border,paddingTop:8}},r.note)
-              );
-            }),
-            React.createElement("div",{style:{marginTop:24,fontWeight:900,fontSize:18,marginBottom:4}},"2026 Draft Class Preview"),
-            React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:12}},"Top prospects · Draft April 23-25 · Teams TBD"),
-            [
-              {name:"Jeremiyah Love",pos:"RB",team:"ARI",grade:"A+",dc:"1-3",fit:"ARI",note:"Elite workhorse RB — dynasty RB1 ceiling in Arizona",color:T.green},
-              {name:"Fernando Mendoza",pos:"QB",team:"LV",grade:"A",dc:"1-1",fit:"LV",note:"#1 overall pick to Raiders — elite arm, must-have in SF leagues",color:"#22c55e"},
-              {name:"Carnell Tate",pos:"WR",team:"TEN",grade:"A",dc:"1-4",fit:"TEN",note:"Top-5 WR pick to Titans — dynasty WR1 ceiling",color:"#22c55e"},
-              {name:"Kenyon Sadiq",pos:"TE",team:"NYJ",grade:"A-",dc:"1-16",fit:"NYJ",note:"Top TE to Jets — rare athleticism, long-term TE1 upside",color:"#86efac"},
-              {name:"Makai Lemon",pos:"WR",team:"PHI",grade:"A-",dc:"1-20",fit:"PHI",note:"Eagles WR — elite athleticism in great offensive system",color:"#86efac"},
-              {name:"Jadarian Price",pos:"RB",team:"SEA",grade:"B+",dc:"1-32",fit:"SEA",note:"Last 1st-rounder to Seahawks — three-down back solid floor",color:"#f59e0b"},
-              {name:"Omar Cooper Jr.",pos:"WR",team:"NYJ",grade:"B+",dc:"1-30",fit:"NYJ",note:"Jets WR — elite YAC, separation specialist pairs with Sadiq",color:"#f59e0b"},
-              {name:"Ty Simpson",pos:"QB",team:"LAR",grade:"B",dc:"1-13",fit:"LAR",note:"Rams QB — dual-threat upside, SF league developmental in McVay offense",color:"#fbbf24"},
-              {name:"Jordyn Tyson",pos:"WR",team:"NO",grade:"B",dc:"1-8",fit:"NO",note:"Saints WR — big-play vertical threat with target share upside",color:"#fbbf24"},
-            ].map(function(r){
-              var p=rankedPlayers.find(function(x){return x.name===r.name;});
-              return React.createElement("div",{key:r.name,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"13px 14px",marginBottom:8}},
-                React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10}},
-                  p&&React.createElement(Avatar,{name:r.name,pos:r.pos,size:40}),
-                  React.createElement("div",{style:{flex:1}},
-                    React.createElement("div",{style:{fontWeight:800,fontSize:14}},r.name),
-                    React.createElement("div",{style:{fontSize:11,color:T.textSub}},r.team+" · "+r.pos+" · Pick "+r.dc)
-                  ),
-                  React.createElement("div",{style:{width:40,height:40,borderRadius:10,background:r.color+"22",border:"2px solid "+r.color+"66",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:16,color:r.color,flexShrink:0}},r.grade)
-                ),
-                React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginTop:10}},
-                  [["Draft Cap",r.dc,T.gold],["Team Fit",r.fit,T.cyan],["Dynasty Val",p?p.tradeVal.toLocaleString():"TBD",T.purple]].map(function(s){
-                    return React.createElement("div",{key:s[0],style:{background:T.bgInput,borderRadius:8,padding:"7px 6px",textAlign:"center"}},
-                      React.createElement("div",{style:{fontSize:9,color:T.textSub,marginBottom:2}},s[0]),
-                      React.createElement("div",{style:{fontWeight:800,fontSize:13,color:s[2]}},s[1])
-                    );
-                  })
-                ),
-                React.createElement("div",{style:{fontSize:11,color:T.textSub,marginTop:8,lineHeight:1.5,borderTop:"1px solid "+T.border,paddingTop:8}},r.note)
-              );
-            }),
-            React.createElement("div",{style:{marginTop:20,fontWeight:800,fontSize:16,marginBottom:10}},"2026 Pick Values"),
-            DRAFT_PICKS.map(function(pk){
-              var tierC=pk.round===1?"#f1c40f":pk.round===2?"#818cf8":"#4b5563";
-              return React.createElement("div",{key:pk.id,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"13px 16px",marginBottom:8,display:"flex",alignItems:"center",gap:12}},
-                React.createElement("div",{style:{width:40,height:40,borderRadius:10,background:tierC+"22",border:"1px solid "+tierC+"44",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:11,color:tierC,flexShrink:0,textAlign:"center"}},"R"+pk.round),
-                React.createElement("div",{style:{flex:1}},
-                  React.createElement("div",{style:{fontWeight:700,fontSize:14}},pk.name),
-                  React.createElement("div",{style:{fontSize:11,color:T.textSub,marginTop:2}},pk.note)
-                ),
-                React.createElement("div",{style:{textAlign:"right"}},
-                  React.createElement("div",{style:{fontWeight:800,fontSize:15,color:tierC}},pk.est+" val"),
-                  React.createElement("div",{style:{fontSize:9,color:T.textSub,marginTop:2}},pk.round===1?"1st Round":pk.round===2?"2nd Round":"3rd Round")
-                )
-              );
-            })
+            React.createElement("div",{style:{textAlign:"right"}},
+              React.createElement("div",{style:{fontWeight:800,fontSize:15,color:tierC}},pk.est+" val"),
+              React.createElement("div",{style:{fontSize:9,color:T.textSub,marginTop:2}},pk.round===1?"1st Round":pk.round===2?"2nd Round":"3rd Round")
+            )
           );
-        })()
+        })
       ),
 
       // VEGAS LINES
