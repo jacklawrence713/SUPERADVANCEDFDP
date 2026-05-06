@@ -940,16 +940,16 @@ const PLAYERS=[
   {name:"Brett Rypien",pos:"QB",age:29,team:"LAR",proj:{PPR:198,Half:198,Standard:198},adp:33.5,ktcVal:300,note:"Emergency backup"},
   // Wave 7 — IDP CBs, more DL/LB, QB/skill depth
   // IDP Wave 7 — CBs
-  {name:"Jaire Alexander",pos:"DB",age:28,team:"GB",proj:{PPR:105,Half:105,Standard:105},adp:17.5,ktcVal:2800,note:"Elite CB: 52 tackles 4 INT when healthy"},
-  {name:"Carlton Davis III",pos:"DB",age:28,team:"DET",proj:{PPR:98,Half:98,Standard:98},adp:20.5,ktcVal:2200,note:"CB1: 58 tackles 3 INT"},
+  {name:"Jaire Alexander",pos:"DB",age:28,team:"PHI",proj:{PPR:105,Half:105,Standard:105},adp:17.5,ktcVal:2800,note:"Traded to PHI via BAL · elite CB: 52 tackles 4 INT"},
+  {name:"Carlton Davis III",pos:"DB",age:28,team:"NE",proj:{PPR:98,Half:98,Standard:98},adp:20.5,ktcVal:2200,note:"Signed NE 3yr/$60M · CB1: 58 tackles 3 INT"},
   {name:"Christian Gonzalez",pos:"DB",age:24,team:"NE",proj:{PPR:102,Half:102,Standard:102},adp:19.0,ktcVal:4500,note:"Year 3 CB: 62 tackles 4 INT"},
-  {name:"DJ Reed",pos:"DB",age:29,team:"NYJ",proj:{PPR:90,Half:90,Standard:90},adp:26.0,ktcVal:2200,note:"CB: 58 tackles 3 INT press coverage"},
+  {name:"DJ Reed",pos:"DB",age:29,team:"DET",proj:{PPR:90,Half:90,Standard:90},adp:26.0,ktcVal:2200,note:"Signed DET 3yr/$48M · CB: 58 tackles 3 INT"},
   {name:"Cam Smith",pos:"DB",age:24,team:"MIA",proj:{PPR:85,Half:85,Standard:85},adp:29.5,ktcVal:2200,note:"Year 3 CB: 55 tackles 2 INT"},
-  {name:"Chidobe Awuzie",pos:"DB",age:30,team:"CIN",proj:{PPR:88,Half:88,Standard:88},adp:27.5,ktcVal:1000,note:"Veteran CB: 60 tackles 2 INT"},
+  {name:"Chidobe Awuzie",pos:"DB",age:30,team:"BAL",proj:{PPR:88,Half:88,Standard:88},adp:27.5,ktcVal:1000,note:"Re-signed BAL 1yr/$5M · veteran CB: 60 tackles 2 INT"},
   {name:"Jaycee Horn",pos:"DB",age:27,team:"CAR",proj:{PPR:92,Half:92,Standard:92},adp:24.5,ktcVal:3200,note:"CB1 when healthy: 60 tackles 3 INT"},
   {name:"Kaiir Elam",pos:"DB",age:25,team:"BUF",proj:{PPR:78,Half:78,Standard:78},adp:34.5,ktcVal:2000,note:"CB Year 4: 52 tackles 2 INT"},
-  {name:"Tyson Campbell",pos:"DB",age:27,team:"JAX",proj:{PPR:88,Half:88,Standard:88},adp:27.0,ktcVal:2200,note:"CB1: 60 tackles 3 INT"},
-  {name:"Jeremy Chinn",pos:"DB",age:27,team:"CAR",proj:{PPR:92,Half:92,Standard:92},adp:24.0,ktcVal:1500,note:"S/LB hybrid: 85 tackles 2 sacks"},
+  {name:"Tyson Campbell",pos:"DB",age:27,team:"CLE",proj:{PPR:88,Half:88,Standard:88},adp:27.0,ktcVal:2200,note:"Traded to CLE Oct 2025 · CB1: 60 tackles 3 INT"},
+  {name:"Jeremy Chinn",pos:"DB",age:27,team:"LV",proj:{PPR:92,Half:92,Standard:92},adp:24.0,ktcVal:1500,note:"Signed LV Mar 2025 · S/LB hybrid: 85 tackles 2 sacks"},
   {name:"Jourdan Lewis",pos:"DB",age:30,team:"DAL",proj:{PPR:80,Half:80,Standard:80},adp:32.0,ktcVal:700,note:"Slot CB: 55 tackles 2 INT"},
   {name:"Damontae Kazee",pos:"DB",age:31,team:"PIT",proj:{PPR:78,Half:78,Standard:78},adp:33.5,ktcVal:800,note:"FS: 58 tackles 3 INT"},
   {name:"Darious Williams",pos:"DB",age:31,team:"LAR",proj:{PPR:72,Half:72,Standard:72},adp:38.0,ktcVal:700,note:"CB slot: 48 tackles 2 INT"},
@@ -975,7 +975,7 @@ const PLAYERS=[
   {name:"Carson Wentz",pos:"QB",age:34,team:"MIN",proj:{PPR:225,Half:225,Standard:225},adp:28.0,ktcVal:400,note:"MIN backup QB"},
   // WR Wave 7
   {name:"Robbie Anderson",pos:"WR",age:31,team:"FA",proj:{PPR:88,Half:81,Standard:74},adp:44.5,ktcVal:200,note:"Veteran deep threat"},
-  {name:"Brandin Cooks",pos:"WR",age:32,team:"BUF",proj:{PPR:102,Half:94,Standard:86},adp:38.5,ktcVal:400,note:"Speed receiver: 44 rec 520 yds"},
+  {name:"Brandin Cooks",pos:"WR",age:32,team:"FA",proj:{PPR:80,Half:73,Standard:66},adp:46.0,ktcVal:200,note:"UFA from BUF · in talks to re-sign · veteran deep threat"},
   {name:"Marquise Brown",pos:"WR",age:28,team:"PHI",proj:{PPR:112,Half:103,Standard:94},adp:35.5,ktcVal:1000,note:"Speed slot: 45 rec 540 yds"},
   {name:"Mecole Hardman Jr.",pos:"WR",age:28,team:"FA",proj:{PPR:95,Half:87,Standard:79},adp:42.0,ktcVal:300,note:"Speed: 38 rec 450 yds 4 TD"},
   // TE Wave 7
