@@ -4026,7 +4026,7 @@ export default function App(){
       React.createElement("div",{style:{position:"relative",borderBottom:"1px solid "+T.border}},
         isDesktop&&React.createElement("button",{onClick:function(){leagueTabsRef.current&&leagueTabsRef.current.scrollBy({left:-200,behavior:"smooth"});},style:{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",zIndex:2,background:T.bgCard,border:"1px solid "+T.border,borderRadius:"50%",width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:T.text,fontSize:14,padding:0}},"‹"),
         React.createElement("div",{ref:leagueTabsRef,style:{display:"flex",gap:8,overflowX:"auto",padding:isDesktop?"12px 36px":"12px 16px",scrollbarWidth:"none"}},
-          [["power","Power Rankings"],["pickpower","Pick Power Rankings"],["playoff","Playoff Odds"],["champ","Championship"],["advice","Team Advice"],["roster","Roster Health"],["waiver","Waiver Wire"],["lineup","Lineup"],["startsit","Start/Sit"],["trades","League Trades"],["auction","Auction"],["rivalry","Rivalry"],["recap","Recap"],["chat","Chat"],["alerts","Alerts"],["leagimport","Import"]].map(function(st){
+          [["power","Power Rankings"],["pickpower","Pick Power Rankings"],["playoff","Playoff Odds"],["champ","Championship"],["advice","Team Advice"],["roster","Roster Health"],["waiver","Waiver Wire"],["lineup","Lineup"],["startsit","Start/Sit"],["trades","League Trades"],["auction","Draft Room"],["rivalry","Rivalry"],["recap","Recap"],["chat","Chat"],["alerts","Alerts"],["leagimport","Import"]].map(function(st){
             var active=leagueSubTab===st[0];
             return React.createElement("button",{key:st[0],onClick:function(){
               setLeagueSubTab(st[0]);
@@ -5399,42 +5399,160 @@ export default function App(){
         var spent=myNoms.reduce(function(s,n){return s+n.price;},0);
         var remaining=auctionBudget-spent;
         var mySlots=myNoms.length;
-        // Roster size = teams setting treated as roster slots per team for single user
         var rosterSize=Math.max(1,auctionTeams);
         var slotsLeft=Math.max(0,rosterSize-mySlots);
-        var maxBid=remaining;
+        var maxBid=slotsLeft>1?remaining-(slotsLeft-1):remaining;
+        var avgPerSlot=slotsLeft>0?Math.round(remaining/slotsLeft):0;
+        var pctSpent=auctionBudget>0?Math.round(spent/auctionBudget*100):0;
         var bestAvail=rankedPlayers.filter(function(p){
-          return !soldNames.has(p.name)&&(auctionPosFilter==="ALL"||p.pos===auctionPosFilter);
+          return !soldNames.has(p.name)&&(auctionPosFilter==="ALL"||p.pos===auctionPosFilter)&&["QB","RB","WR","TE"].indexOf(p.pos)>=0;
         }).sort(function(a,b){return (b.auction||0)-(a.auction||0);}).slice(0,20);
         var posFilters=["ALL","QB","RB","WR","TE"];
+        // Roster composition for advisor
+        var myPosCts={QB:0,RB:0,WR:0,TE:0};
+        myNoms.forEach(function(n){if(myPosCts.hasOwnProperty(n.pos))myPosCts[n.pos]++;});
+        var idealRatio=rosterSize>=18?{QB:2,RB:5,WR:5,TE:2}:rosterSize>=14?{QB:2,RB:4,WR:4,TE:2}:{QB:1,RB:3,WR:3,TE:1};
+        var needs=[];
+        ["QB","RB","WR","TE"].forEach(function(pos){var gap=idealRatio[pos]-myPosCts[pos];if(gap>0)needs.push({pos:pos,gap:gap,have:myPosCts[pos],ideal:idealRatio[pos]});});
+        needs.sort(function(a,b){return b.gap-a.gap;});
         return React.createElement("div",{style:{padding:"16px"}},
           // Header
           React.createElement("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}},
             React.createElement("div",null,
-              React.createElement("div",{style:{fontWeight:900,fontSize:22}},"Auction Draft"),
-              React.createElement("div",{style:{fontSize:12,color:T.textSub}},"Live budget tracker & value guide")
+              React.createElement("div",{style:{fontWeight:900,fontSize:22}},"Draft Room"),
+              React.createElement("div",{style:{fontSize:12,color:T.textSub}},"Live budget tracker, draft advisor & value guide")
             ),
-            React.createElement("button",{onClick:function(){if(window.confirm("Reset all auction data?"))setAuctionNoms([]);},style:{fontSize:11,color:T.red,background:"none",border:"none",cursor:"pointer",fontWeight:700}},"Reset")
+            React.createElement("div",{style:{display:"flex",gap:6}},
+              React.createElement("button",{onClick:function(){
+                var text=rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;}).slice(0,100).map(function(p,i){return (i+1)+","+p.name+","+p.pos+","+p.team+","+(p.tradeVal||0)+","+(p.auction||1);}).join("\n");
+                var blob=new Blob(["Rank,Name,Pos,Team,Value,AuctionVal\n"+text],{type:"text/csv"});
+                var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="fdp-draft-values.csv";a.click();
+              },style:{padding:"6px 12px",borderRadius:8,border:"1px solid "+T.border,background:T.bgCard,color:T.text,fontWeight:700,fontSize:11,cursor:"pointer"}},"CSV"),
+              React.createElement("button",{onClick:function(){if(window.confirm("Reset all draft data?"))setAuctionNoms([]);},style:{fontSize:11,color:T.red,background:"none",border:"none",cursor:"pointer",fontWeight:700}},"Reset")
+            )
           ),
           // Settings row
-          React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}},
+          React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:12}},
             React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:10,padding:"10px 12px"}},
-              React.createElement("div",{style:{fontSize:9,color:T.textSub,fontWeight:700,marginBottom:4}},"YOUR BUDGET ($)"),
+              React.createElement("div",{style:{fontSize:9,color:T.textSub,fontWeight:700,marginBottom:4}},"BUDGET ($)"),
               React.createElement("input",{type:"number",value:auctionBudget,min:1,onChange:function(e){setAuctionBudget(Math.max(1,+e.target.value||1));},style:{background:"transparent",color:T.text,border:"none",fontSize:20,fontWeight:900,width:"100%",outline:"none"}})
             ),
             React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:10,padding:"10px 12px"}},
               React.createElement("div",{style:{fontSize:9,color:T.textSub,fontWeight:700,marginBottom:4}},"ROSTER SLOTS"),
               React.createElement("input",{type:"number",value:auctionTeams,onChange:function(e){setAuctionTeams(+e.target.value||10);},style:{background:"transparent",color:T.text,border:"none",fontSize:20,fontWeight:900,width:"100%",outline:"none"}})
+            ),
+            React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:10,padding:"10px 12px"}},
+              React.createElement("div",{style:{fontSize:9,color:T.textSub,fontWeight:700,marginBottom:4}},"LEAGUE TEAMS"),
+              React.createElement("input",{type:"number",value:draftLeagueSize,min:2,max:20,onChange:function(e){setDraftLeagueSize(Math.max(2,Math.min(20,+e.target.value||12)));},style:{background:"transparent",color:T.text,border:"none",fontSize:20,fontWeight:900,width:"100%",outline:"none"}})
             )
           ),
-          // Budget stats
-          React.createElement("div",{style:{background:T.purpleDim,border:"1px solid "+T.borderPurple,borderRadius:12,padding:"12px 14px",marginBottom:12,display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:4}},
-            [["Spent","$"+spent,T.red],["Left","$"+remaining,remaining<20?T.red:T.green],["Max Bid","$"+Math.max(1,maxBid),T.gold],["Slots Left",slotsLeft,T.textSub]].map(function(s){
-              return React.createElement("div",{key:s[0],style:{textAlign:"center"}},
-                React.createElement("div",{style:{fontSize:8,color:T.textDim,fontWeight:700,letterSpacing:0.5,marginBottom:2}},s[0]),
-                React.createElement("div",{style:{fontWeight:900,fontSize:16,color:s[2]}},s[1])
-              );
-            })
+          // Budget bar + stats
+          React.createElement("div",{style:{background:T.purpleDim,border:"1px solid "+T.borderPurple,borderRadius:12,padding:"12px 14px",marginBottom:12}},
+            React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}},
+              React.createElement("div",{style:{fontSize:11,fontWeight:700,color:T.textSub}},"Budget"),
+              React.createElement("div",{style:{fontSize:13,fontWeight:900,color:remaining<20?T.red:remaining<50?T.gold:T.green}},"$"+remaining+" remaining")
+            ),
+            React.createElement("div",{style:{background:T.border,borderRadius:99,height:8,overflow:"hidden",marginBottom:8}},
+              React.createElement("div",{style:{width:Math.min(100,pctSpent)+"%",height:"100%",background:pctSpent>90?T.red:pctSpent>70?T.gold:T.green,borderRadius:99,transition:"width 0.3s"}})
+            ),
+            React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:4}},
+              [["Spent","$"+spent,T.red],["Left","$"+remaining,remaining<20?T.red:T.green],["Max Bid","$"+Math.max(1,maxBid),T.gold],["Slots Left",slotsLeft+"/"+rosterSize,T.textSub]].map(function(s){
+                return React.createElement("div",{key:s[0],style:{textAlign:"center"}},
+                  React.createElement("div",{style:{fontSize:8,color:T.textDim,fontWeight:700,letterSpacing:0.5,marginBottom:2}},s[0]),
+                  React.createElement("div",{style:{fontWeight:900,fontSize:16,color:s[2]}},s[1])
+                );
+              })
+            )
+          ),
+          // Round tracker
+          auctionNoms.length>0&&React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:12}},
+            React.createElement("div",{style:{fontSize:11,fontWeight:700,color:T.textSub}},"Round "+(Math.floor(auctionNoms.length/Math.max(1,draftLeagueSize))+1)+", Pick "+(auctionNoms.length%Math.max(1,draftLeagueSize)+1)),
+            React.createElement("div",{style:{flex:1,height:4,background:T.border,borderRadius:4,overflow:"hidden"}},
+              React.createElement("div",{style:{width:Math.min(100,(auctionNoms.length%Math.max(1,draftLeagueSize))/Math.max(1,draftLeagueSize)*100)+"%",height:"100%",background:T.purple,borderRadius:4}})
+            ),
+            React.createElement("div",{style:{fontSize:11,fontWeight:800,color:T.purple}},auctionNoms.length+" picks")
+          ),
+          // Best Available quick-pick bar
+          React.createElement("div",{style:{background:"linear-gradient(135deg,#1e1040,#0f172a)",border:"1px solid "+T.borderPurple,borderRadius:14,padding:"12px 14px",marginBottom:12}},
+            React.createElement("div",{style:{fontSize:10,fontWeight:800,color:T.purpleLight,letterSpacing:1,marginBottom:8}},"BEST AVAILABLE"),
+            React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6}},
+              ["QB","RB","WR","TE"].map(function(pos){
+                var posAvail=rankedPlayers.filter(function(p){return p.pos===pos&&!soldNames.has(p.name);}).sort(function(a,b){return (b.auction||0)-(a.auction||0);});
+                var bp=posAvail[0];
+                if(!bp)return React.createElement("div",{key:pos,style:{textAlign:"center",opacity:0.4}},React.createElement("div",{style:{fontSize:9,fontWeight:700,color:POS_COLORS[pos]||T.textSub}},pos),React.createElement("div",{style:{fontSize:10,color:T.textDim}},"\u2014"));
+                return React.createElement("div",{key:pos,onClick:function(){setAuctionBidPlayer(bp);setAuctionSearch(bp.name);},style:{textAlign:"center",cursor:"pointer",background:T.bgCard+"88",borderRadius:8,padding:"6px 4px"}},
+                  React.createElement("div",{style:{fontSize:9,fontWeight:800,color:POS_COLORS[pos]||T.textSub,letterSpacing:0.5,marginBottom:2}},pos),
+                  React.createElement(Avatar,{name:bp.name,pos:bp.pos,size:28}),
+                  React.createElement("div",{style:{fontSize:10,fontWeight:700,color:T.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",marginTop:2}},(function(){var parts=bp.name.split(" ");return parts[parts.length-1];})()),
+                  React.createElement("div",{style:{fontSize:9,color:T.gold,fontWeight:700}},"$"+(bp.auction||1))
+                );
+              })
+            )
+          ),
+          // Draft Advisor
+          myNoms.length>0&&needs.length>0&&slotsLeft>0&&React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:14,padding:"12px 14px",marginBottom:12}},
+            React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,marginBottom:8}},
+              React.createElement("span",{style:{fontSize:16}},"\uD83C\uDFAF"),
+              React.createElement("div",null,
+                React.createElement("div",{style:{fontSize:11,fontWeight:800,color:T.purpleLight,letterSpacing:0.5}},"DRAFT ADVISOR"),
+                React.createElement("div",{style:{fontSize:9,color:T.textDim}},"$"+remaining+" left \u00B7 "+slotsLeft+" slots \u00B7 ~$"+avgPerSlot+"/pick")
+              )
+            ),
+            // Roster composition mini bar
+            React.createElement("div",{style:{display:"flex",gap:8,marginBottom:10}},
+              ["QB","RB","WR","TE"].map(function(pos){
+                var have=myPosCts[pos];var ideal=idealRatio[pos];var full=have>=ideal;
+                return React.createElement("div",{key:pos,style:{flex:1,textAlign:"center"}},
+                  React.createElement("div",{style:{fontSize:9,fontWeight:800,color:POS_COLORS[pos]||T.textSub}},pos),
+                  React.createElement("div",{style:{fontSize:12,fontWeight:900,color:full?T.green:have>0?T.gold:T.red}},have+"/"+ideal),
+                  React.createElement("div",{style:{height:3,borderRadius:2,background:T.border,marginTop:2,overflow:"hidden"}},
+                    React.createElement("div",{style:{width:Math.min(100,Math.round(have/Math.max(1,ideal)*100))+"%",height:"100%",background:full?T.green:T.gold,borderRadius:2}})
+                  )
+                );
+              })
+            ),
+            // Suggested targets
+            React.createElement("div",{style:{display:"flex",flexDirection:"column",gap:6}},
+              (function(){
+                var targets=[];
+                needs.forEach(function(n){
+                  var posAvail=rankedPlayers.filter(function(p){return p.pos===n.pos&&!soldNames.has(p.name);}).sort(function(a,b){return (b.auction||0)-(a.auction||0);});
+                  var best=posAvail[0];
+                  var valuePick=posAvail.find(function(p,idx){return idx>=3&&idx<=12;});
+                  if(best)targets.push({player:best,reason:"Best "+n.pos+" available",type:"premium",need:n.gap+" more "+n.pos+(n.gap>1?"s":"")+" needed"});
+                  if(valuePick&&valuePick!==best)targets.push({player:valuePick,reason:"Value "+n.pos+" \u2014 stretch budget",type:"value",need:n.gap+" more "+n.pos+(n.gap>1?"s":"")+" needed"});
+                });
+                if(remaining<avgPerSlot*slotsLeft*0.6&&slotsLeft>2){
+                  var bargains=rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0&&!soldNames.has(p.name)&&p.posRank>=10&&p.posRank<=25;}).sort(function(a,b){return (b.pts/(b.tradeVal||1))-(a.pts/(a.tradeVal||1));}).slice(0,2);
+                  bargains.forEach(function(p){targets.push({player:p,reason:"Budget-friendly \u2014 high pts/value",type:"bargain",need:"Save budget"});});
+                }
+                var seen={};targets=targets.filter(function(t){if(seen[t.player.name])return false;seen[t.player.name]=true;return true;}).slice(0,5);
+                return targets.map(function(t){
+                  var p=t.player;
+                  var typeColor=t.type==="premium"?T.purple:t.type==="value"?"#60a5fa":"#22c55e";
+                  var typeLabel=t.type==="premium"?"PRIORITY":t.type==="value"?"VALUE":"BARGAIN";
+                  return React.createElement("div",{key:p.name,style:{display:"flex",alignItems:"center",gap:8,background:T.bgInput,borderRadius:10,padding:"8px 10px",border:"1px solid "+typeColor+"33"}},
+                    React.createElement(Avatar,{name:p.name,pos:p.pos,size:28}),
+                    React.createElement("div",{style:{flex:1,minWidth:0}},
+                      React.createElement("div",{style:{display:"flex",alignItems:"center",gap:4}},
+                        React.createElement("span",{style:{fontWeight:700,fontSize:12,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
+                        React.createElement("span",{style:{fontSize:7,fontWeight:800,color:typeColor,background:typeColor+"18",borderRadius:4,padding:"1px 4px"}},typeLabel)
+                      ),
+                      React.createElement("div",{style:{fontSize:9,color:T.textSub}},t.reason+" \u00B7 ",React.createElement("span",{style:{color:POS_COLORS[p.pos]||T.textSub,fontWeight:700}},p.pos+p.posRank)," \u00B7 ",t.need)
+                    ),
+                    React.createElement("div",{style:{textAlign:"right",flexShrink:0}},
+                      React.createElement("div",{style:{fontWeight:800,fontSize:13,color:T.gold}},"$"+(p.auction||1)),
+                      React.createElement("div",{style:{fontSize:9,color:T.textSub}},p.pts.toFixed(1)+" pts")
+                    ),
+                    React.createElement("button",{onClick:function(){setAuctionBidPlayer(p);setAuctionSearch(p.name);setAuctionMine(true);},style:{padding:"4px 10px",borderRadius:8,border:"1px solid "+T.purple,background:T.purple,color:"#fff",fontWeight:700,fontSize:10,cursor:"pointer",flexShrink:0}},"Bid")
+                  );
+                });
+              })()
+            )
+          ),
+          myNoms.length>0&&slotsLeft<=0&&React.createElement("div",{style:{background:T.green+"18",border:"1px solid "+T.green+"44",borderRadius:12,padding:"12px 14px",marginBottom:12,textAlign:"center"}},
+            React.createElement("div",{style:{fontWeight:800,fontSize:14,color:T.green}},"Roster Complete!"),
+            React.createElement("div",{style:{fontSize:11,color:T.textSub,marginTop:4}},"You drafted "+mySlots+" players for $"+spent)
           ),
           // Add nomination
           React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:12,padding:"14px",marginBottom:12}},
@@ -5726,7 +5844,7 @@ export default function App(){
       React.createElement("div",{style:{position:"relative",borderBottom:"1px solid "+T.border}},
         isDesktop&&React.createElement("button",{onClick:function(){rankingTabsRef.current&&rankingTabsRef.current.scrollBy({left:-200,behavior:"smooth"});},style:{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",zIndex:2,background:T.bgCard,border:"1px solid "+T.border,borderRadius:"50%",width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:T.text,fontSize:14,padding:0}},"‹"),
         React.createElement("div",{ref:rankingTabsRef,style:{display:"flex",gap:6,overflowX:"auto",padding:isDesktop?"10px 36px":"10px 12px",scrollbarWidth:"none",WebkitOverflowScrolling:"touch"}},
-          [["news","📰 Dynasty News"],["playervalues","$ Player Values"],["allrankings","All Rankings"],["qbs","QBs"],["rbs","RBs"],["wrs","WRs"],["tes","TEs"],["idp","IDP"],["rookie","Rookie Picks"],["vegas","Vegas Lines"],["trending","Trending"],["market","Market"],["valuetrends","Value Trends"],["pickcalc","Pick Calculator"],["watchlist","Watchlist"],["draft","Draft Kit"],["keeper","Keeper Calc"],["compare","Compare"],["history","Trade History"]].map(function(st){
+          [["news","📰 Dynasty News"],["playervalues","$ Player Values"],["allrankings","All Rankings"],["qbs","QBs"],["rbs","RBs"],["wrs","WRs"],["tes","TEs"],["idp","IDP"],["rookie","Rookie Picks"],["vegas","Vegas Lines"],["trending","Trending"],["market","Market"],["valuetrends","Value Trends"],["pickcalc","Pick Calculator"],["watchlist","Watchlist"],["keeper","Keeper Calc"],["compare","Compare"],["history","Trade History"]].map(function(st){
             var active=rankSubTab===st[0];
             return React.createElement("button",{key:st[0],onClick:function(){setRankSubTab(st[0]);},style:{padding:"7px 14px",borderRadius:20,border:"1px solid "+(active?T.purple:T.border),background:active?T.purple:"transparent",color:active?"#fff":T.textSub,fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}},st[1]);
           })
@@ -6602,9 +6720,8 @@ export default function App(){
             )
       ),
 
-      // DRAFT KIT
-      rankSubTab==="draft"&&React.createElement("div",{style:{paddingBottom:16}},
-        React.createElement("style",null,"@keyframes fdp-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}"),
+      // DRAFT KIT REMOVED — merged into League > Draft Room
+      false&&React.createElement("div",null,
         React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 16px 12px"}},
           React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10}},
             React.createElement("span",{style:{fontSize:22,color:"#3b82f6"}},"[=]"),
