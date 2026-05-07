@@ -3625,7 +3625,7 @@ export default function App(){
     React.createElement("div",{style:{flex:isDesktop?1:undefined,minWidth:0,overflowY:isDesktop?"auto":undefined,maxWidth:isDesktop?900:undefined,width:isDesktop?"100%":undefined,paddingBottom:isDesktop?40:undefined}},
 
     // Dynasty Value Ticker (all tabs)
-    React.createElement("div",{style:{overflow:"hidden",background:darkMode?"#0a0818":"#f8f7ff",borderBottom:"1px solid "+T.border,padding:"6px 0"}},
+    React.createElement("div",{style:{overflow:"hidden",background:darkMode?"#0a0818":"#f8f7ff",borderBottom:"1px solid "+T.border,padding:"6px 0",position:"sticky",top:0,zIndex:90}},
       React.createElement("style",null,"@keyframes fdp-ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}"),
       React.createElement("div",{style:{display:"flex",gap:20,animation:"fdp-ticker 60s linear infinite",width:"max-content"}},
         rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;}).slice(0,50).concat(rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;}).slice(0,50)).map(function(p,i){
