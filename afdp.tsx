@@ -3350,7 +3350,7 @@ export default function App(){
   var activeTeams=powerRankingTeams||LEAGUE_TEAMS;
   var leagueTeamNames=activeTeams.map(function(t){return t.name;});
 
-  return React.createElement("div",{style:{background:T.bg,minHeight:"100vh",color:T.text,fontFamily:"-apple-system,BlinkMacSystemFont,'Inter',sans-serif",maxWidth:isDesktop?"100%":480,margin:"0 auto",paddingBottom:isDesktop?0:70,display:isDesktop?"flex":"block"}},
+  return React.createElement("div",{style:{background:T.bg,height:"100vh",color:T.text,fontFamily:"-apple-system,BlinkMacSystemFont,'Inter',sans-serif",maxWidth:isDesktop?"100%":480,margin:"0 auto",display:"flex",flexDirection:isDesktop?"row":"column",overflow:"hidden"}},
 
     showAuth&&React.createElement(AuthModal,{mode:authMode,onClose:function(){setShowAuth(false);},onAuth:function(u){saveAndSetUser(u);setShowAuth(false);},T:T}),
 
@@ -3556,7 +3556,7 @@ export default function App(){
     ),
 
     // NAV (mobile only)
-    !isDesktop&&React.createElement("div",{style:{position:"sticky",top:0,background:T.bg,zIndex:100,borderBottom:"1px solid "+T.border,paddingBottom:10}},
+    !isDesktop&&React.createElement("div",{style:{background:T.bg,flexShrink:0,borderBottom:"1px solid "+T.border,paddingBottom:10}},
       React.createElement("div",{style:{display:"flex",justifyContent:"center",paddingTop:12}},
         React.createElement("img",{src:appLogoSrc,alt:"Fantasy DraftPros",style:{height:72,width:"auto",maxWidth:280}})
       ),
@@ -3621,11 +3621,8 @@ export default function App(){
       })
     ),
 
-    // MAIN CONTENT WRAPPER (flex:1 on desktop for sidebar layout)
-    React.createElement("div",{style:{flex:isDesktop?1:undefined,minWidth:0,overflowY:isDesktop?"auto":undefined,maxWidth:isDesktop?900:undefined,width:isDesktop?"100%":undefined,paddingBottom:isDesktop?40:undefined}},
-
-    // Dynasty Value Ticker (all tabs)
-    React.createElement("div",{style:{overflow:"hidden",background:darkMode?"#0a0818":"#f8f7ff",borderBottom:"1px solid "+T.border,padding:"6px 0",position:"sticky",top:0,zIndex:90}},
+    // Dynasty Value Ticker (all tabs — outside scroll wrapper so it stays fixed)
+    React.createElement("div",{style:{overflow:"hidden",background:darkMode?"#0a0818":"#f8f7ff",borderBottom:"1px solid "+T.border,padding:"6px 0",flexShrink:0}},
       React.createElement("style",null,"@keyframes fdp-ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}"),
       React.createElement("div",{style:{display:"flex",gap:20,animation:"fdp-ticker 60s linear infinite",width:"max-content"}},
         rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;}).slice(0,50).concat(rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;}).slice(0,50)).map(function(p,i){
@@ -3638,6 +3635,9 @@ export default function App(){
         })
       )
     ),
+
+    // MAIN CONTENT WRAPPER (flex:1 on desktop for sidebar layout)
+    React.createElement("div",{style:{flex:1,minWidth:0,overflowY:"auto",maxWidth:isDesktop?900:undefined,width:isDesktop?"100%":undefined,paddingBottom:isDesktop?40:70}},
 
     // ════ TRADE TAB ════
     tab==="trade"&&React.createElement("div",{style:{padding:"16px 16px 0"}},
