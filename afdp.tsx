@@ -4822,17 +4822,17 @@ export default function App(){
             var gems=availablePlayers.filter(function(p){return (p.age||25)<=25&&(p.tradeVal||0)>=800&&(p.pts||0)>=80&&["QB","RB","WR","TE"].indexOf(p.pos)>=0;}).slice(0,4);
             if(gems.length===0)return null;
             return React.createElement("div",{style:{background:"linear-gradient(135deg,#1e1040,#0f172a)",border:"1px solid "+T.borderPurple,borderRadius:14,padding:"14px 16px",marginBottom:14}},
-              React.createElement("div",{style:{fontSize:10,fontWeight:800,color:T.gold,letterSpacing:1,marginBottom:12}},"💎 HIDDEN GEMS — YOUNG UPSIDE"),
-              React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}},
+              React.createElement("div",{style:{fontSize:10,fontWeight:800,color:T.gold,letterSpacing:1,marginBottom:10}},"💎 HIDDEN GEMS — YOUNG UPSIDE"),
+              React.createElement("div",{style:{display:"flex",flexDirection:"column",gap:8}},
                 gems.map(function(p){
                   var gAg=ageGrade(p.pos,p.age);
-                  return React.createElement("div",{key:p.name,onClick:function(){addToTrade(p);},style:{background:T.bgCard+"88",borderRadius:12,padding:"12px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:10}},
+                  return React.createElement("div",{key:p.name,onClick:function(){addToTrade(p);},style:{background:T.bgCard+"88",borderRadius:10,padding:"10px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:10}},
                     React.createElement(Avatar,{name:p.name,pos:p.pos,size:32}),
                     React.createElement("div",{style:{flex:1,minWidth:0}},
-                      React.createElement("div",{style:{fontWeight:700,fontSize:12,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",marginBottom:2}},p.name),
-                      React.createElement("div",{style:{fontSize:10,color:T.textSub}},React.createElement("span",{style:{color:POS_COLORS[p.pos],fontWeight:700}},p.pos+p.posRank)," · ",p.age," · ",React.createElement("span",{style:{color:gAg.c}},gAg.g))
+                      React.createElement("div",{style:{fontWeight:700,fontSize:13,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
+                      React.createElement("div",{style:{fontSize:10,color:T.textSub,marginTop:1}},React.createElement("span",{style:{color:POS_COLORS[p.pos],fontWeight:700}},p.pos+p.posRank)," · ",p.team," · ",p.age," · ",React.createElement("span",{style:{color:gAg.c}},gAg.g))
                     ),
-                    React.createElement("div",{style:{fontSize:11,fontWeight:800,color:T.purpleLight,flexShrink:0}},(p.tradeVal||0).toLocaleString())
+                    React.createElement("div",{style:{fontSize:12,fontWeight:800,color:T.purpleLight,flexShrink:0}},(p.tradeVal||0).toLocaleString())
                   );
                 })
               )
