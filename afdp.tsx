@@ -2724,7 +2724,6 @@ export default function App(){
   var [h2hSearchB,setH2hSearchB]=useState("");
   var [h2hResult,setH2hResult]=useState(null as any);
   var [tfPosNeed,setTfPosNeed]=useState("ALL");
-  var [prLeagueData,setPrLeagueData]=useState(null as any);
 
   useEffect(function(){if(onboardStep===0){var t=setTimeout(function(){setOnboardStep(1);},1500);return function(){clearTimeout(t);};}},[]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -6094,7 +6093,7 @@ export default function App(){
       React.createElement("div",{style:{position:"relative",borderBottom:"1px solid "+T.border}},
         isDesktop&&React.createElement("button",{onClick:function(){rankingTabsRef.current&&rankingTabsRef.current.scrollBy({left:-200,behavior:"smooth"});},style:{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",zIndex:2,background:T.bgCard,border:"1px solid "+T.border,borderRadius:"50%",width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:T.text,fontSize:14,padding:0}},"‹"),
         React.createElement("div",{ref:rankingTabsRef,style:{display:"flex",gap:6,overflowX:"auto",padding:isDesktop?"10px 36px":"10px 12px",scrollbarWidth:"none",WebkitOverflowScrolling:"touch"}},
-          [["news","📰 Dynasty News"],["playervalues","$ Player Values"],["allrankings","All Rankings"],["qbs","QBs"],["rbs","RBs"],["wrs","WRs"],["tes","TEs"],["idp","IDP"],["rookie","Rookie Picks"],["mockdraft","Mock Draft"],["startup","Startup Draft"],["rosterbuilder","Roster Builder"],["h2h","H2H Matchup"],["tradefinder","Trade Finder"],["powerrank","Power Rankings"],["vegas","Vegas Lines"],["trending","Trending"],["market","Market"],["valuetrends","Value Trends"],["pickcalc","Pick Calculator"],["watchlist","Watchlist"],["keeper","Keeper Calc"],["compare","Compare"],["history","Trade History"]].map(function(st){
+          [["news","📰 Dynasty News"],["playervalues","$ Player Values"],["allrankings","All Rankings"],["qbs","QBs"],["rbs","RBs"],["wrs","WRs"],["tes","TEs"],["idp","IDP"],["rookie","Rookie Picks"],["mockdraft","Mock Draft"],["startup","Startup Draft"],["rosterbuilder","Roster Builder"],["h2h","H2H Matchup"],["tradefinder","Trade Finder"],["vegas","Vegas Lines"],["trending","Trending"],["market","Market"],["valuetrends","Value Trends"],["pickcalc","Pick Calculator"],["watchlist","Watchlist"],["keeper","Keeper Calc"],["compare","Compare"],["history","Trade History"]].map(function(st){
             var active=rankSubTab===st[0];
             return React.createElement("button",{key:st[0],onClick:function(){setRankSubTab(st[0]);},style:{padding:"7px 14px",borderRadius:20,border:"1px solid "+(active?T.purple:T.border),background:active?T.purple:"transparent",color:active?"#fff":T.textSub,fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}},st[1]);
           })
@@ -7084,91 +7083,6 @@ export default function App(){
                 )
               );
             })
-          );
-        })()
-      ),
-
-      // DYNASTY POWER RANKINGS
-      rankSubTab==="powerrank"&&React.createElement("div",{style:{padding:"16px"}},
-        React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10,marginBottom:16}},
-          React.createElement("span",{style:{fontSize:28}},"🏆"),
-          React.createElement("div",null,
-            React.createElement("div",{style:{fontWeight:900,fontSize:22}},"Dynasty Power Rankings"),
-            React.createElement("div",{style:{fontSize:12,color:T.textSub}},"Build rosters and rank teams in your league")
-          )
-        ),
-        (function(){
-          var pr=prLeagueData||{teams:[]};
-          var addTeam=function(){setPrLeagueData(function(prev){var d=prev||{teams:[]};if(d.teams.length>=14)return d;return{teams:d.teams.concat([{name:"Team "+(d.teams.length+1),players:[],search:""}])};});};
-          var removeTeam=function(idx){setPrLeagueData(function(prev){var d=prev||{teams:[]};return{teams:d.teams.filter(function(_,i){return i!==idx;})};});};
-          var updateSearch=function(idx,val){setPrLeagueData(function(prev){var d=prev||{teams:[]};var t=d.teams.slice();t[idx]=Object.assign({},t[idx],{search:val});return{teams:t};});};
-          var addPlayer=function(idx,player){setPrLeagueData(function(prev){var d=prev||{teams:[]};var t=d.teams.slice();if(t[idx].players.length>=25)return d;t[idx]=Object.assign({},t[idx],{players:t[idx].players.concat([player]),search:""});return{teams:t};});};
-          var removePlayer=function(idx,pIdx){setPrLeagueData(function(prev){var d=prev||{teams:[]};var t=d.teams.slice();t[idx]=Object.assign({},t[idx],{players:t[idx].players.filter(function(_,i){return i!==pIdx;})});return{teams:t};});};
-          var renameTeam=function(idx,name){setPrLeagueData(function(prev){var d=prev||{teams:[]};var t=d.teams.slice();t[idx]=Object.assign({},t[idx],{name:name});return{teams:t};});};
-          var rankedTeams=pr.teams.map(function(team,idx){
-            var totalVal=team.players.reduce(function(s,p){return s+(p.tradeVal||0);},0);
-            var posCounts={QB:0,RB:0,WR:0,TE:0};
-            team.players.forEach(function(p){if(posCounts[p.pos]!==undefined)posCounts[p.pos]++;});
-            var qbVal=team.players.filter(function(p){return p.pos==="QB";}).reduce(function(s,p){return s+(p.tradeVal||0);},0);
-            var rbVal=team.players.filter(function(p){return p.pos==="RB";}).reduce(function(s,p){return s+(p.tradeVal||0);},0);
-            var wrVal=team.players.filter(function(p){return p.pos==="WR";}).reduce(function(s,p){return s+(p.tradeVal||0);},0);
-            var teVal=team.players.filter(function(p){return p.pos==="TE";}).reduce(function(s,p){return s+(p.tradeVal||0);},0);
-            var young=team.players.filter(function(p){return (p.age||99)<=25;}).length;
-            var prime=team.players.filter(function(p){var a=p.age||99;return a>=22&&a<=28;}).length;
-            var old=team.players.filter(function(p){return (p.age||0)>=30;}).length;
-            var window=young>prime?"Rebuilding":old>young?"Win Now":"Contender";
-            var grade=totalVal>=120000?"A+":totalVal>=100000?"A":totalVal>=80000?"B+":totalVal>=65000?"B":totalVal>=50000?"C+":totalVal>=35000?"C":"D";
-            return{idx:idx,name:team.name,players:team.players,search:team.search||"",totalVal:totalVal,posCounts:posCounts,qbVal:qbVal,rbVal:rbVal,wrVal:wrVal,teVal:teVal,window:window,grade:grade};
-          }).sort(function(a,b){return b.totalVal-a.totalVal;});
-          var maxVal=rankedTeams.length>0?rankedTeams[0].totalVal:1;
-          return React.createElement(React.Fragment,null,
-            React.createElement("div",{style:{display:"flex",gap:8,marginBottom:16}},
-              React.createElement("button",{onClick:addTeam,style:{flex:1,padding:"12px",borderRadius:12,border:"1px solid "+T.purple,background:T.purple+"15",color:T.purpleLight,fontWeight:700,fontSize:13,cursor:"pointer"}},"+ Add Team"+(pr.teams.length>0?" ("+pr.teams.length+")":""))
-            ),
-            rankedTeams.map(function(team,rank){
-              var searchResults=team.search.length>=2?rankedPlayers.filter(function(p){return p.name.toLowerCase().includes(team.search.toLowerCase());}).slice(0,5):[];
-              return React.createElement("div",{key:team.idx,style:{background:T.bgCard,border:"1px solid "+(rank===0&&rankedTeams.length>1?T.gold||"#f59e0b":T.border),borderRadius:16,padding:14,marginBottom:12}},
-                React.createElement("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}},
-                  React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8}},
-                    rankedTeams.length>1&&React.createElement("span",{style:{fontSize:18,fontWeight:900,color:rank===0?"#f59e0b":rank===1?"#94a3b8":rank===2?"#d97706":T.textDim}},"#"+(rank+1)),
-                    React.createElement("input",{value:team.name,onChange:function(e){renameTeam(team.idx,e.target.value);},style:{background:"transparent",border:"none",color:T.text,fontWeight:800,fontSize:15,outline:"none",width:140}})
-                  ),
-                  React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8}},
-                    React.createElement("span",{style:{fontSize:10,fontWeight:800,padding:"3px 8px",borderRadius:6,background:team.grade.startsWith("A")?T.green+"22":team.grade.startsWith("B")?"#3b82f622":team.grade.startsWith("C")?"#f59e0b22":T.red+"22",color:team.grade.startsWith("A")?T.green:team.grade.startsWith("B")?"#3b82f6":team.grade.startsWith("C")?"#f59e0b":T.red}},team.grade),
-                    React.createElement("span",{style:{fontWeight:900,fontSize:14,color:T.purpleLight}},team.totalVal.toLocaleString()),
-                    React.createElement("button",{onClick:function(){removeTeam(team.idx);},style:{background:"transparent",border:"none",color:T.textDim,cursor:"pointer",fontSize:16}},"×")
-                  )
-                ),
-                rankedTeams.length>1&&React.createElement("div",{style:{height:4,background:T.border,borderRadius:4,marginBottom:10,overflow:"hidden"}},
-                  React.createElement("div",{style:{height:"100%",width:Math.round(team.totalVal/maxVal*100)+"%",background:"linear-gradient(90deg,"+T.purple+",#5b21b6)",borderRadius:4}})
-                ),
-                React.createElement("div",{style:{display:"flex",gap:4,marginBottom:8,fontSize:10}},
-                  [{label:"QB",val:team.qbVal,c:POS_COLORS.QB},{label:"RB",val:team.rbVal,c:POS_COLORS.RB},{label:"WR",val:team.wrVal,c:POS_COLORS.WR},{label:"TE",val:team.teVal,c:POS_COLORS.TE}].map(function(g){
-                    return React.createElement("div",{key:g.label,style:{flex:1,textAlign:"center",padding:"4px 2px",borderRadius:6,background:g.c+"15",color:g.c,fontWeight:700}},g.label+" "+g.val.toLocaleString());
-                  })
-                ),
-                React.createElement("div",{style:{fontSize:10,color:T.textSub,fontWeight:700,marginBottom:8}},"Window: "+team.window+" · "+team.players.length+" players"),
-                React.createElement("div",{style:{display:"flex",flexWrap:"wrap",gap:4,marginBottom:8}},
-                  team.players.map(function(p,pi){
-                    return React.createElement("span",{key:pi,style:{fontSize:10,fontWeight:700,padding:"2px 6px",borderRadius:6,background:(POS_COLORS[p.pos]||T.purple)+"22",color:POS_COLORS[p.pos]||T.purple,cursor:"pointer"},onClick:function(){removePlayer(team.idx,pi);}},p.name+" ×");
-                  })
-                ),
-                React.createElement("input",{placeholder:"Search players to add...",value:team.search,onChange:function(e){updateSearch(team.idx,e.target.value);},style:{width:"100%",padding:"8px 10px",borderRadius:8,border:"1px solid "+T.border,background:T.bgInput,color:T.text,fontSize:12,outline:"none",boxSizing:"border-box"}}),
-                searchResults.length>0&&React.createElement("div",{style:{background:T.bgInput,border:"1px solid "+T.border,borderRadius:8,marginTop:4,maxHeight:150,overflow:"auto"}},
-                  searchResults.map(function(p,ri){
-                    return React.createElement("div",{key:ri,onClick:function(){addPlayer(team.idx,p);},style:{padding:"6px 10px",cursor:"pointer",display:"flex",justifyContent:"space-between",borderBottom:ri<searchResults.length-1?"1px solid "+T.border:"none"}},
-                      React.createElement("span",{style:{fontSize:12,fontWeight:600}},p.name),
-                      React.createElement("span",{style:{fontSize:10,color:POS_COLORS[p.pos]||T.purple,fontWeight:700}},p.pos+" · "+(p.tradeVal||0).toLocaleString())
-                    );
-                  })
-                )
-              );
-            }),
-            pr.teams.length===0&&React.createElement("div",{style:{background:T.bgCard,borderRadius:16,padding:24,textAlign:"center"}},
-              React.createElement("div",{style:{fontSize:48,marginBottom:12}},"🏟️"),
-              React.createElement("div",{style:{fontWeight:800,fontSize:16,marginBottom:8,color:T.text}},"Add Teams to Get Started"),
-              React.createElement("div",{style:{fontSize:13,color:T.textSub}},"Click \"+ Add Team\" above and add players to each team to see dynasty power rankings.")
-            )
           );
         })()
       ),
