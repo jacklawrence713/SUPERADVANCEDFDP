@@ -6441,11 +6441,11 @@ export default function App(){
         var pool=mockAvailable||rookiePlayers;
         var filteredPool=mockPosFilter==="ALL"?pool:pool.filter(function(p){return p.pos===mockPosFilter;});
         var totalPicks=mockTeams*4;
-        var isMyPick=mockStarted&&((mockPick-1)%mockTeams)+1===mockSlot;
         var currentRound=Math.ceil(mockPick/mockTeams);
         var pickInRound=((mockPick-1)%mockTeams)+1;
         var isSnake=currentRound%2===0;
         var actualPickInRound=isSnake?mockTeams-pickInRound+1:pickInRound;
+        var isMyPick=mockStarted&&actualPickInRound===mockSlot;
         var draftDone=mockPick>totalPicks||pool.length===0;
         function aiPick(){
           if(pool.length===0)return;
@@ -6463,19 +6463,21 @@ export default function App(){
           setMockPick(function(v){return v+1;});
         }
         function runAiPicks(){
-          if(draftDone||isMyPick)return;
+          if(pool.length===0||mockPick>totalPicks)return;
           var p=pool.slice();var pk=mockPick;var lg=mockLog.slice();
-          while(pk<=totalPicks&&p.length>0){
+          var safety=0;
+          while(pk<=totalPicks&&p.length>0&&safety<200){
+            safety++;
             var cr=Math.ceil(pk/mockTeams);var pir=((pk-1)%mockTeams)+1;var sn=cr%2===0;var apr=sn?mockTeams-pir+1:pir;
             if(apr===mockSlot)break;
             var best=p[0];p=p.slice(1);
             lg.push({round:cr,pick:pk,team:"Team "+apr,player:best,isUser:false});
             pk++;
           }
-          setMockAvailable(p);setMockPick(pk);setMockLog(lg);
+          if(pk!==mockPick){setMockAvailable(p);setMockPick(pk);setMockLog(lg);}
         }
         // Auto-run AI picks when it's not user's turn
-        if(mockStarted&&!isMyPick&&!draftDone&&pool.length>0){setTimeout(runAiPicks,300);}
+        if(mockStarted&&!isMyPick&&!draftDone&&pool.length>0){setTimeout(runAiPicks,400);}
         return React.createElement("div",{style:{padding:"16px"}},
           React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10,marginBottom:16}},
             React.createElement("span",{style:{fontSize:28}},"🏈"),
