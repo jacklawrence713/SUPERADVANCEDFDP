@@ -3954,42 +3954,38 @@ export default function App(){
               React.createElement("button",{onClick:function(){var tmpA=tradeA.slice(),tmpB=tradeB.slice(),tmpFa=faabA,tmpFb=faabB;setTradeA(tmpB);setTradeB(tmpA);setFaabA(tmpFb);setFaabB(tmpFa);},style:{width:32,height:32,borderRadius:"50%",border:"1px solid "+T.border,background:T.bgCard,cursor:"pointer",color:T.textSub,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}},"⇄"),
               React.createElement("div",{style:{background:T.bgCard,borderRadius:10,padding:12,border:"1px solid "+T.border,textAlign:"center"}},React.createElement("div",{style:{fontSize:9,color:T.textSub,letterSpacing:1,marginBottom:4}},"TEAM B"),React.createElement("div",{style:{fontWeight:900,fontSize:24,color:T.purpleLight}},tvB.toFixed(0)))
             ),
-            React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginTop:10}},
-              React.createElement("div",null,
-                tradeA.map(function(p){var pAg=ageGrade(p.pos,p.age||0);var pTier=tierLabel(p.posRank||99,p.pos);var pctW=tvA>0?Math.round((p.tradeVal||0)/tvA*100):0;return React.createElement("div",{key:p.name,style:{position:"relative",display:"flex",alignItems:"center",gap:6,marginBottom:6,background:T.bgCard,borderRadius:8,padding:"6px 8px",border:"1px solid "+T.border,overflow:"hidden"}},
+            React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginTop:10,overflow:"hidden"}},
+              React.createElement("div",{style:{minWidth:0,overflow:"hidden"}},
+                tradeA.map(function(p){var pAg=ageGrade(p.pos,p.age||0);var pTier=tierLabel(p.posRank||99,p.pos);var pctW=tvA>0?Math.round((p.tradeVal||0)/tvA*100):0;return React.createElement("div",{key:p.name,style:{position:"relative",display:"flex",alignItems:"center",gap:4,marginBottom:4,background:T.bgCard,borderRadius:8,padding:"5px 6px",border:"1px solid "+T.border,overflow:"hidden"}},
                   React.createElement("div",{style:{position:"absolute",left:0,top:0,bottom:0,width:pctW+"%",background:T.purple+"12",borderRadius:8,transition:"width 0.4s"}}),
-                  React.createElement(Avatar,{name:p.name,pos:p.pos,size:24}),
+                  React.createElement(Avatar,{name:p.name,pos:p.pos,size:20}),
                   React.createElement("div",{style:{flex:1,minWidth:0,position:"relative"}},
-                    React.createElement("div",{style:{fontWeight:700,fontSize:11,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
-                    React.createElement("div",{style:{fontSize:9,color:T.textSub,display:"flex",alignItems:"center",gap:3}},
+                    React.createElement("div",{style:{fontWeight:700,fontSize:10,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
+                    React.createElement("div",{style:{fontSize:8,color:T.textSub,display:"flex",alignItems:"center",gap:2,flexWrap:"nowrap",overflow:"hidden"}},
                       React.createElement("span",{style:{color:POS_COLORS[p.pos]||T.textSub,fontWeight:700}},p.pos+(p.posRank?p.posRank:"")),
-                      p.age&&React.createElement("span",null,"· "+p.age),
-                      p.team&&React.createElement("span",{style:{color:T.textDim}},p.team)
+                      p.age&&React.createElement("span",null,"·"+p.age)
                     )
                   ),
                   React.createElement("div",{style:{textAlign:"right",flexShrink:0,position:"relative"}},
-                    React.createElement("div",{style:{fontWeight:800,fontSize:11,color:T.purple}},(p.tradeVal||0).toLocaleString()),
-                    React.createElement("div",{style:{fontSize:8,color:pAg.c,fontWeight:700}},pAg.g+" · T"+pTier.t),
-                    React.createElement("div",{style:{fontSize:7,color:T.textDim,fontWeight:700}},pctW+"%")
+                    React.createElement("div",{style:{fontWeight:800,fontSize:10,color:T.purple}},(p.tradeVal||0).toLocaleString()),
+                    React.createElement("div",{style:{fontSize:7,color:pAg.c,fontWeight:700}},pAg.g)
                   )
                 );})
               ),
-              React.createElement("div",null,
-                tradeB.map(function(p){var pAg=ageGrade(p.pos,p.age||0);var pTier=tierLabel(p.posRank||99,p.pos);var pctW=tvB>0?Math.round((p.tradeVal||0)/tvB*100):0;return React.createElement("div",{key:p.name,style:{position:"relative",display:"flex",alignItems:"center",gap:6,marginBottom:6,background:T.bgCard,borderRadius:8,padding:"6px 8px",border:"1px solid "+T.border,overflow:"hidden"}},
+              React.createElement("div",{style:{minWidth:0,overflow:"hidden"}},
+                tradeB.map(function(p){var pAg=ageGrade(p.pos,p.age||0);var pTier=tierLabel(p.posRank||99,p.pos);var pctW=tvB>0?Math.round((p.tradeVal||0)/tvB*100):0;return React.createElement("div",{key:p.name,style:{position:"relative",display:"flex",alignItems:"center",gap:4,marginBottom:4,background:T.bgCard,borderRadius:8,padding:"5px 6px",border:"1px solid "+T.border,overflow:"hidden"}},
                   React.createElement("div",{style:{position:"absolute",left:0,top:0,bottom:0,width:pctW+"%",background:T.purpleLight+"12",borderRadius:8,transition:"width 0.4s"}}),
-                  React.createElement(Avatar,{name:p.name,pos:p.pos,size:24}),
+                  React.createElement(Avatar,{name:p.name,pos:p.pos,size:20}),
                   React.createElement("div",{style:{flex:1,minWidth:0,position:"relative"}},
-                    React.createElement("div",{style:{fontWeight:700,fontSize:11,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
-                    React.createElement("div",{style:{fontSize:9,color:T.textSub,display:"flex",alignItems:"center",gap:3}},
+                    React.createElement("div",{style:{fontWeight:700,fontSize:10,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
+                    React.createElement("div",{style:{fontSize:8,color:T.textSub,display:"flex",alignItems:"center",gap:2,flexWrap:"nowrap",overflow:"hidden"}},
                       React.createElement("span",{style:{color:POS_COLORS[p.pos]||T.textSub,fontWeight:700}},p.pos+(p.posRank?p.posRank:"")),
-                      p.age&&React.createElement("span",null,"· "+p.age),
-                      p.team&&React.createElement("span",{style:{color:T.textDim}},p.team)
+                      p.age&&React.createElement("span",null,"·"+p.age)
                     )
                   ),
                   React.createElement("div",{style:{textAlign:"right",flexShrink:0,position:"relative"}},
-                    React.createElement("div",{style:{fontWeight:800,fontSize:11,color:T.purpleLight}},(p.tradeVal||0).toLocaleString()),
-                    React.createElement("div",{style:{fontSize:8,color:pAg.c,fontWeight:700}},pAg.g+" · T"+pTier.t),
-                    React.createElement("div",{style:{fontSize:7,color:T.textDim,fontWeight:700}},pctW+"%")
+                    React.createElement("div",{style:{fontWeight:800,fontSize:10,color:T.purpleLight}},(p.tradeVal||0).toLocaleString()),
+                    React.createElement("div",{style:{fontSize:7,color:pAg.c,fontWeight:700}},pAg.g)
                   )
                 );})
               )
