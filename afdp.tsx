@@ -2095,7 +2095,6 @@ function TradeItem(props){
 // ── Analytics Dashboard Component ─────────────────────────────────────────
 function AnalyticsDashboard({T,data,loading,onLoad}:{T:any,data:any,loading:boolean,onLoad:()=>void}){
   useEffect(function(){onLoad();},[]);// eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(function(){if(onboardStep===0){var t=setTimeout(function(){setOnboardStep(1);},1500);return function(){clearTimeout(t);};}},[]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Build daily chart from raw page_view events
   function buildDailyBuckets(events:any[]){
@@ -2706,6 +2705,8 @@ export default function App(){
   var [mockLog,setMockLog]=useState([] as any[]);
   var [mockStarted,setMockStarted]=useState(false);
   var [mockPosFilter,setMockPosFilter]=useState("ALL");
+
+  useEffect(function(){if(onboardStep===0){var t=setTimeout(function(){setOnboardStep(1);},1500);return function(){clearTimeout(t);};}},[]); // eslint-disable-line react-hooks/exhaustive-deps
 
   var T=darkMode?DARK:LIGHT;
   var isPro=user&&user.isPro;
