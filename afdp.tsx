@@ -6436,8 +6436,8 @@ export default function App(){
 
       // MOCK DRAFT SIMULATOR
       rankSubTab==="mockdraft"&&(function(){
-        var rookiePlayers=rankedPlayers.filter(function(p){return p.note&&(p.note.includes("pick")||p.note.includes("Pick"))&&(p.age||99)<=24;}).sort(function(a,b){return (b.tradeVal||0)-(a.tradeVal||0);});
-        if(rookiePlayers.length<10)rookiePlayers=rankedPlayers.filter(function(p){return (p.age||99)<=24;}).sort(function(a,b){return (b.tradeVal||0)-(a.tradeVal||0);}).slice(0,36);
+        var rookiePlayers=rankedPlayers.filter(function(p){return p.note&&p.note.includes("2026")&&(p.note.includes("pick")||p.note.includes("draft"));}).sort(function(a,b){return (b.tradeVal||0)-(a.tradeVal||0);});
+        if(rookiePlayers.length<10)rookiePlayers=rankedPlayers.filter(function(p){return p.note&&p.note.includes("2026");}).sort(function(a,b){return (b.tradeVal||0)-(a.tradeVal||0);}).slice(0,48);
         var pool=mockAvailable||rookiePlayers;
         var filteredPool=mockPosFilter==="ALL"?pool:pool.filter(function(p){return p.pos===mockPosFilter;});
         var totalPicks=mockTeams*4;
