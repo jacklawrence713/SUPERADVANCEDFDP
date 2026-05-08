@@ -2694,6 +2694,7 @@ export default function App(){
   var [tradeAddPending,setTradeAddPending]=useState(null as any);
   var [pvSearch,setPvSearch]=useState("");
   var [reportTagFilter,setReportTagFilter]=useState("All");
+  var [tradeTargetPos,setTradeTargetPos]=useState("ALL");
 
   var T=darkMode?DARK:LIGHT;
   var isPro=user&&user.isPro;
@@ -4068,6 +4069,98 @@ export default function App(){
           );
         })()
       ),
+      // HOT TRADE TARGETS
+      (function(){
+        var targetPos=typeof tradeTargetPos==="undefined"?"ALL":tradeTargetPos;
+        var offPlayers=rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].includes(p.pos)&&(p.tradeVal||0)>=1000;});
+        // Buy Low: young + pre-prime + value between 2000-7000 (upside)
+        var buyLow=offPlayers.filter(function(p){
+          var lo=PRIME[p.pos]?PRIME[p.pos][0]:25;
+          return (p.age||25)<=lo+1&&(p.tradeVal||0)>=2000&&(p.tradeVal||0)<=7000&&(targetPos==="ALL"||p.pos===targetPos);
+        }).sort(function(a,b){return (b.tradeVal||0)-(a.tradeVal||0);}).slice(0,5);
+        // Sell High: past prime peak or aging with high value
+        var sellHigh=offPlayers.filter(function(p){
+          var hi=PRIME[p.pos]?PRIME[p.pos][1]:30;
+          return (p.age||25)>=hi-1&&(p.tradeVal||0)>=3000&&(targetPos==="ALL"||p.pos===targetPos);
+        }).sort(function(a,b){return (b.tradeVal||0)-(a.tradeVal||0);}).slice(0,5);
+        // Breakout: young players with solid value (rising)
+        var breakout=offPlayers.filter(function(p){
+          return (p.age||25)<=24&&(p.tradeVal||0)>=1500&&(p.tradeVal||0)<=6000&&(targetPos==="ALL"||p.pos===targetPos);
+        }).sort(function(a,b){return (b.tradeVal||0)-(a.tradeVal||0);}).slice(0,5);
+        if(buyLow.length===0&&sellHigh.length===0)return null;
+        return React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:20,padding:18,marginBottom:20}},
+          React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:4}},
+            React.createElement("span",{style:{fontSize:20}},"🎯"),
+            React.createElement("div",{style:{fontWeight:800,fontSize:16}},"Trade Targets")
+          ),
+          React.createElement("div",{style:{fontSize:11,color:T.textSub,marginBottom:12}},"Buy low on undervalued assets. Sell high before the cliff. Tap any player to analyze a trade."),
+          React.createElement("div",{style:{display:"flex",gap:6,marginBottom:14,flexWrap:"wrap"}},
+            ["ALL","QB","RB","WR","TE"].map(function(pos){
+              var active=targetPos===pos;var pc=POS_COLORS[pos]||T.purple;
+              return React.createElement("button",{key:pos,onClick:function(){setTradeTargetPos(pos);},style:{padding:"5px 14px",borderRadius:20,border:"1px solid "+(active?pc:T.border),background:active?pc+"22":"transparent",color:active?pc:T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},pos);
+            })
+          ),
+          buyLow.length>0&&React.createElement("div",{style:{marginBottom:14}},
+            React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,marginBottom:8}},
+              React.createElement("span",{style:{fontSize:10,fontWeight:800,color:T.green,background:T.green+"18",borderRadius:6,padding:"3px 8px",letterSpacing:1}},"BUY LOW"),
+              React.createElement("span",{style:{fontSize:10,color:T.textDim}},"Undervalued — acquire before they rise")
+            ),
+            buyLow.map(function(p){
+              var lo=PRIME[p.pos]?PRIME[p.pos][0]:25;var yrsToP=Math.max(0,lo-(p.age||25));
+              return React.createElement("div",{key:p.name,onClick:function(){addToTrade(p);},style:{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",background:T.bgInput,borderRadius:10,marginBottom:4,cursor:"pointer",border:"1px solid transparent"}},
+                React.createElement(Avatar,{name:p.name,pos:p.pos,size:28}),
+                React.createElement("div",{style:{flex:1,minWidth:0}},
+                  React.createElement("div",{style:{fontWeight:700,fontSize:12,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
+                  React.createElement("div",{style:{fontSize:10,color:T.textSub}},p.pos+" · "+p.team+" · Age "+(p.age||"?")+(yrsToP>0?" · "+yrsToP+"yr to prime":""))
+                ),
+                React.createElement("div",{style:{textAlign:"right",flexShrink:0}},
+                  React.createElement("div",{style:{fontWeight:800,fontSize:12,color:T.green}},(p.tradeVal||0).toLocaleString()),
+                  React.createElement("div",{style:{fontSize:9,color:T.green}},"↗ Buy")
+                )
+              );
+            })
+          ),
+          sellHigh.length>0&&React.createElement("div",{style:{marginBottom:14}},
+            React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,marginBottom:8}},
+              React.createElement("span",{style:{fontSize:10,fontWeight:800,color:T.red,background:T.red+"18",borderRadius:6,padding:"3px 8px",letterSpacing:1}},"SELL HIGH"),
+              React.createElement("span",{style:{fontSize:10,color:T.textDim}},"Peak value — sell before decline")
+            ),
+            sellHigh.map(function(p){
+              var hi=PRIME[p.pos]?PRIME[p.pos][1]:30;var yrsPast=Math.max(0,(p.age||25)-hi);
+              return React.createElement("div",{key:p.name,onClick:function(){addToTrade(p);},style:{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",background:T.bgInput,borderRadius:10,marginBottom:4,cursor:"pointer",border:"1px solid transparent"}},
+                React.createElement(Avatar,{name:p.name,pos:p.pos,size:28}),
+                React.createElement("div",{style:{flex:1,minWidth:0}},
+                  React.createElement("div",{style:{fontWeight:700,fontSize:12,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
+                  React.createElement("div",{style:{fontSize:10,color:T.textSub}},p.pos+" · "+p.team+" · Age "+(p.age||"?")+(yrsPast>0?" · "+yrsPast+"yr past prime":""))
+                ),
+                React.createElement("div",{style:{textAlign:"right",flexShrink:0}},
+                  React.createElement("div",{style:{fontWeight:800,fontSize:12,color:T.red}},(p.tradeVal||0).toLocaleString()),
+                  React.createElement("div",{style:{fontSize:9,color:T.red}},"↘ Sell")
+                )
+              );
+            })
+          ),
+          breakout.length>0&&React.createElement("div",null,
+            React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,marginBottom:8}},
+              React.createElement("span",{style:{fontSize:10,fontWeight:800,color:"#818cf8",background:"#818cf822",borderRadius:6,padding:"3px 8px",letterSpacing:1}},"BREAKOUT"),
+              React.createElement("span",{style:{fontSize:10,color:T.textDim}},"Young upside — dynasty league winners")
+            ),
+            breakout.map(function(p){
+              return React.createElement("div",{key:p.name,onClick:function(){addToTrade(p);},style:{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",background:T.bgInput,borderRadius:10,marginBottom:4,cursor:"pointer",border:"1px solid transparent"}},
+                React.createElement(Avatar,{name:p.name,pos:p.pos,size:28}),
+                React.createElement("div",{style:{flex:1,minWidth:0}},
+                  React.createElement("div",{style:{fontWeight:700,fontSize:12,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
+                  React.createElement("div",{style:{fontSize:10,color:T.textSub}},p.pos+" · "+p.team+" · Age "+(p.age||"?"))
+                ),
+                React.createElement("div",{style:{textAlign:"right",flexShrink:0}},
+                  React.createElement("div",{style:{fontWeight:800,fontSize:12,color:"#818cf8"}},(p.tradeVal||0).toLocaleString()),
+                  React.createElement("div",{style:{fontSize:9,color:"#818cf8"}},"⚡ Breakout")
+                )
+              );
+            })
+          )
+        );
+      })(),
       !isPro&&React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:28,padding:"0 4px"}},
         [["1,000+","PLAYERS RANKED"],["4","LEAGUE PLATFORMS"],["6","SCORING COMBOS"],["Daily","VALUE UPDATES"]].map(function(s){return React.createElement("div",{key:s[0],style:{textAlign:"center"}},React.createElement("div",{style:{fontWeight:900,fontSize:26,color:T.purple}},s[0]),React.createElement("div",{style:{fontSize:10,color:T.textSub,letterSpacing:1.5,fontWeight:600}},s[1]));})
       ),
