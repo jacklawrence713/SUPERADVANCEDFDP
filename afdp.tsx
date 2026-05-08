@@ -2705,6 +2705,24 @@ export default function App(){
   var [mockLog,setMockLog]=useState([] as any[]);
   var [mockStarted,setMockStarted]=useState(false);
   var [mockPosFilter,setMockPosFilter]=useState("ALL");
+  var [startupStarted,setStartupStarted]=useState(false);
+  var [startupRound,setStartupRound]=useState(1);
+  var [startupPick,setStartupPick]=useState(1);
+  var [startupRoster,setStartupRoster]=useState([] as any[]);
+  var [startupAvailable,setStartupAvailable]=useState(null as any[]|null);
+  var [startupTeams,setStartupTeams]=useState(12);
+  var [startupSlot,setStartupSlot]=useState(1);
+  var [startupLog,setStartupLog]=useState([] as any[]);
+  var [startupPosFilter,setStartupPosFilter]=useState("ALL");
+  var [startupRounds,setStartupRounds]=useState(16);
+  var [rbTeamA,setRbTeamA]=useState([] as any[]);
+  var [rbSearch,setRbSearch]=useState("");
+  var [rbGrade,setRbGrade]=useState(null as any);
+  var [h2hTeamA,setH2hTeamA]=useState([] as any[]);
+  var [h2hTeamB,setH2hTeamB]=useState([] as any[]);
+  var [h2hSearchA,setH2hSearchA]=useState("");
+  var [h2hSearchB,setH2hSearchB]=useState("");
+  var [h2hResult,setH2hResult]=useState(null as any);
 
   useEffect(function(){if(onboardStep===0){var t=setTimeout(function(){setOnboardStep(1);},1500);return function(){clearTimeout(t);};}},[]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -6074,7 +6092,7 @@ export default function App(){
       React.createElement("div",{style:{position:"relative",borderBottom:"1px solid "+T.border}},
         isDesktop&&React.createElement("button",{onClick:function(){rankingTabsRef.current&&rankingTabsRef.current.scrollBy({left:-200,behavior:"smooth"});},style:{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",zIndex:2,background:T.bgCard,border:"1px solid "+T.border,borderRadius:"50%",width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:T.text,fontSize:14,padding:0}},"‹"),
         React.createElement("div",{ref:rankingTabsRef,style:{display:"flex",gap:6,overflowX:"auto",padding:isDesktop?"10px 36px":"10px 12px",scrollbarWidth:"none",WebkitOverflowScrolling:"touch"}},
-          [["news","📰 Dynasty News"],["playervalues","$ Player Values"],["allrankings","All Rankings"],["qbs","QBs"],["rbs","RBs"],["wrs","WRs"],["tes","TEs"],["idp","IDP"],["rookie","Rookie Picks"],["mockdraft","Mock Draft"],["vegas","Vegas Lines"],["trending","Trending"],["market","Market"],["valuetrends","Value Trends"],["pickcalc","Pick Calculator"],["watchlist","Watchlist"],["keeper","Keeper Calc"],["compare","Compare"],["history","Trade History"]].map(function(st){
+          [["news","📰 Dynasty News"],["playervalues","$ Player Values"],["allrankings","All Rankings"],["qbs","QBs"],["rbs","RBs"],["wrs","WRs"],["tes","TEs"],["idp","IDP"],["rookie","Rookie Picks"],["mockdraft","Mock Draft"],["startup","Startup Draft"],["rosterbuilder","Roster Builder"],["h2h","H2H Matchup"],["vegas","Vegas Lines"],["trending","Trending"],["market","Market"],["valuetrends","Value Trends"],["pickcalc","Pick Calculator"],["watchlist","Watchlist"],["keeper","Keeper Calc"],["compare","Compare"],["history","Trade History"]].map(function(st){
             var active=rankSubTab===st[0];
             return React.createElement("button",{key:st[0],onClick:function(){setRankSubTab(st[0]);},style:{padding:"7px 14px",borderRadius:20,border:"1px solid "+(active?T.purple:T.border),background:active?T.purple:"transparent",color:active?"#fff":T.textSub,fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}},st[1]);
           })
@@ -6502,9 +6520,31 @@ export default function App(){
                 )
               )
             ),
+            React.createElement("div",{style:{display:"flex",gap:10,marginBottom:12}},
+              React.createElement("div",{style:{flex:1}},
+                React.createElement("div",{style:{fontSize:10,color:T.textSub,fontWeight:700,marginBottom:4,letterSpacing:1}},"SCORING"),
+                React.createElement("div",{style:{display:"flex",gap:4}},
+                  ["PPR","Half","Standard"].map(function(f){return React.createElement("button",{key:f,onClick:function(){setFormat(f);},style:{flex:1,padding:"8px 4px",borderRadius:8,border:"1px solid "+(format===f?T.purple:T.border),background:format===f?T.purple+"22":"transparent",color:format===f?T.purpleLight:T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},f);})
+                )
+              ),
+              React.createElement("div",{style:{flex:1}},
+                React.createElement("div",{style:{fontSize:10,color:T.textSub,fontWeight:700,marginBottom:4,letterSpacing:1}},"LEAGUE TYPE"),
+                React.createElement("div",{style:{display:"flex",gap:4}},
+                  ["Dynasty","Keeper","Redraft"].map(function(lt){return React.createElement("button",{key:lt,onClick:function(){setLeagueType(lt);},style:{flex:1,padding:"8px 4px",borderRadius:8,border:"1px solid "+(leagueType===lt?T.purple:T.border),background:leagueType===lt?T.purple+"22":"transparent",color:leagueType===lt?T.purpleLight:T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},lt);})
+                )
+              )
+            ),
+            React.createElement("div",{style:{display:"flex",gap:8,marginBottom:14}},
+              React.createElement("button",{onClick:function(){setSfMode(function(v){return !v;});},style:{flex:1,padding:"8px 4px",borderRadius:8,border:"1px solid "+(sfMode?"#f59e0b":T.border),background:sfMode?"#f59e0b22":"transparent",color:sfMode?"#f59e0b":T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},sfMode?"✓ Superflex":"Superflex"),
+              React.createElement("button",{onClick:function(){setTePremium(function(v){return v?0:1;});},style:{flex:1,padding:"8px 4px",borderRadius:8,border:"1px solid "+(tePremium?"#f59e0b":T.border),background:tePremium?"#f59e0b22":"transparent",color:tePremium?"#f59e0b":T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},tePremium?"✓ TE Premium":"TE Premium"),
+              React.createElement("button",{onClick:function(){setIdpMode(function(v){return !v;});},style:{flex:1,padding:"8px 4px",borderRadius:8,border:"1px solid "+(idpMode?"#f59e0b":T.border),background:idpMode?"#f59e0b22":"transparent",color:idpMode?"#f59e0b":T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},idpMode?"✓ IDP":"IDP")
+            ),
             React.createElement("button",{onClick:function(){setMockStarted(true);setMockAvailable(rookiePlayers.slice());setMockRoster([]);setMockLog([]);setMockPick(1);setMockRound(1);},style:{width:"100%",padding:"14px",borderRadius:12,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",fontWeight:800,fontSize:14,cursor:"pointer"}},"Start Draft")
           ),
           mockStarted&&React.createElement(React.Fragment,null,
+            React.createElement("div",{style:{display:"flex",gap:6,marginBottom:8,flexWrap:"wrap"}},
+              [format,leagueType,sfMode?"Superflex":"1QB",tePremium?"TEP":"Standard TE"].concat(idpMode?["IDP"]:[]).map(function(tag){return React.createElement("span",{key:tag,style:{fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:6,background:T.purple+"22",color:T.purpleLight,border:"1px solid "+T.purple+"44"}},tag);})
+            ),
             React.createElement("div",{style:{display:"flex",gap:8,marginBottom:12}},
               React.createElement("div",{style:{flex:1,background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"10px 14px",textAlign:"center"}},
                 React.createElement("div",{style:{fontSize:9,color:T.textSub,fontWeight:700,letterSpacing:1}},"ROUND"),
@@ -6528,7 +6568,7 @@ export default function App(){
             isMyPick&&!draftDone&&React.createElement("div",{style:{marginBottom:12}},
               React.createElement("div",{style:{fontSize:11,fontWeight:800,color:T.green,letterSpacing:1,marginBottom:8}},"ON THE CLOCK — MAKE YOUR PICK"),
               React.createElement("div",{style:{display:"flex",gap:6,marginBottom:10,flexWrap:"wrap"}},
-                ["ALL","QB","RB","WR","TE"].map(function(pos){
+                ["ALL","QB","RB","WR","TE"].concat(idpMode?["DL","LB","DB"]:[]).map(function(pos){
                   var active=mockPosFilter===pos;var pc=POS_COLORS[pos]||T.purple;
                   return React.createElement("button",{key:pos,onClick:function(){setMockPosFilter(pos);},style:{padding:"5px 12px",borderRadius:20,border:"1px solid "+(active?pc:T.border),background:active?pc+"22":"transparent",color:active?pc:T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},pos);
                 })
@@ -6574,6 +6614,386 @@ export default function App(){
           )
         );
       })(),
+
+      // STARTUP DRAFT SIMULATOR
+      rankSubTab==="startup"&&(function(){
+        var startupPositions=["QB","RB","WR","TE"].concat(idpMode?["DL","LB","DB"]:[]);
+        var allPlayers=rankedPlayers.filter(function(p){return startupPositions.includes(p.pos)&&(p.tradeVal||0)>=500;}).sort(function(a,b){return (b.tradeVal||0)-(a.tradeVal||0);});
+        var pool=startupAvailable||allPlayers;
+        var totalPicks=startupTeams*startupRounds;
+        var currentRound=Math.ceil(startupPick/startupTeams);
+        var pickInRound=((startupPick-1)%startupTeams)+1;
+        var isSnake=currentRound%2===0;
+        var actualPickInRound=isSnake?startupTeams-pickInRound+1:pickInRound;
+        var isMyPick=startupStarted&&actualPickInRound===startupSlot;
+        var draftDone=startupPick>totalPicks||pool.length===0;
+        var filteredPool=startupPosFilter==="ALL"?pool:pool.filter(function(p){return p.pos===startupPosFilter;});
+        function runStartupAi(){
+          if(pool.length===0||startupPick>totalPicks)return;
+          var p=pool.slice();var pk=startupPick;var lg=startupLog.slice();var safety=0;
+          while(pk<=totalPicks&&p.length>0&&safety<300){
+            safety++;var cr=Math.ceil(pk/startupTeams);var pir=((pk-1)%startupTeams)+1;var sn=cr%2===0;var apr=sn?startupTeams-pir+1:pir;
+            if(apr===startupSlot)break;
+            // AI picks with slight positional randomness
+            var idx=Math.min(Math.floor(Math.random()*3),p.length-1);
+            var best=p[idx];p.splice(idx,1);
+            lg.push({round:cr,pick:pk,team:"Team "+apr,player:best,isUser:false});pk++;
+          }
+          if(pk!==startupPick){setStartupAvailable(p);setStartupPick(pk);setStartupLog(lg);}
+        }
+        function userStartupPick(player){
+          var remaining=pool.filter(function(x){return x.name!==player.name;});
+          setStartupAvailable(remaining);
+          setStartupRoster(function(prev){return prev.concat([player]);});
+          setStartupLog(function(prev){return prev.concat([{round:currentRound,pick:startupPick,team:"You ("+startupSlot+")",player:player,isUser:true}]);});
+          setStartupPick(function(v){return v+1;});
+        }
+        if(startupStarted&&!isMyPick&&!draftDone&&pool.length>0){setTimeout(runStartupAi,300);}
+        // Roster composition
+        var rosterByPos={QB:0,RB:0,WR:0,TE:0};
+        startupRoster.forEach(function(p){if(rosterByPos[p.pos]!==undefined)rosterByPos[p.pos]++;});
+        var totalRosterVal=startupRoster.reduce(function(s,p){return s+(p.tradeVal||0);},0);
+        return React.createElement("div",{style:{padding:"16px"}},
+          React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10,marginBottom:16}},
+            React.createElement("span",{style:{fontSize:28}},"🏟️"),
+            React.createElement("div",null,
+              React.createElement("div",{style:{fontWeight:900,fontSize:22}},"Startup Draft Simulator"),
+              React.createElement("div",{style:{fontSize:12,color:T.textSub}},"Build your dynasty team from scratch against AI")
+            )
+          ),
+          !startupStarted&&React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:16,padding:20,marginBottom:16}},
+            React.createElement("div",{style:{fontWeight:700,fontSize:14,marginBottom:14}},"Startup Settings"),
+            React.createElement("div",{style:{display:"flex",gap:10,marginBottom:12}},
+              React.createElement("div",{style:{flex:1}},
+                React.createElement("div",{style:{fontSize:10,color:T.textSub,fontWeight:700,marginBottom:4,letterSpacing:1}},"TEAMS"),
+                React.createElement("div",{style:{display:"flex",gap:4}},
+                  [8,10,12,14].map(function(n){return React.createElement("button",{key:n,onClick:function(){setStartupTeams(n);if(startupSlot>n)setStartupSlot(n);},style:{flex:1,padding:"8px 4px",borderRadius:8,border:"1px solid "+(startupTeams===n?T.purple:T.border),background:startupTeams===n?T.purple+"22":"transparent",color:startupTeams===n?T.purpleLight:T.textSub,fontWeight:700,fontSize:12,cursor:"pointer"}},n);})
+                )
+              ),
+              React.createElement("div",{style:{flex:1}},
+                React.createElement("div",{style:{fontSize:10,color:T.textSub,fontWeight:700,marginBottom:4,letterSpacing:1}},"ROUNDS"),
+                React.createElement("div",{style:{display:"flex",gap:4}},
+                  [12,16,20,24].map(function(n){return React.createElement("button",{key:n,onClick:function(){setStartupRounds(n);},style:{flex:1,padding:"8px 4px",borderRadius:8,border:"1px solid "+(startupRounds===n?T.purple:T.border),background:startupRounds===n?T.purple+"22":"transparent",color:startupRounds===n?T.purpleLight:T.textSub,fontWeight:700,fontSize:12,cursor:"pointer"}},n);})
+                )
+              )
+            ),
+            React.createElement("div",{style:{marginBottom:12}},
+              React.createElement("div",{style:{fontSize:10,color:T.textSub,fontWeight:700,marginBottom:4,letterSpacing:1}},"YOUR PICK"),
+              React.createElement("select",{value:startupSlot,onChange:function(e){setStartupSlot(+e.target.value);},style:{width:"100%",background:T.bgInput,color:T.text,border:"1px solid "+T.border,borderRadius:8,padding:"8px",fontSize:12,outline:"none"}},
+                Array.from({length:startupTeams},function(_,i){return React.createElement("option",{key:i+1,value:i+1},"Pick "+(i+1));})
+              )
+            ),
+            React.createElement("div",{style:{display:"flex",gap:10,marginBottom:12}},
+              React.createElement("div",{style:{flex:1}},
+                React.createElement("div",{style:{fontSize:10,color:T.textSub,fontWeight:700,marginBottom:4,letterSpacing:1}},"SCORING"),
+                React.createElement("div",{style:{display:"flex",gap:4}},
+                  ["PPR","Half","Standard"].map(function(f){return React.createElement("button",{key:f,onClick:function(){setFormat(f);},style:{flex:1,padding:"8px 4px",borderRadius:8,border:"1px solid "+(format===f?T.purple:T.border),background:format===f?T.purple+"22":"transparent",color:format===f?T.purpleLight:T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},f);})
+                )
+              ),
+              React.createElement("div",{style:{flex:1}},
+                React.createElement("div",{style:{fontSize:10,color:T.textSub,fontWeight:700,marginBottom:4,letterSpacing:1}},"LEAGUE TYPE"),
+                React.createElement("div",{style:{display:"flex",gap:4}},
+                  ["Dynasty","Keeper","Redraft"].map(function(lt){return React.createElement("button",{key:lt,onClick:function(){setLeagueType(lt);},style:{flex:1,padding:"8px 4px",borderRadius:8,border:"1px solid "+(leagueType===lt?T.purple:T.border),background:leagueType===lt?T.purple+"22":"transparent",color:leagueType===lt?T.purpleLight:T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},lt);})
+                )
+              )
+            ),
+            React.createElement("div",{style:{display:"flex",gap:8,marginBottom:14}},
+              React.createElement("button",{onClick:function(){setSfMode(function(v){return !v;});},style:{flex:1,padding:"8px 4px",borderRadius:8,border:"1px solid "+(sfMode?"#f59e0b":T.border),background:sfMode?"#f59e0b22":"transparent",color:sfMode?"#f59e0b":T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},sfMode?"✓ Superflex":"Superflex"),
+              React.createElement("button",{onClick:function(){setTePremium(function(v){return v?0:1;});},style:{flex:1,padding:"8px 4px",borderRadius:8,border:"1px solid "+(tePremium?"#f59e0b":T.border),background:tePremium?"#f59e0b22":"transparent",color:tePremium?"#f59e0b":T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},tePremium?"✓ TE Premium":"TE Premium"),
+              React.createElement("button",{onClick:function(){setIdpMode(function(v){return !v;});},style:{flex:1,padding:"8px 4px",borderRadius:8,border:"1px solid "+(idpMode?"#f59e0b":T.border),background:idpMode?"#f59e0b22":"transparent",color:idpMode?"#f59e0b":T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},idpMode?"✓ IDP":"IDP")
+            ),
+            React.createElement("button",{onClick:function(){setStartupStarted(true);setStartupAvailable(allPlayers.slice());setStartupRoster([]);setStartupLog([]);setStartupPick(1);},style:{width:"100%",padding:"14px",borderRadius:12,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",fontWeight:800,fontSize:14,cursor:"pointer"}},"Start Startup Draft")
+          ),
+          startupStarted&&React.createElement(React.Fragment,null,
+            React.createElement("div",{style:{display:"flex",gap:6,marginBottom:8,flexWrap:"wrap"}},
+              [format,leagueType,sfMode?"Superflex":"1QB",tePremium?"TEP":"Standard TE"].concat(idpMode?["IDP"]:[]).map(function(tag){return React.createElement("span",{key:tag,style:{fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:6,background:T.purple+"22",color:T.purpleLight,border:"1px solid "+T.purple+"44"}},tag);})
+            ),
+            React.createElement("div",{style:{display:"flex",gap:6,marginBottom:12}},
+              React.createElement("div",{style:{flex:1,background:T.bgCard,border:"1px solid "+T.border,borderRadius:10,padding:"8px 12px",textAlign:"center"}},
+                React.createElement("div",{style:{fontSize:8,color:T.textSub,fontWeight:700,letterSpacing:1}},"ROUND"),
+                React.createElement("div",{style:{fontWeight:900,fontSize:20,color:T.purple}},currentRound+"/"+startupRounds)
+              ),
+              React.createElement("div",{style:{flex:1,background:T.bgCard,border:"1px solid "+T.border,borderRadius:10,padding:"8px 12px",textAlign:"center"}},
+                React.createElement("div",{style:{fontSize:8,color:T.textSub,fontWeight:700,letterSpacing:1}},"PICK"),
+                React.createElement("div",{style:{fontWeight:900,fontSize:20,color:T.text}},startupPick+"/"+totalPicks)
+              ),
+              React.createElement("div",{style:{flex:1,background:isMyPick?T.green+"22":T.bgCard,border:"1px solid "+(isMyPick?T.green:T.border),borderRadius:10,padding:"8px 12px",textAlign:"center"}},
+                React.createElement("div",{style:{fontSize:8,color:isMyPick?T.green:T.textSub,fontWeight:700,letterSpacing:1}},isMyPick?"ON THE CLOCK":"WAITING"),
+                React.createElement("div",{style:{fontWeight:900,fontSize:14,color:isMyPick?T.green:T.textDim}},isMyPick?"Pick now!":"AI...")
+              ),
+              React.createElement("div",{style:{flex:1,background:T.bgCard,border:"1px solid "+T.border,borderRadius:10,padding:"8px 12px",textAlign:"center"}},
+                React.createElement("div",{style:{fontSize:8,color:T.textSub,fontWeight:700,letterSpacing:1}},"VALUE"),
+                React.createElement("div",{style:{fontWeight:900,fontSize:14,color:T.purpleLight}},totalRosterVal.toLocaleString())
+              )
+            ),
+            draftDone&&React.createElement("div",{style:{background:"linear-gradient(135deg,#052e16,#064e3b)",border:"1px solid "+T.green+"44",borderRadius:16,padding:20,marginBottom:16,textAlign:"center"}},
+              React.createElement("div",{style:{fontSize:36,marginBottom:8}},"🏆"),
+              React.createElement("div",{style:{fontWeight:900,fontSize:20,color:T.green,marginBottom:4}},"Startup Draft Complete!"),
+              React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:4}},startupRoster.length+" players · "+totalRosterVal.toLocaleString()+" total value"),
+              React.createElement("div",{style:{display:"flex",justifyContent:"center",gap:12,marginBottom:12}},
+                Object.keys(rosterByPos).map(function(pos){return React.createElement("div",{key:pos,style:{textAlign:"center"}},
+                  React.createElement("div",{style:{fontWeight:900,fontSize:18,color:POS_COLORS[pos]||T.text}},rosterByPos[pos]),
+                  React.createElement("div",{style:{fontSize:9,color:T.textSub,fontWeight:700}},pos)
+                );})
+              ),
+              React.createElement("button",{onClick:function(){setStartupStarted(false);setStartupAvailable(null);setStartupRoster([]);setStartupLog([]);setStartupPick(1);},style:{padding:"12px 24px",borderRadius:12,border:"1px solid "+T.green,background:T.green+"22",color:T.green,fontWeight:700,fontSize:13,cursor:"pointer"}},"Draft Again")
+            ),
+            isMyPick&&!draftDone&&React.createElement("div",{style:{marginBottom:12}},
+              React.createElement("div",{style:{display:"flex",gap:6,marginBottom:10,flexWrap:"wrap"}},
+                ["ALL","QB","RB","WR","TE"].concat(idpMode?["DL","LB","DB"]:[]).map(function(pos){
+                  var active=startupPosFilter===pos;var pc=POS_COLORS[pos]||T.purple;
+                  return React.createElement("button",{key:pos,onClick:function(){setStartupPosFilter(pos);},style:{padding:"5px 12px",borderRadius:20,border:"1px solid "+(active?pc:T.border),background:active?pc+"22":"transparent",color:active?pc:T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},pos);
+                })
+              ),
+              filteredPool.slice(0,15).map(function(p){
+                var ag=ageGrade(p.pos,p.age||0);
+                return React.createElement("div",{key:p.name,onClick:function(){userStartupPick(p);},style:{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",background:T.bgCard,border:"1px solid "+T.border,borderRadius:10,marginBottom:4,cursor:"pointer"}},
+                  React.createElement(Avatar,{name:p.name,pos:p.pos,size:28}),
+                  React.createElement("div",{style:{flex:1,minWidth:0}},
+                    React.createElement("div",{style:{fontWeight:700,fontSize:12,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
+                    React.createElement("div",{style:{fontSize:10,color:T.textSub}},p.pos+" · "+p.team+" · Age "+(p.age||"?")+" · "+ag.g)
+                  ),
+                  React.createElement("div",{style:{textAlign:"right",flexShrink:0}},
+                    React.createElement("div",{style:{fontWeight:800,fontSize:12,color:T.purpleLight}},(p.tradeVal||0).toLocaleString()),
+                    React.createElement("button",{style:{fontSize:9,fontWeight:700,color:T.green,background:T.green+"18",border:"1px solid "+T.green+"33",borderRadius:6,padding:"2px 8px",cursor:"pointer",marginTop:2}},"Draft")
+                  )
+                );
+              })
+            ),
+            startupRoster.length>0&&React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:14,padding:14,marginBottom:12}},
+              React.createElement("div",{style:{fontWeight:800,fontSize:13,marginBottom:8}},"Your Roster ("+startupRoster.length+")"),
+              React.createElement("div",{style:{display:"flex",gap:8,marginBottom:10}},
+                Object.keys(rosterByPos).map(function(pos){return React.createElement("div",{key:pos,style:{background:POS_COLORS[pos]+"22",borderRadius:8,padding:"4px 10px",fontSize:10,fontWeight:700,color:POS_COLORS[pos]}},pos+" "+rosterByPos[pos]);})
+              ),
+              startupRoster.map(function(p,i){
+                return React.createElement("div",{key:p.name,style:{display:"flex",alignItems:"center",gap:6,marginBottom:3}},
+                  React.createElement("span",{style:{fontSize:9,color:T.textDim,fontWeight:700,width:18}},(i+1)+"."),
+                  React.createElement(Avatar,{name:p.name,pos:p.pos,size:18}),
+                  React.createElement("div",{style:{flex:1,fontSize:11,fontWeight:600}},p.name),
+                  React.createElement(PBadge,{pos:p.pos}),
+                  React.createElement("span",{style:{fontSize:10,color:T.purpleLight,fontWeight:700}},(p.tradeVal||0).toLocaleString())
+                );
+              })
+            ),
+            startupLog.length>0&&React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:14}},
+              React.createElement("div",{style:{fontWeight:800,fontSize:13,marginBottom:8}},"Draft Log (last 20)"),
+              startupLog.slice().reverse().slice(0,20).map(function(entry,i){
+                return React.createElement("div",{key:i,style:{display:"flex",alignItems:"center",gap:6,marginBottom:3,opacity:entry.isUser?1:0.6}},
+                  React.createElement("span",{style:{fontSize:9,color:T.textDim,fontWeight:700,width:28}},entry.round+"."+((entry.pick-1)%startupTeams+1)),
+                  React.createElement(Avatar,{name:entry.player.name,pos:entry.player.pos,size:16}),
+                  React.createElement("div",{style:{flex:1,fontSize:10,fontWeight:entry.isUser?700:500,color:entry.isUser?T.green:T.text}},entry.player.name),
+                  React.createElement(PBadge,{pos:entry.player.pos}),
+                  React.createElement("span",{style:{fontSize:9,color:entry.isUser?T.green:T.textDim}},entry.team)
+                );
+              })
+            )
+          )
+        );
+      })(),
+
+      // ROSTER BUILDER
+      rankSubTab==="rosterbuilder"&&React.createElement("div",{style:{padding:"16px"}},
+        React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10,marginBottom:16}},
+          React.createElement("span",{style:{fontSize:28}},"🏗️"),
+          React.createElement("div",null,
+            React.createElement("div",{style:{fontWeight:900,fontSize:22}},"Roster Builder"),
+            React.createElement("div",{style:{fontSize:12,color:T.textSub}},"Build a roster from scratch and get a dynasty grade")
+          )
+        ),
+        React.createElement("div",{style:{position:"relative",marginBottom:12}},
+          React.createElement("input",{value:rbSearch,onChange:function(e){setRbSearch(e.target.value);},placeholder:"Search players to add...",style:{width:"100%",background:T.bgInput,color:T.text,border:"1px solid "+T.border,borderRadius:12,padding:"12px 14px",fontSize:13,outline:"none",boxSizing:"border-box"}}),
+          rbSearch.length>=2&&React.createElement("div",{style:{position:"absolute",top:"calc(100% + 4px)",left:0,right:0,zIndex:200,background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:10,overflow:"hidden",boxShadow:"0 8px 24px #0008",maxHeight:240,overflowY:"auto"}},
+            rankedPlayers.filter(function(p){return p.name.toLowerCase().includes(rbSearch.toLowerCase())&&!rbTeamA.find(function(x){return x.name===p.name;});}).slice(0,8).map(function(p){
+              return React.createElement("div",{key:p.name,onClick:function(){setRbTeamA(function(prev){return prev.concat([p]);});setRbSearch("");setRbGrade(null);},style:{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",cursor:"pointer",borderBottom:"1px solid "+T.border}},
+                React.createElement(Avatar,{name:p.name,pos:p.pos,size:24}),
+                React.createElement("div",{style:{flex:1}},React.createElement("div",{style:{fontWeight:700,fontSize:12}},p.name),React.createElement("div",{style:{fontSize:10,color:T.textSub}},p.pos+" · "+p.team)),
+                React.createElement("span",{style:{fontWeight:800,fontSize:11,color:T.purpleLight}},(p.tradeVal||0).toLocaleString())
+              );
+            })
+          )
+        ),
+        rbTeamA.length>0&&React.createElement("div",{style:{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}},
+          ["QB","RB","WR","TE","DL","LB","DB"].map(function(pos){
+            var ct=rbTeamA.filter(function(p){return p.pos===pos;}).length;
+            return ct>0?React.createElement("div",{key:pos,style:{background:POS_COLORS[pos]+"22",borderRadius:8,padding:"4px 10px",fontSize:10,fontWeight:700,color:POS_COLORS[pos]}},pos+" "+ct):null;
+          })
+        ),
+        rbTeamA.map(function(p,i){
+          return React.createElement("div",{key:p.name,style:{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",background:T.bgCard,border:"1px solid "+T.border,borderRadius:10,marginBottom:4}},
+            React.createElement(Avatar,{name:p.name,pos:p.pos,size:26}),
+            React.createElement("div",{style:{flex:1,minWidth:0}},
+              React.createElement("div",{style:{fontWeight:700,fontSize:12,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
+              React.createElement("div",{style:{fontSize:10,color:T.textSub}},p.pos+" · "+p.team+" · Age "+(p.age||"?"))
+            ),
+            React.createElement("span",{style:{fontWeight:800,fontSize:11,color:T.purpleLight,flexShrink:0}},(p.tradeVal||0).toLocaleString()),
+            React.createElement("button",{onClick:function(){setRbTeamA(function(prev){return prev.filter(function(x){return x.name!==p.name;});});setRbGrade(null);},style:{padding:"4px 8px",borderRadius:6,border:"1px solid "+T.border,background:"none",color:T.textDim,fontSize:10,cursor:"pointer",flexShrink:0}},"✕")
+          );
+        }),
+        rbTeamA.length>=3&&React.createElement("button",{onClick:function(){
+          var total=rbTeamA.reduce(function(s,p){return s+(p.tradeVal||0);},0);
+          var grade=total>=140000?"A+":total>=120000?"A":total>=100000?"A-":total>=85000?"B+":total>=70000?"B":total>=58000?"B-":total>=47000?"C+":total>=38000?"C":total>=30000?"C-":"D";
+          var gradeColor=grade.startsWith("A")?"#22c55e":grade.startsWith("B")?"#60a5fa":grade.startsWith("C")?"#f59e0b":"#f87171";
+          var posCts={QB:0,RB:0,WR:0,TE:0};rbTeamA.forEach(function(p){if(posCts[p.pos]!==undefined)posCts[p.pos]++;});
+          var avgAge=rbTeamA.reduce(function(s,p){return s+(p.age||25);},0)/rbTeamA.length;
+          var strengths=[];var weaknesses=[];
+          if(posCts.QB>=2)strengths.push("Strong QB depth");else if(posCts.QB<1)weaknesses.push("No starting QB");
+          if(posCts.RB>=4)strengths.push("Deep RB room");else if(posCts.RB<2)weaknesses.push("Thin at RB");
+          if(posCts.WR>=4)strengths.push("Loaded at WR");else if(posCts.WR<3)weaknesses.push("Need more WRs");
+          if(posCts.TE>=2)strengths.push("TE depth");else if(posCts.TE<1)weaknesses.push("No TE");
+          if(avgAge<26)strengths.push("Young roster ("+avgAge.toFixed(1)+" avg)");else if(avgAge>29)weaknesses.push("Aging roster ("+avgAge.toFixed(1)+" avg)");
+          var windowYrs=avgAge<24?"5+":avgAge<26?"3-4":avgAge<28?"2-3":avgAge<30?"1-2":"<1";
+          setRbGrade({grade:grade,color:gradeColor,total:total,avgAge:avgAge,window:windowYrs,strengths:strengths,weaknesses:weaknesses,posCts:posCts});
+        },style:{width:"100%",padding:"14px",borderRadius:12,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",fontWeight:800,fontSize:14,cursor:"pointer",marginTop:8,marginBottom:12}},"Grade My Roster"),
+        rbGrade&&React.createElement("div",{style:{background:T.bgCard,border:"2px solid "+rbGrade.color,borderRadius:16,padding:20,marginBottom:16}},
+          React.createElement("div",{style:{display:"flex",alignItems:"center",gap:16,marginBottom:16}},
+            React.createElement("div",{style:{width:72,height:72,borderRadius:"50%",border:"4px solid "+rbGrade.color,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}},
+              React.createElement("div",{style:{fontWeight:900,fontSize:32,color:rbGrade.color}},rbGrade.grade)
+            ),
+            React.createElement("div",null,
+              React.createElement("div",{style:{fontWeight:900,fontSize:18}},"Dynasty Roster Grade"),
+              React.createElement("div",{style:{fontSize:12,color:T.textSub}},rbGrade.total.toLocaleString()+" total value · "+rbTeamA.length+" players"),
+              React.createElement("div",{style:{fontSize:12,color:rbGrade.avgAge<26?T.green:rbGrade.avgAge>29?T.red:T.gold,fontWeight:700,marginTop:2}},"Dynasty Window: "+rbGrade.window+" years")
+            )
+          ),
+          React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}},
+            React.createElement("div",null,
+              React.createElement("div",{style:{fontSize:10,fontWeight:800,color:T.green,letterSpacing:1,marginBottom:6}},"STRENGTHS"),
+              rbGrade.strengths.length>0?rbGrade.strengths.map(function(s){return React.createElement("div",{key:s,style:{fontSize:11,color:T.green,marginBottom:3}},"✓ "+s);}):React.createElement("div",{style:{fontSize:11,color:T.textDim}},"None identified")
+            ),
+            React.createElement("div",null,
+              React.createElement("div",{style:{fontSize:10,fontWeight:800,color:T.red,letterSpacing:1,marginBottom:6}},"WEAKNESSES"),
+              rbGrade.weaknesses.length>0?rbGrade.weaknesses.map(function(s){return React.createElement("div",{key:s,style:{fontSize:11,color:T.red,marginBottom:3}},"✗ "+s);}):React.createElement("div",{style:{fontSize:11,color:T.textDim}},"None identified")
+            )
+          ),
+          React.createElement("div",{style:{display:"flex",gap:8}},
+            Object.keys(rbGrade.posCts).map(function(pos){return React.createElement("div",{key:pos,style:{flex:1,textAlign:"center",background:T.bgInput,borderRadius:8,padding:"8px 4px"}},
+              React.createElement("div",{style:{fontWeight:900,fontSize:18,color:POS_COLORS[pos]||T.text}},rbGrade.posCts[pos]),
+              React.createElement("div",{style:{fontSize:9,color:T.textSub,fontWeight:700}},pos)
+            );})
+          )
+        ),
+        rbTeamA.length>0&&React.createElement("button",{onClick:function(){setRbTeamA([]);setRbGrade(null);},style:{width:"100%",padding:"10px",borderRadius:10,border:"1px solid "+T.border,background:"transparent",color:T.textDim,fontWeight:600,fontSize:12,cursor:"pointer"}},"Clear Roster"),
+        rbTeamA.length===0&&React.createElement("div",{style:{background:T.bgCard,border:"1px dashed "+T.border,borderRadius:14,padding:"32px 20px",textAlign:"center"}},
+          React.createElement("div",{style:{fontSize:32,marginBottom:8}},"🏗️"),
+          React.createElement("div",{style:{fontSize:13,color:T.textSub,fontWeight:600}},"Search for players above to build your roster"),
+          React.createElement("div",{style:{fontSize:11,color:T.textDim,marginTop:4}},"Add at least 3 players to get a dynasty grade")
+        )
+      ),
+
+      // HEAD-TO-HEAD MATCHUP PREDICTOR
+      rankSubTab==="h2h"&&React.createElement("div",{style:{padding:"16px"}},
+        React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10,marginBottom:16}},
+          React.createElement("span",{style:{fontSize:28}},"⚔️"),
+          React.createElement("div",null,
+            React.createElement("div",{style:{fontWeight:900,fontSize:22}},"H2H Matchup Predictor"),
+            React.createElement("div",{style:{fontSize:12,color:T.textSub}},"Compare two rosters and predict weekly matchup outcomes")
+          )
+        ),
+        React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}},
+          React.createElement("div",null,
+            React.createElement("div",{style:{fontSize:10,fontWeight:800,color:T.purple,letterSpacing:1,marginBottom:6}},"TEAM A"),
+            React.createElement("div",{style:{position:"relative",marginBottom:8}},
+              React.createElement("input",{value:h2hSearchA,onChange:function(e){setH2hSearchA(e.target.value);},placeholder:"Add player...",style:{width:"100%",background:T.bgInput,color:T.text,border:"1px solid "+T.border,borderRadius:8,padding:"8px 10px",fontSize:11,outline:"none",boxSizing:"border-box"}}),
+              h2hSearchA.length>=2&&React.createElement("div",{style:{position:"absolute",top:"calc(100% + 2px)",left:0,right:0,zIndex:200,background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:8,overflow:"hidden",boxShadow:"0 8px 24px #0008",maxHeight:180,overflowY:"auto"}},
+                rankedPlayers.filter(function(p){return p.name.toLowerCase().includes(h2hSearchA.toLowerCase())&&!h2hTeamA.find(function(x){return x.name===p.name;})&&!h2hTeamB.find(function(x){return x.name===p.name;});}).slice(0,6).map(function(p){
+                  return React.createElement("div",{key:p.name,onClick:function(){setH2hTeamA(function(prev){return prev.concat([p]);});setH2hSearchA("");setH2hResult(null);},style:{display:"flex",alignItems:"center",gap:6,padding:"6px 10px",cursor:"pointer",borderBottom:"1px solid "+T.border,fontSize:11}},
+                    React.createElement(PBadge,{pos:p.pos}),
+                    React.createElement("span",{style:{fontWeight:600,flex:1}},p.name),
+                    React.createElement("span",{style:{color:T.purpleLight,fontWeight:700,fontSize:10}},(p.tradeVal||0).toLocaleString())
+                  );
+                })
+              )
+            ),
+            h2hTeamA.map(function(p){return React.createElement("div",{key:p.name,style:{display:"flex",alignItems:"center",gap:4,marginBottom:3,fontSize:10}},
+              React.createElement(PBadge,{pos:p.pos}),
+              React.createElement("span",{style:{flex:1,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
+              React.createElement("button",{onClick:function(){setH2hTeamA(function(pr){return pr.filter(function(x){return x.name!==p.name;});});setH2hResult(null);},style:{background:"none",border:"none",color:T.textDim,cursor:"pointer",fontSize:10,padding:0}},"✕")
+            );})
+          ),
+          React.createElement("div",null,
+            React.createElement("div",{style:{fontSize:10,fontWeight:800,color:T.gold,letterSpacing:1,marginBottom:6}},"TEAM B"),
+            React.createElement("div",{style:{position:"relative",marginBottom:8}},
+              React.createElement("input",{value:h2hSearchB,onChange:function(e){setH2hSearchB(e.target.value);},placeholder:"Add player...",style:{width:"100%",background:T.bgInput,color:T.text,border:"1px solid "+T.border,borderRadius:8,padding:"8px 10px",fontSize:11,outline:"none",boxSizing:"border-box"}}),
+              h2hSearchB.length>=2&&React.createElement("div",{style:{position:"absolute",top:"calc(100% + 2px)",left:0,right:0,zIndex:200,background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:8,overflow:"hidden",boxShadow:"0 8px 24px #0008",maxHeight:180,overflowY:"auto"}},
+                rankedPlayers.filter(function(p){return p.name.toLowerCase().includes(h2hSearchB.toLowerCase())&&!h2hTeamA.find(function(x){return x.name===p.name;})&&!h2hTeamB.find(function(x){return x.name===p.name;});}).slice(0,6).map(function(p){
+                  return React.createElement("div",{key:p.name,onClick:function(){setH2hTeamB(function(prev){return prev.concat([p]);});setH2hSearchB("");setH2hResult(null);},style:{display:"flex",alignItems:"center",gap:6,padding:"6px 10px",cursor:"pointer",borderBottom:"1px solid "+T.border,fontSize:11}},
+                    React.createElement(PBadge,{pos:p.pos}),
+                    React.createElement("span",{style:{fontWeight:600,flex:1}},p.name),
+                    React.createElement("span",{style:{color:T.purpleLight,fontWeight:700,fontSize:10}},(p.tradeVal||0).toLocaleString())
+                  );
+                })
+              )
+            ),
+            h2hTeamB.map(function(p){return React.createElement("div",{key:p.name,style:{display:"flex",alignItems:"center",gap:4,marginBottom:3,fontSize:10}},
+              React.createElement(PBadge,{pos:p.pos}),
+              React.createElement("span",{style:{flex:1,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
+              React.createElement("button",{onClick:function(){setH2hTeamB(function(pr){return pr.filter(function(x){return x.name!==p.name;});});setH2hResult(null);},style:{background:"none",border:"none",color:T.textDim,cursor:"pointer",fontSize:10,padding:0}},"✕")
+            );})
+          )
+        ),
+        (h2hTeamA.length>=1&&h2hTeamB.length>=1)&&React.createElement("button",{onClick:function(){
+          var sk=format==="Half"?"Half":format==="Standard"?"Standard":"PPR";
+          var projA=h2hTeamA.reduce(function(s,p){return s+(p.proj?p.proj[sk]||0:0);},0);
+          var projB=h2hTeamB.reduce(function(s,p){return s+(p.proj?p.proj[sk]||0:0);},0);
+          var valA=h2hTeamA.reduce(function(s,p){return s+(p.tradeVal||0);},0);
+          var valB=h2hTeamB.reduce(function(s,p){return s+(p.tradeVal||0);},0);
+          var spread=projA-projB;
+          // Simulate 1000 matchups with variance
+          var winsA=0;var winsB=0;var ties=0;
+          for(var sim=0;sim<1000;sim++){
+            var simA=0;var simB=0;
+            h2hTeamA.forEach(function(p){var base=p.proj?p.proj[sk]||0:0;simA+=base*(0.7+Math.random()*0.6);});
+            h2hTeamB.forEach(function(p){var base=p.proj?p.proj[sk]||0:0;simB+=base*(0.7+Math.random()*0.6);});
+            if(simA>simB)winsA++;else if(simB>simA)winsB++;else ties++;
+          }
+          var winPctA=Math.round(winsA/10);var winPctB=Math.round(winsB/10);
+          var floorA=Math.round(projA*0.7);var ceilA=Math.round(projA*1.3);
+          var floorB=Math.round(projB*0.7);var ceilB=Math.round(projB*1.3);
+          setH2hResult({projA:projA,projB:projB,valA:valA,valB:valB,spread:spread,winPctA:winPctA,winPctB:winPctB,floorA:floorA,ceilA:ceilA,floorB:floorB,ceilB:ceilB});
+        },style:{width:"100%",padding:"14px",borderRadius:12,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",fontWeight:800,fontSize:14,cursor:"pointer",marginBottom:12}},"Predict Matchup"),
+        h2hResult&&React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:16,padding:20}},
+          React.createElement("div",{style:{textAlign:"center",marginBottom:16}},
+            React.createElement("div",{style:{fontWeight:900,fontSize:20,color:h2hResult.winPctA>h2hResult.winPctB?T.purple:T.gold}},h2hResult.winPctA>h2hResult.winPctB?"Team A Favored":"Team B Favored"),
+            React.createElement("div",{style:{fontSize:12,color:T.textSub,marginTop:4}},"Based on 1,000 simulated matchups")
+          ),
+          React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr auto 1fr",gap:8,alignItems:"center",marginBottom:16}},
+            React.createElement("div",{style:{textAlign:"center"}},
+              React.createElement("div",{style:{fontWeight:900,fontSize:28,color:T.purple}},h2hResult.winPctA+"%"),
+              React.createElement("div",{style:{fontSize:10,color:T.textSub,fontWeight:600}},"WIN RATE")
+            ),
+            React.createElement("div",{style:{fontSize:14,fontWeight:900,color:T.textDim}},"vs"),
+            React.createElement("div",{style:{textAlign:"center"}},
+              React.createElement("div",{style:{fontWeight:900,fontSize:28,color:T.gold}},h2hResult.winPctB+"%"),
+              React.createElement("div",{style:{fontSize:10,color:T.textSub,fontWeight:600}},"WIN RATE")
+            )
+          ),
+          React.createElement("div",{style:{background:T.border,borderRadius:99,height:10,marginBottom:16,overflow:"hidden"}},
+            React.createElement("div",{style:{width:h2hResult.winPctA+"%",height:"100%",background:"linear-gradient(90deg,"+T.purple+",#5b21b6)",borderRadius:99}})
+          ),
+          React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}},
+            React.createElement("div",{style:{background:T.bgInput,borderRadius:10,padding:12}},
+              React.createElement("div",{style:{fontSize:9,color:T.textSub,fontWeight:700,letterSpacing:1,marginBottom:6}},"TEAM A PROJECTION"),
+              React.createElement("div",{style:{fontWeight:900,fontSize:22,color:T.purple}},h2hResult.projA.toFixed(0)),
+              React.createElement("div",{style:{fontSize:10,color:T.textSub}},"Floor: "+h2hResult.floorA+" · Ceil: "+h2hResult.ceilA),
+              React.createElement("div",{style:{fontSize:10,color:T.textDim,marginTop:4}},"Dynasty: "+h2hResult.valA.toLocaleString())
+            ),
+            React.createElement("div",{style:{background:T.bgInput,borderRadius:10,padding:12}},
+              React.createElement("div",{style:{fontSize:9,color:T.textSub,fontWeight:700,letterSpacing:1,marginBottom:6}},"TEAM B PROJECTION"),
+              React.createElement("div",{style:{fontWeight:900,fontSize:22,color:T.gold}},h2hResult.projB.toFixed(0)),
+              React.createElement("div",{style:{fontSize:10,color:T.textSub}},"Floor: "+h2hResult.floorB+" · Ceil: "+h2hResult.ceilB),
+              React.createElement("div",{style:{fontSize:10,color:T.textDim,marginTop:4}},"Dynasty: "+h2hResult.valB.toLocaleString())
+            )
+          ),
+          React.createElement("div",{style:{textAlign:"center",marginTop:12,fontSize:12,color:T.textSub}},
+            "Spread: ",React.createElement("span",{style:{fontWeight:900,color:h2hResult.spread>0?T.purple:T.gold}},h2hResult.spread>0?"Team A +"+(h2hResult.spread.toFixed(1)):h2hResult.spread<0?"Team B +"+Math.abs(h2hResult.spread).toFixed(1):"Even")
+          )
+        ),
+        h2hTeamA.length===0&&h2hTeamB.length===0&&React.createElement("div",{style:{background:T.bgCard,border:"1px dashed "+T.border,borderRadius:14,padding:"32px 20px",textAlign:"center"}},
+          React.createElement("div",{style:{fontSize:32,marginBottom:8}},"⚔️"),
+          React.createElement("div",{style:{fontSize:13,color:T.textSub,fontWeight:600}},"Add players to each team to predict a matchup"),
+          React.createElement("div",{style:{fontSize:11,color:T.textDim,marginTop:4}},"Uses weekly projections with Monte Carlo simulation")
+        )
+      ),
 
       // VEGAS LINES
       rankSubTab==="vegas"&&(function(){
