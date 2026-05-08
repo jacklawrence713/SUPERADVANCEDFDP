@@ -2095,6 +2095,7 @@ function TradeItem(props){
 // ── Analytics Dashboard Component ─────────────────────────────────────────
 function AnalyticsDashboard({T,data,loading,onLoad}:{T:any,data:any,loading:boolean,onLoad:()=>void}){
   useEffect(function(){onLoad();},[]);// eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(function(){if(onboardStep===0){var t=setTimeout(function(){setOnboardStep(1);},1500);return function(){clearTimeout(t);};}},[]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Build daily chart from raw page_view events
   function buildDailyBuckets(events:any[]){
@@ -2695,6 +2696,16 @@ export default function App(){
   var [pvSearch,setPvSearch]=useState("");
   var [reportTagFilter,setReportTagFilter]=useState("All");
   var [tradeTargetPos,setTradeTargetPos]=useState("ALL");
+  var [onboardStep,setOnboardStep]=useState(function(){try{return localStorage.getItem('fdp_onboard_done')?"done":0;}catch(e){return 0;}});
+  var [mockRound,setMockRound]=useState(1);
+  var [mockPick,setMockPick]=useState(1);
+  var [mockRoster,setMockRoster]=useState([] as any[]);
+  var [mockAvailable,setMockAvailable]=useState(null as any[]|null);
+  var [mockTeams,setMockTeams]=useState(12);
+  var [mockSlot,setMockSlot]=useState(1);
+  var [mockLog,setMockLog]=useState([] as any[]);
+  var [mockStarted,setMockStarted]=useState(false);
+  var [mockPosFilter,setMockPosFilter]=useState("ALL");
 
   var T=darkMode?DARK:LIGHT;
   var isPro=user&&user.isPro;
@@ -3566,6 +3577,36 @@ export default function App(){
           )
         ),
         React.createElement("button",{onClick:function(){setShowSettings(false);},style:{width:"100%",padding:"13px",borderRadius:12,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer"}},"Save Settings")
+      )
+    ),
+
+    // ONBOARDING MODAL
+    onboardStep!=="done"&&onboardStep!==0&&React.createElement("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.9)",zIndex:1100,display:"flex",alignItems:"center",justifyContent:"center",padding:16}},
+      React.createElement("div",{style:{background:T.bgCard,border:"2px solid "+T.purple,borderRadius:24,padding:"28px 24px",width:"100%",maxWidth:400,textAlign:"center"}},
+        (function(){
+          var steps=[
+            {title:"Welcome to Fantasy Draft Pros",sub:"The #1 free dynasty trade analyzer. Let's show you around in 30 seconds.",icon:"⚖️",btn:"Let's Go"},
+            {title:"Analyze Any Trade",sub:"Search for players, add them to Team A or Team B, then hit Analyze. We'll tell you who wins — with 1,000+ player values updated daily.",icon:"🔍",btn:"Next"},
+            {title:"All Scoring Formats",sub:"Toggle between Dynasty, Keeper, and Redraft. Switch PPR, Half, Standard, Superflex, TE Premium, and IDP with one tap.",icon:"⚙️",btn:"Next"},
+            {title:"Import Your League",sub:"Connect your Sleeper, ESPN, Yahoo, or MFL league for power rankings, trade finder, waiver wire, and lineup optimization.",icon:"🏈",btn:"Next"},
+            {title:"Share & Win Trades",sub:"Share trade analysis as a branded image, link, or text. Send it to your group chat and prove you won the trade.",icon:"🔗",btn:"Next"},
+            {title:"You're All Set!",sub:"Start by searching for a player above. Build smarter trades, win your dynasty league.",icon:"🏆",btn:"Start Trading"}
+          ];
+          var s=steps[onboardStep-1]||steps[0];
+          var idx=typeof onboardStep==="number"?onboardStep:1;
+          return React.createElement(React.Fragment,null,
+            React.createElement("div",{style:{fontSize:48,marginBottom:12}},s.icon),
+            React.createElement("div",{style:{fontWeight:900,fontSize:20,marginBottom:8,color:"#fff"}},s.title),
+            React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.7,marginBottom:20}},s.sub),
+            React.createElement("div",{style:{display:"flex",justifyContent:"center",gap:6,marginBottom:16}},
+              steps.map(function(_,i){return React.createElement("div",{key:i,style:{width:8,height:8,borderRadius:"50%",background:i+1===idx?T.purple:T.border}});})
+            ),
+            React.createElement("div",{style:{display:"flex",gap:10}},
+              React.createElement("button",{onClick:function(){setOnboardStep("done");try{localStorage.setItem('fdp_onboard_done','1');}catch(e){}},style:{flex:1,padding:"13px",borderRadius:12,border:"1px solid "+T.border,background:"transparent",color:T.textSub,fontWeight:700,fontSize:14,cursor:"pointer"}},"Skip"),
+              React.createElement("button",{onClick:function(){if(idx>=steps.length){setOnboardStep("done");try{localStorage.setItem('fdp_onboard_done','1');}catch(e){}}else{setOnboardStep(idx+1);}},style:{flex:2,padding:"13px",borderRadius:12,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",fontWeight:800,fontSize:14,cursor:"pointer"}},s.btn)
+            )
+          );
+        })()
       )
     ),
 
@@ -6032,7 +6073,7 @@ export default function App(){
       React.createElement("div",{style:{position:"relative",borderBottom:"1px solid "+T.border}},
         isDesktop&&React.createElement("button",{onClick:function(){rankingTabsRef.current&&rankingTabsRef.current.scrollBy({left:-200,behavior:"smooth"});},style:{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",zIndex:2,background:T.bgCard,border:"1px solid "+T.border,borderRadius:"50%",width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:T.text,fontSize:14,padding:0}},"‹"),
         React.createElement("div",{ref:rankingTabsRef,style:{display:"flex",gap:6,overflowX:"auto",padding:isDesktop?"10px 36px":"10px 12px",scrollbarWidth:"none",WebkitOverflowScrolling:"touch"}},
-          [["news","📰 Dynasty News"],["playervalues","$ Player Values"],["allrankings","All Rankings"],["qbs","QBs"],["rbs","RBs"],["wrs","WRs"],["tes","TEs"],["idp","IDP"],["rookie","Rookie Picks"],["vegas","Vegas Lines"],["trending","Trending"],["market","Market"],["valuetrends","Value Trends"],["pickcalc","Pick Calculator"],["watchlist","Watchlist"],["keeper","Keeper Calc"],["compare","Compare"],["history","Trade History"]].map(function(st){
+          [["news","📰 Dynasty News"],["playervalues","$ Player Values"],["allrankings","All Rankings"],["qbs","QBs"],["rbs","RBs"],["wrs","WRs"],["tes","TEs"],["idp","IDP"],["rookie","Rookie Picks"],["mockdraft","Mock Draft"],["vegas","Vegas Lines"],["trending","Trending"],["market","Market"],["valuetrends","Value Trends"],["pickcalc","Pick Calculator"],["watchlist","Watchlist"],["keeper","Keeper Calc"],["compare","Compare"],["history","Trade History"]].map(function(st){
             var active=rankSubTab===st[0];
             return React.createElement("button",{key:st[0],onClick:function(){setRankSubTab(st[0]);},style:{padding:"7px 14px",borderRadius:20,border:"1px solid "+(active?T.purple:T.border),background:active?T.purple:"transparent",color:active?"#fff":T.textSub,fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}},st[1]);
           })
@@ -6391,6 +6432,145 @@ export default function App(){
           })
         )
       ),
+
+      // MOCK DRAFT SIMULATOR
+      rankSubTab==="mockdraft"&&(function(){
+        var rookiePlayers=rankedPlayers.filter(function(p){return p.note&&(p.note.includes("pick")||p.note.includes("Pick"))&&(p.age||99)<=24;}).sort(function(a,b){return (b.tradeVal||0)-(a.tradeVal||0);});
+        if(rookiePlayers.length<10)rookiePlayers=rankedPlayers.filter(function(p){return (p.age||99)<=24;}).sort(function(a,b){return (b.tradeVal||0)-(a.tradeVal||0);}).slice(0,36);
+        var pool=mockAvailable||rookiePlayers;
+        var filteredPool=mockPosFilter==="ALL"?pool:pool.filter(function(p){return p.pos===mockPosFilter;});
+        var totalPicks=mockTeams*4;
+        var isMyPick=mockStarted&&((mockPick-1)%mockTeams)+1===mockSlot;
+        var currentRound=Math.ceil(mockPick/mockTeams);
+        var pickInRound=((mockPick-1)%mockTeams)+1;
+        var isSnake=currentRound%2===0;
+        var actualPickInRound=isSnake?mockTeams-pickInRound+1:pickInRound;
+        var draftDone=mockPick>totalPicks||pool.length===0;
+        function aiPick(){
+          if(pool.length===0)return;
+          var best=pool[0];
+          var remaining=pool.filter(function(p){return p.name!==best.name;});
+          setMockAvailable(remaining);
+          setMockLog(function(prev){return prev.concat([{round:currentRound,pick:mockPick,team:"Team "+actualPickInRound,player:best,isUser:false}]);});
+          setMockPick(function(v){return v+1;});
+        }
+        function userPick(p){
+          var remaining=pool.filter(function(x){return x.name!==p.name;});
+          setMockAvailable(remaining);
+          setMockRoster(function(prev){return prev.concat([p]);});
+          setMockLog(function(prev){return prev.concat([{round:currentRound,pick:mockPick,team:"You ("+mockSlot+")",player:p,isUser:true}]);});
+          setMockPick(function(v){return v+1;});
+        }
+        function runAiPicks(){
+          if(draftDone||isMyPick)return;
+          var p=pool.slice();var pk=mockPick;var lg=mockLog.slice();
+          while(pk<=totalPicks&&p.length>0){
+            var cr=Math.ceil(pk/mockTeams);var pir=((pk-1)%mockTeams)+1;var sn=cr%2===0;var apr=sn?mockTeams-pir+1:pir;
+            if(apr===mockSlot)break;
+            var best=p[0];p=p.slice(1);
+            lg.push({round:cr,pick:pk,team:"Team "+apr,player:best,isUser:false});
+            pk++;
+          }
+          setMockAvailable(p);setMockPick(pk);setMockLog(lg);
+        }
+        // Auto-run AI picks when it's not user's turn
+        if(mockStarted&&!isMyPick&&!draftDone&&pool.length>0){setTimeout(runAiPicks,300);}
+        return React.createElement("div",{style:{padding:"16px"}},
+          React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10,marginBottom:16}},
+            React.createElement("span",{style:{fontSize:28}},"🏈"),
+            React.createElement("div",null,
+              React.createElement("div",{style:{fontWeight:900,fontSize:22}},"Mock Draft Simulator"),
+              React.createElement("div",{style:{fontSize:12,color:T.textSub}},"Simulate a rookie draft against AI opponents")
+            )
+          ),
+          !mockStarted&&React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:16,padding:20,marginBottom:16}},
+            React.createElement("div",{style:{fontWeight:700,fontSize:14,marginBottom:14}},"Draft Settings"),
+            React.createElement("div",{style:{display:"flex",gap:10,marginBottom:12}},
+              React.createElement("div",{style:{flex:1}},
+                React.createElement("div",{style:{fontSize:10,color:T.textSub,fontWeight:700,marginBottom:4,letterSpacing:1}},"TEAMS"),
+                React.createElement("div",{style:{display:"flex",gap:4}},
+                  [8,10,12,14].map(function(n){return React.createElement("button",{key:n,onClick:function(){setMockTeams(n);if(mockSlot>n)setMockSlot(n);},style:{flex:1,padding:"8px 4px",borderRadius:8,border:"1px solid "+(mockTeams===n?T.purple:T.border),background:mockTeams===n?T.purple+"22":"transparent",color:mockTeams===n?T.purpleLight:T.textSub,fontWeight:700,fontSize:12,cursor:"pointer"}},n);})
+                )
+              ),
+              React.createElement("div",{style:{flex:1}},
+                React.createElement("div",{style:{fontSize:10,color:T.textSub,fontWeight:700,marginBottom:4,letterSpacing:1}},"YOUR PICK"),
+                React.createElement("select",{value:mockSlot,onChange:function(e){setMockSlot(+e.target.value);},style:{width:"100%",background:T.bgInput,color:T.text,border:"1px solid "+T.border,borderRadius:8,padding:"8px",fontSize:12,outline:"none"}},
+                  Array.from({length:mockTeams},function(_,i){return React.createElement("option",{key:i+1,value:i+1},"Pick "+(i+1)+(i===0?" (1st)":i===mockTeams-1?" (Last)":""));})
+                )
+              )
+            ),
+            React.createElement("button",{onClick:function(){setMockStarted(true);setMockAvailable(rookiePlayers.slice());setMockRoster([]);setMockLog([]);setMockPick(1);setMockRound(1);},style:{width:"100%",padding:"14px",borderRadius:12,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",fontWeight:800,fontSize:14,cursor:"pointer"}},"Start Draft")
+          ),
+          mockStarted&&React.createElement(React.Fragment,null,
+            React.createElement("div",{style:{display:"flex",gap:8,marginBottom:12}},
+              React.createElement("div",{style:{flex:1,background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"10px 14px",textAlign:"center"}},
+                React.createElement("div",{style:{fontSize:9,color:T.textSub,fontWeight:700,letterSpacing:1}},"ROUND"),
+                React.createElement("div",{style:{fontWeight:900,fontSize:22,color:T.purple}},currentRound)
+              ),
+              React.createElement("div",{style:{flex:1,background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"10px 14px",textAlign:"center"}},
+                React.createElement("div",{style:{fontSize:9,color:T.textSub,fontWeight:700,letterSpacing:1}},"PICK"),
+                React.createElement("div",{style:{fontWeight:900,fontSize:22,color:T.text}},mockPick+"/"+totalPicks)
+              ),
+              React.createElement("div",{style:{flex:1,background:isMyPick?T.green+"22":T.bgCard,border:"1px solid "+(isMyPick?T.green:T.border),borderRadius:12,padding:"10px 14px",textAlign:"center"}},
+                React.createElement("div",{style:{fontSize:9,color:isMyPick?T.green:T.textSub,fontWeight:700,letterSpacing:1}},isMyPick?"YOUR PICK":"WAITING"),
+                React.createElement("div",{style:{fontWeight:900,fontSize:16,color:isMyPick?T.green:T.textDim}},isMyPick?"Pick now!":"AI picking...")
+              )
+            ),
+            draftDone&&React.createElement("div",{style:{background:"linear-gradient(135deg,#052e16,#064e3b)",border:"1px solid "+T.green+"44",borderRadius:16,padding:20,marginBottom:16,textAlign:"center"}},
+              React.createElement("div",{style:{fontSize:36,marginBottom:8}},"🏆"),
+              React.createElement("div",{style:{fontWeight:900,fontSize:20,color:T.green,marginBottom:4}},"Draft Complete!"),
+              React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:12}},"You drafted "+mockRoster.length+" players"),
+              React.createElement("button",{onClick:function(){setMockStarted(false);setMockAvailable(null);setMockRoster([]);setMockLog([]);setMockPick(1);},style:{padding:"12px 24px",borderRadius:12,border:"1px solid "+T.green,background:T.green+"22",color:T.green,fontWeight:700,fontSize:13,cursor:"pointer"}},"Draft Again")
+            ),
+            isMyPick&&!draftDone&&React.createElement("div",{style:{marginBottom:12}},
+              React.createElement("div",{style:{fontSize:11,fontWeight:800,color:T.green,letterSpacing:1,marginBottom:8}},"ON THE CLOCK — MAKE YOUR PICK"),
+              React.createElement("div",{style:{display:"flex",gap:6,marginBottom:10,flexWrap:"wrap"}},
+                ["ALL","QB","RB","WR","TE"].map(function(pos){
+                  var active=mockPosFilter===pos;var pc=POS_COLORS[pos]||T.purple;
+                  return React.createElement("button",{key:pos,onClick:function(){setMockPosFilter(pos);},style:{padding:"5px 12px",borderRadius:20,border:"1px solid "+(active?pc:T.border),background:active?pc+"22":"transparent",color:active?pc:T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},pos);
+                })
+              ),
+              filteredPool.slice(0,12).map(function(p){
+                return React.createElement("div",{key:p.name,onClick:function(){userPick(p);},style:{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",background:T.bgCard,border:"1px solid "+T.border,borderRadius:10,marginBottom:4,cursor:"pointer"}},
+                  React.createElement(Avatar,{name:p.name,pos:p.pos,size:28}),
+                  React.createElement("div",{style:{flex:1,minWidth:0}},
+                    React.createElement("div",{style:{fontWeight:700,fontSize:12,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
+                    React.createElement("div",{style:{fontSize:10,color:T.textSub}},p.pos+" · "+p.team+" · Age "+(p.age||"?"))
+                  ),
+                  React.createElement("div",{style:{textAlign:"right",flexShrink:0}},
+                    React.createElement("div",{style:{fontWeight:800,fontSize:12,color:T.purpleLight}},(p.tradeVal||0).toLocaleString()),
+                    React.createElement("button",{style:{fontSize:9,fontWeight:700,color:T.green,background:T.green+"18",border:"1px solid "+T.green+"33",borderRadius:6,padding:"2px 8px",cursor:"pointer",marginTop:2}},"Draft")
+                  )
+                );
+              })
+            ),
+            mockRoster.length>0&&React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:14,padding:14,marginBottom:12}},
+              React.createElement("div",{style:{fontWeight:800,fontSize:13,marginBottom:8}},"Your Roster ("+mockRoster.length+")"),
+              mockRoster.map(function(p,i){
+                return React.createElement("div",{key:p.name,style:{display:"flex",alignItems:"center",gap:6,marginBottom:4}},
+                  React.createElement("span",{style:{fontSize:9,color:T.textDim,fontWeight:700,width:18}},""+(i+1)+"."),
+                  React.createElement(Avatar,{name:p.name,pos:p.pos,size:20}),
+                  React.createElement("div",{style:{flex:1,fontSize:11,fontWeight:600}},p.name),
+                  React.createElement(PBadge,{pos:p.pos}),
+                  React.createElement("span",{style:{fontSize:10,color:T.purpleLight,fontWeight:700}},(p.tradeVal||0).toLocaleString())
+                );
+              })
+            ),
+            mockLog.length>0&&React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:14}},
+              React.createElement("div",{style:{fontWeight:800,fontSize:13,marginBottom:8}},"Draft Log"),
+              mockLog.slice().reverse().slice(0,20).map(function(entry,i){
+                return React.createElement("div",{key:i,style:{display:"flex",alignItems:"center",gap:6,marginBottom:4,opacity:entry.isUser?1:0.7}},
+                  React.createElement("span",{style:{fontSize:9,color:T.textDim,fontWeight:700,width:28}},""+entry.round+"."+((entry.pick-1)%mockTeams+1)),
+                  React.createElement(Avatar,{name:entry.player.name,pos:entry.player.pos,size:18}),
+                  React.createElement("div",{style:{flex:1,fontSize:10,fontWeight:entry.isUser?700:500,color:entry.isUser?T.green:T.text}},entry.player.name),
+                  React.createElement(PBadge,{pos:entry.player.pos}),
+                  React.createElement("span",{style:{fontSize:9,color:entry.isUser?T.green:T.textDim,fontWeight:600}},entry.team)
+                );
+              })
+            )
+          )
+        );
+      })(),
 
       // VEGAS LINES
       rankSubTab==="vegas"&&(function(){
