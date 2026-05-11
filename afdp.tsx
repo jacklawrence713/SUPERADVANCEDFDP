@@ -2387,7 +2387,12 @@ export default function App(){
       function findItem(n:string){return rankedPlayers.find(function(p){return p.name===n;})||(function(){var pk=DRAFT_PICKS.find(function(pk){return pk.name===n;});return pk?makePick(pk):null;})();}
       if(d.a&&Array.isArray(d.a)){var pa=d.a.map(findItem).filter(Boolean);if(pa.length)setTradeA(pa as any[]);}
       if(d.b&&Array.isArray(d.b)){var pb=d.b.map(findItem).filter(Boolean);if(pb.length)setTradeB(pb as any[]);}
-      if(d.s)setScoring(d.s);
+      if(d.lt)setLeagueType(d.lt);
+      if(d.fmt)setFormat(d.fmt);
+      if(d.sf!==undefined)setSfMode(!!d.sf);
+      if(d.idp!==undefined)setIdpMode(!!d.idp);
+      if(d.tep!==undefined)setTePremium(d.tep);
+      if(d.tm)setTeams(d.tm);
       if(d.fa)setFaabA(d.fa);
       if(d.fb)setFaabB(d.fb);
       setTab("trade");
@@ -3633,7 +3638,7 @@ export default function App(){
     // SHARE TRADE MODAL
     showShareModal&&(function(){
       var buildShareUrl=function(){
-        var data={a:tradeA.map(function(x:any){return x.name;}),b:tradeB.map(function(x:any){return x.name;}),s:scoring,fa:faabA,fb:faabB};
+        var data={a:tradeA.map(function(x:any){return x.name;}),b:tradeB.map(function(x:any){return x.name;}),fa:faabA,fb:faabB,lt:leagueType,fmt:format,sf:sfMode?1:0,idp:idpMode?1:0,tep:tePremium,tm:teams};
         return window.location.origin+window.location.pathname+"?trade="+encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(data)))))+"#trade";
       };
       var shareUrl=buildShareUrl();
