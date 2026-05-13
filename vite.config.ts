@@ -10,6 +10,10 @@ export default defineConfig({
         entryFileNames: 'assets/app.[hash].js',
         chunkFileNames: 'assets/app-[name].[hash].js',
         assetFileNames: 'assets/[name].[hash].[ext]',
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          supabase: ['@supabase/supabase-js'],
+        },
       }
     }
   }
