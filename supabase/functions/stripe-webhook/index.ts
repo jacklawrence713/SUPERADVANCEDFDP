@@ -48,19 +48,16 @@ Deno.serve(async (req) => {
           }
         }
         if (userId) {
-          // Core update — these columns are guaranteed to exist
           const { error: coreErr } = await supabase.from("users").update({
             plan,
             is_pro: true,
-          }).eq("id", userId);
-          if (coreErr) console.error("Core update failed:", coreErr);
-          // Extended update — stripe columns may not exist, fail silently
-          await supabase.from("users").update({
+            trial_used: true,
             stripe_customer_id: session.customer as string,
             stripe_subscription_id: session.subscription as string,
             subscription_status: "active",
             updated_at: new Date().toISOString(),
-          }).eq("id", userId).then(() => {}).catch(() => {});
+          }).eq("id", userId);
+          if (coreErr) console.error("checkout.session.completed update failed:", coreErr);
         }
         break;
       }
@@ -74,8 +71,12 @@ Deno.serve(async (req) => {
         }
         if (userId) {
           const isActive = sub.status === "active" || sub.status === "trialing";
-          await supabase.from("users").update({ is_pro: isActive }).eq("id", userId);
-          await supabase.from("users").update({ subscription_status: sub.status, updated_at: new Date().toISOString() }).eq("id", userId).then(() => {}).catch(() => {});
+          const { error: updErr } = await supabase.from("users").update({
+            is_pro: isActive,
+            subscription_status: sub.status,
+            updated_at: new Date().toISOString(),
+          }).eq("id", userId);
+          if (updErr) console.error("subscription.updated failed:", updErr);
         }
         break;
       }
@@ -88,8 +89,14 @@ Deno.serve(async (req) => {
           userId = profile?.id;
         }
         if (userId) {
-          await supabase.from("users").update({ plan: "free", is_pro: false }).eq("id", userId);
-          await supabase.from("users").update({ stripe_subscription_id: null, subscription_status: "cancelled", updated_at: new Date().toISOString() }).eq("id", userId).then(() => {}).catch(() => {});
+          const { error: delErr } = await supabase.from("users").update({
+            plan: "free",
+            is_pro: false,
+            stripe_subscription_id: null,
+            subscription_status: "cancelled",
+            updated_at: new Date().toISOString(),
+          }).eq("id", userId);
+          if (delErr) console.error("subscription.deleted failed:", delErr);
         }
         break;
       }

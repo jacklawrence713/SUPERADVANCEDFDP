@@ -55,13 +55,14 @@ Deno.serve(async (req) => {
     await stripe.subscriptions.cancel(profile.stripe_subscription_id);
 
     // Immediately downgrade in DB (webhook will also fire but this is instant)
-    await supabase.from("users").update({
+    const { error: dbErr } = await supabase.from("users").update({
       plan: "free",
       is_pro: false,
       stripe_subscription_id: null,
       subscription_status: "cancelled",
       updated_at: new Date().toISOString(),
     }).eq("id", user.id);
+    if (dbErr) console.error("cancel-subscription DB update failed:", dbErr);
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

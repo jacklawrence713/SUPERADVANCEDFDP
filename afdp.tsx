@@ -1939,7 +1939,7 @@ function AuthModal(props){
         });
         if(signUpResult.error)throw signUpResult.error;
         // Send welcome email (non-blocking)
-        callEdgeFn("send-email",{type:"welcome",to:email,name}).catch(function(){});
+        callEdgeFn("send-email",{type:"welcome",to:email,name},signUpResult.data.session?.access_token).catch(function(){});
         // If email confirmation required, show message; otherwise auth state will fire
         if(signUpResult.data.session){
           var u=signUpResult.data.session.user;
@@ -8573,7 +8573,7 @@ export default function App(){
           React.createElement("button",{onClick:async function(){
             if(!contactName.trim()||!contactEmail.includes("@")||!contactMsg.trim()){setImpErr("Please fill in your name, a valid email, and a message.");return;}
             trackEvent("contact_form",{name:contactName,email:contactEmail,subject:contactSubject,msg:contactMsg.slice(0,200)});
-            try{await callEdgeFn("send-email",{type:"contact",to:contactEmail,name:contactName,subject:contactSubject,message:contactMsg});}catch(e){}
+            try{await callEdgeFn("send-email",{type:"contact",to:contactEmail,name:contactName,subject:contactSubject,message:contactMsg},user?.token);}catch(e){}
             setContactSent(true);
             setContactName("");setContactEmail("");setContactSubject("");setContactMsg("");
             setTimeout(function(){setContactSent(false);},5000);

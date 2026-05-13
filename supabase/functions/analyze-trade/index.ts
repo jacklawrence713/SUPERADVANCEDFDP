@@ -1,6 +1,7 @@
 // Supabase Edge Function: analyze-trade
 // Calls Claude API to generate real AI trade analysis
 import Anthropic from "npm:@anthropic-ai/sdk@0.29.2";
+import { createClient } from "npm:@supabase/supabase-js@2.39.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,6 +14,24 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Auth check — require signed-in user
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: "Invalid token" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { sideA, sideB, tvA, tvB, scoring } = await req.json();
 
     if (!sideA || !sideB) {
