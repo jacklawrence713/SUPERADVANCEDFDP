@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
     // Get or create Stripe customer
     const { data: profile } = await supabase
       .from("users")
-      .select("stripe_customer_id, name")
+      .select("stripe_customer_id, name, trial_used")
       .eq("id", user.id)
       .single();
 
@@ -86,7 +86,7 @@ Deno.serve(async (req) => {
       payment_method_types: ["card"],
       line_items: [{ price: priceId, quantity: 1 }],
       subscription_data: {
-        trial_period_days: 7,
+        ...(profile?.trial_used ? {} : { trial_period_days: 7 }),
         metadata: { supabase_user_id: user.id, plan },
       },
       success_url: `${Deno.env.get("SITE_URL") || "https://fantasydraftpros.com"}/?checkout=success`,
