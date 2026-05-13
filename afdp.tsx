@@ -2405,6 +2405,7 @@ export default function App(){
     if(!authClient)return;
     var {data:{subscription}}=authClient.auth.onAuthStateChange(function(event,session){
       if(event==="SIGNED_OUT"||!session){saveAndSetUser(null);return;}
+      if(event==="PASSWORD_RECOVERY"){setShowResetPw(true);return;}
       if(event==="SIGNED_IN"||event==="TOKEN_REFRESHED"||event==="INITIAL_SESSION"){
         var usr=session.user;
         var isAdmin2=isAdminEmail(usr.email||"");
@@ -2570,6 +2571,11 @@ export default function App(){
   }
   var [showAuth,setShowAuth]=useState(false);
   var [authMode,setAuthMode]=useState("signup");
+  var [showResetPw,setShowResetPw]=useState(false);
+  var [resetPwVal,setResetPwVal]=useState("");
+  var [resetPwErr,setResetPwErr]=useState("");
+  var [resetPwDone,setResetPwDone]=useState(false);
+  var [resetPwLoading,setResetPwLoading]=useState(false);
   var [showAdmin,setShowAdmin]=useState(false);
   var [darkMode,setDarkMode]=useState(function(){try{var s=localStorage.getItem('fdp_dark_v1');return s?JSON.parse(s):true;}catch(e){return true;}});
   function toggleDarkMode(){setDarkMode(function(d){var next=!d;try{localStorage.setItem('fdp_dark_v1',JSON.stringify(next));}catch(e){}return next;});}
@@ -3488,6 +3494,23 @@ export default function App(){
   return React.createElement("div",{style:{background:T.bg,height:"100vh",color:T.text,fontFamily:"-apple-system,BlinkMacSystemFont,'Inter',sans-serif",maxWidth:isDesktop?"100%":480,margin:"0 auto",display:"flex",flexDirection:isDesktop?"row":"column",overflow:"hidden"}},
 
     showAuth&&React.createElement(AuthModal,{mode:authMode,onClose:function(){setShowAuth(false);},onAuth:function(u){saveAndSetUser(u);setShowAuth(false);},T:T}),
+    showResetPw&&React.createElement("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}},
+      React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:20,padding:28,width:"100%",maxWidth:400,position:"relative"}},
+        React.createElement("div",{style:{textAlign:"center",marginBottom:18}},
+          React.createElement("img",{src:T.bgCard==="#ffffff"?"/logo-shield-light.png":"/logo-shield.png",alt:"Fantasy Draft Pros",style:{height:56,width:"auto",maxWidth:240}})),
+        resetPwDone
+          ?React.createElement("div",{style:{textAlign:"center",padding:"20px 0"}},
+            React.createElement("div",{style:{fontSize:32,marginBottom:12}},"✅"),
+            React.createElement("div",{style:{fontWeight:800,fontSize:18,marginBottom:8,color:T.text}},"Password Updated!"),
+            React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.6,marginBottom:16}},"Your password has been changed. You're signed in."),
+            React.createElement("button",{onClick:function(){setShowResetPw(false);setResetPwDone(false);setResetPwVal("");},style:{width:"100%",padding:"14px",borderRadius:12,border:"none",cursor:"pointer",fontWeight:800,fontSize:15,background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff"}},"Continue"))
+          :React.createElement("div",null,
+            React.createElement("div",{style:{textAlign:"center",marginBottom:18}},
+              React.createElement("div",{style:{fontWeight:900,fontSize:22,marginBottom:4,color:T.text}},"Set New Password"),
+              React.createElement("div",{style:{fontSize:13,color:T.textSub}},"Enter your new password below")),
+            React.createElement("input",{placeholder:"New password (6+ characters)",type:"password",value:resetPwVal,onChange:function(e){setResetPwVal(e.target.value);},onKeyDown:function(e){if(e.key==="Enter"&&resetPwVal.length>=6){setResetPwLoading(true);setResetPwErr("");authClient.auth.updateUser({password:resetPwVal}).then(function(r){setResetPwLoading(false);if(r.error){setResetPwErr(r.error.message);}else{setResetPwDone(true);}}).catch(function(e){setResetPwLoading(false);setResetPwErr(e.message||"Something went wrong");});}},style:{background:T.bgInput,color:T.text,border:"1px solid "+T.border,borderRadius:10,padding:"13px 16px",fontSize:14,outline:"none",width:"100%",boxSizing:"border-box",marginBottom:resetPwErr?8:16}}),
+            resetPwErr&&React.createElement("div",{style:{fontSize:12,color:T.red,marginBottom:12,padding:"8px 12px",background:T.red+"15",borderRadius:8}},resetPwErr),
+            React.createElement("button",{onClick:function(){if(resetPwVal.length<6){setResetPwErr("Password must be 6+ characters");return;}setResetPwLoading(true);setResetPwErr("");authClient.auth.updateUser({password:resetPwVal}).then(function(r){setResetPwLoading(false);if(r.error){setResetPwErr(r.error.message);}else{setResetPwDone(true);}}).catch(function(e){setResetPwLoading(false);setResetPwErr(e.message||"Something went wrong");});},disabled:resetPwLoading,style:{width:"100%",padding:"14px",borderRadius:12,border:"none",cursor:"pointer",fontWeight:800,fontSize:15,background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",opacity:resetPwLoading?0.7:1}},resetPwLoading?"Updating...":"Update Password")))),
 
     // Roster modal
     rosterViewTeam!==null&&(function(){
