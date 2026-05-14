@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 460" width="400" height="460">
+  <defs>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#9c6cff;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#6a3de8;stop-opacity:1"/>
+    </linearGradient>
+    <linearGradient id="ballGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#c4a8ff;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Dark background -->
+  <rect width="400" height="460" rx="16" fill="#13111e"/>
+
+  <!-- Shield outline -->
+  <path d="M200 42 C120 42 60 52 60 52 L60 220 C60 300 120 370 200 420 C280 370 340 300 340 220 L340 52 C340 52 280 42 200 42Z"
+        fill="none" stroke="url(#shieldGrad)" stroke-width="4" stroke-linejoin="round" filter="url(#glow)"/>
+
+  <!-- Football / eye shape -->
+  <g transform="translate(200,148)">
+    <!-- Outer football shape -->
+    <ellipse cx="0" cy="0" rx="82" ry="48" fill="none" stroke="#c4b5e0" stroke-width="3.5"/>
+    <!-- Left point -->
+    <path d="M-82 0 Q-92 0 -82 0" fill="none" stroke="#c4b5e0" stroke-width="3"/>
+    <!-- Right point -->
+    <path d="M82 0 Q92 0 82 0" fill="none" stroke="#c4b5e0" stroke-width="3"/>
+
+    <!-- Bar chart laces (3 bars) -->
+    <rect x="-20" y="-28" width="10" height="56" rx="2" fill="url(#ballGrad)"/>
+    <rect x="-5" y="-36" width="10" height="72" rx="2" fill="url(#ballGrad)"/>
+    <rect x="10" y="-22" width="10" height="44" rx="2" fill="url(#ballGrad)"/>
+
+    <!-- Horizontal lace lines -->
+    <line x1="-50" y1="0" x2="-28" y2="0" stroke="#c4b5e0" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="28" y1="0" x2="50" y2="0" stroke="#c4b5e0" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+
+  <!-- FANTASY text -->
+  <text x="200" y="240" text-anchor="middle" font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="26" font-weight="700" letter-spacing="8" fill="#c4b5e0">FANTASY</text>
+
+  <!-- DRAFTPROS text -->
+  <text x="200" y="300" text-anchor="middle" font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="56" font-weight="900" letter-spacing="2" fill="url(#shieldGrad)">DRAFTPROS</text>
+
+  <!-- Star -->
+  <polygon points="200,340 205,352 218,352 208,360 212,373 200,365 188,373 192,360 182,352 195,352"
+           fill="url(#shieldGrad)"/>
+</svg>

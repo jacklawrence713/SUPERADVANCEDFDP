@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 140" width="560" height="140">
+  <defs>
+    <linearGradient id="hGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#9c6cff;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#6a3de8;stop-opacity:1"/>
+    </linearGradient>
+    <linearGradient id="hBallGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#c4a8ff;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1"/>
+    </linearGradient>
+    <filter id="hGlow">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Dark background -->
+  <rect width="560" height="140" rx="12" fill="#13111e"/>
+
+  <!-- Football / eye icon -->
+  <g transform="translate(72,70)">
+    <!-- Outer football shape -->
+    <ellipse cx="0" cy="0" rx="50" ry="30" fill="none" stroke="#c4b5e0" stroke-width="2.8"/>
+
+    <!-- Bar chart laces -->
+    <rect x="-13" y="-18" width="7" height="36" rx="1.5" fill="url(#hBallGrad)"/>
+    <rect x="-3" y="-24" width="7" height="48" rx="1.5" fill="url(#hBallGrad)"/>
+    <rect x="7" y="-14" width="7" height="28" rx="1.5" fill="url(#hBallGrad)"/>
+
+    <!-- Horizontal lace lines -->
+    <line x1="-32" y1="0" x2="-19" y2="0" stroke="#c4b5e0" stroke-width="2" stroke-linecap="round"/>
+    <line x1="19" y1="0" x2="32" y2="0" stroke="#c4b5e0" stroke-width="2" stroke-linecap="round"/>
+  </g>
+
+  <!-- "fantasy" text (lighter weight) -->
+  <text x="138" y="82" font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="38" font-weight="400" fill="#9b96b8" letter-spacing="0.5">fantasy</text>
+
+  <!-- "DraftPros" text (bold purple) -->
+  <text x="310" y="82" font-family="'Inter','Segoe UI',system-ui,sans-serif" font-size="38" font-weight="900" fill="url(#hGrad)" letter-spacing="0.5">DraftPros</text>
+</svg>
