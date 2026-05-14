@@ -1973,7 +1973,7 @@ function AuthModal(props){
       setLoading(false);
     }
   }
-  var logoSrc=T.bgCard==="#ffffff"?"/logo-shield-light.svg":"/logo-shield.svg";
+  var logoSrc=T.bgCard==="#ffffff"?"/logo-shield-light.png":"/logo-shield.png";
   var LogoSvg=React.createElement("img",{src:logoSrc,alt:"Fantasy DraftPros",style:{height:48,width:"auto"}});
   return React.createElement("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}},
     React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:20,padding:28,width:"100%",maxWidth:400,position:"relative"}},
@@ -3484,7 +3484,7 @@ export default function App(){
 
   var inpS={background:T.bgInput,color:T.text,border:"1px solid "+T.border,borderRadius:10,padding:"12px 16px",fontSize:13,outline:"none",width:"100%",boxSizing:"border-box"};
 
-  var appLogoSrc=darkMode?"/logo-shield.svg":"/logo-shield-light.svg";
+  var appLogoSrc=darkMode?"/logo-shield.png":"/logo-shield-light.png";
   var LogoSvg=React.createElement("img",{src:appLogoSrc,alt:"Fantasy DraftPros",style:{height:28,width:"auto"}});
 
   // ── LEAGUE TEAMS mock data helper ──
@@ -3497,7 +3497,7 @@ export default function App(){
     showResetPw&&React.createElement("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}},
       React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:20,padding:28,width:"100%",maxWidth:400,position:"relative"}},
         React.createElement("div",{style:{textAlign:"center",marginBottom:18}},
-          React.createElement("img",{src:T.bgCard==="#ffffff"?"/logo-shield-light.svg":"/logo-shield.svg",alt:"Fantasy Draft Pros",style:{height:56,width:"auto",maxWidth:240}})),
+          React.createElement("img",{src:T.bgCard==="#ffffff"?"/logo-shield-light.png":"/logo-shield.png",alt:"Fantasy Draft Pros",style:{height:56,width:"auto",maxWidth:240}})),
         resetPwDone
           ?React.createElement("div",{style:{textAlign:"center",padding:"20px 0"}},
             React.createElement("div",{style:{fontSize:32,marginBottom:12}},"✅"),
