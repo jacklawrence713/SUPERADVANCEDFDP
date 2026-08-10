@@ -18,6 +18,7 @@ async function callEdgeFn(fn: string, body: any, userToken?: string) {
   const headers: Record<string,string> = { "Content-Type": "application/json", "apikey": SUPA_KEY };
   if (userToken) headers["Authorization"] = `Bearer ${userToken}`;
   const res = await fetch(`${EDGE_URL}/${fn}`, { method: "POST", headers, body: JSON.stringify(body) });
+  if (!res.ok) { const txt = await res.text().catch(() => ""); try { return JSON.parse(txt); } catch { return { error: `HTTP ${res.status}` }; } }
   return res.json();
 }
 
@@ -1860,6 +1861,79 @@ const DRAFT_PICKS=[
   {id:"p2029_5",name:"2029 5th Round",round:5,est:893,note:"Future 5th"},
 ];
 
+// ── NFL Futures & Props (August 2026 preseason) ──────────────────────────
+const SB_ODDS=[
+{team:"LAR",odds:"+500",pct:16.7},{team:"BUF",odds:"+1000",pct:9.1},{team:"BAL",odds:"+1100",pct:8.3},
+{team:"SEA",odds:"+1200",pct:7.7},{team:"DET",odds:"+1600",pct:5.9},{team:"KC",odds:"+1600",pct:5.9},
+{team:"LAC",odds:"+1700",pct:5.6},{team:"PHI",odds:"+1700",pct:5.6},{team:"SF",odds:"+1800",pct:5.3},
+{team:"DEN",odds:"+2000",pct:4.8},{team:"HOU",odds:"+2000",pct:4.8},{team:"GB",odds:"+2000",pct:4.8},
+{team:"NE",odds:"+2000",pct:4.8},{team:"CHI",odds:"+2200",pct:4.3},{team:"CIN",odds:"+2200",pct:4.3},
+{team:"DAL",odds:"+2200",pct:4.3},{team:"JAX",odds:"+2800",pct:3.4},{team:"MIN",odds:"+4500",pct:2.2},
+{team:"IND",odds:"+5000",pct:2.0},{team:"TB",odds:"+5500",pct:1.8},{team:"NYG",odds:"+6500",pct:1.5},
+{team:"WAS",odds:"+6500",pct:1.5},{team:"ATL",odds:"+6500",pct:1.5},{team:"PIT",odds:"+7500",pct:1.3},
+{team:"NO",odds:"+9000",pct:1.1},{team:"CAR",odds:"+9000",pct:1.1},{team:"TEN",odds:"+12500",pct:0.8},
+{team:"LV",odds:"+12500",pct:0.8},{team:"CLE",odds:"+15000",pct:0.7},{team:"NYJ",odds:"+25000",pct:0.4},
+{team:"MIA",odds:"+30000",pct:0.3},{team:"ARI",odds:"+50000",pct:0.2}
+];
+const WIN_TOTALS=[
+{team:"BAL",ou:11.5},{team:"LAR",ou:11.5},{team:"BUF",ou:10.5},{team:"CIN",ou:10.5},{team:"DET",ou:10.5},
+{team:"KC",ou:10.5},{team:"NE",ou:10.5},{team:"PHI",ou:10.5},{team:"SEA",ou:10.5},{team:"CHI",ou:9.5},
+{team:"DAL",ou:9.5},{team:"DEN",ou:9.5},{team:"GB",ou:9.5},{team:"HOU",ou:9.5},{team:"LAC",ou:9.5},
+{team:"SF",ou:9.5},{team:"JAX",ou:8.5},{team:"MIN",ou:8.5},{team:"PIT",ou:8.5},{team:"TB",ou:8.5},
+{team:"CAR",ou:7.5},{team:"IND",ou:7.5},{team:"NO",ou:7.5},{team:"NYG",ou:7.5},{team:"WAS",ou:7.5},
+{team:"ATL",ou:6.5},{team:"TEN",ou:6.5},{team:"CLE",ou:5.5},{team:"LV",ou:5.5},{team:"NYJ",ou:5.5},
+{team:"MIA",ou:4.5},{team:"ARI",ou:3.5}
+];
+const MVP_ODDS=[
+{name:"Josh Allen",pos:"QB",team:"BUF",odds:"+550"},{name:"Lamar Jackson",pos:"QB",team:"BAL",odds:"+800"},
+{name:"Joe Burrow",pos:"QB",team:"CIN",odds:"+850"},{name:"Patrick Mahomes",pos:"QB",team:"KC",odds:"+1000"},
+{name:"Justin Herbert",pos:"QB",team:"LAC",odds:"+1000"},{name:"Drake Maye",pos:"QB",team:"NE",odds:"+1100"},
+{name:"Dak Prescott",pos:"QB",team:"DAL",odds:"+1300"},{name:"Caleb Williams",pos:"QB",team:"CHI",odds:"+1300"},
+{name:"Matthew Stafford",pos:"QB",team:"LAR",odds:"+1400"},{name:"Jordan Love",pos:"QB",team:"GB",odds:"+1800"},
+{name:"Jayden Daniels",pos:"QB",team:"WAS",odds:"+2000"},{name:"Brock Purdy",pos:"QB",team:"SF",odds:"+2000"},
+{name:"Trevor Lawrence",pos:"QB",team:"JAX",odds:"+2200"},{name:"Sam Darnold",pos:"QB",team:"SEA",odds:"+2800"},
+{name:"Jalen Hurts",pos:"QB",team:"PHI",odds:"+2800"},{name:"Jared Goff",pos:"QB",team:"DET",odds:"+3500"},
+{name:"Bo Nix",pos:"QB",team:"DEN",odds:"+3500"},{name:"Jaxson Dart",pos:"QB",team:"NYG",odds:"+4500"},
+{name:"C.J. Stroud",pos:"QB",team:"HOU",odds:"+4500"},{name:"Baker Mayfield",pos:"QB",team:"TB",odds:"+4500"},
+{name:"Bijan Robinson",pos:"RB",team:"ATL",odds:"+10000"},{name:"Jahmyr Gibbs",pos:"RB",team:"DET",odds:"+12000"},
+{name:"Puka Nacua",pos:"WR",team:"LAR",odds:"+15000"},{name:"Christian McCaffrey",pos:"RB",team:"SF",odds:"+15000"}
+];
+const OPOY_ODDS=[
+{name:"Jahmyr Gibbs",pos:"RB",team:"DET",odds:"+750"},{name:"Bijan Robinson",pos:"RB",team:"ATL",odds:"+900"},
+{name:"Ja'Marr Chase",pos:"WR",team:"CIN",odds:"+1000"},{name:"Puka Nacua",pos:"WR",team:"LAR",odds:"+1100"},
+{name:"Christian McCaffrey",pos:"RB",team:"SF",odds:"+1200"},{name:"Jaxon Smith-Njigba",pos:"WR",team:"SEA",odds:"+1500"},
+{name:"Saquon Barkley",pos:"RB",team:"PHI",odds:"+1500"},{name:"Justin Jefferson",pos:"WR",team:"MIN",odds:"+1500"},
+{name:"CeeDee Lamb",pos:"WR",team:"DAL",odds:"+1800"},{name:"Amon-Ra St. Brown",pos:"WR",team:"DET",odds:"+2000"},
+{name:"De'Von Achane",pos:"RB",team:"MIA",odds:"+2500"},{name:"Ashton Jeanty",pos:"RB",team:"LV",odds:"+3000"},
+{name:"Brock Bowers",pos:"TE",team:"LV",odds:"+4000"},{name:"Drake London",pos:"WR",team:"ATL",odds:"+5000"}
+];
+const OROY_ODDS=[
+{name:"Jeremiyah Love",pos:"RB",team:"ARI",odds:"+425"},{name:"Fernando Mendoza",pos:"QB",team:"LV",odds:"+428"},
+{name:"Carnell Tate",pos:"WR",team:"TEN",odds:"+600"},{name:"Jordyn Tyson",pos:"WR",team:"NO",odds:"+625"},
+{name:"Jadarian Price",pos:"RB",team:"SEA",odds:"+900"},{name:"Kenyon Sadiq",pos:"TE",team:"NYJ",odds:"+1400"},
+{name:"De'Zhaun Stribling",pos:"WR",team:"SF",odds:"+2000"},{name:"Makai Lemon",pos:"WR",team:"PHI",odds:"+2200"},
+{name:"Ty Simpson",pos:"QB",team:"LAR",odds:"+3300"},{name:"Omar Cooper Jr.",pos:"WR",team:"NYJ",odds:"+4000"},
+{name:"KC Concepcion",pos:"WR",team:"CLE",odds:"+5000"},{name:"Kaelon Black",pos:"RB",team:"SF",odds:"+6000"}
+];
+const PLAYER_PROPS=[
+{name:"Josh Allen",pos:"QB",team:"BUF",stat:"Pass Yds",ou:4450.5},{name:"Josh Allen",pos:"QB",team:"BUF",stat:"Pass TD",ou:38.5},
+{name:"Lamar Jackson",pos:"QB",team:"BAL",stat:"Pass Yds",ou:3800.5},{name:"Lamar Jackson",pos:"QB",team:"BAL",stat:"Rush Yds",ou:850.5},
+{name:"Joe Burrow",pos:"QB",team:"CIN",stat:"Pass Yds",ou:4700.5},{name:"Joe Burrow",pos:"QB",team:"CIN",stat:"Pass TD",ou:36.5},
+{name:"Patrick Mahomes",pos:"QB",team:"KC",stat:"Pass Yds",ou:4300.5},{name:"Patrick Mahomes",pos:"QB",team:"KC",stat:"Pass TD",ou:35.5},
+{name:"Justin Herbert",pos:"QB",team:"LAC",stat:"Pass Yds",ou:4400.5},{name:"Drake Maye",pos:"QB",team:"NE",stat:"Pass Yds",ou:4200.5},
+{name:"Caleb Williams",pos:"QB",team:"CHI",stat:"Pass Yds",ou:4100.5},{name:"Matthew Stafford",pos:"QB",team:"LAR",stat:"Pass Yds",ou:4350.5},
+{name:"Bijan Robinson",pos:"RB",team:"ATL",stat:"Rush Yds",ou:1500.5},{name:"Bijan Robinson",pos:"RB",team:"ATL",stat:"Rush TD",ou:12.5},
+{name:"Jahmyr Gibbs",pos:"RB",team:"DET",stat:"Rush Yds",ou:1300.5},{name:"Jahmyr Gibbs",pos:"RB",team:"DET",stat:"Rush TD",ou:11.5},
+{name:"Saquon Barkley",pos:"RB",team:"PHI",stat:"Rush Yds",ou:1250.5},{name:"De'Von Achane",pos:"RB",team:"MIA",stat:"Rush Yds",ou:1100.5},
+{name:"Jonathan Taylor",pos:"RB",team:"IND",stat:"Rush Yds",ou:1150.5},{name:"Christian McCaffrey",pos:"RB",team:"SF",stat:"Rush Yds",ou:1050.5},
+{name:"Ashton Jeanty",pos:"RB",team:"LV",stat:"Rush Yds",ou:1000.5},{name:"Kenneth Walker III",pos:"RB",team:"KC",stat:"Rush Yds",ou:950.5},
+{name:"Ja'Marr Chase",pos:"WR",team:"CIN",stat:"Rec Yds",ou:1400.5},{name:"Ja'Marr Chase",pos:"WR",team:"CIN",stat:"Rec TD",ou:12.5},
+{name:"Jaxon Smith-Njigba",pos:"WR",team:"SEA",stat:"Rec Yds",ou:1250.5},{name:"Puka Nacua",pos:"WR",team:"LAR",stat:"Rec Yds",ou:1350.5},
+{name:"CeeDee Lamb",pos:"WR",team:"DAL",stat:"Rec Yds",ou:1200.5},{name:"Justin Jefferson",pos:"WR",team:"MIN",stat:"Rec Yds",ou:1150.5},
+{name:"Amon-Ra St. Brown",pos:"WR",team:"DET",stat:"Rec Yds",ou:1100.5},{name:"Drake London",pos:"WR",team:"ATL",stat:"Rec Yds",ou:1050.5},
+{name:"Brock Bowers",pos:"TE",team:"LV",stat:"Rec Yds",ou:950.5},{name:"Trey McBride",pos:"TE",team:"ARI",stat:"Rec Yds",ou:900.5}
+];
+
 const UNQ=PLAYERS.filter(function(p,i,a){return a.findIndex(function(x){return x.name===p.name;})===i;});
 
 function dynastyBonus(pos,age){
@@ -2449,8 +2523,6 @@ export default function App(){
   var [budget,setBudget]=useState(200);
   var [ffab,setFfab]=useState(100);
   var [sortBy,setSortBy]=useState("rank");
-  var [search,setSearch]=useState("");
-  var [posFilter,setPosFilter]=useState("ALL");
   var [tradeA,setTradeA]=useState([]);
   var [tradeB,setTradeB]=useState([]);
   var [tSrchA,setTSrchA]=useState("");
@@ -2476,7 +2548,6 @@ export default function App(){
   var [faqOpen,setFaqOpen]=useState(null);
   var [reportSubTab,setReportSubTab]=useState(function(){try{return localStorage.getItem('fdp_reportSubTab')||"dynasty";}catch(e){return"dynasty";}});
   var _setReportSubTab=setReportSubTab;setReportSubTab=function(v){_setReportSubTab(v);try{localStorage.setItem('fdp_reportSubTab',v);}catch(e){}};
-  var [newsFilter,setNewsFilter]=useState("all");
   var [billingPeriod,setBillingPeriod]=useState("yearly");
   var [adminSubTab,setAdminSubTab]=useState(function(){try{return localStorage.getItem('fdp_adminSubTab')||"system";}catch(e){return"system";}});
   var _setAdminSubTab=setAdminSubTab;setAdminSubTab=function(v){_setAdminSubTab(v);try{localStorage.setItem('fdp_adminSubTab',v);}catch(e){}};
@@ -2529,7 +2600,11 @@ export default function App(){
     setCancelLoading(false);
   }
   async function checkSubscriptionAfterPayment(){
-    if(!authClient||!user)return;
+    if(!authClient)return;
+    // Re-read user from localStorage to avoid stale closure
+    var currentUser;
+    try{var s=localStorage.getItem('fdp_user_v1');currentUser=s?JSON.parse(s):null;}catch(e){currentUser=null;}
+    if(!currentUser)return;
     setPostPaymentLoading(true);
     setPostPaymentStatus("Checking your payment...");
     var maxAttempts=10;
@@ -2539,7 +2614,7 @@ export default function App(){
         if(!sess?.session){setPostPaymentStatus("Session expired — please log in again.");setPostPaymentLoading(false);return;}
         var {data:prof}=await authClient.from("users").select("id,plan,is_pro,subscription_status").eq("id",sess.session.user.id).single();
         if(prof?.is_pro){
-          saveAndSetUser(Object.assign({},user,{plan:prof.plan||"pro",isPro:true,subscriptionStatus:prof.subscription_status||"active"}));
+          saveAndSetUser(Object.assign({},currentUser,{plan:prof.plan||"pro",isPro:true,subscriptionStatus:prof.subscription_status||"active"}));
           setShowPostPayment(false);setPostPaymentLoading(false);setPostPaymentStatus("");
           return;
         }
@@ -2600,12 +2675,6 @@ export default function App(){
   var [rivalryTeam1,setRivalryTeam1]=useState("All Teams");
   var [rivalryTeam2,setRivalryTeam2]=useState("All Teams");
   var [rosterTeamIdx,setRosterTeamIdx]=useState(0);
-  var [recapWeek,setRecapWeek]=useState("1");
-  var [recapGenerated,setRecapGenerated]=useState(false);
-  var [recapError,setRecapError]=useState(false);
-  var [chatMessages,setChatMessages]=useState([]);
-  var [chatInput,setChatInput]=useState("");
-  var [notifications,setNotifications]=useState([]);
   var [leagueImportUser,setLeagueImportUser]=useState("");
   var [leagueImportStatus,setLeagueImportStatus]=useState(null);
   var [leagueImportData,setLeagueImportData]=useState(null);
@@ -2615,7 +2684,7 @@ export default function App(){
   var [espnYear,setEspnYear]=useState("2026");
   var [espnS2,setEspnS2]=useState(function(){try{return localStorage.getItem('fdp_espn_s2')||"";}catch(e){return "";}});
   var [espnSWID,setEspnSWID]=useState(function(){try{return localStorage.getItem('fdp_espn_swid')||"";}catch(e){return "";}});
-  var [espnWorkerUrl,setEspnWorkerUrl]=useState("https://espn-proxy.fantasydraftpros.workers.dev");
+  var espnWorkerUrl="https://espn-proxy.fantasydraftpros.workers.dev";
   var [manualRosterText,setManualRosterText]=useState("");
   var [importedTeams,setImportedTeams]=useState(function(){try{var s=localStorage.getItem('fdp_teams_v1');return s?JSON.parse(s):null;}catch(e){return null;}});
   function saveAndSetImportedTeams(teams){try{if(teams)localStorage.setItem('fdp_teams_v1',JSON.stringify(teams));else localStorage.removeItem('fdp_teams_v1');}catch(e){}setImportedTeams(teams);}
@@ -2633,6 +2702,7 @@ export default function App(){
   var [leagueUsers,setLeagueUsers]=useState(null);
   // Rankings
   var [rankSubTab,setRankSubTab]=useState(function(){try{return localStorage.getItem('fdp_rankSubTab')||"allrankings";}catch(e){return"allrankings";}});
+  var [vegasSubTab,setVegasSubTab]=useState("lines");
   var _setRankSubTab=setRankSubTab;setRankSubTab=function(v){_setRankSubTab(v);try{localStorage.setItem('fdp_rankSubTab',v);}catch(e){}};
   var [rankPos,setRankPos]=useState("QB");
 
@@ -2641,6 +2711,7 @@ export default function App(){
   var [sfMode,setSfMode]=useState(false);
   var [idpMode,setIdpMode]=useState(function(){try{var s=localStorage.getItem('fdp_idp_v1');return s==="true";}catch(e){return false;}});
   var [pvPos,setPvPos]=useState("All");
+  var [rankTep,setRankTep]=useState(false);
   var [rankSearch,setRankSearch]=useState("");
   var [rankTeamFilter,setRankTeamFilter]=useState("All Teams");
   var [rankIdpPos,setRankIdpPos]=useState("DL");
@@ -2660,7 +2731,6 @@ export default function App(){
   var [pickYear,setPickYear]=useState("2026");
   var [rookiePosFilter,setRookiePosFilter]=useState("All");
   var [rookieSearch,setRookieSearch]=useState("");
-  var [draftKitLoaded,setDraftKitLoaded]=useState(true);
   var [draftKitPos,setDraftKitPos]=useState("All Positions");
   var [draftKitSearch,setDraftKitSearch]=useState("");
   var [drafted,setDrafted]=useState<any[]>([]);
@@ -3107,7 +3177,7 @@ export default function App(){
     });
   },[]);
 
-  function tVal(side,fa){return side.reduce(function(s,x){return s+(x.pos==="PICK"?x.est:Math.max(0,x.tradeVal));},0)+((fa||0)*(2000/Math.max(1,budget)));}
+  function tVal(side,fa){return side.reduce(function(s,x){return s+(x.pos==="PICK"?x.est:Math.max(0,x.tradeVal));},0)+((fa||0)*(2000/Math.max(50,budget)));}
   var tvA=tVal(tradeA,faabA),tvB=tVal(tradeB,faabB);
   function verdict(){
     var diff=tvA-tvB,maxVal=Math.max(tvA,tvB);
@@ -3137,7 +3207,7 @@ export default function App(){
 
   function genAiAnalysis(sA,sB,valA,valB){
     var diff=valA-valB;
-    var pct=valB>0?Math.abs(diff/valB)*100:0;
+    var maxVal=Math.max(valA,valB);var pct=maxVal>0?Math.abs(diff)/maxVal*100:0;
     var aPlrs=sA.filter(function(p){return p.pos!=="PICK";});
     var bPlrs=sB.filter(function(p){return p.pos!=="PICK";});
     var aPicks=sA.filter(function(p){return p.pos==="PICK";});
@@ -3161,8 +3231,8 @@ export default function App(){
       if(youngCount>=2){lines.push("Rebuilder move: you're acquiring "+youngCount+" players aged 24 or under. Great for long-term dynasty value.");}
       else if(primeCount>=2){lines.push("Win-now move: "+primeCount+" incoming players are in their prime window. Push for a championship.");}
     }
-    var oldRbs=aPlrs.filter(function(p){return p.pos==="RB"&&(p.age||25)>=30;});
-    if(oldRbs.length>0){lines.push("Risk flag: "+oldRbs.map(function(p){return p.name;}).join(" & ")+" "+( oldRbs.length>1?"are":"is")+" 30+ at RB — steep production cliff ahead.");}
+    var oldRbs=aPlrs.filter(function(p){return p.pos==="RB"&&(p.age||25)>=29;});
+    if(oldRbs.length>0){lines.push("Risk flag: "+oldRbs.map(function(p){return p.name;}).join(" & ")+" "+( oldRbs.length>1?"are":"is")+" 29+ at RB — steep production cliff ahead.");}
     var oldRbsIn=bPlrs.filter(function(p){return p.pos==="RB"&&(p.age||25)>=29;});
     if(oldRbsIn.length>0){lines.push("Caution: acquiring "+oldRbsIn.map(function(p){return p.name+"("+p.age+")";}).join(", ")+" — RBs 29+ carry significant injury and decline risk.");}
     if(aPicks.length>bPicks.length){var ep=aPicks.length-bPicks.length;lines.push("You're adding "+ep+" extra pick"+(ep>1?"s":"")+" — speculative upside, best for rebuilders.");}
@@ -3185,27 +3255,28 @@ export default function App(){
     // Team B overpays (diff<0): suggest Team B adds a player or Team A adds a player
     var overpaySide=diff>0?"A":"B";
     var overpayAmt=Math.abs(diff);
-    if(overpaySide==="A"&&tradeA.length>1){
-      // Find the lowest-val player on A side closest to the overpay amount
-      var byDelta=tradeA.slice().sort(function(a,b){return Math.abs((a.tradeVal||a.est||0)-overpayAmt)-Math.abs((b.tradeVal||b.est||0)-overpayAmt);});
+    var overSide=overpaySide==="A"?tradeA:tradeB;
+    var otherSideLabel=overpaySide==="A"?"B":"A";
+    if(overSide.length>1){
+      // Find the player on overpaying side closest to the overpay amount
+      var byDelta=overSide.slice().sort(function(a,b){return Math.abs((a.tradeVal||a.est||0)-overpayAmt)-Math.abs((b.tradeVal||b.est||0)-overpayAmt);});
       var candidate=byDelta[0];
-      return {action:"remove",side:"A",player:candidate,description:"Remove "+candidate.name+" from Team A's offer to balance the trade (reduces A's overpay by ~"+(candidate.tradeVal||candidate.est||0).toLocaleString()+" pts)"};
+      return {action:"remove",side:overpaySide,player:candidate,description:"Remove "+candidate.name+" from Team "+overpaySide+"'s offer to balance the trade (reduces "+overpaySide+"'s overpay by ~"+(candidate.tradeVal||candidate.est||0).toLocaleString()+" pts)"};
     }
-    // Find a player from the tradePool that Team B could add to their side
+    // Find a player from the tradePool that the underpaying side could add
     var pool=tradePool.filter(function(p){return !tradeA.find(function(x){return x.name===p.name;})&&!tradeB.find(function(x){return x.name===p.name;})&&(p.tradeVal||0)>0;});
     pool.sort(function(a,b){return Math.abs((a.tradeVal||0)-overpayAmt)-Math.abs((b.tradeVal||0)-overpayAmt);});
     var addCandidate=pool[0];
     if(!addCandidate)return null;
-    var addSide=diff>0?"B":"A";
-    return {action:"add",side:addSide,player:addCandidate,description:"Add "+addCandidate.name+" ("+( addCandidate.tradeVal||0).toLocaleString()+") to Team "+addSide+"'s side to create a fairer deal"};
+    return {action:"add",side:otherSideLabel,player:addCandidate,description:"Add "+addCandidate.name+" ("+( addCandidate.tradeVal||0).toLocaleString()+") to Team "+otherSideLabel+"'s side to create a fairer deal"};
   }
 
   function genAiSuggestions(){
     var lines=[];
     var allPlayers=tradeA.concat(tradeB).filter(function(p){return p.pos!=="PICK";});
-    // Sell-high: outgoing players that are young and valuable
-    var sellHigh=tradeA.filter(function(p){return p.pos!=="PICK"&&p.age<=27&&(p.tradeVal||0)>=3000;});
-    if(sellHigh.length>0){lines.push("Sell-High on "+sellHigh[0].name+": "+sellHigh[0].age+" yrs, still near peak value — ideal window to sell.");}
+    // Sell-high: outgoing players past prime whose value may decline
+    var sellHigh=tradeA.filter(function(p){if(p.pos==="PICK")return false;var peak=p.pos==="RB"?26:p.pos==="WR"?28:p.pos==="TE"?27:29;return (p.age||25)>=peak&&(p.tradeVal||0)>=2000;});
+    if(sellHigh.length>0){lines.push("Sell-High on "+sellHigh[0].name+": age "+sellHigh[0].age+" at "+sellHigh[0].pos+" — value likely to decline, good time to move.");}
     // Buy-low: incoming players on slumps or recent value drops
     var buyLow=tradeB.filter(function(p){return p.pos!=="PICK"&&(p.tradeVal||0)>=1500&&p.age<=30;});
     if(buyLow.length>0){lines.push("Buy-Low target: "+buyLow[0].name+" — solid dynasty value at this price point.");}
@@ -4053,7 +4124,7 @@ export default function App(){
             ),
             React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginTop:10,overflow:"hidden"}},
               React.createElement("div",{style:{minWidth:0,overflow:"hidden"}},
-                tradeA.map(function(p){var pAg=ageGrade(p.pos,p.age||0);var pTier=tierLabel(p.posRank||99,p.pos);var pctW=tvA>0?Math.round((p.tradeVal||0)/tvA*100):0;return React.createElement("div",{key:p.name,style:{position:"relative",display:"flex",alignItems:"center",gap:4,marginBottom:4,background:T.bgCard,borderRadius:8,padding:"5px 6px",border:"1px solid "+T.border,overflow:"hidden"}},
+                tradeA.map(function(p){var pAg=ageGrade(p.pos,p.age||0);var pctW=tvA>0?Math.round((p.tradeVal||0)/tvA*100):0;return React.createElement("div",{key:p.name,style:{position:"relative",display:"flex",alignItems:"center",gap:4,marginBottom:4,background:T.bgCard,borderRadius:8,padding:"5px 6px",border:"1px solid "+T.border,overflow:"hidden"}},
                   React.createElement("div",{style:{position:"absolute",left:0,top:0,bottom:0,width:pctW+"%",background:T.purple+"12",borderRadius:8,transition:"width 0.4s"}}),
                   React.createElement(Avatar,{name:p.name,pos:p.pos,size:20}),
                   React.createElement("div",{style:{flex:1,minWidth:0,position:"relative"}},
@@ -4070,7 +4141,7 @@ export default function App(){
                 );})
               ),
               React.createElement("div",{style:{minWidth:0,overflow:"hidden"}},
-                tradeB.map(function(p){var pAg=ageGrade(p.pos,p.age||0);var pTier=tierLabel(p.posRank||99,p.pos);var pctW=tvB>0?Math.round((p.tradeVal||0)/tvB*100):0;return React.createElement("div",{key:p.name,style:{position:"relative",display:"flex",alignItems:"center",gap:4,marginBottom:4,background:T.bgCard,borderRadius:8,padding:"5px 6px",border:"1px solid "+T.border,overflow:"hidden"}},
+                tradeB.map(function(p){var pAg=ageGrade(p.pos,p.age||0);var pctW=tvB>0?Math.round((p.tradeVal||0)/tvB*100):0;return React.createElement("div",{key:p.name,style:{position:"relative",display:"flex",alignItems:"center",gap:4,marginBottom:4,background:T.bgCard,borderRadius:8,padding:"5px 6px",border:"1px solid "+T.border,overflow:"hidden"}},
                   React.createElement("div",{style:{position:"absolute",left:0,top:0,bottom:0,width:pctW+"%",background:T.purpleLight+"12",borderRadius:8,transition:"width 0.4s"}}),
                   React.createElement(Avatar,{name:p.name,pos:p.pos,size:20}),
                   React.createElement("div",{style:{flex:1,minWidth:0,position:"relative"}},
@@ -4117,7 +4188,7 @@ export default function App(){
             aiAnalysis&&React.createElement("div",{style:{marginTop:12,background:darkMode?"#1a1035":"#f5f3ff",border:"1px solid "+T.borderPurple,borderRadius:12,padding:"12px 14px"}},
               React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,marginBottom:6}},
                 React.createElement("span",{style:{fontSize:13,color:T.purple}},"✦"),
-                React.createElement("span",{style:{fontSize:10,fontWeight:800,color:T.purple,letterSpacing:1}}),"AI ANALYSIS"
+                React.createElement("span",{style:{fontSize:10,fontWeight:800,color:T.purple,letterSpacing:1}},"AI ANALYSIS")
               ),
               React.createElement("div",{style:{fontSize:12,color:T.text,lineHeight:1.8}},aiAnalysis)
             ),
@@ -6262,10 +6333,11 @@ export default function App(){
         React.createElement("div",{style:{padding:"0 16px 12px"}},
           React.createElement("div",{style:{fontSize:12,color:T.textSub,fontWeight:600,marginBottom:8}},"Format"),
           React.createElement("div",{style:{display:"flex",gap:8}},
-            ["SF","1QB","TEP"].map(function(fmt){
+            ["SF","1QB"].map(function(fmt){
               var active=rankFormat===fmt;
               return React.createElement("button",{key:fmt,onClick:function(){setRankFormat(fmt);},style:{padding:"10px 22px",borderRadius:10,border:"none",background:active?"#22c55e":T.bgInput,color:active?"#fff":T.textSub,fontWeight:700,fontSize:14,cursor:"pointer"}},fmt);
-            })
+            }),
+            React.createElement("button",{key:"TEP",onClick:function(){setRankTep(!rankTep);},style:{padding:"10px 22px",borderRadius:10,border:"none",background:rankTep?"#22c55e":T.bgInput,color:rankTep?"#fff":T.textSub,fontWeight:700,fontSize:14,cursor:"pointer"}},"TEP")
           )
         ),
         React.createElement("div",{style:{padding:"0 16px 12px"}},
@@ -6287,7 +6359,9 @@ export default function App(){
           var filtered=rankedPlayers.filter(function(p){
             return p.pos===posF&&(!rankSearch||p.name.toLowerCase().includes(rankSearch.toLowerCase()))&&(rankTeamFilter==="All Teams"||p.team.toUpperCase()===rankTeamFilter.toUpperCase());
           });
-          filtered=filtered.slice().sort(function(a,b){return b.tradeVal-a.tradeVal;});
+          var wSF=rankFormat==="SF";var wTEP=rankTep;
+          function rankVal(p){var sf=wSF&&p.pos==="QB"?1.25:1;var tp=wTEP&&p.pos==="TE"?1.2:1;return p.tradeVal*sf*tp;}
+          filtered=filtered.slice().sort(function(a,b){return rankVal(b)-rankVal(a);});
           return filtered.filter(function(_,i){return !user||user.isPro||i<FREE_RANK_LIMIT;}).map(function(p,i){
             var gs=getGameScript(p.team,oddsData);
             var rAg=ageGrade(p.pos,p.age);
@@ -6393,7 +6467,7 @@ export default function App(){
           if(rookieSearch){var q=rookieSearch.toLowerCase();rookies=rookies.filter(function(p){return p.name.toLowerCase().includes(q)||p.team.toLowerCase().includes(q);});}
           // Parse pick number from note for sorting
           rookies=rookies.map(function(p){
-            var m=p.note.match(new RegExp(yr+"\\s+(?:pick\\s+|#)(\\d+)(?:-(\\d+))?"));
+            var m=p.note&&p.note.match(new RegExp(yr+"\\s+(?:pick\\s+|#)(\\d+)(?:-(\\d+))?"));
             var pickNum=m?parseInt(m[1])*100+(m[2]?parseInt(m[2]):0):9999;
             return Object.assign({},p,{_pickNum:pickNum,_pickLabel:m?(m[2]?m[1]+"."+String(m[2]).padStart(2,"0"):"#"+m[1]):""});
           }).sort(function(a,b){return a._pickNum-b._pickNum;});
@@ -6983,7 +7057,7 @@ export default function App(){
             h2hTeamB.forEach(function(p){var base=p.proj?p.proj[sk]||0:0;simB+=base*(0.7+Math.random()*0.6);});
             if(simA>simB)winsA++;else if(simB>simA)winsB++;else ties++;
           }
-          var winPctA=Math.round(winsA/10);var winPctB=Math.round(winsB/10);
+          var winPctA=Math.round(winsA/10);var winPctB=100-winPctA;
           var floorA=Math.round(projA*0.7);var ceilA=Math.round(projA*1.3);
           var floorB=Math.round(projB*0.7);var ceilB=Math.round(projB*1.3);
           setH2hResult({projA:projA,projB:projB,valA:valA,valB:valB,spread:spread,winPctA:winPctA,winPctB:winPctB,floorA:floorA,ceilA:ceilA,floorB:floorB,ceilB:ceilB});
@@ -7045,7 +7119,7 @@ export default function App(){
           React.createElement("div",{style:{fontSize:48,marginBottom:12}},"📋"),
           React.createElement("div",{style:{fontWeight:800,fontSize:16,marginBottom:8}},"Import Your Roster First"),
           React.createElement("div",{style:{fontSize:13,color:T.textSub,marginBottom:16}},"Go to the Trade tab and import your Sleeper league to unlock personalized trade suggestions."),
-          React.createElement("button",{onClick:function(){setActiveTab("trade");},style:{padding:"12px 28px",borderRadius:12,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer"}},"Go to Trade Tab")
+          React.createElement("button",{onClick:function(){setTab("trade");},style:{padding:"12px 28px",borderRadius:12,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer"}},"Go to Trade Tab")
         ),
         impRoster.length>0&&(function(){
           var roster=impRoster;
@@ -7127,69 +7201,196 @@ export default function App(){
       rankSubTab==="vegas"&&(function(){
         var games=oddsData?Object.keys(oddsData).filter(function(team){var g=oddsData[team];return g&&g.spread<=0;}).map(function(homeTeam){var g=oddsData[homeTeam];return{home:homeTeam,away:g.opp,spread:g.spread,total:g.total};}).sort(function(a,b){return a.spread-b.spread;}):[];
         var hasData=games.length>0;
+        var TEAM_FULL:{[k:string]:string}={"ARI":"Cardinals","ATL":"Falcons","BAL":"Ravens","BUF":"Bills","CAR":"Panthers","CHI":"Bears","CIN":"Bengals","CLE":"Browns","DAL":"Cowboys","DEN":"Broncos","DET":"Lions","GB":"Packers","HOU":"Texans","IND":"Colts","JAX":"Jaguars","KC":"Chiefs","LAC":"Chargers","LAR":"Rams","LV":"Raiders","MIA":"Dolphins","MIN":"Vikings","NE":"Patriots","NO":"Saints","NYG":"Giants","NYJ":"Jets","PHI":"Eagles","PIT":"Steelers","SF":"49ers","SEA":"Seahawks","TB":"Buccaneers","TEN":"Titans","WAS":"Commanders"};
+        var sbTier=function(i:number){return i<4?"#22c55e":i<10?"#4ade80":i<17?"#94a3b8":i<24?"#fb923c":"#f87171";};
         return React.createElement("div",{style:{padding:"16px"}},
-          React.createElement("div",{style:{display:"flex",alignItems:"center",gap:12,marginBottom:16}},
+          React.createElement("div",{style:{display:"flex",alignItems:"center",gap:12,marginBottom:12}},
             React.createElement("div",{style:{width:44,height:44,borderRadius:12,background:"#16a34a",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}},
               React.createElement("span",{style:{fontSize:22,color:"#fff"}},"$")
             ),
             React.createElement("div",null,
-              React.createElement("div",{style:{fontWeight:900,fontSize:22,color:T.text}},"Vegas Lines"),
-              React.createElement("div",{style:{fontSize:12,color:T.textSub}},"NFL spreads, totals, and game script predictions")
+              React.createElement("div",{style:{fontWeight:900,fontSize:22,color:T.text}},"Vegas Lines & Futures"),
+              React.createElement("div",{style:{fontSize:12,color:T.textSub}},"NFL odds, futures, props & game script predictions")
             )
           ),
-          !hasData&&React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,padding:32,textAlign:"center",marginBottom:16}},
-            React.createElement("div",{style:{fontSize:36,marginBottom:12}},"📅"),
-            React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:8}},"No Current NFL Lines"),
-            React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.6,maxWidth:320,margin:"0 auto",marginBottom:16}},"Odds are posted Thursday–Sunday during the NFL season (September–January). Check back once Week 1 lines drop."),
-            React.createElement("button",{onClick:function(){_oddsCache=null;fetchOdds().then(function(d){if(Object.keys(d).length>0)setOddsData(d);});},style:{padding:"10px 24px",borderRadius:12,border:"1px solid "+T.border,background:T.bgInput,color:T.text,fontWeight:700,fontSize:13,cursor:"pointer"}},"↻ Check for Lines")
-          ),
-          hasData&&React.createElement("div",{style:{marginBottom:12}},
-            React.createElement("div",{style:{fontSize:11,color:T.textSub,fontWeight:700,letterSpacing:1,marginBottom:8}},"THIS WEEK'S GAMES — "+games.length+" MATCHUPS"),
-            games.map(function(g){
-              var gsHome=getGameScript(g.home,oddsData);
-              var gsAway=getGameScript(g.away,oddsData);
-              var totalNote=g.total>=50?"🔥 Shootout":g.total<=41?"🛡 Low Scoring":"";
-              return React.createElement("div",{key:g.home+g.away,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:16,marginBottom:10}},
-                React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}},
-                  React.createElement("div",{style:{fontWeight:800,fontSize:15,color:T.text}},g.away+" @ "+g.home),
-                  totalNote&&React.createElement("div",{style:{fontSize:11,fontWeight:700,color:g.total>=50?"#f59e0b":"#60a5fa"}},totalNote)
-                ),
-                React.createElement("div",{style:{display:"flex",gap:8,marginBottom:10}},
-                  React.createElement("div",{style:{flex:1,background:T.bgInput,borderRadius:10,padding:"10px 12px",textAlign:"center"}},
-                    React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:4}},"SPREAD"),
-                    React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text}},(g.spread>0?"+":"")+g.spread)
-                  ),
-                  React.createElement("div",{style:{flex:1,background:T.bgInput,borderRadius:10,padding:"10px 12px",textAlign:"center"}},
-                    React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:4}},"O/U TOTAL"),
-                    React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text}},g.total)
-                  )
-                ),
-                React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}},
-                  gsAway&&React.createElement("div",{style:{background:gsAway.color+"14",border:"1px solid "+gsAway.color+"33",borderRadius:10,padding:"8px 12px"}},
-                    React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:2}},g.away),
-                    React.createElement("div",{style:{fontWeight:700,fontSize:12,color:gsAway.color}},gsAway.script),
-                    React.createElement("div",{style:{fontSize:10,color:T.textDim}},"Spread: "+(gsAway.spread>0?"+":"")+gsAway.spread)
-                  ),
-                  gsHome&&React.createElement("div",{style:{background:gsHome.color+"14",border:"1px solid "+gsHome.color+"33",borderRadius:10,padding:"8px 12px"}},
-                    React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:2}},g.home),
-                    React.createElement("div",{style:{fontWeight:700,fontSize:12,color:gsHome.color}},gsHome.script),
-                    React.createElement("div",{style:{fontSize:10,color:T.textDim}},"Spread: "+(gsHome.spread>0?"+":"")+gsHome.spread)
-                  )
-                )
-              );
+          // Sub-tabs
+          React.createElement("div",{style:{display:"flex",gap:6,flexWrap:"wrap",marginBottom:16}},
+            ["lines","futures","wintotals","awards","props"].map(function(tab){
+              var labels:{[k:string]:string}={"lines":"Game Lines","futures":"Super Bowl","wintotals":"Win Totals","awards":"Awards","props":"Player Props"};
+              var active=vegasSubTab===tab;
+              return React.createElement("button",{key:tab,onClick:function(){setVegasSubTab(tab);},style:{padding:"7px 14px",borderRadius:20,border:"1px solid "+(active?"#16a34a":T.border),background:active?"#16a34a":"transparent",color:active?"#fff":T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},labels[tab]);
             })
           ),
-          React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:16}},
-            React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text,marginBottom:10}},"Game Script Guide"),
-            [["Positive Script","Favored by 7+ pts — run-heavy, clock control. Boost RBs.","#22c55e"],["Slight Fav","Favored by 3–6 pts — balanced attack expected.","#4ade80"],["Neutral","Pick'em or within 2 pts — no clear script edge.","#94a3b8"],["Slight Dog","Underdog by 3–6 pts — pass volume increases.","#fb923c"],["Negative Script","Underdog by 7+ pts — pass-heavy game script. Boost WRs/TEs.","#f87171"]].map(function(row){
-              return React.createElement("div",{key:row[0],style:{display:"flex",alignItems:"center",gap:10,marginBottom:8}},
-                React.createElement("div",{style:{width:10,height:10,borderRadius:"50%",background:row[2],flexShrink:0}}),
-                React.createElement("div",null,
-                  React.createElement("span",{style:{fontWeight:700,fontSize:12,color:row[2]}},(row[0] as string)+": "),
-                  React.createElement("span",{style:{fontSize:12,color:T.textSub}},row[1])
-                )
+          // ── GAME LINES TAB ──
+          vegasSubTab==="lines"&&React.createElement("div",null,
+            !hasData&&React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,padding:32,textAlign:"center",marginBottom:16}},
+              React.createElement("div",{style:{fontSize:36,marginBottom:12}},"📅"),
+              React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:8}},"No Current NFL Lines"),
+              React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.6,maxWidth:320,margin:"0 auto",marginBottom:16}},"Odds are posted Thursday–Sunday during the NFL season (September–January). Check back once Week 1 lines drop."),
+              React.createElement("button",{onClick:function(){_oddsCache=null;fetchOdds().then(function(d){if(Object.keys(d).length>0)setOddsData(d);});},style:{padding:"10px 24px",borderRadius:12,border:"1px solid "+T.border,background:T.bgInput,color:T.text,fontWeight:700,fontSize:13,cursor:"pointer"}},"↻ Check for Lines")
+            ),
+            hasData&&React.createElement("div",{style:{marginBottom:12}},
+              React.createElement("div",{style:{fontSize:11,color:T.textSub,fontWeight:700,letterSpacing:1,marginBottom:8}},"THIS WEEK'S GAMES — "+games.length+" MATCHUPS"),
+              games.map(function(g){
+                var gsHome=getGameScript(g.home,oddsData);
+                var gsAway=getGameScript(g.away,oddsData);
+                var totalNote=g.total>=50?"🔥 Shootout":g.total<=41?"🛡 Low Scoring":"";
+                return React.createElement("div",{key:g.home+g.away,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:16,marginBottom:10}},
+                  React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}},
+                    React.createElement("div",{style:{fontWeight:800,fontSize:15,color:T.text}},g.away+" @ "+g.home),
+                    totalNote&&React.createElement("div",{style:{fontSize:11,fontWeight:700,color:g.total>=50?"#f59e0b":"#60a5fa"}},totalNote)
+                  ),
+                  React.createElement("div",{style:{display:"flex",gap:8,marginBottom:10}},
+                    React.createElement("div",{style:{flex:1,background:T.bgInput,borderRadius:10,padding:"10px 12px",textAlign:"center"}},
+                      React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:4}},"SPREAD"),
+                      React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text}},(g.spread>0?"+":"")+g.spread)
+                    ),
+                    React.createElement("div",{style:{flex:1,background:T.bgInput,borderRadius:10,padding:"10px 12px",textAlign:"center"}},
+                      React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:4}},"O/U TOTAL"),
+                      React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text}},g.total)
+                    )
+                  ),
+                  React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}},
+                    gsAway&&React.createElement("div",{style:{background:gsAway.color+"14",border:"1px solid "+gsAway.color+"33",borderRadius:10,padding:"8px 12px"}},
+                      React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:2}},g.away),
+                      React.createElement("div",{style:{fontWeight:700,fontSize:12,color:gsAway.color}},gsAway.script),
+                      React.createElement("div",{style:{fontSize:10,color:T.textDim}},"Spread: "+(gsAway.spread>0?"+":"")+gsAway.spread)
+                    ),
+                    gsHome&&React.createElement("div",{style:{background:gsHome.color+"14",border:"1px solid "+gsHome.color+"33",borderRadius:10,padding:"8px 12px"}},
+                      React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:2}},g.home),
+                      React.createElement("div",{style:{fontWeight:700,fontSize:12,color:gsHome.color}},gsHome.script),
+                      React.createElement("div",{style:{fontSize:10,color:T.textDim}},"Spread: "+(gsHome.spread>0?"+":"")+gsHome.spread)
+                    )
+                  )
+                );
+              })
+            ),
+            React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:16}},
+              React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text,marginBottom:10}},"Game Script Guide"),
+              [["Positive Script","Favored by 7+ pts — run-heavy, clock control. Boost RBs.","#22c55e"],["Slight Fav","Favored by 3–6 pts — balanced attack expected.","#4ade80"],["Neutral","Pick'em or within 2 pts — no clear script edge.","#94a3b8"],["Slight Dog","Underdog by 3–6 pts — pass volume increases.","#fb923c"],["Negative Script","Underdog by 7+ pts — pass-heavy game script. Boost WRs/TEs.","#f87171"]].map(function(row){
+                return React.createElement("div",{key:row[0],style:{display:"flex",alignItems:"center",gap:10,marginBottom:8}},
+                  React.createElement("div",{style:{width:10,height:10,borderRadius:"50%",background:row[2],flexShrink:0}}),
+                  React.createElement("div",null,
+                    React.createElement("span",{style:{fontWeight:700,fontSize:12,color:row[2]}},(row[0] as string)+": "),
+                    React.createElement("span",{style:{fontSize:12,color:T.textSub}},row[1])
+                  )
+                );
+              })
+            )
+          ),
+          // ── SUPER BOWL FUTURES TAB ──
+          vegasSubTab==="futures"&&React.createElement("div",null,
+            React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4}},"Super Bowl LXI Odds"),
+            React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:14}},"2026-27 season · Rams enter as favorites at +500"),
+            SB_ODDS.map(function(sb,i){
+              var barW=Math.max(6,sb.pct*5.5);
+              return React.createElement("div",{key:sb.team,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"10px 14px",marginBottom:6,display:"flex",alignItems:"center",gap:12}},
+                React.createElement("div",{style:{fontWeight:900,fontSize:11,color:T.textDim,width:20,textAlign:"right"}},i+1),
+                React.createElement("div",{style:{fontWeight:800,fontSize:14,color:T.text,width:42}},sb.team),
+                React.createElement("div",{style:{fontSize:12,color:T.textSub,width:50}},TEAM_FULL[sb.team]||""),
+                React.createElement("div",{style:{flex:1,position:"relative",height:18,background:T.bgInput,borderRadius:9,overflow:"hidden"}},
+                  React.createElement("div",{style:{position:"absolute",left:0,top:0,height:"100%",width:barW+"%",background:sbTier(i),borderRadius:9,transition:"width 0.3s"}})
+                ),
+                React.createElement("div",{style:{fontWeight:800,fontSize:13,color:sbTier(i),width:60,textAlign:"right"}},sb.odds),
+                React.createElement("div",{style:{fontSize:11,color:T.textSub,width:42,textAlign:"right"}},sb.pct+"%")
               );
-            })
+            }),
+            React.createElement("div",{style:{fontSize:10,color:T.textDim,textAlign:"center",marginTop:10}},"Implied probability shown · Odds via consensus sportsbooks · August 2026")
+          ),
+          // ── WIN TOTALS TAB ──
+          vegasSubTab==="wintotals"&&React.createElement("div",null,
+            React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4}},"2026 Team Win Totals"),
+            React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:14}},"Over/Under regular season wins · BAL & LAR lead at 11.5"),
+            WIN_TOTALS.map(function(wt){
+              var barW=Math.max(8,(wt.ou/13)*100);
+              var clr=wt.ou>=10.5?"#22c55e":wt.ou>=8.5?"#4ade80":wt.ou>=6.5?"#94a3b8":wt.ou>=5?"#fb923c":"#f87171";
+              return React.createElement("div",{key:wt.team,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"10px 14px",marginBottom:5,display:"flex",alignItems:"center",gap:12}},
+                React.createElement("div",{style:{fontWeight:800,fontSize:14,color:T.text,width:42}},wt.team),
+                React.createElement("div",{style:{fontSize:12,color:T.textSub,width:90}},TEAM_FULL[wt.team]||""),
+                React.createElement("div",{style:{flex:1,position:"relative",height:16,background:T.bgInput,borderRadius:8,overflow:"hidden"}},
+                  React.createElement("div",{style:{position:"absolute",left:0,top:0,height:"100%",width:barW+"%",background:clr,borderRadius:8}})
+                ),
+                React.createElement("div",{style:{fontWeight:900,fontSize:16,color:clr,width:40,textAlign:"right"}},wt.ou)
+              );
+            }),
+            React.createElement("div",{style:{fontSize:10,color:T.textDim,textAlign:"center",marginTop:10}},"DraftKings consensus · August 2026")
+          ),
+          // ── AWARDS TAB ──
+          vegasSubTab==="awards"&&React.createElement("div",null,
+            // MVP
+            React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4}},"2026 NFL MVP"),
+            React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:12}},"Josh Allen favored for his 2nd MVP · all top-20 candidates are QBs"),
+            MVP_ODDS.map(function(p,i){
+              var pc=POS_COLORS[p.pos]||"#888";
+              return React.createElement("div",{key:p.name+"mvp",style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"10px 14px",marginBottom:5,display:"flex",alignItems:"center",gap:10}},
+                React.createElement("div",{style:{fontWeight:900,fontSize:11,color:T.textDim,width:20,textAlign:"right"}},i+1),
+                React.createElement(Avatar,{name:p.name,pos:p.pos,size:28}),
+                React.createElement("div",{style:{flex:1}},
+                  React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text}},p.name),
+                  React.createElement("div",{style:{fontSize:10,color:T.textSub}},p.pos+" · "+p.team)
+                ),
+                React.createElement("div",{style:{fontWeight:800,fontSize:14,color:i<3?"#22c55e":i<10?"#4ade80":"#94a3b8"}},p.odds)
+              );
+            }),
+            // OPOY
+            React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4,marginTop:20}},"Offensive Player of the Year"),
+            React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:12}},"Gibbs favored after Montgomery trade gives him full workload"),
+            OPOY_ODDS.map(function(p,i){
+              return React.createElement("div",{key:p.name+"opoy",style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"10px 14px",marginBottom:5,display:"flex",alignItems:"center",gap:10}},
+                React.createElement("div",{style:{fontWeight:900,fontSize:11,color:T.textDim,width:20,textAlign:"right"}},i+1),
+                React.createElement(Avatar,{name:p.name,pos:p.pos,size:28}),
+                React.createElement("div",{style:{flex:1}},
+                  React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text}},p.name),
+                  React.createElement("div",{style:{fontSize:10,color:T.textSub}},p.pos+" · "+p.team)
+                ),
+                React.createElement("div",{style:{fontWeight:800,fontSize:14,color:i<3?"#c084fc":i<8?"#a78bfa":"#94a3b8"}},p.odds)
+              );
+            }),
+            // OROY
+            React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4,marginTop:20}},"Offensive Rookie of the Year"),
+            React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:12}},"Love & Mendoza in a dead heat · Tate the top WR threat"),
+            OROY_ODDS.map(function(p,i){
+              return React.createElement("div",{key:p.name+"oroy",style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"10px 14px",marginBottom:5,display:"flex",alignItems:"center",gap:10}},
+                React.createElement("div",{style:{fontWeight:900,fontSize:11,color:T.textDim,width:20,textAlign:"right"}},i+1),
+                React.createElement(Avatar,{name:p.name,pos:p.pos,size:28}),
+                React.createElement("div",{style:{flex:1}},
+                  React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text}},p.name),
+                  React.createElement("div",{style:{fontSize:10,color:T.textSub}},p.pos+" · "+p.team)
+                ),
+                React.createElement("div",{style:{fontWeight:800,fontSize:14,color:i<2?"#f59e0b":i<5?"#fbbf24":"#94a3b8"}},p.odds)
+              );
+            }),
+            React.createElement("div",{style:{fontSize:10,color:T.textDim,textAlign:"center",marginTop:12}},"Consensus odds · August 2026 · For entertainment only")
+          ),
+          // ── PLAYER PROPS TAB ──
+          vegasSubTab==="props"&&React.createElement("div",null,
+            React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4}},"Season-Long Player Props"),
+            React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:14}},"Over/Under season stat totals · 2026-27 NFL season"),
+            (function(){
+              var cats=["Pass Yds","Pass TD","Rush Yds","Rush TD","Rec Yds","Rec TD"];
+              var catColors:{[k:string]:string}={"Pass Yds":"#818cf8","Pass TD":"#818cf8","Rush Yds":"#34d399","Rush TD":"#34d399","Rec Yds":"#c084fc","Rec TD":"#c084fc"};
+              var grouped:{[k:string]:typeof PLAYER_PROPS}={};
+              PLAYER_PROPS.forEach(function(p){if(!grouped[p.stat])grouped[p.stat]=[];grouped[p.stat].push(p);});
+              return cats.filter(function(c){return grouped[c];}).map(function(cat){
+                return React.createElement("div",{key:cat,style:{marginBottom:16}},
+                  React.createElement("div",{style:{fontWeight:800,fontSize:13,color:catColors[cat]||T.text,letterSpacing:0.5,marginBottom:8,textTransform:"uppercase"}},cat),
+                  grouped[cat].map(function(p){
+                    return React.createElement("div",{key:p.name+p.stat,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"10px 14px",marginBottom:5,display:"flex",alignItems:"center",gap:10}},
+                      React.createElement(Avatar,{name:p.name,pos:p.pos,size:28}),
+                      React.createElement("div",{style:{flex:1}},
+                        React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text}},p.name),
+                        React.createElement("div",{style:{fontSize:10,color:T.textSub}},p.pos+" · "+p.team)
+                      ),
+                      React.createElement("div",{style:{textAlign:"right"}},
+                        React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:2}},"O/U"),
+                        React.createElement("div",{style:{fontWeight:900,fontSize:16,color:catColors[cat]||T.text}},p.ou.toLocaleString())
+                      )
+                    );
+                  })
+                );
+              });
+            })(),
+            React.createElement("div",{style:{fontSize:10,color:T.textDim,textAlign:"center",marginTop:8}},"FDP estimates based on consensus lines · August 2026 · For entertainment only")
           )
         );
       })(),
@@ -7639,226 +7840,6 @@ export default function App(){
             )
       ),
 
-      // DRAFT KIT REMOVED — merged into League > Draft Room
-      false&&React.createElement("div",null,
-        React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 16px 12px"}},
-          React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10}},
-            React.createElement("span",{style:{fontSize:22,color:"#3b82f6"}},"[=]"),
-            React.createElement("div",{style:{fontWeight:900,fontSize:24,color:T.text}},"Draft Kit")
-          ),
-          React.createElement("button",{onClick:function(){
-            var text=rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;}).slice(0,100).map(function(p,i){return (i+1)+","+p.name+","+p.pos+","+p.team+","+(p.tradeVal||0);}).join("\n");
-            var blob=new Blob(["Rank,Name,Pos,Team,Value\n"+text],{type:"text/csv"});
-            var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="fdp-rankings.csv";a.click();
-          },style:{padding:"10px 18px",borderRadius:10,border:"none",background:"#22c55e",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}},"Download CSV")
-        ),
-        React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:14,margin:"0 16px 12px",padding:"14px 16px"}},
-          React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:10}},
-            React.createElement("div",null,
-              React.createElement("div",{style:{fontSize:9,fontWeight:700,color:T.textDim,letterSpacing:0.5,marginBottom:3}},"BUDGET ($)"),
-              React.createElement("input",{type:"number",value:draftBudget,onChange:function(e){setDraftBudget(Math.max(1,+e.target.value||200));},style:Object.assign({},inpS,{padding:"8px 10px",fontSize:13,textAlign:"center"})})
-            ),
-            React.createElement("div",null,
-              React.createElement("div",{style:{fontSize:9,fontWeight:700,color:T.textDim,letterSpacing:0.5,marginBottom:3}},"TEAMS"),
-              React.createElement("input",{type:"number",value:draftLeagueSize,onChange:function(e){setDraftLeagueSize(Math.max(2,Math.min(20,+e.target.value||12)));},style:Object.assign({},inpS,{padding:"8px 10px",fontSize:13,textAlign:"center"})})
-            ),
-            React.createElement("div",null,
-              React.createElement("div",{style:{fontSize:9,fontWeight:700,color:T.textDim,letterSpacing:0.5,marginBottom:3}},"ROSTER SIZE"),
-              React.createElement("input",{type:"number",value:draftRosterSize,onChange:function(e){setDraftRosterSize(Math.max(5,Math.min(30,+e.target.value||15)));},style:Object.assign({},inpS,{padding:"8px 10px",fontSize:13,textAlign:"center"})})
-            )
-          ),
-          (function(){
-            var spent=drafted.reduce(function(s,d){return s+(d.price||0);},0);
-            var remaining=draftBudget-spent;
-            var slotsLeft=draftRosterSize-drafted.length;
-            var maxBid=slotsLeft>1?remaining-(slotsLeft-1):remaining;
-            var pct=draftBudget>0?Math.round(spent/draftBudget*100):0;
-            return React.createElement("div",{style:{background:T.bgInput,borderRadius:10,padding:"10px 12px",marginBottom:10}},
-              React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}},
-                React.createElement("div",{style:{fontSize:11,fontWeight:700,color:T.textSub}},"Budget"),
-                React.createElement("div",{style:{fontSize:13,fontWeight:900,color:remaining<20?T.red:remaining<50?T.gold:T.green}},"$"+remaining+" remaining")
-              ),
-              React.createElement("div",{style:{background:T.border,borderRadius:99,height:8,overflow:"hidden",marginBottom:6}},
-                React.createElement("div",{style:{width:Math.min(100,pct)+"%",height:"100%",background:pct>90?T.red:pct>70?T.gold:T.green,borderRadius:99,transition:"width 0.3s"}})
-              ),
-              React.createElement("div",{style:{display:"flex",justifyContent:"space-between",fontSize:10,color:T.textDim}},
-                React.createElement("span",null,"Spent: $"+spent),
-                React.createElement("span",null,"Slots left: "+slotsLeft),
-                maxBid>0&&React.createElement("span",{style:{color:T.purpleLight,fontWeight:700}},"Max bid: $"+maxBid)
-              )
-            );
-          })()
-        ),
-        React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,margin:"0 16px 16px",padding:"14px 16px"}},
-          React.createElement("div",{style:{display:"flex",gap:8,marginBottom:10}},
-            React.createElement("button",{onClick:function(){setDraftKitSearch("");},style:{width:44,height:44,borderRadius:10,border:"1px solid "+T.border,background:T.bgInput,cursor:"pointer",color:T.textSub,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}},"✕"),
-            React.createElement("select",{value:draftKitPos,onChange:function(e){setDraftKitPos(e.target.value);},style:{flex:1,background:T.bgInput,color:T.text,border:"1px solid "+T.border,borderRadius:10,padding:"10px 14px",fontSize:13,outline:"none",cursor:"pointer"}},
-              ["All Positions","QB","RB","WR","TE","K","DST"].map(function(p){return React.createElement("option",{key:p},p);})
-            ),
-            React.createElement("button",{onClick:function(){setDrafted([]);setDraftKitLoaded(function(v){return !v;});},style:{padding:"10px 16px",borderRadius:10,border:"none",background:"#2563eb",color:draftKitLoaded?"#fff":"rgba(255,255,255,0.7)",fontWeight:700,fontSize:13,cursor:"pointer",flexShrink:0}},draftKitLoaded?"Reset":"Loading...")
-          ),
-          React.createElement("div",{style:{display:"flex",gap:20,fontSize:13,color:T.textSub}},
-            React.createElement("span",null,"Drafted: ",React.createElement("span",{style:{fontWeight:800,color:T.text}},drafted.length+"/"+draftRosterSize)),
-            React.createElement("span",null,"Available: ",React.createElement("span",{style:{fontWeight:800,color:T.text}},rankedPlayers.filter(function(p){return !drafted.find(function(d){return d.name===p.name;})&&(draftKitPos==="All Positions"||p.pos===draftKitPos);}).length))
-          )
-        ),
-        !draftKitLoaded
-          ?React.createElement("div",{style:{textAlign:"center",padding:"60px 20px"}},
-              React.createElement("div",{style:{width:48,height:48,border:"3px solid #3b82f6",borderTopColor:"transparent",borderRadius:"50%",margin:"0 auto 16px",animation:"fdp-spin 0.9s linear infinite"}}),
-              React.createElement("div",{style:{fontSize:14,color:T.textSub}},"Loading draft board...")
-            )
-          :React.createElement("div",null,
-              // Best Available bar
-              (function(){
-                var avail=rankedPlayers.filter(function(p){return !drafted.find(function(d){return d.name===p.name;})&&["QB","RB","WR","TE"].indexOf(p.pos)>=0;});
-                avail.sort(function(a,b){return b.tradeVal-a.tradeVal;});
-                var bestByPos={};
-                avail.forEach(function(p){if(!bestByPos[p.pos])bestByPos[p.pos]=p;});
-                return React.createElement("div",{style:{margin:"0 16px 12px",background:"linear-gradient(135deg,#1e1040,#0f172a)",border:"1px solid "+T.borderPurple,borderRadius:14,padding:"12px 14px"}},
-                  React.createElement("div",{style:{fontSize:10,fontWeight:800,color:T.purpleLight,letterSpacing:1,marginBottom:8}},"BEST AVAILABLE"),
-                  React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6}},
-                    ["QB","RB","WR","TE"].map(function(pos){
-                      var bp=bestByPos[pos];
-                      if(!bp)return React.createElement("div",{key:pos,style:{textAlign:"center",opacity:0.4}},React.createElement("div",{style:{fontSize:9,fontWeight:700,color:POS_COLORS[pos]||T.textSub}},pos),React.createElement("div",{style:{fontSize:10,color:T.textDim}},"—"));
-                      return React.createElement("div",{key:pos,onClick:function(){var price=prompt("Draft price for "+bp.name+"?","1");if(price===null)return;setDrafted(function(d){return [{name:bp.name,price:+price||0}].concat(d);});},style:{textAlign:"center",cursor:"pointer",background:T.bgCard+"88",borderRadius:8,padding:"6px 4px"}},
-                        React.createElement("div",{style:{fontSize:9,fontWeight:800,color:POS_COLORS[pos]||T.textSub,letterSpacing:0.5,marginBottom:2}},pos),
-                        React.createElement(Avatar,{name:bp.name,pos:bp.pos,size:28}),
-                        React.createElement("div",{style:{fontSize:10,fontWeight:700,color:T.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",marginTop:2}},bp.name.split(" ").pop()),
-                        React.createElement("div",{style:{fontSize:9,color:T.purpleLight,fontWeight:700}},(bp.tradeVal||0).toLocaleString())
-                      );
-                    })
-                  )
-                );
-              })(),
-              // Round tracker
-              drafted.length>0&&React.createElement("div",{style:{margin:"0 16px 10px",display:"flex",alignItems:"center",gap:8}},
-                React.createElement("div",{style:{fontSize:11,fontWeight:700,color:T.textSub}},"Round "+(Math.floor(drafted.length/draftLeagueSize)+1)+", Pick "+(drafted.length%draftLeagueSize+1)),
-                React.createElement("div",{style:{flex:1,height:4,background:T.border,borderRadius:4,overflow:"hidden"}},
-                  React.createElement("div",{style:{width:Math.min(100,(drafted.length%draftLeagueSize)/Math.max(1,draftLeagueSize)*100)+"%",height:"100%",background:T.purple,borderRadius:4}})
-                ),
-                React.createElement("div",{style:{fontSize:11,fontWeight:800,color:T.purple}},drafted.length+" picks")
-              ),
-              // Draft Advice Panel
-              drafted.length>0&&(function(){
-                var spent=drafted.reduce(function(s,d){return s+(d.price||0);},0);
-                var remaining=draftBudget-spent;
-                var slotsLeft=draftRosterSize-drafted.length;
-                if(slotsLeft<=0)return React.createElement("div",{style:{margin:"0 16px 12px",background:T.green+"18",border:"1px solid "+T.green+"44",borderRadius:12,padding:"12px 14px",textAlign:"center"}},
-                  React.createElement("div",{style:{fontWeight:800,fontSize:14,color:T.green}},"Roster Complete!"),
-                  React.createElement("div",{style:{fontSize:11,color:T.textSub,marginTop:4}},"You drafted "+drafted.length+" players for $"+spent)
-                );
-                var maxBid=slotsLeft>1?remaining-(slotsLeft-1):remaining;
-                // Analyze roster composition
-                var myPosCts={QB:0,RB:0,WR:0,TE:0};
-                drafted.forEach(function(d){var rp=rankedPlayers.find(function(p){return p.name===d.name;});if(rp&&myPosCts.hasOwnProperty(rp.pos))myPosCts[rp.pos]++;});
-                // Ideal targets based on roster size
-                var idealRatio=draftRosterSize>=18?{QB:2,RB:5,WR:5,TE:2}:draftRosterSize>=14?{QB:2,RB:4,WR:4,TE:2}:{QB:1,RB:3,WR:3,TE:1};
-                var needs=[];
-                ["QB","RB","WR","TE"].forEach(function(pos){
-                  var gap=idealRatio[pos]-myPosCts[pos];
-                  if(gap>0)needs.push({pos:pos,gap:gap,have:myPosCts[pos],ideal:idealRatio[pos]});
-                });
-                needs.sort(function(a,b){return b.gap-a.gap;});
-                // Find best value targets within budget
-                var targets=[];
-                var avgPerSlot=slotsLeft>0?Math.round(remaining/slotsLeft):0;
-                needs.forEach(function(n){
-                  var posAvail=rankedPlayers.filter(function(p){return p.pos===n.pos&&!drafted.find(function(d){return d.name===p.name;});}).sort(function(a,b){return b.tradeVal-a.tradeVal;});
-                  // Best available at this position
-                  var best=posAvail[0];
-                  // Value pick — high value but maybe affordable
-                  var valuePick=posAvail.find(function(p,idx){return idx>=3&&idx<=12;});
-                  if(best)targets.push({player:best,reason:"Best "+n.pos+" available",type:"premium",need:n.gap+" more "+n.pos+(n.gap>1?"s":"")+" needed"});
-                  if(valuePick&&valuePick!==best)targets.push({player:valuePick,reason:"Value "+n.pos+" — stretch budget",type:"value",need:n.gap+" more "+n.pos+(n.gap>1?"s":"")+" needed"});
-                });
-                // If budget is tight, suggest bargains
-                if(remaining<avgPerSlot*slotsLeft*0.6&&slotsLeft>2){
-                  var bargains=rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0&&!drafted.find(function(d){return d.name===p.name;})&&p.posRank>=10&&p.posRank<=25;}).sort(function(a,b){return (b.pts/(b.tradeVal||1))-(a.pts/(a.tradeVal||1));}).slice(0,2);
-                  bargains.forEach(function(p){targets.push({player:p,reason:"Budget-friendly — high pts/value",type:"bargain",need:"Save budget"});});
-                }
-                // Deduplicate
-                var seen={};targets=targets.filter(function(t){if(seen[t.player.name])return false;seen[t.player.name]=true;return true;});
-                targets=targets.slice(0,5);
-                if(targets.length===0)return null;
-                return React.createElement("div",{style:{margin:"0 16px 12px",background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:14,padding:"12px 14px"}},
-                  React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,marginBottom:8}},
-                    React.createElement("span",{style:{fontSize:16}},"🎯"),
-                    React.createElement("div",null,
-                      React.createElement("div",{style:{fontSize:11,fontWeight:800,color:T.purpleLight,letterSpacing:0.5}},"DRAFT ADVISOR"),
-                      React.createElement("div",{style:{fontSize:9,color:T.textDim}},"$"+remaining+" left · "+slotsLeft+" slots · ~$"+avgPerSlot+"/pick")
-                    )
-                  ),
-                  // Roster composition mini bar
-                  React.createElement("div",{style:{display:"flex",gap:8,marginBottom:10}},
-                    ["QB","RB","WR","TE"].map(function(pos){
-                      var have=myPosCts[pos];
-                      var ideal=idealRatio[pos];
-                      var full=have>=ideal;
-                      return React.createElement("div",{key:pos,style:{flex:1,textAlign:"center"}},
-                        React.createElement("div",{style:{fontSize:9,fontWeight:800,color:POS_COLORS[pos]||T.textSub}},pos),
-                        React.createElement("div",{style:{fontSize:12,fontWeight:900,color:full?T.green:have>0?T.gold:T.red}},have+"/"+ideal),
-                        React.createElement("div",{style:{height:3,borderRadius:2,background:T.border,marginTop:2,overflow:"hidden"}},
-                          React.createElement("div",{style:{width:Math.min(100,Math.round(have/Math.max(1,ideal)*100))+"%",height:"100%",background:full?T.green:T.gold,borderRadius:2}})
-                        )
-                      );
-                    })
-                  ),
-                  // Suggested targets
-                  React.createElement("div",{style:{display:"flex",flexDirection:"column",gap:6}},
-                    targets.map(function(t){
-                      var p=t.player;
-                      var typeColor=t.type==="premium"?T.purple:t.type==="value"?"#60a5fa":"#22c55e";
-                      var typeLabel=t.type==="premium"?"PRIORITY":t.type==="value"?"VALUE":"BARGAIN";
-                      return React.createElement("div",{key:p.name,style:{display:"flex",alignItems:"center",gap:8,background:T.bgInput,borderRadius:10,padding:"8px 10px",border:"1px solid "+typeColor+"33"}},
-                        React.createElement(Avatar,{name:p.name,pos:p.pos,size:28}),
-                        React.createElement("div",{style:{flex:1,minWidth:0}},
-                          React.createElement("div",{style:{display:"flex",alignItems:"center",gap:4}},
-                            React.createElement("span",{style:{fontWeight:700,fontSize:12,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
-                            React.createElement("span",{style:{fontSize:7,fontWeight:800,color:typeColor,background:typeColor+"18",borderRadius:4,padding:"1px 4px"}},typeLabel)
-                          ),
-                          React.createElement("div",{style:{fontSize:9,color:T.textSub}},t.reason+" · ",React.createElement("span",{style:{color:POS_COLORS[p.pos]||T.textSub,fontWeight:700}},p.pos+p.posRank)," · ",t.need)
-                        ),
-                        React.createElement("div",{style:{textAlign:"right",flexShrink:0}},
-                          React.createElement("div",{style:{fontWeight:800,fontSize:11,color:T.purpleLight}},(p.tradeVal||0).toLocaleString()),
-                          React.createElement("div",{style:{fontSize:9,color:T.textSub}},p.pts.toFixed(1)+" pts")
-                        ),
-                        React.createElement("button",{onClick:function(){var price=prompt("Draft price for "+p.name+"?","1");if(price===null)return;setDrafted(function(d){return [{name:p.name,price:+price||0}].concat(d);});},style:{padding:"4px 10px",borderRadius:8,border:"1px solid "+T.purple,background:T.purple,color:"#fff",fontWeight:700,fontSize:10,cursor:"pointer",flexShrink:0}},"Draft")
-                      );
-                    })
-                  )
-                );
-              })(),
-              React.createElement("div",{style:{padding:"0 16px 8px"}},
-                React.createElement("input",{value:draftKitSearch,onChange:function(e){setDraftKitSearch(e.target.value);},placeholder:"Search players...",style:Object.assign({},inpS)})
-              ),
-              rankedPlayers.filter(function(p){
-                return (draftKitPos==="All Positions"||p.pos===draftKitPos)&&(!draftKitSearch||p.name.toLowerCase().includes(draftKitSearch.toLowerCase()));
-              }).slice().sort(function(a,b){return b.tradeVal-a.tradeVal;}).slice(0,40).map(function(p){
-                var draftEntry=drafted.find(function(d){return d.name===p.name;});
-                var isDrafted=!!draftEntry;
-                var dAg=ageGrade(p.pos,p.age);
-                return React.createElement("div",{key:p.name,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:10,padding:"10px 14px",marginBottom:5,margin:"0 16px 6px",display:"flex",alignItems:"center",gap:10,opacity:isDrafted?0.4:1}},
-                  React.createElement("span",{style:{fontWeight:700,fontSize:11,color:T.textDim,width:24,flexShrink:0}},"#"+p.posRank),
-                  React.createElement(Avatar,{name:p.name,pos:p.pos,size:30}),
-                  React.createElement(PBadge,{pos:p.pos,rank:p.posRank}),
-                  React.createElement("div",{style:{flex:1,minWidth:0}},
-                    React.createElement("div",{style:{fontWeight:700,fontSize:13,color:isDrafted?T.textDim:T.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
-                    React.createElement("div",{style:{display:"flex",alignItems:"center",gap:4,fontSize:10,color:T.textSub}},
-                      React.createElement("span",null,p.team),
-                      p.age&&React.createElement("span",null,"· "+p.age),
-                      React.createElement("span",{style:{color:dAg.c,fontWeight:700}},dAg.g),
-                      isDrafted&&draftEntry.price>0&&React.createElement("span",{style:{color:T.gold,fontWeight:800}},"$"+draftEntry.price)
-                    )
-                  ),
-                  React.createElement("div",{style:{textAlign:"right",flexShrink:0,marginRight:4}},
-                    React.createElement("div",{style:{fontWeight:800,fontSize:12,color:T.purple}},(p.tradeVal||0).toLocaleString()),
-                    React.createElement("div",{style:{fontSize:9,color:T.textSub}},p.pts.toFixed(1)+" pts")
-                  ),
-                  React.createElement("button",{onClick:function(){if(isDrafted){setDrafted(function(d){return d.filter(function(x){return x.name!==p.name;});});}else{var price=prompt("Draft price for "+p.name+"?","1");if(price===null)return;setDrafted(function(d){return [{name:p.name,price:+price||0}].concat(d);});}},style:{padding:"6px 12px",borderRadius:8,border:"1px solid "+(isDrafted?T.border:T.purple),background:isDrafted?"transparent":T.purple,color:isDrafted?T.textDim:"#fff",fontWeight:700,fontSize:11,cursor:"pointer",flexShrink:0}},isDrafted?"Undo":"Draft")
-                );
-              })
-            )
-      ),
 
       // KEEPER CALCULATOR
       rankSubTab==="keeper"&&React.createElement("div",{style:{padding:"16px",paddingBottom:8}},
@@ -8005,7 +7986,7 @@ export default function App(){
             ["Proj Pts",compareP1.pts.toFixed(1),compareP2.pts.toFixed(1),compareP1.pts,compareP2.pts,false],
             ["Age",compareP1.age,compareP2.age,compareP1.age,compareP2.age,true],
             ["Pos Rank","#"+compareP1.posRank,"#"+compareP2.posRank,compareP1.posRank,compareP2.posRank,true],
-            ["Age Grade",ag1.g,ag2.g,"ABCD".indexOf(ag1.g[0]),"ABCD".indexOf(ag2.g[0]),true],
+            ["Age Grade",ag1.g,ag2.g,"ABCDN".indexOf(ag1.g[0]),"ABCDN".indexOf(ag2.g[0]),true],
             ["Tier","T"+t1.t,"T"+t2.t,t1.t,t2.t,true],
             ["Dynasty Curve",ab1>1?"+"+((ab1-1)*100).toFixed(0)+"%":ab1<1?((ab1-1)*100).toFixed(0)+"%":"Prime",ab2>1?"+"+((ab2-1)*100).toFixed(0)+"%":ab2<1?((ab2-1)*100).toFixed(0)+"%":"Prime",ab1,ab2,false],
             ["Scarcity",sc1.l,sc2.l,["Elite","Scarce","Available","Deep"].indexOf(sc1.l),["Elite","Scarce","Available","Deep"].indexOf(sc2.l),true]
@@ -8121,7 +8102,7 @@ export default function App(){
         ),
         tradeHistory.filter(function(entry){if(!histSearch)return true;var q=histSearch.toLowerCase();return entry.sideA.concat(entry.sideB).some(function(p){return p.name.toLowerCase().includes(q);});}).map(function(entry,idx){
           var diff=entry.tvA-entry.tvB;
-          var pct=entry.tvB>0?Math.abs(diff/entry.tvB)*100:0;
+          var maxVal=Math.max(entry.tvA,entry.tvB);var pct=maxVal>0?Math.abs(diff)/maxVal*100:0;
           var fair=pct<8;
           var aWins=diff>0;
           var vc=fair?T.green:aWins?T.gold:T.red;
