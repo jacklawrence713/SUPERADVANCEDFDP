@@ -1863,21 +1863,21 @@ const DRAFT_PICKS=[
 
 // ── NFL Futures & Props (August 2026 preseason) ──────────────────────────
 const SB_ODDS=[
-{team:"LAR",odds:"+500",pct:16.7},{team:"BUF",odds:"+1000",pct:9.1},{team:"BAL",odds:"+1100",pct:8.3},
-{team:"SEA",odds:"+1200",pct:7.7},{team:"DET",odds:"+1600",pct:5.9},{team:"KC",odds:"+1600",pct:5.9},
-{team:"LAC",odds:"+1700",pct:5.6},{team:"PHI",odds:"+1700",pct:5.6},{team:"SF",odds:"+1800",pct:5.3},
-{team:"DEN",odds:"+2000",pct:4.8},{team:"HOU",odds:"+2000",pct:4.8},{team:"GB",odds:"+2000",pct:4.8},
-{team:"NE",odds:"+2000",pct:4.8},{team:"CHI",odds:"+2200",pct:4.3},{team:"CIN",odds:"+2200",pct:4.3},
-{team:"DAL",odds:"+2200",pct:4.3},{team:"JAX",odds:"+2800",pct:3.4},{team:"MIN",odds:"+4500",pct:2.2},
-{team:"IND",odds:"+5000",pct:2.0},{team:"TB",odds:"+5500",pct:1.8},{team:"NYG",odds:"+6500",pct:1.5},
-{team:"WAS",odds:"+6500",pct:1.5},{team:"ATL",odds:"+6500",pct:1.5},{team:"PIT",odds:"+7500",pct:1.3},
-{team:"NO",odds:"+9000",pct:1.1},{team:"CAR",odds:"+9000",pct:1.1},{team:"TEN",odds:"+12500",pct:0.8},
-{team:"LV",odds:"+12500",pct:0.8},{team:"CLE",odds:"+15000",pct:0.7},{team:"NYJ",odds:"+25000",pct:0.4},
-{team:"MIA",odds:"+30000",pct:0.3},{team:"ARI",odds:"+50000",pct:0.2}
+{team:"LAR",odds:"+550",pct:15.4},{team:"BUF",odds:"+1000",pct:9.1},{team:"BAL",odds:"+1100",pct:8.3},
+{team:"SEA",odds:"+1100",pct:8.3},{team:"DET",odds:"+1400",pct:6.7},{team:"CIN",odds:"+1500",pct:6.3},
+{team:"PHI",odds:"+1600",pct:5.9},{team:"KC",odds:"+1500",pct:6.3},{team:"NE",odds:"+1600",pct:5.9},
+{team:"LAC",odds:"+1800",pct:5.3},{team:"DEN",odds:"+1800",pct:5.3},{team:"SF",odds:"+2000",pct:4.8},
+{team:"HOU",odds:"+2000",pct:4.8},{team:"GB",odds:"+2000",pct:4.8},{team:"CHI",odds:"+2200",pct:4.3},
+{team:"DAL",odds:"+2200",pct:4.3},{team:"JAX",odds:"+2500",pct:3.8},{team:"TB",odds:"+4000",pct:2.4},
+{team:"MIN",odds:"+4500",pct:2.2},{team:"PIT",odds:"+5000",pct:2.0},{team:"IND",odds:"+5000",pct:2.0},
+{team:"CAR",odds:"+5500",pct:1.8},{team:"NO",odds:"+6000",pct:1.6},{team:"WAS",odds:"+6500",pct:1.5},
+{team:"NYG",odds:"+6600",pct:1.5},{team:"ATL",odds:"+7000",pct:1.4},{team:"TEN",odds:"+10000",pct:1.0},
+{team:"CLE",odds:"+12000",pct:0.8},{team:"LV",odds:"+15000",pct:0.7},{team:"NYJ",odds:"+20000",pct:0.5},
+{team:"MIA",odds:"+25000",pct:0.4},{team:"ARI",odds:"+50000",pct:0.2}
 ];
 const WIN_TOTALS=[
-{team:"BAL",ou:11.5},{team:"LAR",ou:11.5},{team:"BUF",ou:10.5},{team:"CIN",ou:10.5},{team:"DET",ou:10.5},
-{team:"KC",ou:10.5},{team:"NE",ou:10.5},{team:"PHI",ou:10.5},{team:"SEA",ou:10.5},{team:"CHI",ou:9.5},
+{team:"BAL",ou:11.5},{team:"LAR",ou:11.5},{team:"BUF",ou:10.5},{team:"SEA",ou:10.5},{team:"CIN",ou:10.5},
+{team:"KC",ou:10.5},{team:"NE",ou:10.5},{team:"PHI",ou:10.5},{team:"DET",ou:10.5},{team:"CHI",ou:9.5},
 {team:"DAL",ou:9.5},{team:"DEN",ou:9.5},{team:"GB",ou:9.5},{team:"HOU",ou:9.5},{team:"LAC",ou:9.5},
 {team:"SF",ou:9.5},{team:"JAX",ou:8.5},{team:"MIN",ou:8.5},{team:"PIT",ou:8.5},{team:"TB",ou:8.5},
 {team:"CAR",ou:7.5},{team:"IND",ou:7.5},{team:"NO",ou:7.5},{team:"NYG",ou:7.5},{team:"WAS",ou:7.5},
@@ -1885,53 +1885,63 @@ const WIN_TOTALS=[
 {team:"MIA",ou:4.5},{team:"ARI",ou:3.5}
 ];
 const MVP_ODDS=[
-{name:"Josh Allen",pos:"QB",team:"BUF",odds:"+550"},{name:"Lamar Jackson",pos:"QB",team:"BAL",odds:"+800"},
-{name:"Joe Burrow",pos:"QB",team:"CIN",odds:"+850"},{name:"Patrick Mahomes",pos:"QB",team:"KC",odds:"+1000"},
-{name:"Justin Herbert",pos:"QB",team:"LAC",odds:"+1000"},{name:"Drake Maye",pos:"QB",team:"NE",odds:"+1100"},
-{name:"Dak Prescott",pos:"QB",team:"DAL",odds:"+1300"},{name:"Caleb Williams",pos:"QB",team:"CHI",odds:"+1300"},
-{name:"Matthew Stafford",pos:"QB",team:"LAR",odds:"+1400"},{name:"Jordan Love",pos:"QB",team:"GB",odds:"+1800"},
+{name:"Josh Allen",pos:"QB",team:"BUF",odds:"+550"},{name:"Lamar Jackson",pos:"QB",team:"BAL",odds:"+650"},
+{name:"Joe Burrow",pos:"QB",team:"CIN",odds:"+900"},{name:"Justin Herbert",pos:"QB",team:"LAC",odds:"+1000"},
+{name:"Patrick Mahomes",pos:"QB",team:"KC",odds:"+1000"},{name:"Drake Maye",pos:"QB",team:"NE",odds:"+1100"},
+{name:"Dak Prescott",pos:"QB",team:"DAL",odds:"+1400"},{name:"Matthew Stafford",pos:"QB",team:"LAR",odds:"+1400"},
+{name:"Caleb Williams",pos:"QB",team:"CHI",odds:"+1400"},{name:"Jordan Love",pos:"QB",team:"GB",odds:"+1800"},
 {name:"Jayden Daniels",pos:"QB",team:"WAS",odds:"+2000"},{name:"Brock Purdy",pos:"QB",team:"SF",odds:"+2000"},
-{name:"Trevor Lawrence",pos:"QB",team:"JAX",odds:"+2200"},{name:"Sam Darnold",pos:"QB",team:"SEA",odds:"+2800"},
-{name:"Jalen Hurts",pos:"QB",team:"PHI",odds:"+2800"},{name:"Jared Goff",pos:"QB",team:"DET",odds:"+3500"},
-{name:"Bo Nix",pos:"QB",team:"DEN",odds:"+3500"},{name:"Jaxson Dart",pos:"QB",team:"NYG",odds:"+4500"},
-{name:"C.J. Stroud",pos:"QB",team:"HOU",odds:"+4500"},{name:"Baker Mayfield",pos:"QB",team:"TB",odds:"+4500"},
+{name:"Sam Darnold",pos:"QB",team:"SEA",odds:"+2200"},{name:"Trevor Lawrence",pos:"QB",team:"JAX",odds:"+2500"},
+{name:"Jalen Hurts",pos:"QB",team:"PHI",odds:"+2800"},{name:"Jared Goff",pos:"QB",team:"DET",odds:"+3000"},
+{name:"Bo Nix",pos:"QB",team:"DEN",odds:"+3500"},{name:"C.J. Stroud",pos:"QB",team:"HOU",odds:"+4000"},
+{name:"Jaxson Dart",pos:"QB",team:"NYG",odds:"+4500"},{name:"Baker Mayfield",pos:"QB",team:"TB",odds:"+5000"},
 {name:"Bijan Robinson",pos:"RB",team:"ATL",odds:"+10000"},{name:"Jahmyr Gibbs",pos:"RB",team:"DET",odds:"+12000"},
 {name:"Puka Nacua",pos:"WR",team:"LAR",odds:"+15000"},{name:"Christian McCaffrey",pos:"RB",team:"SF",odds:"+15000"}
 ];
 const OPOY_ODDS=[
-{name:"Jahmyr Gibbs",pos:"RB",team:"DET",odds:"+750"},{name:"Bijan Robinson",pos:"RB",team:"ATL",odds:"+900"},
-{name:"Ja'Marr Chase",pos:"WR",team:"CIN",odds:"+1000"},{name:"Puka Nacua",pos:"WR",team:"LAR",odds:"+1100"},
-{name:"Christian McCaffrey",pos:"RB",team:"SF",odds:"+1200"},{name:"Jaxon Smith-Njigba",pos:"WR",team:"SEA",odds:"+1500"},
+{name:"Jahmyr Gibbs",pos:"RB",team:"DET",odds:"+650"},{name:"Bijan Robinson",pos:"RB",team:"ATL",odds:"+900"},
+{name:"Ja'Marr Chase",pos:"WR",team:"CIN",odds:"+1000"},{name:"Puka Nacua",pos:"WR",team:"LAR",odds:"+1300"},
+{name:"Christian McCaffrey",pos:"RB",team:"SF",odds:"+1600"},{name:"Jaxon Smith-Njigba",pos:"WR",team:"SEA",odds:"+1800"},
 {name:"Saquon Barkley",pos:"RB",team:"PHI",odds:"+1500"},{name:"Justin Jefferson",pos:"WR",team:"MIN",odds:"+1500"},
-{name:"CeeDee Lamb",pos:"WR",team:"DAL",odds:"+1800"},{name:"Amon-Ra St. Brown",pos:"WR",team:"DET",odds:"+2000"},
+{name:"CeeDee Lamb",pos:"WR",team:"DAL",odds:"+2000"},{name:"Amon-Ra St. Brown",pos:"WR",team:"DET",odds:"+2200"},
 {name:"De'Von Achane",pos:"RB",team:"MIA",odds:"+2500"},{name:"Ashton Jeanty",pos:"RB",team:"LV",odds:"+3000"},
 {name:"Brock Bowers",pos:"TE",team:"LV",odds:"+4000"},{name:"Drake London",pos:"WR",team:"ATL",odds:"+5000"}
 ];
 const OROY_ODDS=[
-{name:"Jeremiyah Love",pos:"RB",team:"ARI",odds:"+425"},{name:"Fernando Mendoza",pos:"QB",team:"LV",odds:"+428"},
-{name:"Carnell Tate",pos:"WR",team:"TEN",odds:"+600"},{name:"Jordyn Tyson",pos:"WR",team:"NO",odds:"+625"},
-{name:"Jadarian Price",pos:"RB",team:"SEA",odds:"+900"},{name:"Kenyon Sadiq",pos:"TE",team:"NYJ",odds:"+1400"},
-{name:"De'Zhaun Stribling",pos:"WR",team:"SF",odds:"+2000"},{name:"Makai Lemon",pos:"WR",team:"PHI",odds:"+2200"},
+{name:"Jeremiyah Love",pos:"RB",team:"ARI",odds:"+400"},{name:"Fernando Mendoza",pos:"QB",team:"LV",odds:"+425"},
+{name:"Carnell Tate",pos:"WR",team:"TEN",odds:"+500"},{name:"Jordyn Tyson",pos:"WR",team:"NO",odds:"+625"},
+{name:"Jadarian Price",pos:"RB",team:"SEA",odds:"+900"},{name:"De'Zhaun Stribling",pos:"WR",team:"SF",odds:"+2000"},
+{name:"Kenyon Sadiq",pos:"TE",team:"NYJ",odds:"+1400"},{name:"Makai Lemon",pos:"WR",team:"PHI",odds:"+2200"},
 {name:"Ty Simpson",pos:"QB",team:"LAR",odds:"+3300"},{name:"Omar Cooper Jr.",pos:"WR",team:"NYJ",odds:"+4000"},
 {name:"KC Concepcion",pos:"WR",team:"CLE",odds:"+5000"},{name:"Kaelon Black",pos:"RB",team:"SF",odds:"+6000"}
 ];
 const PLAYER_PROPS=[
 {name:"Josh Allen",pos:"QB",team:"BUF",stat:"Pass Yds",ou:4450.5},{name:"Josh Allen",pos:"QB",team:"BUF",stat:"Pass TD",ou:38.5},
-{name:"Lamar Jackson",pos:"QB",team:"BAL",stat:"Pass Yds",ou:3800.5},{name:"Lamar Jackson",pos:"QB",team:"BAL",stat:"Rush Yds",ou:850.5},
 {name:"Joe Burrow",pos:"QB",team:"CIN",stat:"Pass Yds",ou:4700.5},{name:"Joe Burrow",pos:"QB",team:"CIN",stat:"Pass TD",ou:36.5},
+{name:"Lamar Jackson",pos:"QB",team:"BAL",stat:"Pass Yds",ou:3800.5},{name:"Lamar Jackson",pos:"QB",team:"BAL",stat:"Rush Yds",ou:850.5},
 {name:"Patrick Mahomes",pos:"QB",team:"KC",stat:"Pass Yds",ou:4300.5},{name:"Patrick Mahomes",pos:"QB",team:"KC",stat:"Pass TD",ou:35.5},
 {name:"Justin Herbert",pos:"QB",team:"LAC",stat:"Pass Yds",ou:4400.5},{name:"Drake Maye",pos:"QB",team:"NE",stat:"Pass Yds",ou:4200.5},
-{name:"Caleb Williams",pos:"QB",team:"CHI",stat:"Pass Yds",ou:4100.5},{name:"Matthew Stafford",pos:"QB",team:"LAR",stat:"Pass Yds",ou:4350.5},
+{name:"Matthew Stafford",pos:"QB",team:"LAR",stat:"Pass Yds",ou:4350.5},{name:"Caleb Williams",pos:"QB",team:"CHI",stat:"Pass Yds",ou:4100.5},
 {name:"Bijan Robinson",pos:"RB",team:"ATL",stat:"Rush Yds",ou:1500.5},{name:"Bijan Robinson",pos:"RB",team:"ATL",stat:"Rush TD",ou:12.5},
-{name:"Jahmyr Gibbs",pos:"RB",team:"DET",stat:"Rush Yds",ou:1300.5},{name:"Jahmyr Gibbs",pos:"RB",team:"DET",stat:"Rush TD",ou:11.5},
+{name:"Jahmyr Gibbs",pos:"RB",team:"DET",stat:"Rush Yds",ou:1350.5},{name:"Jahmyr Gibbs",pos:"RB",team:"DET",stat:"Rush TD",ou:12.5},
 {name:"Saquon Barkley",pos:"RB",team:"PHI",stat:"Rush Yds",ou:1250.5},{name:"De'Von Achane",pos:"RB",team:"MIA",stat:"Rush Yds",ou:1100.5},
 {name:"Jonathan Taylor",pos:"RB",team:"IND",stat:"Rush Yds",ou:1150.5},{name:"Christian McCaffrey",pos:"RB",team:"SF",stat:"Rush Yds",ou:1050.5},
 {name:"Ashton Jeanty",pos:"RB",team:"LV",stat:"Rush Yds",ou:1000.5},{name:"Kenneth Walker III",pos:"RB",team:"KC",stat:"Rush Yds",ou:950.5},
 {name:"Ja'Marr Chase",pos:"WR",team:"CIN",stat:"Rec Yds",ou:1400.5},{name:"Ja'Marr Chase",pos:"WR",team:"CIN",stat:"Rec TD",ou:12.5},
-{name:"Jaxon Smith-Njigba",pos:"WR",team:"SEA",stat:"Rec Yds",ou:1250.5},{name:"Puka Nacua",pos:"WR",team:"LAR",stat:"Rec Yds",ou:1350.5},
+{name:"Puka Nacua",pos:"WR",team:"LAR",stat:"Rec Yds",ou:1350.5},{name:"Jaxon Smith-Njigba",pos:"WR",team:"SEA",stat:"Rec Yds",ou:1250.5},
 {name:"CeeDee Lamb",pos:"WR",team:"DAL",stat:"Rec Yds",ou:1200.5},{name:"Justin Jefferson",pos:"WR",team:"MIN",stat:"Rec Yds",ou:1150.5},
 {name:"Amon-Ra St. Brown",pos:"WR",team:"DET",stat:"Rec Yds",ou:1100.5},{name:"Drake London",pos:"WR",team:"ATL",stat:"Rec Yds",ou:1050.5},
 {name:"Brock Bowers",pos:"TE",team:"LV",stat:"Rec Yds",ou:950.5},{name:"Trey McBride",pos:"TE",team:"ARI",stat:"Rec Yds",ou:900.5}
+];
+const DIV_ODDS=[
+{div:"AFC East",teams:[{team:"BUF",odds:"-136"},{team:"NE",odds:"+131"},{team:"NYJ",odds:"+1200"},{team:"MIA",odds:"+2500"}]},
+{div:"AFC North",teams:[{team:"BAL",odds:"-109"},{team:"CIN",odds:"+225"},{team:"PIT",odds:"+520"},{team:"CLE",odds:"+2000"}]},
+{div:"AFC South",teams:[{team:"HOU",odds:"+110"},{team:"JAX",odds:"+245"},{team:"IND",odds:"+500"},{team:"TEN",odds:"+900"}]},
+{div:"AFC West",teams:[{team:"KC",odds:"+180"},{team:"LAC",odds:"+190"},{team:"DEN",odds:"+213"},{team:"LV",odds:"+1500"}]},
+{div:"NFC East",teams:[{team:"PHI",odds:"+140"},{team:"DAL",odds:"+235"},{team:"WAS",odds:"+450"},{team:"NYG",odds:"+700"}]},
+{div:"NFC North",teams:[{team:"DET",odds:"+165"},{team:"GB",odds:"+235"},{team:"CHI",odds:"+350"},{team:"MIN",odds:"+493"}]},
+{div:"NFC South",teams:[{team:"TB",odds:"+200"},{team:"CAR",odds:"+330"},{team:"ATL",odds:"+425"},{team:"NO",odds:"+500"}]},
+{div:"NFC West",teams:[{team:"LAR",odds:"-103"},{team:"SEA",odds:"+211"},{team:"SF",odds:"+302"},{team:"ARI",odds:"+10000"}]}
 ];
 
 const UNQ=PLAYERS.filter(function(p,i,a){return a.findIndex(function(x){return x.name===p.name;})===i;});
@@ -7203,70 +7213,87 @@ export default function App(){
         var hasData=games.length>0;
         var TEAM_FULL:{[k:string]:string}={"ARI":"Cardinals","ATL":"Falcons","BAL":"Ravens","BUF":"Bills","CAR":"Panthers","CHI":"Bears","CIN":"Bengals","CLE":"Browns","DAL":"Cowboys","DEN":"Broncos","DET":"Lions","GB":"Packers","HOU":"Texans","IND":"Colts","JAX":"Jaguars","KC":"Chiefs","LAC":"Chargers","LAR":"Rams","LV":"Raiders","MIA":"Dolphins","MIN":"Vikings","NE":"Patriots","NO":"Saints","NYG":"Giants","NYJ":"Jets","PHI":"Eagles","PIT":"Steelers","SF":"49ers","SEA":"Seahawks","TB":"Buccaneers","TEN":"Titans","WAS":"Commanders"};
         var sbTier=function(i:number){return i<4?"#22c55e":i<10?"#4ade80":i<17?"#94a3b8":i<24?"#fb923c":"#f87171";};
+        var tabIcon:{[k:string]:string}={"lines":"\uD83C\uDFC8","futures":"\uD83C\uDFC6","wintotals":"\uD83D\uDCCA","awards":"\u2B50","props":"\uD83C\uDFAF","divisions":"\uD83D\uDDFA\uFE0F"};
         return React.createElement("div",{style:{padding:"16px"}},
-          React.createElement("div",{style:{display:"flex",alignItems:"center",gap:12,marginBottom:12}},
-            React.createElement("div",{style:{width:44,height:44,borderRadius:12,background:"#16a34a",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}},
-              React.createElement("span",{style:{fontSize:22,color:"#fff"}},"$")
-            ),
-            React.createElement("div",null,
-              React.createElement("div",{style:{fontWeight:900,fontSize:22,color:T.text}},"Vegas Lines & Futures"),
-              React.createElement("div",{style:{fontSize:12,color:T.textSub}},"NFL odds, futures, props & game script predictions")
+          // Header with gradient
+          React.createElement("div",{style:{background:"linear-gradient(135deg,#065f46,#047857,#059669)",borderRadius:16,padding:"20px 18px",marginBottom:16,position:"relative",overflow:"hidden"}},
+            React.createElement("div",{style:{position:"absolute",right:-20,top:-20,width:100,height:100,borderRadius:"50%",background:"rgba(255,255,255,0.06)"}}),
+            React.createElement("div",{style:{position:"absolute",right:30,bottom:-30,width:80,height:80,borderRadius:"50%",background:"rgba(255,255,255,0.04)"}}),
+            React.createElement("div",{style:{position:"relative",display:"flex",alignItems:"center",gap:14}},
+              React.createElement("div",{style:{width:48,height:48,borderRadius:14,background:"rgba(255,255,255,0.15)",backdropFilter:"blur(8px)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}},
+                React.createElement("span",{style:{fontSize:24}},"$")
+              ),
+              React.createElement("div",null,
+                React.createElement("div",{style:{fontWeight:900,fontSize:22,color:"#fff",letterSpacing:-0.5}},"Vegas Lines & Futures"),
+                React.createElement("div",{style:{fontSize:12,color:"rgba(255,255,255,0.7)",marginTop:2}},"NFL odds, futures, props & division winners")
+              )
             )
           ),
-          // Sub-tabs
+          // Sub-tabs with icons
           React.createElement("div",{style:{display:"flex",gap:6,flexWrap:"wrap",marginBottom:16}},
-            ["lines","futures","wintotals","awards","props"].map(function(tab){
-              var labels:{[k:string]:string}={"lines":"Game Lines","futures":"Super Bowl","wintotals":"Win Totals","awards":"Awards","props":"Player Props"};
+            ["lines","futures","divisions","wintotals","awards","props"].map(function(tab){
+              var labels:{[k:string]:string}={"lines":"Game Lines","futures":"Super Bowl","wintotals":"Win Totals","awards":"Awards","props":"Player Props","divisions":"Divisions"};
               var active=vegasSubTab===tab;
-              return React.createElement("button",{key:tab,onClick:function(){setVegasSubTab(tab);},style:{padding:"7px 14px",borderRadius:20,border:"1px solid "+(active?"#16a34a":T.border),background:active?"#16a34a":"transparent",color:active?"#fff":T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},labels[tab]);
+              return React.createElement("button",{key:tab,onClick:function(){setVegasSubTab(tab);},style:{padding:"8px 14px",borderRadius:22,border:"1px solid "+(active?"#059669":T.border),background:active?"linear-gradient(135deg,#059669,#047857)":"transparent",color:active?"#fff":T.textSub,fontWeight:700,fontSize:11,cursor:"pointer",display:"flex",alignItems:"center",gap:5,transition:"all 0.2s"}},
+                React.createElement("span",{style:{fontSize:12}},tabIcon[tab]||""),labels[tab]);
             })
           ),
           // ── GAME LINES TAB ──
           vegasSubTab==="lines"&&React.createElement("div",null,
-            !hasData&&React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,padding:32,textAlign:"center",marginBottom:16}},
-              React.createElement("div",{style:{fontSize:36,marginBottom:12}},"📅"),
-              React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:8}},"No Current NFL Lines"),
-              React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.6,maxWidth:320,margin:"0 auto",marginBottom:16}},"Odds are posted Thursday–Sunday during the NFL season (September–January). Check back once Week 1 lines drop."),
-              React.createElement("button",{onClick:function(){_oddsCache=null;fetchOdds().then(function(d){if(Object.keys(d).length>0)setOddsData(d);});},style:{padding:"10px 24px",borderRadius:12,border:"1px solid "+T.border,background:T.bgInput,color:T.text,fontWeight:700,fontSize:13,cursor:"pointer"}},"↻ Check for Lines")
+            !hasData&&React.createElement("div",{style:{background:"linear-gradient(135deg,"+(darkMode?"#1a1a2e":"#f0fdf4")+","+(darkMode?"#16213e":"#ecfdf5")+")",border:"1px solid "+(darkMode?"#065f4633":"#bbf7d0"),borderRadius:16,padding:32,textAlign:"center",marginBottom:16}},
+              React.createElement("div",{style:{fontSize:48,marginBottom:12}},"📅"),
+              React.createElement("div",{style:{fontWeight:800,fontSize:18,color:T.text,marginBottom:8}},"No Current NFL Lines"),
+              React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.7,maxWidth:340,margin:"0 auto",marginBottom:16}},"Odds are posted Thursday–Sunday during the NFL season (September–January). Check back once Week 1 lines drop!"),
+              React.createElement("button",{onClick:function(){_oddsCache=null;fetchOdds().then(function(d){if(Object.keys(d).length>0)setOddsData(d);});},style:{padding:"12px 28px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#059669,#047857)",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",boxShadow:"0 4px 12px rgba(5,150,105,0.3)"}},"↻ Check for Lines")
             ),
             hasData&&React.createElement("div",{style:{marginBottom:12}},
-              React.createElement("div",{style:{fontSize:11,color:T.textSub,fontWeight:700,letterSpacing:1,marginBottom:8}},"THIS WEEK'S GAMES — "+games.length+" MATCHUPS"),
+              React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:12}},
+                React.createElement("div",{style:{fontSize:10,fontWeight:800,color:"#059669",letterSpacing:1}},"THIS WEEK'S GAMES"),
+                React.createElement("div",{style:{background:"#059669",color:"#fff",borderRadius:10,padding:"2px 8px",fontSize:10,fontWeight:800}},games.length)
+              ),
               games.map(function(g){
                 var gsHome=getGameScript(g.home,oddsData);
                 var gsAway=getGameScript(g.away,oddsData);
-                var totalNote=g.total>=50?"🔥 Shootout":g.total<=41?"🛡 Low Scoring":"";
-                return React.createElement("div",{key:g.home+g.away,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:16,marginBottom:10}},
-                  React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}},
+                var totalNote=g.total>=50?"Shootout":g.total<=41?"Low Scoring":"";
+                var totalIcon=g.total>=50?"\uD83D\uDD25":g.total<=41?"\uD83D\uDEE1\uFE0F":"";
+                return React.createElement("div",{key:g.home+g.away,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,padding:0,marginBottom:10,overflow:"hidden"}},
+                  // Game header
+                  React.createElement("div",{style:{background:darkMode?"rgba(5,150,105,0.08)":"rgba(5,150,105,0.04)",padding:"12px 16px",borderBottom:"1px solid "+T.border,display:"flex",justifyContent:"space-between",alignItems:"center"}},
                     React.createElement("div",{style:{fontWeight:800,fontSize:15,color:T.text}},g.away+" @ "+g.home),
-                    totalNote&&React.createElement("div",{style:{fontSize:11,fontWeight:700,color:g.total>=50?"#f59e0b":"#60a5fa"}},totalNote)
+                    totalNote&&React.createElement("div",{style:{fontSize:10,fontWeight:700,color:g.total>=50?"#f59e0b":"#60a5fa",background:(g.total>=50?"#f59e0b":"#60a5fa")+"14",padding:"3px 10px",borderRadius:10}},totalIcon+" "+totalNote)
                   ),
-                  React.createElement("div",{style:{display:"flex",gap:8,marginBottom:10}},
-                    React.createElement("div",{style:{flex:1,background:T.bgInput,borderRadius:10,padding:"10px 12px",textAlign:"center"}},
-                      React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:4}},"SPREAD"),
-                      React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text}},(g.spread>0?"+":"")+g.spread)
+                  React.createElement("div",{style:{padding:"12px 16px"}},
+                    React.createElement("div",{style:{display:"flex",gap:8,marginBottom:10}},
+                      React.createElement("div",{style:{flex:1,background:T.bgInput,borderRadius:12,padding:"10px 12px",textAlign:"center"}},
+                        React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:700,letterSpacing:0.5,marginBottom:4}},"SPREAD"),
+                        React.createElement("div",{style:{fontWeight:900,fontSize:18,color:T.text}},(g.spread>0?"+":"")+g.spread)
+                      ),
+                      React.createElement("div",{style:{flex:1,background:T.bgInput,borderRadius:12,padding:"10px 12px",textAlign:"center"}},
+                        React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:700,letterSpacing:0.5,marginBottom:4}},"O/U TOTAL"),
+                        React.createElement("div",{style:{fontWeight:900,fontSize:18,color:T.text}},g.total)
+                      )
                     ),
-                    React.createElement("div",{style:{flex:1,background:T.bgInput,borderRadius:10,padding:"10px 12px",textAlign:"center"}},
-                      React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:4}},"O/U TOTAL"),
-                      React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text}},g.total)
-                    )
-                  ),
-                  React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}},
-                    gsAway&&React.createElement("div",{style:{background:gsAway.color+"14",border:"1px solid "+gsAway.color+"33",borderRadius:10,padding:"8px 12px"}},
-                      React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:2}},g.away),
-                      React.createElement("div",{style:{fontWeight:700,fontSize:12,color:gsAway.color}},gsAway.script),
-                      React.createElement("div",{style:{fontSize:10,color:T.textDim}},"Spread: "+(gsAway.spread>0?"+":"")+gsAway.spread)
-                    ),
-                    gsHome&&React.createElement("div",{style:{background:gsHome.color+"14",border:"1px solid "+gsHome.color+"33",borderRadius:10,padding:"8px 12px"}},
-                      React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:2}},g.home),
-                      React.createElement("div",{style:{fontWeight:700,fontSize:12,color:gsHome.color}},gsHome.script),
-                      React.createElement("div",{style:{fontSize:10,color:T.textDim}},"Spread: "+(gsHome.spread>0?"+":"")+gsHome.spread)
+                    React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}},
+                      gsAway&&React.createElement("div",{style:{background:gsAway.color+"10",border:"1px solid "+gsAway.color+"28",borderRadius:12,padding:"10px 12px"}},
+                        React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:3,fontWeight:600}},g.away),
+                        React.createElement("div",{style:{fontWeight:800,fontSize:13,color:gsAway.color}},gsAway.script),
+                        React.createElement("div",{style:{fontSize:10,color:T.textDim,marginTop:2}},"Spread: "+(gsAway.spread>0?"+":"")+gsAway.spread)
+                      ),
+                      gsHome&&React.createElement("div",{style:{background:gsHome.color+"10",border:"1px solid "+gsHome.color+"28",borderRadius:12,padding:"10px 12px"}},
+                        React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:3,fontWeight:600}},g.home),
+                        React.createElement("div",{style:{fontWeight:800,fontSize:13,color:gsHome.color}},gsHome.script),
+                        React.createElement("div",{style:{fontSize:10,color:T.textDim,marginTop:2}},"Spread: "+(gsHome.spread>0?"+":"")+gsHome.spread)
+                      )
                     )
                   )
                 );
               })
             ),
-            React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:16}},
-              React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text,marginBottom:10}},"Game Script Guide"),
+            // Game Script Guide
+            React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,padding:16}},
+              React.createElement("div",{style:{fontWeight:800,fontSize:13,color:T.text,marginBottom:10,display:"flex",alignItems:"center",gap:6}},
+                React.createElement("span",{style:{fontSize:14}},"\uD83D\uDCD6"),"Game Script Guide"
+              ),
               [["Positive Script","Favored by 7+ pts — run-heavy, clock control. Boost RBs.","#22c55e"],["Slight Fav","Favored by 3–6 pts — balanced attack expected.","#4ade80"],["Neutral","Pick'em or within 2 pts — no clear script edge.","#94a3b8"],["Slight Dog","Underdog by 3–6 pts — pass volume increases.","#fb923c"],["Negative Script","Underdog by 7+ pts — pass-heavy game script. Boost WRs/TEs.","#f87171"]].map(function(row){
                 return React.createElement("div",{key:row[0],style:{display:"flex",alignItems:"center",gap:10,marginBottom:8}},
                   React.createElement("div",{style:{width:10,height:10,borderRadius:"50%",background:row[2],flexShrink:0}}),
@@ -7280,87 +7307,179 @@ export default function App(){
           ),
           // ── SUPER BOWL FUTURES TAB ──
           vegasSubTab==="futures"&&React.createElement("div",null,
-            React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4}},"Super Bowl LXI Odds"),
-            React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:14}},"2026-27 season · Rams enter as favorites at +500"),
+            // Top 3 podium
+            React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}},
+              [1,0,2].map(function(idx){
+                var sb=SB_ODDS[idx];if(!sb)return null;
+                var heights=[140,170,120];var bgs=["linear-gradient(135deg,#c0c0c0,#e8e8e8)","linear-gradient(135deg,#ffd700,#ffed4a)","linear-gradient(135deg,#cd7f32,#e8a862)"];
+                var labels=["2ND","1ST","3RD"];var order=[1,0,2];
+                return React.createElement("div",{key:sb.team,style:{textAlign:"center",display:"flex",flexDirection:"column",justifyContent:"flex-end"}},
+                  React.createElement("div",{style:{fontWeight:900,fontSize:20,color:T.text,marginBottom:4}},sb.team),
+                  React.createElement("div",{style:{fontSize:11,color:T.textSub,marginBottom:4}},TEAM_FULL[sb.team]),
+                  React.createElement("div",{style:{fontWeight:800,fontSize:15,color:"#059669",marginBottom:6}},sb.odds),
+                  React.createElement("div",{style:{height:heights[order[idx]],background:bgs[order[idx]],borderRadius:"10px 10px 0 0",display:"flex",alignItems:"flex-end",justifyContent:"center",paddingBottom:8}},
+                    React.createElement("div",{style:{fontWeight:900,fontSize:12,color:idx===0?"#333":"#fff"}},labels[order[idx]])
+                  )
+                );
+              })
+            ),
+            React.createElement("div",{style:{fontSize:11,fontWeight:800,color:T.textDim,letterSpacing:1,marginBottom:8,marginTop:4}},"ALL 32 TEAMS"),
             SB_ODDS.map(function(sb,i){
-              var barW=Math.max(6,sb.pct*5.5);
-              return React.createElement("div",{key:sb.team,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"10px 14px",marginBottom:6,display:"flex",alignItems:"center",gap:12}},
-                React.createElement("div",{style:{fontWeight:900,fontSize:11,color:T.textDim,width:20,textAlign:"right"}},i+1),
-                React.createElement("div",{style:{fontWeight:800,fontSize:14,color:T.text,width:42}},sb.team),
-                React.createElement("div",{style:{fontSize:12,color:T.textSub,width:50}},TEAM_FULL[sb.team]||""),
-                React.createElement("div",{style:{flex:1,position:"relative",height:18,background:T.bgInput,borderRadius:9,overflow:"hidden"}},
-                  React.createElement("div",{style:{position:"absolute",left:0,top:0,height:"100%",width:barW+"%",background:sbTier(i),borderRadius:9,transition:"width 0.3s"}})
+              var barW=Math.max(4,sb.pct*5.5);
+              return React.createElement("div",{key:sb.team,style:{background:i<3?("linear-gradient(90deg,"+(darkMode?"#065f4622":"#ecfdf5")+","+(darkMode?T.bgCard:T.bgCard)+")"):"transparent",border:"1px solid "+(i<3?"#059669"+33:T.border),borderRadius:12,padding:"8px 14px",marginBottom:4,display:"flex",alignItems:"center",gap:10}},
+                React.createElement("div",{style:{fontWeight:900,fontSize:11,color:i<3?"#059669":T.textDim,width:20,textAlign:"right"}},i+1),
+                React.createElement("div",{style:{fontWeight:800,fontSize:14,color:T.text,width:38}},sb.team),
+                React.createElement("div",{style:{fontSize:11,color:T.textSub,width:80}},TEAM_FULL[sb.team]||""),
+                React.createElement("div",{style:{flex:1,position:"relative",height:16,background:T.bgInput,borderRadius:8,overflow:"hidden"}},
+                  React.createElement("div",{style:{position:"absolute",left:0,top:0,height:"100%",width:barW+"%",background:sbTier(i),borderRadius:8,transition:"width 0.3s"}})
                 ),
-                React.createElement("div",{style:{fontWeight:800,fontSize:13,color:sbTier(i),width:60,textAlign:"right"}},sb.odds),
-                React.createElement("div",{style:{fontSize:11,color:T.textSub,width:42,textAlign:"right"}},sb.pct+"%")
+                React.createElement("div",{style:{fontWeight:800,fontSize:13,color:sbTier(i),width:55,textAlign:"right"}},sb.odds),
+                React.createElement("div",{style:{fontSize:10,color:T.textSub,width:38,textAlign:"right"}},sb.pct+"%")
               );
             }),
-            React.createElement("div",{style:{fontSize:10,color:T.textDim,textAlign:"center",marginTop:10}},"Implied probability shown · Odds via consensus sportsbooks · August 2026")
+            React.createElement("div",{style:{fontSize:10,color:T.textDim,textAlign:"center",marginTop:10}},"Implied probability shown · Consensus sportsbooks · Updated Aug 2026")
+          ),
+          // ── DIVISION WINNERS TAB ──
+          vegasSubTab==="divisions"&&React.createElement("div",null,
+            React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4}},"\uD83D\uDDFA\uFE0F Division Winner Odds"),
+            React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:16}},"Bills & Ravens the only odds-on favorites to win their divisions"),
+            DIV_ODDS.map(function(d){
+              var isAFC=d.div.indexOf("AFC")>=0;
+              var divColor=isAFC?"#ef4444":"#3b82f6";
+              return React.createElement("div",{key:d.div,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:0,marginBottom:10,overflow:"hidden"}},
+                React.createElement("div",{style:{background:divColor+"14",borderBottom:"1px solid "+divColor+"22",padding:"10px 14px",display:"flex",alignItems:"center",gap:8}},
+                  React.createElement("div",{style:{width:8,height:8,borderRadius:"50%",background:divColor}}),
+                  React.createElement("div",{style:{fontWeight:800,fontSize:13,color:T.text}},d.div)
+                ),
+                React.createElement("div",{style:{padding:"8px 14px"}},
+                  d.teams.map(function(t,ti){
+                    var isFav=ti===0;
+                    var oddsVal=parseInt(t.odds.replace("+",""));
+                    var isNeg=t.odds.indexOf("-")===0;
+                    var pct=isNeg?Math.round(Math.abs(oddsVal)/(Math.abs(oddsVal)+100)*100):Math.round(100/(oddsVal+100)*100);
+                    var barW=Math.max(6,pct);
+                    return React.createElement("div",{key:t.team,style:{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:ti<d.teams.length-1?"1px solid "+T.border+"66":"none"}},
+                      React.createElement("div",{style:{fontWeight:800,fontSize:14,color:isFav?divColor:T.text,width:36}},t.team),
+                      React.createElement("div",{style:{fontSize:11,color:T.textSub,width:80}},TEAM_FULL[t.team]||""),
+                      React.createElement("div",{style:{flex:1,position:"relative",height:14,background:T.bgInput,borderRadius:7,overflow:"hidden"}},
+                        React.createElement("div",{style:{position:"absolute",left:0,top:0,height:"100%",width:barW+"%",background:isFav?divColor:T.textDim+"44",borderRadius:7}})
+                      ),
+                      React.createElement("div",{style:{fontWeight:800,fontSize:13,color:isFav?divColor:T.textSub,width:55,textAlign:"right"}},t.odds),
+                      React.createElement("div",{style:{fontSize:10,color:T.textDim,width:32,textAlign:"right"}},pct+"%")
+                    );
+                  })
+                )
+              );
+            }),
+            React.createElement("div",{style:{fontSize:10,color:T.textDim,textAlign:"center",marginTop:10}},"Consensus sportsbooks · Updated Aug 2026")
           ),
           // ── WIN TOTALS TAB ──
           vegasSubTab==="wintotals"&&React.createElement("div",null,
             React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4}},"2026 Team Win Totals"),
             React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:14}},"Over/Under regular season wins · BAL & LAR lead at 11.5"),
-            WIN_TOTALS.map(function(wt){
+            // Tier headers inline
+            WIN_TOTALS.map(function(wt,wi){
               var barW=Math.max(8,(wt.ou/13)*100);
               var clr=wt.ou>=10.5?"#22c55e":wt.ou>=8.5?"#4ade80":wt.ou>=6.5?"#94a3b8":wt.ou>=5?"#fb923c":"#f87171";
-              return React.createElement("div",{key:wt.team,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"10px 14px",marginBottom:5,display:"flex",alignItems:"center",gap:12}},
-                React.createElement("div",{style:{fontWeight:800,fontSize:14,color:T.text,width:42}},wt.team),
-                React.createElement("div",{style:{fontSize:12,color:T.textSub,width:90}},TEAM_FULL[wt.team]||""),
-                React.createElement("div",{style:{flex:1,position:"relative",height:16,background:T.bgInput,borderRadius:8,overflow:"hidden"}},
-                  React.createElement("div",{style:{position:"absolute",left:0,top:0,height:"100%",width:barW+"%",background:clr,borderRadius:8}})
-                ),
-                React.createElement("div",{style:{fontWeight:900,fontSize:16,color:clr,width:40,textAlign:"right"}},wt.ou)
+              var tierLabel2=wt.ou>=10.5?"Contender":wt.ou>=8.5?"Playoff Hopeful":wt.ou>=6.5?"Middle Pack":wt.ou>=5?"Underdog":"Rebuilder";
+              var prevOu=wi>0?WIN_TOTALS[wi-1].ou:99;
+              var showTier=wt.ou!==prevOu&&(wt.ou===10.5||wt.ou===8.5||wt.ou===6.5||wt.ou===5);
+              return React.createElement(React.Fragment,{key:wt.team},
+                showTier&&React.createElement("div",{style:{fontSize:9,fontWeight:800,color:clr,letterSpacing:1,marginTop:10,marginBottom:4,textTransform:"uppercase"}},tierLabel2),
+                React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"8px 14px",marginBottom:4,display:"flex",alignItems:"center",gap:10}},
+                  React.createElement("div",{style:{fontWeight:800,fontSize:14,color:T.text,width:38}},wt.team),
+                  React.createElement("div",{style:{fontSize:11,color:T.textSub,width:85}},TEAM_FULL[wt.team]||""),
+                  React.createElement("div",{style:{flex:1,position:"relative",height:16,background:T.bgInput,borderRadius:8,overflow:"hidden"}},
+                    React.createElement("div",{style:{position:"absolute",left:0,top:0,height:"100%",width:barW+"%",background:clr,borderRadius:8}})
+                  ),
+                  React.createElement("div",{style:{fontWeight:900,fontSize:16,color:clr,width:36,textAlign:"right"}},wt.ou)
+                )
               );
             }),
-            React.createElement("div",{style:{fontSize:10,color:T.textDim,textAlign:"center",marginTop:10}},"DraftKings consensus · August 2026")
+            React.createElement("div",{style:{fontSize:10,color:T.textDim,textAlign:"center",marginTop:10}},"DraftKings consensus · Updated Aug 2026")
           ),
           // ── AWARDS TAB ──
           vegasSubTab==="awards"&&React.createElement("div",null,
-            // MVP
-            React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4}},"2026 NFL MVP"),
-            React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:12}},"Josh Allen favored for his 2nd MVP · all top-20 candidates are QBs"),
-            MVP_ODDS.map(function(p,i){
-              var pc=POS_COLORS[p.pos]||"#888";
-              return React.createElement("div",{key:p.name+"mvp",style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"10px 14px",marginBottom:5,display:"flex",alignItems:"center",gap:10}},
-                React.createElement("div",{style:{fontWeight:900,fontSize:11,color:T.textDim,width:20,textAlign:"right"}},i+1),
-                React.createElement(Avatar,{name:p.name,pos:p.pos,size:28}),
-                React.createElement("div",{style:{flex:1}},
-                  React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text}},p.name),
-                  React.createElement("div",{style:{fontSize:10,color:T.textSub}},p.pos+" · "+p.team)
-                ),
-                React.createElement("div",{style:{fontWeight:800,fontSize:14,color:i<3?"#22c55e":i<10?"#4ade80":"#94a3b8"}},p.odds)
-              );
-            }),
-            // OPOY
-            React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4,marginTop:20}},"Offensive Player of the Year"),
-            React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:12}},"Gibbs favored after Montgomery trade gives him full workload"),
-            OPOY_ODDS.map(function(p,i){
-              return React.createElement("div",{key:p.name+"opoy",style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"10px 14px",marginBottom:5,display:"flex",alignItems:"center",gap:10}},
-                React.createElement("div",{style:{fontWeight:900,fontSize:11,color:T.textDim,width:20,textAlign:"right"}},i+1),
-                React.createElement(Avatar,{name:p.name,pos:p.pos,size:28}),
-                React.createElement("div",{style:{flex:1}},
-                  React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text}},p.name),
-                  React.createElement("div",{style:{fontSize:10,color:T.textSub}},p.pos+" · "+p.team)
-                ),
-                React.createElement("div",{style:{fontWeight:800,fontSize:14,color:i<3?"#c084fc":i<8?"#a78bfa":"#94a3b8"}},p.odds)
-              );
-            }),
-            // OROY
-            React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4,marginTop:20}},"Offensive Rookie of the Year"),
-            React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:12}},"Love & Mendoza in a dead heat · Tate the top WR threat"),
-            OROY_ODDS.map(function(p,i){
-              return React.createElement("div",{key:p.name+"oroy",style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"10px 14px",marginBottom:5,display:"flex",alignItems:"center",gap:10}},
-                React.createElement("div",{style:{fontWeight:900,fontSize:11,color:T.textDim,width:20,textAlign:"right"}},i+1),
-                React.createElement(Avatar,{name:p.name,pos:p.pos,size:28}),
-                React.createElement("div",{style:{flex:1}},
-                  React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text}},p.name),
-                  React.createElement("div",{style:{fontSize:10,color:T.textSub}},p.pos+" · "+p.team)
-                ),
-                React.createElement("div",{style:{fontWeight:800,fontSize:14,color:i<2?"#f59e0b":i<5?"#fbbf24":"#94a3b8"}},p.odds)
-              );
-            }),
-            React.createElement("div",{style:{fontSize:10,color:T.textDim,textAlign:"center",marginTop:12}},"Consensus odds · August 2026 · For entertainment only")
+            // MVP section
+            React.createElement("div",{style:{background:"linear-gradient(135deg,"+(darkMode?"#1a1035":"#fefce8")+","+(darkMode?"#0f172a":"#fff7ed")+")",border:"1px solid "+(darkMode?"#854d0e33":"#fde68a"),borderRadius:16,padding:16,marginBottom:16}},
+              React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:12}},
+                React.createElement("span",{style:{fontSize:20}},"\uD83C\uDFC6"),
+                React.createElement("div",null,
+                  React.createElement("div",{style:{fontWeight:900,fontSize:16,color:T.text}},"2026 NFL MVP"),
+                  React.createElement("div",{style:{fontSize:11,color:T.textSub}},"Josh Allen favored for his 2nd · Lamar closing the gap")
+                )
+              ),
+              MVP_ODDS.slice(0,5).map(function(p,i){
+                var medalColors=["#ffd700","#c0c0c0","#cd7f32","",""];
+                return React.createElement("div",{key:p.name+"mvp",style:{background:T.bgCard,border:"1px solid "+(i<3?medalColors[i]+"44":T.border),borderRadius:12,padding:"10px 14px",marginBottom:6,display:"flex",alignItems:"center",gap:10}},
+                  React.createElement("div",{style:{fontWeight:900,fontSize:13,color:i<3?medalColors[i]:T.textDim,width:20,textAlign:"right"}},i<3?["\uD83E\uDD47","\uD83E\uDD48","\uD83E\uDD49"][i]:""+(i+1)),
+                  React.createElement(Avatar,{name:p.name,pos:p.pos,size:32}),
+                  React.createElement("div",{style:{flex:1}},
+                    React.createElement("div",{style:{fontWeight:700,fontSize:14,color:T.text}},p.name),
+                    React.createElement("div",{style:{fontSize:10,color:T.textSub}},p.pos+" · "+p.team)
+                  ),
+                  React.createElement("div",{style:{fontWeight:800,fontSize:15,color:i<3?"#22c55e":"#4ade80"}},p.odds)
+                );
+              })
+            ),
+            // Remaining MVP
+            React.createElement("div",{style:{marginBottom:16}},
+              React.createElement("div",{style:{fontSize:10,fontWeight:800,color:T.textDim,letterSpacing:1,marginBottom:6}},"MORE MVP CONTENDERS"),
+              MVP_ODDS.slice(5).map(function(p,i){
+                return React.createElement("div",{key:p.name+"mvp2",style:{display:"flex",alignItems:"center",gap:10,padding:"6px 0",borderBottom:"1px solid "+T.border+"44"}},
+                  React.createElement("div",{style:{fontWeight:700,fontSize:11,color:T.textDim,width:20,textAlign:"right"}},i+6),
+                  React.createElement(Avatar,{name:p.name,pos:p.pos,size:24}),
+                  React.createElement("div",{style:{flex:1,fontWeight:600,fontSize:12,color:T.text}},p.name),
+                  React.createElement("div",{style:{fontSize:10,color:T.textSub,width:28}},p.pos),
+                  React.createElement("div",{style:{fontWeight:700,fontSize:12,color:T.textSub,width:55,textAlign:"right"}},p.odds)
+                );
+              })
+            ),
+            // OPOY section
+            React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:16,padding:16,marginBottom:16}},
+              React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:12}},
+                React.createElement("span",{style:{fontSize:18}},"\u26A1"),
+                React.createElement("div",null,
+                  React.createElement("div",{style:{fontWeight:900,fontSize:15,color:T.text}},"Offensive Player of the Year"),
+                  React.createElement("div",{style:{fontSize:11,color:T.textSub}},"Gibbs favored at +650 after Montgomery departure")
+                )
+              ),
+              OPOY_ODDS.map(function(p,i){
+                var pc=POS_COLORS[p.pos]||"#888";
+                return React.createElement("div",{key:p.name+"opoy",style:{display:"flex",alignItems:"center",gap:10,padding:"7px 0",borderBottom:i<OPOY_ODDS.length-1?"1px solid "+T.border+"44":"none"}},
+                  React.createElement("div",{style:{fontWeight:900,fontSize:11,color:T.textDim,width:18,textAlign:"right"}},i+1),
+                  React.createElement(Avatar,{name:p.name,pos:p.pos,size:26}),
+                  React.createElement("div",{style:{flex:1,minWidth:0}},
+                    React.createElement("div",{style:{fontWeight:700,fontSize:12,color:T.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
+                    React.createElement("div",{style:{fontSize:9,color:pc,fontWeight:700}},p.pos+" · "+p.team)
+                  ),
+                  React.createElement("div",{style:{fontWeight:800,fontSize:13,color:i<3?"#c084fc":"#94a3b8",flexShrink:0}},p.odds)
+                );
+              })
+            ),
+            // OROY section
+            React.createElement("div",{style:{background:T.bgCard,border:"1px solid #f59e0b33",borderRadius:16,padding:16}},
+              React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:12}},
+                React.createElement("span",{style:{fontSize:18}},"\uD83C\uDF1F"),
+                React.createElement("div",null,
+                  React.createElement("div",{style:{fontWeight:900,fontSize:15,color:T.text}},"Offensive Rookie of the Year"),
+                  React.createElement("div",{style:{fontSize:11,color:T.textSub}},"Love & Mendoza in a dead heat · Tate the top WR")
+                )
+              ),
+              OROY_ODDS.map(function(p,i){
+                var pc=POS_COLORS[p.pos]||"#888";
+                return React.createElement("div",{key:p.name+"oroy",style:{display:"flex",alignItems:"center",gap:10,padding:"7px 0",borderBottom:i<OROY_ODDS.length-1?"1px solid "+T.border+"44":"none"}},
+                  React.createElement("div",{style:{fontWeight:900,fontSize:11,color:T.textDim,width:18,textAlign:"right"}},i+1),
+                  React.createElement(Avatar,{name:p.name,pos:p.pos,size:26}),
+                  React.createElement("div",{style:{flex:1,minWidth:0}},
+                    React.createElement("div",{style:{fontWeight:700,fontSize:12,color:T.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
+                    React.createElement("div",{style:{fontSize:9,color:pc,fontWeight:700}},p.pos+" · "+p.team)
+                  ),
+                  React.createElement("div",{style:{fontWeight:800,fontSize:13,color:i<2?"#f59e0b":i<5?"#fbbf24":"#94a3b8",flexShrink:0}},p.odds)
+                );
+              })
+            ),
+            React.createElement("div",{style:{fontSize:10,color:T.textDim,textAlign:"center",marginTop:12}},"Consensus odds · Updated Aug 2026 · For entertainment only")
           ),
           // ── PLAYER PROPS TAB ──
           vegasSubTab==="props"&&React.createElement("div",null,
@@ -7369,28 +7488,34 @@ export default function App(){
             (function(){
               var cats=["Pass Yds","Pass TD","Rush Yds","Rush TD","Rec Yds","Rec TD"];
               var catColors:{[k:string]:string}={"Pass Yds":"#818cf8","Pass TD":"#818cf8","Rush Yds":"#34d399","Rush TD":"#34d399","Rec Yds":"#c084fc","Rec TD":"#c084fc"};
+              var catIcons:{[k:string]:string}={"Pass Yds":"\uD83C\uDFC8","Pass TD":"\uD83C\uDFC8","Rush Yds":"\uD83C\uDFC3","Rush TD":"\uD83C\uDFC3","Rec Yds":"\uD83D\uDC50","Rec TD":"\uD83D\uDC50"};
               var grouped:{[k:string]:typeof PLAYER_PROPS}={};
               PLAYER_PROPS.forEach(function(p){if(!grouped[p.stat])grouped[p.stat]=[];grouped[p.stat].push(p);});
               return cats.filter(function(c){return grouped[c];}).map(function(cat){
+                var cc=catColors[cat]||T.text;
                 return React.createElement("div",{key:cat,style:{marginBottom:16}},
-                  React.createElement("div",{style:{fontWeight:800,fontSize:13,color:catColors[cat]||T.text,letterSpacing:0.5,marginBottom:8,textTransform:"uppercase"}},cat),
-                  grouped[cat].map(function(p){
+                  React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,marginBottom:8}},
+                    React.createElement("span",{style:{fontSize:13}},catIcons[cat]||""),
+                    React.createElement("div",{style:{fontWeight:800,fontSize:13,color:cc,letterSpacing:0.5,textTransform:"uppercase"}},cat)
+                  ),
+                  grouped[cat].map(function(p,pi){
                     return React.createElement("div",{key:p.name+p.stat,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"10px 14px",marginBottom:5,display:"flex",alignItems:"center",gap:10}},
+                      React.createElement("div",{style:{fontWeight:700,fontSize:10,color:T.textDim,width:16,textAlign:"right"}},pi+1),
                       React.createElement(Avatar,{name:p.name,pos:p.pos,size:28}),
-                      React.createElement("div",{style:{flex:1}},
-                        React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text}},p.name),
+                      React.createElement("div",{style:{flex:1,minWidth:0}},
+                        React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
                         React.createElement("div",{style:{fontSize:10,color:T.textSub}},p.pos+" · "+p.team)
                       ),
-                      React.createElement("div",{style:{textAlign:"right"}},
-                        React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:2}},"O/U"),
-                        React.createElement("div",{style:{fontWeight:900,fontSize:16,color:catColors[cat]||T.text}},p.ou.toLocaleString())
+                      React.createElement("div",{style:{textAlign:"right",flexShrink:0}},
+                        React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:600,marginBottom:2}},"O/U"),
+                        React.createElement("div",{style:{fontWeight:900,fontSize:16,color:cc}},p.ou.toLocaleString())
                       )
                     );
                   })
                 );
               });
             })(),
-            React.createElement("div",{style:{fontSize:10,color:T.textDim,textAlign:"center",marginTop:8}},"FDP estimates based on consensus lines · August 2026 · For entertainment only")
+            React.createElement("div",{style:{fontSize:10,color:T.textDim,textAlign:"center",marginTop:8}},"Consensus lines · Updated Aug 2026 · For entertainment only")
           )
         );
       })(),
