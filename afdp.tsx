@@ -121,6 +121,16 @@ const DYNASTY_NEWS=[
   {id:42,ts:"Aug 3",tag:"NEWS",pos:"WR",title:"Malik Nabers avoids PUP list but Week 1 status uncertain",body:"Nabers tore his ACL in 2025 and underwent a second knee surgery to remove scar tissue this offseason. The Giants avoided placing him on PUP, and he's returned to practice, but he says he doesn't know if he'll be ready for Week 1 vs. Dallas. Analysts project he misses the first 4-5 games. Buy low in dynasty — he's still just 22 with elite talent. Jaxson Dart's early-season value takes a hit without his WR1."},
   {id:41,ts:"Aug 2",tag:"NEWS",pos:"WR",title:"Chris Olave signs 4-year, $132M extension with Saints",body:"Olave locked in long-term with New Orleans after posting 100 rec, 1,163 yds, and 9 TD on 156 targets in 2025. At 26, he's entering his prime as the Saints' alpha WR. Dynasty value gets a boost with the security — but monitor rookie Jordyn Tyson (drafted 8th overall) eating into targets. Olave remains a mid-tier WR1 in dynasty."},
   {id:40,ts:"Aug 1",tag:"NEWS",pos:"WR",title:"De'Zhaun Stribling emerging as 49ers WR1 at camp",body:"The 49ers' 2nd-round pick (33rd overall) is turning heads in San Francisco. Brock Purdy called him a 'baller' — praising his routes, strength, and separation. With Aiyuk on the reserve list and Kittle on PUP, the target tree is wide open. Stribling (2,884) is a dynasty stash with WR2 upside if he wins the starting job. Christian Kirk is already dealing with a calf injury, opening the door further."},
+  {id:49,ts:"Aug 11",tag:"NEWS",pos:"QB",title:"Vikings name Kyler Murray starting QB over J.J. McCarthy",body:"Minnesota officially named Murray the Week 1 starter over 2024 1st-rounder J.J. McCarthy. Short-term blow to McCarthy's dynasty value — hold, as Murray is on a 1-year deal and McCarthy remains the long-term plan. Murray's rushing upside makes him a solid QB2 in redraft, and his presence could boost Justin Jefferson's production if the passing game is more dynamic."},
+  {id:48,ts:"Aug 10",tag:"NEWS",pos:"QB",title:"Watson trending toward Browns starting job over Shedeur Sanders",body:"Reports indicate Deshaun Watson is winning Cleveland's QB competition over rookie Shedeur Sanders. Sanders managers should hold — Watson's injury history makes a mid-season transition likely — but temper expectations for Year 1 production. If Watson starts Week 1, it suppresses value of Jerry Jeudy and Cedric Tillman short-term."},
+  {id:47,ts:"Aug 9",tag:"INJURY",pos:"WR",title:"Malik Nabers knee rehab — Week 1 status uncertain",body:"Giants WR Malik Nabers continues rehabbing his surgically repaired right knee (torn ACL from Week 4 of 2025) and hasn't fully participated in training camp. He's doing individual drills and looking fluid but has sat out all 7-on-7 and team periods. Elite dynasty value intact long-term, but prepare backup plans for early weeks in case he starts on a snap count or misses time."},
+  {id:46,ts:"Aug 8",tag:"NEWS",pos:"WR",title:"Cyrus Allen emerging as Chiefs WR sleeper",body:"Fifth-round rookie WR Cyrus Allen has earned the trust of Patrick Mahomes and Andy Reid throughout camp, emerging as a legitimate contributor. In a KC offense that historically elevates late-round WRs (think Mecole Hardman's early role), Allen could carve out meaningful snaps by Week 1. Must-add on dynasty waivers — acquisition cost is near zero and the ceiling in that offense is significant."},
+  {id:45,ts:"Aug 8",tag:"NEWS",pos:"QB",title:"Cam Ward dominating Titans camp — chemistry with Carnell Tate",body:"Year 2 QB Cam Ward is commanding Tennessee's camp like no Titans QB since prime Tannehill, completing 11-of-16 with two TDs on Day 1. Rookie WR Carnell Tate has caught three TDs from Ward in scrimmages, establishing himself as the top target. Buy Ward now before his price inflates — top-tier dynasty QB asset entering Year 2 with visible improvement and real weapons."},
+  {id:44,ts:"Aug 7",tag:"NEWS",pos:"RB",title:"Steelers RB battle: Jaylen Warren vs. Rico Dowdle",body:"Pittsburgh's initial depth chart lists Warren as RB1 over free agent Dowdle, but beat reporters note Dowdle has flashed quickness, speed, and vision throughout camp. HC Mike McCarthy building a committee approach. Treat this as a 55/45 split favoring Warren — neither has standalone RB1 upside, making both mid-RB2 dynasty assets with RB3 weekly floor risk."},
+  {id:43,ts:"Aug 6",tag:"NEWS",pos:"RB",title:"Jonathan Taylor signs $44M extension with Colts",body:"The Colts locked up Jonathan Taylor on a 2-year, $44M extension through his age-28 season. Strong dynasty hold signal — Taylor's role is secure and Indy is committed to feeding him. However, the contract carries aging curve risk, so consider selling at peak value if you can get a 1st-round pick + young asset in return."},
+  {id:42,ts:"Aug 1",tag:"INJURY",pos:"WR",title:"Ricky Pearsall out for 2026 — season-ending PCL surgery",body:"49ers WR Pearsall will undergo season-ending PCL surgery after aggravating a knee injury from Week 4 of 2025. His dynasty value takes a hit as he misses a critical Year 3 development window, though SF expects full recovery for 2027. Hold at his buy-low floor. The 49ers responded by re-signing Deebo Samuel, which further clouds Pearsall's long-term target share."},
+  {id:41,ts:"Aug 1",tag:"NEWS",pos:"WR",title:"Deebo Samuel returns to 49ers — major role incoming",body:"Deebo signed a 1-year, $7M deal to rejoin San Francisco after Pearsall's season-ending injury. He'll play WR, RB, and return kicks full-time. Fantasy value spikes in redraft as the clear WR2 alongside Aiyuk, but in dynasty he's a short-term rental at age 30. Win-now managers should acquire at his depressed dynasty price; rebuilders sell high after a few strong weeks."},
+  {id:40,ts:"Aug 1",tag:"INJURY",pos:"TE",title:"George Kittle on PUP list — 49ers TE situation in flux",body:"Kittle was placed on the PUP list recovering from a torn Achilles, though the veteran wants to play Week 1. At 32 coming off a major lower-body injury, dynasty managers should be cautious — Achilles tears historically sap athleticism from pass-catching TEs. Kittle's dynasty value is in decline; sellers should move him to contenders while he still carries name value."},
   {id:39,ts:"Aug 1",tag:"NEWS",pos:"WR",title:"A.J. Brown traded to Patriots — dynasty sell-high candidate",body:"The Eagles shipped A.J. Brown to New England for a 2027 5th and 2028 1st. Brown moves from Hurts to Drake Maye, which is actually an upgrade in passing volume — Philly ranked 27th in pass rate last year. He's a low-end WR1 for 2026 redraft, but at 29 in dynasty, this is your sell window. Move him for a young asset + pick while his value is inflated by the new situation."},
   {id:38,ts:"Jul 30",tag:"NEWS",pos:"WR",title:"Jaylen Waddle settling in with Broncos — paired with Bo Nix",body:"Denver sent a 2026 1st, 3rd, and 4th to Miami for Waddle this offseason. At 27 with a 3-year/$84.75M deal through 2028, he immediately becomes the Broncos' WR1 opposite Courtland Sutton. Dynasty value is stable — Waddle logged 64/910/6 in 2025 and now gets a rising QB in Bo Nix. Hold as a WR2 with WR1 upside if Nix takes the next step."},
   {id:37,ts:"Jul 28",tag:"NEWS",pos:"QB",title:"Carson Beck competing for Cardinals starting job",body:"The 3rd-round pick out of Miami signed his 4-year/$7.4M rookie deal and entered a three-way QB battle with Jacoby Brissett and Gardner Minshew. Beck (3,605) won't start right away — OC Nathaniel Hackett says he plays 'when he's ready.' But as Arizona's long-term answer at QB, he's a deep SF dynasty stash. Kyler Murray is gone and this job will be Beck's by midseason if he shows out in preseason."},
@@ -1944,6 +1954,9 @@ const DIV_ODDS=[
 {div:"NFC West",teams:[{team:"LAR",odds:"-103"},{team:"SEA",odds:"+211"},{team:"SF",odds:"+302"},{team:"ARI",odds:"+10000"}]}
 ];
 
+// 2026 NFL Bye Weeks (weeks 5-14)
+const BYE_WEEKS:{[k:string]:number}={"DET":5,"LAC":5,"PHI":5,"SF":5,"ARI":6,"CAR":6,"NYG":6,"TB":6,"ATL":7,"BUF":7,"CIN":7,"JAX":7,"DAL":8,"HOU":8,"PIT":8,"SEA":8,"CHI":9,"CLE":9,"DEN":9,"IND":9,"BAL":10,"LV":10,"MIA":10,"MIN":10,"GB":11,"KC":11,"NE":11,"NO":11,"LAR":12,"NYJ":12,"TEN":12,"WAS":12};
+
 const UNQ=PLAYERS.filter(function(p,i,a){return a.findIndex(function(x){return x.name===p.name;})===i;});
 
 function dynastyBonus(pos,age){
@@ -3075,7 +3088,7 @@ export default function App(){
     // Normalize name for fuzzy matching (strips Jr./Sr./II/III, apostrophes, dots)
     function normName(n){return (n||"").toLowerCase().replace(/[''`]/g,"'").replace(/\./g,"").replace(/\s+(jr|sr|ii|iii|iv)$/,"").trim();}
     var playersPromise;
-    try{var c=localStorage.getItem('fdp_sp_v1');if(c)playersPromise=Promise.resolve(JSON.parse(c));}catch(e){}
+    try{var c=localStorage.getItem('fdp_sp_v1');var cTs=localStorage.getItem('fdp_sp_v1_ts');var stale=!cTs||Date.now()-Number(cTs)>7*86400000;if(c&&!stale)playersPromise=Promise.resolve(JSON.parse(c));}catch(e){}
     if(!playersPromise){
       playersPromise=fetch("https://api.sleeper.app/v1/players/nfl").then(function(r){return r.json();}).then(function(data){
         var compact={};
@@ -3083,7 +3096,7 @@ export default function App(){
           var p=data[id];
           if(p.full_name&&(p.active||p.team)){compact[id]={name:p.full_name,pos:(p.fantasy_positions&&p.fantasy_positions[0])||p.position||"?",team:p.team||"FA",age:p.age||0};}
         });
-        try{localStorage.setItem('fdp_sp_v1',JSON.stringify(compact));}catch(e){}
+        try{localStorage.setItem('fdp_sp_v1',JSON.stringify(compact));localStorage.setItem('fdp_sp_v1_ts',String(Date.now()));}catch(e){}
         return compact;
       });
     }
@@ -5032,9 +5045,9 @@ export default function App(){
         (function(){
           var selectedTeam=activeTeams[rosterTeamIdx]||activeTeams[0];
           var myPlayers=(selectedTeam&&selectedTeam.players&&selectedTeam.players.length>0?selectedTeam.players:rankedPlayers).filter(function(p){return p.pos!=="DST"&&p.pos!=="K";});
-          var healthy=myPlayers.length;
-          var injured=0;
-          var onBye=0;
+          var onBye=myPlayers.filter(function(p){return BYE_WEEKS[p.team]===byeWeek;}).length;
+          var injured=myPlayers.filter(function(p){return p.note&&(/IR|out for season|ACL|torn|surgery|injured reserve/i).test(p.note);}).length;
+          var healthy=myPlayers.length-injured-onBye;
           var posCounts={};
           myPlayers.forEach(function(p){posCounts[p.pos]=(posCounts[p.pos]||0)+1;});
           return React.createElement("div",null,
@@ -5130,16 +5143,22 @@ export default function App(){
               React.createElement("input",{type:"number",value:byeWeek,onChange:function(e){setByeWeek(Number(e.target.value));},style:{background:T.bgInput,color:T.text,border:"1px solid "+T.border,borderRadius:10,padding:"10px 14px",fontSize:13,outline:"none",width:"60px"}})
             ),
             myPlayers.map(function(p){
-              return React.createElement("div",{key:p.name,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:16,marginBottom:10,display:"flex",alignItems:"center",gap:14}},
+              var isBye=BYE_WEEKS[p.team]===byeWeek;
+              var isInj=p.note&&(/IR|out for season|ACL|torn|surgery|injured reserve/i).test(p.note);
+              var statusColor=isInj?T.red:isBye?"#60a5fa":T.green;
+              var statusBg=isInj?T.red:isBye?"#60a5fa":T.green;
+              var statusIcon=isInj?"⚠":isBye?"▦":"✓";
+              var statusText=isInj?"Injured":isBye?"Bye Week "+byeWeek:"Healthy";
+              return React.createElement("div",{key:p.name,style:{background:T.bgCard,border:"1px solid "+(isInj?T.red+"33":isBye?"#60a5fa33":T.border),borderRadius:14,padding:16,marginBottom:10,display:"flex",alignItems:"center",gap:14,opacity:isInj?0.7:1}},
                 React.createElement("div",{style:{position:"relative",flexShrink:0}},
                   React.createElement(Avatar,{name:p.name,pos:p.pos,size:52}),
                   React.createElement("div",{style:{position:"absolute",bottom:-2,right:-2,background:"#1a1a2e",borderRadius:6,padding:"1px 5px",fontSize:9,fontWeight:700,color:T.textSub,border:"1px solid "+T.border}},p.team)
                 ),
                 React.createElement("div",{style:{flex:1}},
                   React.createElement("div",{style:{fontWeight:700,fontSize:14,marginBottom:6}},p.name),
-                  React.createElement("div",{style:{display:"inline-flex",alignItems:"center",gap:4,background:T.green+"18",border:"1px solid "+T.green+"33",borderRadius:20,padding:"3px 10px"}},
-                    React.createElement("span",{style:{color:T.green,fontSize:11}},"✓"),
-                    React.createElement("span",{style:{color:T.green,fontWeight:700,fontSize:11}},"Healthy")
+                  React.createElement("div",{style:{display:"inline-flex",alignItems:"center",gap:4,background:statusBg+"18",border:"1px solid "+statusBg+"33",borderRadius:20,padding:"3px 10px"}},
+                    React.createElement("span",{style:{color:statusColor,fontSize:11}},statusIcon),
+                    React.createElement("span",{style:{color:statusColor,fontWeight:700,fontSize:11}},statusText)
                   )
                 )
               );
@@ -5254,9 +5273,12 @@ export default function App(){
           var wrs=teamPlrs.filter(function(p){return p.pos==="WR";});
           var tes=teamPlrs.filter(function(p){return p.pos==="TE";});
           var sortP=function(arr){return arr.slice().sort(function(a,b){return b.pts-a.pts;});};
-          var flexPool=[].concat(sortP(rbs).slice(2),sortP(wrs).slice(2),sortP(tes).slice(1)).sort(function(a,b){return b.pts-a.pts;});
-          var curFlex=flexPool[0]||null;
-          var optFlex=flexPool[0]||null;
+          // Current lineup: first players by list order (simulates "current" unoptimized roster)
+          var curFlexPool=[].concat(rbs.slice(2),wrs.slice(2),tes.slice(1)).sort(function(a,b){return b.pts-a.pts;});
+          var curFlex=curFlexPool[0]||null;
+          // Optimal lineup: best players by pts
+          var optFlexPool=[].concat(sortP(rbs).slice(2),sortP(wrs).slice(2),sortP(tes).slice(1)).sort(function(a,b){return b.pts-a.pts;});
+          var optFlex=optFlexPool[0]||null;
           var curSlots=[["QB",qbs[0]||null],["RB",rbs[0]||null],["RB",rbs[1]||null],["WR",wrs[0]||null],["WR",wrs[1]||null],["TE",tes[0]||null],["FLEX",curFlex]];
           var optSlots=[["QB",sortP(qbs)[0]||null],["RB",sortP(rbs)[0]||null],["RB",sortP(rbs)[1]||null],["WR",sortP(wrs)[0]||null],["WR",sortP(wrs)[1]||null],["TE",sortP(tes)[0]||null],["FLEX",optFlex]];
           var bench=teamPlrs.filter(function(p){return !curSlots.find(function(s){return s[1]&&s[1].name===p.name;});}).slice(0,5);
