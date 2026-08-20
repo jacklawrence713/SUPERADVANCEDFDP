@@ -348,7 +348,7 @@ const PLAYERS=[
   {name:"Tyler Warren",pos:"TE",age:24,team:"IND",proj:{PPR:232,Half:213,Standard:194},adp:5.2,ktcVal:6524,note:"2025 pick 1-14 · Year 2 breakout: 95 rec 1,020 yds 10 TD dynasty TE2"},
   {name:"Sam LaPorta",pos:"TE",age:25,team:"DET",proj:{PPR:222,Half:204,Standard:186},adp:6.2,ktcVal:5399,note:"2026: 98 rec 1,050 yds 10 TD"},
   {name:"Mark Andrews",pos:"TE",age:31,team:"BAL",proj:{PPR:212,Half:195,Standard:178},adp:7.5,ktcVal:3461,note:"2026: 84 rec 920 yds 9 TD"},
-  {name:"Travis Kelce",pos:"TE",age:37,team:"KC",proj:{PPR:182,Half:167,Standard:152},adp:10.5,ktcVal:2960,note:"2026: 78 rec 860 yds declining age"},
+  {name:"Travis Kelce",pos:"TE",age:36,team:"KC",proj:{PPR:182,Half:167,Standard:152},adp:10.5,ktcVal:2960,note:"2026: 78 rec 860 yds declining age"},
   {name:"Myles Garrett",pos:"DL",age:30,team:"CLE",proj:{PPR:148,Half:148,Standard:148},adp:7.8,ktcVal:8755,note:"15 sacks 22 TFL"},
   {name:"Micah Parsons",pos:"DL",age:27,team:"DAL",proj:{PPR:145,Half:145,Standard:145},adp:8.1,ktcVal:8034,note:"14 sacks 21 TFL"},
   {name:"Aidan Hutchinson",pos:"DL",age:26,team:"DET",proj:{PPR:142,Half:142,Standard:142},adp:8.5,ktcVal:5150,note:"14 sacks 18 TFL"},
@@ -459,7 +459,7 @@ const PLAYERS=[
   {name:"Danielle Hunter",pos:"DL",age:31,team:"HOU",proj:{PPR:112,Half:112,Standard:112},adp:16.2,ktcVal:2266,note:"12 sacks 14 TFL"},
   // Additional LBs
   {name:"T.J. Edwards",pos:"LB",age:30,team:"CHI",proj:{PPR:150,Half:150,Standard:150},adp:8.2,ktcVal:2060,note:"155 tackles 3 sacks 2 INT"},
-  {name:"Bobby Wagner",pos:"LB",age:35,team:"FA",proj:{PPR:145,Half:145,Standard:145},adp:8.8,ktcVal:618,note:"Veteran: 140 tackles 3 sacks"},
+  {name:"Bobby Wagner",pos:"LB",age:36,team:"FA",proj:{PPR:145,Half:145,Standard:145},adp:8.8,ktcVal:618,note:"Veteran: 140 tackles 3 sacks"},
   {name:"Patrick Queen",pos:"LB",age:27,team:"PIT",proj:{PPR:142,Half:142,Standard:142},adp:9.2,ktcVal:2884,note:"148 tackles 4 sacks"},
   {name:"Foyesade Oluokun",pos:"LB",age:30,team:"JAX",proj:{PPR:140,Half:140,Standard:140},adp:9.8,ktcVal:2266,note:"158 tackles 2 sacks"},
   {name:"Quay Walker",pos:"LB",age:26,team:"LV",proj:{PPR:138,Half:138,Standard:138},adp:10.2,ktcVal:2884,note:"150 tackles 3 sacks"},

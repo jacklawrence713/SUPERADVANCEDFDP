@@ -20,26 +20,28 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Auth check — require signed-in user for all email types
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    const supaAuth = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user: authUser }, error: authError } = await supaAuth.auth.getUser(token);
-    if (authError || !authUser) {
-      return new Response(JSON.stringify({ error: "Invalid token" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
     const { type, to, name, subject, message, userId, plan } = await req.json();
+
+    // Auth check — exempt welcome emails (sent during signup before session exists)
+    if (type !== "welcome" && type !== "welcome_pro") {
+      const authHeader = req.headers.get("Authorization");
+      if (!authHeader) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const supaAuth = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+      const token = authHeader.replace("Bearer ", "");
+      const { data: { user: authUser }, error: authError } = await supaAuth.auth.getUser(token);
+      if (authError || !authUser) {
+        return new Response(JSON.stringify({ error: "Invalid token" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
 
     let emailPayload: any = null;
 
