@@ -3595,7 +3595,7 @@ export default function App(){
 
   return React.createElement("div",{style:{background:T.bg,height:"100vh",color:T.text,fontFamily:"-apple-system,BlinkMacSystemFont,'Inter',sans-serif",maxWidth:isDesktop?"100%":480,margin:"0 auto",display:"flex",flexDirection:isDesktop?"row":"column",overflow:"hidden"}},
 
-    showAuth&&React.createElement(AuthModal,{mode:authMode,onClose:function(){setShowAuth(false);},onAuth:function(u){saveAndSetUser(u);setShowAuth(false);},T:T}),
+    showAuth&&React.createElement(AuthModal,{mode:authMode,onClose:function(){setShowAuth(false);},onAuth:function(u){saveAndSetUser(u);setShowAuth(false);if(u.plan&&u.plan!=="free"&&!u.subscriptionStatus){handleCheckout(u.plan,"monthly");}},T:T}),
     showResetPw&&React.createElement("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}},
       React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:20,padding:28,width:"100%",maxWidth:400,position:"relative"}},
         React.createElement("div",{style:{textAlign:"center",marginBottom:18}},
