@@ -2774,6 +2774,8 @@ export default function App(){
   var [sitS2,setSitS2]=useState("");
   var [sitFormat,setSitFormat]=useState("PPR");
   var [oddsData,setOddsData]=useState<{[t:string]:{spread:number,total:number,opp:string}}|null>(null);
+  var [oddsChecking,setOddsChecking]=useState(false);
+  var [oddsChecked,setOddsChecked]=useState(false);
   var [tradeHistory,setTradeHistory]=useState(function(){try{var s=localStorage.getItem('fdp_th_v1');return s?JSON.parse(s):[];}catch(e){return [];}});
   var [tradeSaved,setTradeSaved]=useState(false);
   var [aiAnalysis,setAiAnalysis]=useState("");
@@ -7266,7 +7268,8 @@ export default function App(){
               React.createElement("div",{style:{fontSize:48,marginBottom:12}},"📅"),
               React.createElement("div",{style:{fontWeight:800,fontSize:18,color:T.text,marginBottom:8}},"No Current NFL Lines"),
               React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.7,maxWidth:340,margin:"0 auto",marginBottom:16}},"Odds are posted Thursday–Sunday during the NFL season (September–January). Check back once Week 1 lines drop!"),
-              React.createElement("button",{onClick:function(){_oddsCache=null;fetchOdds().then(function(d){if(Object.keys(d).length>0)setOddsData(d);});},style:{padding:"12px 28px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#059669,#047857)",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",boxShadow:"0 4px 12px rgba(5,150,105,0.3)"}},"↻ Check for Lines")
+              React.createElement("button",{onClick:function(){setOddsChecking(true);setOddsChecked(false);_oddsCache=null;fetchOdds().then(function(d){setOddsChecking(false);setOddsChecked(true);if(Object.keys(d).length>0)setOddsData(d);}).catch(function(){setOddsChecking(false);setOddsChecked(true);});},disabled:oddsChecking,style:{padding:"12px 28px",borderRadius:12,border:"none",background:oddsChecking?"#6b7280":"linear-gradient(135deg,#059669,#047857)",color:"#fff",fontWeight:700,fontSize:13,cursor:oddsChecking?"wait":"pointer",boxShadow:"0 4px 12px rgba(5,150,105,0.3)",opacity:oddsChecking?0.7:1}},oddsChecking?"Checking...":"↻ Check for Lines"),
+              oddsChecked&&!hasData&&React.createElement("div",{style:{marginTop:12,padding:"10px 16px",background:darkMode?"#1e293b":"#fef3c7",border:"1px solid "+(darkMode?"#475569":"#fcd34d"),borderRadius:12,fontSize:12,color:darkMode?"#fbbf24":"#92400e",fontWeight:600,textAlign:"center"}},"No lines available right now. NFL game lines are typically posted during the regular season (Sep–Jan).")
             ),
             hasData&&React.createElement("div",{style:{marginBottom:12}},
               React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:12}},
