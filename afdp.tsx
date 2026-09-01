@@ -1902,11 +1902,11 @@ const WIN_TOTALS=[
 {team:"SF",ou:9.5},{team:"JAX",ou:8.5},{team:"MIN",ou:8.5},{team:"PIT",ou:8.5},{team:"TB",ou:8.5},
 {team:"CAR",ou:7.5},{team:"IND",ou:7.5},{team:"NO",ou:7.5},{team:"NYG",ou:7.5},{team:"WAS",ou:7.5},
 {team:"ATL",ou:6.5},{team:"TEN",ou:6.5},{team:"CLE",ou:5.5},{team:"LV",ou:5.5},{team:"NYJ",ou:5.5},
-{team:"MIA",ou:3.5},{team:"ARI",ou:3.5}
+{team:"MIA",ou:4.5},{team:"ARI",ou:3.5}
 ];
 const MVP_ODDS=[
-{name:"Josh Allen",pos:"QB",team:"BUF",odds:"+600"},{name:"Lamar Jackson",pos:"QB",team:"BAL",odds:"+650"},
-{name:"Joe Burrow",pos:"QB",team:"CIN",odds:"+900"},{name:"Justin Herbert",pos:"QB",team:"LAC",odds:"+1000"},
+{name:"Josh Allen",pos:"QB",team:"BUF",odds:"+600"},{name:"Lamar Jackson",pos:"QB",team:"BAL",odds:"+800"},
+{name:"Joe Burrow",pos:"QB",team:"CIN",odds:"+850"},{name:"Justin Herbert",pos:"QB",team:"LAC",odds:"+1000"},
 {name:"Patrick Mahomes",pos:"QB",team:"KC",odds:"+1000"},{name:"Drake Maye",pos:"QB",team:"NE",odds:"+1100"},
 {name:"Dak Prescott",pos:"QB",team:"DAL",odds:"+1400"},{name:"Matthew Stafford",pos:"QB",team:"LAR",odds:"+1400"},
 {name:"Caleb Williams",pos:"QB",team:"CHI",odds:"+1400"},{name:"Jordan Love",pos:"QB",team:"GB",odds:"+1800"},
@@ -1921,16 +1921,16 @@ const MVP_ODDS=[
 const OPOY_ODDS=[
 {name:"Jahmyr Gibbs",pos:"RB",team:"DET",odds:"+650"},{name:"Bijan Robinson",pos:"RB",team:"ATL",odds:"+900"},
 {name:"Ja'Marr Chase",pos:"WR",team:"CIN",odds:"+1000"},{name:"Puka Nacua",pos:"WR",team:"LAR",odds:"+1300"},
-{name:"Christian McCaffrey",pos:"RB",team:"SF",odds:"+1600"},{name:"Jaxon Smith-Njigba",pos:"WR",team:"SEA",odds:"+1600"},
-{name:"Saquon Barkley",pos:"RB",team:"PHI",odds:"+1500"},{name:"Justin Jefferson",pos:"WR",team:"MIN",odds:"+1500"},
+{name:"Christian McCaffrey",pos:"RB",team:"SF",odds:"+1700"},{name:"Jaxon Smith-Njigba",pos:"WR",team:"SEA",odds:"+1600"},
+{name:"Saquon Barkley",pos:"RB",team:"PHI",odds:"+1500"},{name:"Justin Jefferson",pos:"WR",team:"MIN",odds:"+1400"},
 {name:"CeeDee Lamb",pos:"WR",team:"DAL",odds:"+2000"},{name:"Amon-Ra St. Brown",pos:"WR",team:"DET",odds:"+2200"},
 {name:"De'Von Achane",pos:"RB",team:"MIA",odds:"+2500"},{name:"Ashton Jeanty",pos:"RB",team:"LV",odds:"+3000"},
 {name:"Brock Bowers",pos:"TE",team:"LV",odds:"+4000"},{name:"Drake London",pos:"WR",team:"ATL",odds:"+5000"}
 ];
 const OROY_ODDS=[
-{name:"Jeremiyah Love",pos:"RB",team:"ARI",odds:"+400"},{name:"Fernando Mendoza",pos:"QB",team:"LV",odds:"+425"},
-{name:"Carnell Tate",pos:"WR",team:"TEN",odds:"+500"},{name:"Jordyn Tyson",pos:"WR",team:"NO",odds:"+625"},
-{name:"Jadarian Price",pos:"RB",team:"SEA",odds:"+900"},{name:"De'Zhaun Stribling",pos:"WR",team:"SF",odds:"+2000"},
+{name:"Jeremiyah Love",pos:"RB",team:"ARI",odds:"+425"},{name:"Fernando Mendoza",pos:"QB",team:"LV",odds:"+550"},
+{name:"Carnell Tate",pos:"WR",team:"TEN",odds:"+550"},{name:"Jordyn Tyson",pos:"WR",team:"NO",odds:"+625"},
+{name:"Jadarian Price",pos:"RB",team:"SEA",odds:"+650"},{name:"De'Zhaun Stribling",pos:"WR",team:"SF",odds:"+2000"},
 {name:"Kenyon Sadiq",pos:"TE",team:"NYJ",odds:"+1400"},{name:"Makai Lemon",pos:"WR",team:"PHI",odds:"+2200"},
 {name:"Ty Simpson",pos:"QB",team:"LAR",odds:"+3300"},{name:"Omar Cooper Jr.",pos:"WR",team:"NYJ",odds:"+4000"},
 {name:"KC Concepcion",pos:"WR",team:"CLE",odds:"+5000"},{name:"Kaelon Black",pos:"RB",team:"SF",odds:"+6000"}
