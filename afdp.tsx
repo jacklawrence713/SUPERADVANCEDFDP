@@ -114,7 +114,7 @@ const FORMATS=["Superflex","PPR","Half","Standard"];
 const ALL_POSITIONS=["ALL","QB","RB","WR","TE","K","DST","DL","LB","DB"];
 const PRIME={QB:[26,35],RB:[22,27],WR:[23,29],TE:[25,30],K:[25,38],DST:[0,99],DL:[23,30],LB:[23,30],DB:[23,29]};
 const FREE_RANK_LIMIT=20;
-const FREE_TRADE_LIMIT=5;
+const FREE_TRADE_LIMIT=3;
 const DYNASTY_NEWS=[
   {id:60,ts:"Aug 31",tag:"NEWS",pos:"DL",title:"Aaron Donald un-retires — signs 1yr/$20M with Rams",body:"The three-time Defensive Player of the Year is back. Donald rejoins an LA defense that already added Myles Garrett this offseason, giving the Rams arguably the most dominant pass-rush duo in NFL history. He'll likely play a rotational, passing-down role to stay fresh. IDP leagues: high-end DL3 with upside. The bigger impact is boosting the Rams DST — already the Super Bowl favorite — to elite tier."},
   {id:59,ts:"Aug 31",tag:"NEWS",pos:"RB",title:"Josh Jacobs placed on Commissioner's Exempt List",body:"The Packers' lead back cannot practice or play while on the exempt list following offseason domestic abuse charges (reduced to two misdemeanors). Timeline for return is unclear — could be weeks or longer. Dynasty managers should hold but prepare contingencies. MarShawn Lloyd and AJ Dillon move up in Green Bay's backfield. If you're contending, trade for Lloyd now before his price spikes."},
