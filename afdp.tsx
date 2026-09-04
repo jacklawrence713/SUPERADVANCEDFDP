@@ -36,8 +36,8 @@ function getVisitorId(): string {
 let _trackedEmail = "";
 function setTrackedUser(email: string) { _trackedEmail = email || ""; }
 
-let _geoCache: {country:string;city:string;region:string;flag:string}|null = null;
-let _geoPromise: Promise<{country:string;city:string;region:string;flag:string}|null>|null = null;
+let _geoCache: {country:string;city:string;region:string;flag:string;ip:string}|null = null;
+let _geoPromise: Promise<{country:string;city:string;region:string;flag:string;ip:string}|null>|null = null;
 async function getGeo() {
   if (_geoCache) return _geoCache;
   if (_geoPromise) return _geoPromise;
@@ -48,8 +48,8 @@ async function getGeo() {
       const r = await fetch("https://ipapi.co/json/", {signal: controller.signal});
       clearTimeout(timeout);
       const d = await r.json();
-      _geoCache = {country: d.country_name||"Unknown", city: d.city||"", region: d.region||"", flag: d.country_code ? String.fromCodePoint(...[...d.country_code].map((c:string)=>0x1F1E6-65+c.charCodeAt(0))) : ""};
-    } catch { _geoCache = {country:"Unknown",city:"",region:"",flag:""}; }
+      _geoCache = {country: d.country_name||"Unknown", city: d.city||"", region: d.region||"", flag: d.country_code ? String.fromCodePoint(...[...d.country_code].map((c:string)=>0x1F1E6-65+c.charCodeAt(0))) : "", ip: d.ip||""};
+    } catch { _geoCache = {country:"Unknown",city:"",region:"",flag:"",ip:""}; }
     return _geoCache;
   })();
   return _geoPromise;
@@ -2060,6 +2060,10 @@ function AuthModal(props){
           options:{data:{name,plan},emailRedirectTo:"https://fantasydraftpros.com"}
         });
         if(signUpResult.error)throw signUpResult.error;
+        // Store IP + visitor_id on user row for duplicate trial detection (non-blocking)
+        if(signUpResult.data.session){
+          (async function(){try{var g=await getGeo().catch(function(){return null;});var upd:any={};if(g?.ip)upd.signup_ip=g.ip;var vid=getVisitorId();if(vid)upd.signup_visitor_id=vid;if(Object.keys(upd).length>0)await authClient!.from("users").update(upd).eq("id",signUpResult.data.session!.user.id);}catch(e){}})();
+        }
         // Send welcome email (non-blocking)
         callEdgeFn("send-email",{type:"welcome",to:email,name},signUpResult.data.session?.access_token).catch(function(){});
         // If email confirmation required, show message; otherwise auth state will fire
@@ -2081,12 +2085,14 @@ function AuthModal(props){
         var fa3=isFullAccessEmail(usr.email||"");
         // Log in immediately with auth data — don't wait for DB
         onAuth({id:usr.id,name:usr.user_metadata?.name||usr.email||"",email:usr.email||"",plan:(admin3||fa3)?"elite":"free",isPro:admin3||fa3,isAdmin:admin3,token:sess.access_token});
-        // Load profile from DB in background and update if found
-        authClient!.from("users").select("name,plan,is_pro,is_admin").eq("id",usr.id).single().then(function(profResult){
+        // Load profile from DB in background and update
+        authClient!.from("users").select("name,plan,is_pro,is_admin,signup_ip,signup_visitor_id").eq("id",usr.id).single().then(function(profResult){
           var prof=profResult.data;
           if(!prof)return;
           var isAdm=admin3||prof.is_admin||false;
           onAuth({id:usr.id,name:prof.name||usr.user_metadata?.name||usr.email||"",email:usr.email||"",plan:(isAdm||fa3)?"elite":(prof.plan||"free"),isPro:prof.is_pro||isAdm||fa3,isAdmin:isAdm,token:sess.access_token});
+          // Backfill IP + visitor_id if missing (for users who signed up before this feature)
+          if(!prof.signup_ip||!prof.signup_visitor_id){(async function(){try{var g=await getGeo().catch(function(){return null;});var upd:any={};if(!prof.signup_ip&&g?.ip)upd.signup_ip=g.ip;if(!prof.signup_visitor_id){var vid=getVisitorId();if(vid)upd.signup_visitor_id=vid;}if(Object.keys(upd).length>0)authClient!.from("users").update(upd).eq("id",usr.id);}catch(e){}})();}
         }).catch(function(){});
       }
     } catch(e:any){
@@ -2679,7 +2685,8 @@ export default function App(){
     }
     // Try dynamic checkout session first — embeds supabase_user_id in metadata for reliable webhook matching
     try{
-      var result=await callEdgeFn("create-checkout",{plan,billing},user.token);
+      var geo=await getGeo().catch(function(){return null;});
+      var result=await callEdgeFn("create-checkout",{plan,billing,signup_ip:geo?.ip||undefined,visitor_id:getVisitorId()},user.token);
       if(result?.url){navigateTo(result.url);return;}
     }catch(e){}
     // Fallback: static payment links with pre-filled email for webhook email matching
