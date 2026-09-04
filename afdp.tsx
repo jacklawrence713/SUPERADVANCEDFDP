@@ -3016,7 +3016,7 @@ export default function App(){
   function doEspnImport(){
     if(!espnLeagueId.trim())return;
     setLeagueImportStatus("loading");setLeagueImportErr("");
-    var yr=espnYear||"2025";
+    var yr=espnYear||"2026";
     var apiUrl="https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/"+yr+"/segments/0/leagues/"+espnLeagueId.trim()+"?view=mRoster&view=mTeam&view=mSettings&view=mMembers";
     var workerUrl=espnWorkerUrl.trim();
     var hasCookies=espnS2.trim()&&espnSWID.trim();
@@ -3343,6 +3343,12 @@ export default function App(){
 
   function downloadGradeCard(team:any){
     try{
+      var totalVal=team.totalVal||0;
+      if(!totalVal&&team.players){totalVal=team.players.reduce(function(s:number,p:any){return s+(p.tradeVal||0);},0);}
+      var sortedPlayers=(team.players||[]).slice().sort(function(a:any,b:any){return (b.tradeVal||0)-(a.tradeVal||0);});
+      var topPlayers=sortedPlayers.slice(0,5);
+      var grade=totalVal>=120000?"A+":totalVal>=100000?"A":totalVal>=85000?"A-":totalVal>=70000?"B+":totalVal>=58000?"B":totalVal>=47000?"B-":totalVal>=38000?"C+":totalVal>=30000?"C":"D";
+      var gradeColor=grade.startsWith("A")?"#22c55e":grade.startsWith("B")?"#60a5fa":grade.startsWith("C")?"#f59e0b":"#f87171";
       var canvas=document.createElement("canvas");
       canvas.width=600;canvas.height=360;
       var ctx=canvas.getContext("2d");
@@ -3356,31 +3362,42 @@ export default function App(){
       ctx.fillStyle="#ffffff";ctx.font="bold 28px system-ui,sans-serif";ctx.fillText("Dynasty Roster Grade",28,56);
       // Team name
       ctx.fillStyle="#a78bfa";ctx.font="bold 16px system-ui,sans-serif";ctx.fillText(team.name||"My Team",28,82);
-      // Grade
-      var totalVal=team.totalVal||team.players?.reduce(function(s:number,p:any){return s+(p.tradeVal||0);},0)||0;
-      var grade=totalVal>=120000?"A+":totalVal>=100000?"A":totalVal>=85000?"A-":totalVal>=70000?"B+":totalVal>=58000?"B":totalVal>=47000?"B-":totalVal>=38000?"C+":totalVal>=30000?"C":"D";
-      var gradeColor=grade.startsWith("A")?"#22c55e":grade.startsWith("B")?"#60a5fa":grade.startsWith("C")?"#f59e0b":"#f87171";
-      ctx.fillStyle=gradeColor;ctx.font="bold 80px system-ui,sans-serif";ctx.fillText(grade,500,120);
+      // Grade circle
+      ctx.fillStyle=gradeColor+"22";ctx.beginPath();ctx.arc(540,80,44,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle=gradeColor;ctx.lineWidth=3;ctx.beginPath();ctx.arc(540,80,44,0,Math.PI*2);ctx.stroke();
+      ctx.fillStyle=gradeColor;ctx.font="bold 48px system-ui,sans-serif";ctx.textAlign="center";ctx.fillText(grade,540,96);ctx.textAlign="left";
       // Divider
-      ctx.strokeStyle="#2a2040";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(28,100);ctx.lineTo(572,100);ctx.stroke();
+      ctx.strokeStyle="#2a2040";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(28,100);ctx.lineTo(480,100);ctx.stroke();
       // Total value
       ctx.fillStyle="#94a3b8";ctx.font="12px system-ui,sans-serif";ctx.fillText("TOTAL DYNASTY VALUE",28,128);
       ctx.fillStyle="#a78bfa";ctx.font="bold 22px system-ui,sans-serif";ctx.fillText(totalVal.toLocaleString(),28,154);
+      // Player count
+      ctx.fillStyle="#94a3b8";ctx.font="12px system-ui,sans-serif";ctx.fillText("ROSTER SIZE",220,128);
+      ctx.fillStyle="#e0dce8";ctx.font="bold 22px system-ui,sans-serif";ctx.fillText(String((team.players||[]).length),220,154);
       // Top players
       ctx.fillStyle="#94a3b8";ctx.font="12px system-ui,sans-serif";ctx.fillText("TOP PLAYERS",28,188);
-      var topPlayers=(team.players||[]).slice(0,5);
       topPlayers.forEach(function(p:any,i:number){
         var y=212+i*26;
         var pc=POS_COLORS[p.pos]||"#a78bfa";
-        ctx.fillStyle=pc;ctx.font="bold 10px system-ui,sans-serif";ctx.fillText(p.pos,28,y);
-        ctx.fillStyle="#ffffff";ctx.font="14px system-ui,sans-serif";ctx.fillText(p.name,56,y);
-        ctx.fillStyle="#a78bfa";ctx.font="bold 13px system-ui,sans-serif";ctx.fillText((p.tradeVal||0).toLocaleString(),450,y);
+        ctx.fillStyle=pc+"33";
+        ctx.beginPath();ctx.roundRect(28,y-12,32,18,4);ctx.fill();
+        ctx.fillStyle=pc;ctx.font="bold 9px system-ui,sans-serif";ctx.textAlign="center";ctx.fillText(p.pos,44,y);ctx.textAlign="left";
+        ctx.fillStyle="#ffffff";ctx.font="14px system-ui,sans-serif";ctx.fillText(p.name,68,y);
+        ctx.fillStyle="#a78bfa";ctx.font="bold 13px system-ui,sans-serif";
+        var valStr=(p.tradeVal||0).toLocaleString();
+        ctx.fillText(valStr,560-ctx.measureText(valStr).width,y);
       });
       // Footer
-      ctx.fillStyle="#4a4060";ctx.font="11px system-ui,sans-serif";ctx.fillText("fantasydraftpros.com · Dynasty Trade Analyzer",28,348);
-      // Download
-      var a=document.createElement("a");a.href=canvas.toDataURL("image/png");a.download=(team.name||"roster-grade")+".png";a.click();
-    }catch(e){console.error("Grade card error",e);}
+      ctx.fillStyle="#4a4060";ctx.font="11px system-ui,sans-serif";ctx.fillText("fantasydraftpros.com \u00B7 Dynasty Trade Analyzer",28,348);
+      // Download — append to DOM for Safari/iOS compat
+      canvas.toBlob(function(blob){
+        if(!blob)return;
+        var url=URL.createObjectURL(blob);
+        var a=document.createElement("a");a.href=url;a.download=(team.name||"roster-grade").replace(/[^a-zA-Z0-9 _-]/g,"")+".png";
+        document.body.appendChild(a);a.click();document.body.removeChild(a);
+        setTimeout(function(){URL.revokeObjectURL(url);},5000);
+      },"image/png");
+    }catch(e){console.error("Grade card error",e);alert("Failed to download grade card. Try again.");}
   }
 
   function downloadTradeImage(){
@@ -3476,8 +3493,14 @@ export default function App(){
       ctx.fillText("Generated by Fantasy Draft Pros — fantasydraftpros.com",24,fY);
       ctx.fillStyle="#a78bfa";ctx.font="bold 11px system-ui,sans-serif";
       ctx.fillText("Free Dynasty Trade Analyzer",W-ctx.measureText("Free Dynasty Trade Analyzer").width-24,fY);
-      // Download
-      var a=document.createElement("a");a.href=canvas.toDataURL("image/png");a.download="trade-analysis.png";a.click();
+      // Download — append to DOM for Safari/iOS compat
+      canvas.toBlob(function(blob){
+        if(!blob)return;
+        var url=URL.createObjectURL(blob);
+        var a=document.createElement("a");a.href=url;a.download="trade-analysis.png";
+        document.body.appendChild(a);a.click();document.body.removeChild(a);
+        setTimeout(function(){URL.revokeObjectURL(url);},5000);
+      },"image/png");
     }catch(e){console.error("Trade image error",e);}
   }
 
