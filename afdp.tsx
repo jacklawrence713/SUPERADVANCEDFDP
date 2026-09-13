@@ -272,13 +272,29 @@ const ODDS_TEAM_MAP:{[k:string]:string}={
   "San Francisco 49ers":"SF","Seattle Seahawks":"SEA","Tampa Bay Buccaneers":"TB",
   "Tennessee Titans":"TEN","Washington Commanders":"WAS"
 };
+// Hardcoded Week 1 lines (updated Sep 12, 2026)
+var WEEK1_LINES:[string,string,number,number][]=[
+  // [home, away, homeSpread, total]  — FINAL games included for game script context
+  ["SEA","NE",-3.5,45.5],["LAR","SF",3.5,48.5],
+  ["CIN","TB",-3.5,50.5],["DET","NO",-7,49.5],["TEN","NYJ",-1.5,38.5],
+  ["IND","BAL",3.5,47.5],["PIT","ATL",-5.5,41.5],["CAR","CHI",3,47.5],
+  ["JAX","CLE",-8.5,39.5],["HOU","BUF",1.5,44.5],["LV","MIA",-3,40.5],
+  ["MIN","GB",-1.5,46.5],["PHI","WAS",-6,44.5],["LAC","ARI",-9.5,47.5],
+  ["NYG","DAL",3,48.5],["KC","DEN",-2.5,43.5]
+];
+function buildHardcodedOdds():{[t:string]:{spread:number,total:number,opp:string}}{
+  var r:{[t:string]:{spread:number,total:number,opp:string}}={};
+  WEEK1_LINES.forEach(function(g){r[g[0]]={spread:g[2],total:g[3],opp:g[1]};r[g[1]]={spread:-g[2],total:g[3],opp:g[0]};});
+  return r;
+}
 var _oddsCache:{data:{[t:string]:{spread:number,total:number,opp:string}};ts:number}|null=null;
 async function fetchOdds():Promise<{[t:string]:{spread:number,total:number,opp:string}}>{
   if(_oddsCache&&Date.now()-_oddsCache.ts<3600000)return _oddsCache.data;
   try{
+    if(!ODDS_API_KEY){var hc=buildHardcodedOdds();_oddsCache={data:hc,ts:Date.now()};return hc;}
     var r=await fetch("https://api.the-odds-api.com/v4/sports/americanfootball_nfl/odds/?apiKey="+ODDS_API_KEY+"&regions=us&markets=spreads,totals");
     var games=await r.json();
-    if(!Array.isArray(games))return {};
+    if(!Array.isArray(games)||games.length===0){var hc2=buildHardcodedOdds();_oddsCache={data:hc2,ts:Date.now()};return hc2;}
     var result:{[t:string]:{spread:number,total:number,opp:string}}={};
     games.forEach(function(game:any){
       var home=ODDS_TEAM_MAP[game.home_team],away=ODDS_TEAM_MAP[game.away_team];
@@ -296,7 +312,7 @@ async function fetchOdds():Promise<{[t:string]:{spread:number,total:number,opp:s
     });
     _oddsCache={data:result,ts:Date.now()};
     return result;
-  }catch{return {};}
+  }catch{var hc3=buildHardcodedOdds();_oddsCache={data:hc3,ts:Date.now()};return hc3;}
 }
 function getGameScript(team:string,odds:{[t:string]:{spread:number,total:number,opp:string}}|null):{spread:number,total:number,script:string,label:string,color:string,opp:string}|null{
   if(!odds)return null;
