@@ -1958,6 +1958,57 @@ const OROY_ODDS=[
 {name:"Ty Simpson",pos:"QB",team:"LAR",odds:"+3300"},{name:"Omar Cooper Jr.",pos:"WR",team:"NYJ",odds:"+4000"},
 {name:"KC Concepcion",pos:"WR",team:"CLE",odds:"+5000"},{name:"Kaelon Black",pos:"RB",team:"SF",odds:"+6000"}
 ];
+// Week 1 Game Props (Sep 13-14, 2026) — updated weekly
+const WEEKLY_PROPS=[
+// Passing Yards
+{name:"Joe Burrow",pos:"QB",team:"CIN",stat:"Pass Yds",ou:264.5,opp:"TB"},
+{name:"Matthew Stafford",pos:"QB",team:"LAR",stat:"Pass Yds",ou:263.5,opp:"SF"},
+{name:"Dak Prescott",pos:"QB",team:"DAL",stat:"Pass Yds",ou:260.5,opp:"NYG"},
+{name:"Jared Goff",pos:"QB",team:"DET",stat:"Pass Yds",ou:261.5,opp:"NO"},
+{name:"Tyler Shough",pos:"QB",team:"NO",stat:"Pass Yds",ou:246.5,opp:"DET"},
+{name:"Brock Purdy",pos:"QB",team:"SF",stat:"Pass Yds",ou:244.5,opp:"LAR"},
+{name:"Jordan Love",pos:"QB",team:"GB",stat:"Pass Yds",ou:241.5,opp:"MIN"},
+{name:"Justin Herbert",pos:"QB",team:"LAC",stat:"Pass Yds",ou:236.5,opp:"ARI"},
+{name:"Patrick Mahomes",pos:"QB",team:"KC",stat:"Pass Yds",ou:232.5,opp:"DEN"},
+{name:"Josh Allen",pos:"QB",team:"BUF",stat:"Pass Yds",ou:220.5,opp:"HOU"},
+{name:"Lamar Jackson",pos:"QB",team:"BAL",stat:"Pass Yds",ou:219.5,opp:"IND"},
+{name:"Caleb Williams",pos:"QB",team:"CHI",stat:"Pass Yds",ou:226.5,opp:"CAR"},
+// Rushing Yards
+{name:"Jahmyr Gibbs",pos:"RB",team:"DET",stat:"Rush Yds",ou:83.5,opp:"NO"},
+{name:"Derrick Henry",pos:"RB",team:"BAL",stat:"Rush Yds",ou:80.5,opp:"IND"},
+{name:"Jonathan Taylor",pos:"RB",team:"IND",stat:"Rush Yds",ou:77.5,opp:"BAL"},
+{name:"Saquon Barkley",pos:"RB",team:"PHI",stat:"Rush Yds",ou:77.5,opp:"WAS"},
+{name:"Bijan Robinson",pos:"RB",team:"ATL",stat:"Rush Yds",ou:76.5,opp:"PIT"},
+{name:"James Cook",pos:"RB",team:"BUF",stat:"Rush Yds",ou:74.5,opp:"HOU"},
+{name:"Javonte Williams",pos:"RB",team:"DAL",stat:"Rush Yds",ou:73.5,opp:"NYG"},
+{name:"D'Andre Swift",pos:"RB",team:"CHI",stat:"Rush Yds",ou:69.5,opp:"CAR"},
+{name:"Devon Achane",pos:"RB",team:"MIA",stat:"Rush Yds",ou:66.5,opp:"LV"},
+{name:"Breece Hall",pos:"RB",team:"NYJ",stat:"Rush Yds",ou:64.5,opp:"TEN"},
+{name:"Kenneth Walker III",pos:"RB",team:"KC",stat:"Rush Yds",ou:63.5,opp:"DEN"},
+{name:"Christian McCaffrey",pos:"RB",team:"SF",stat:"Rush Yds",ou:60.5,opp:"LAR"},
+// Receiving Yards
+{name:"Puka Nacua",pos:"WR",team:"LAR",stat:"Rec Yds",ou:90.5,opp:"SF"},
+{name:"Ja'Marr Chase",pos:"WR",team:"CIN",stat:"Rec Yds",ou:87.5,opp:"TB"},
+{name:"Jaxon Smith-Njigba",pos:"WR",team:"SEA",stat:"Rec Yds",ou:81.5,opp:"NE"},
+{name:"CeeDee Lamb",pos:"WR",team:"DAL",stat:"Rec Yds",ou:76.5,opp:"NYG"},
+{name:"Chris Olave",pos:"WR",team:"NO",stat:"Rec Yds",ou:76.5,opp:"DET"},
+{name:"Justin Jefferson",pos:"WR",team:"MIN",stat:"Rec Yds",ou:74.5,opp:"GB"},
+{name:"Nico Collins",pos:"WR",team:"HOU",stat:"Rec Yds",ou:69.5,opp:"BUF"},
+{name:"Brock Bowers",pos:"TE",team:"LV",stat:"Rec Yds",ou:65.5,opp:"MIA"},
+{name:"Tee Higgins",pos:"WR",team:"CIN",stat:"Rec Yds",ou:61.5,opp:"TB"},
+{name:"Malik Nabers",pos:"WR",team:"NYG",stat:"Rec Yds",ou:60.5,opp:"DAL"},
+{name:"Trey McBride",pos:"TE",team:"ARI",stat:"Rec Yds",ou:58.5,opp:"LAC"},
+{name:"Rashee Rice",pos:"WR",team:"KC",stat:"Rec Yds",ou:59.5,opp:"DEN"},
+// Receptions
+{name:"Puka Nacua",pos:"WR",team:"LAR",stat:"Receptions",ou:7.5,opp:"SF"},
+{name:"Ja'Marr Chase",pos:"WR",team:"CIN",stat:"Receptions",ou:7.5,opp:"TB"},
+{name:"CeeDee Lamb",pos:"WR",team:"DAL",stat:"Receptions",ou:6.5,opp:"NYG"},
+{name:"Trey McBride",pos:"TE",team:"ARI",stat:"Receptions",ou:6.5,opp:"LAC"},
+{name:"Jaxon Smith-Njigba",pos:"WR",team:"SEA",stat:"Receptions",ou:6.5,opp:"NE"},
+{name:"Justin Jefferson",pos:"WR",team:"MIN",stat:"Receptions",ou:5.5,opp:"GB"},
+{name:"Brock Bowers",pos:"TE",team:"LV",stat:"Receptions",ou:5.5,opp:"MIA"},
+{name:"Malik Nabers",pos:"WR",team:"NYG",stat:"Receptions",ou:5.5,opp:"DAL"}
+];
 const PLAYER_PROPS=[
 {name:"Josh Allen",pos:"QB",team:"BUF",stat:"Pass Yds",ou:4450.5},{name:"Josh Allen",pos:"QB",team:"BUF",stat:"Pass TD",ou:38.5},
 {name:"Joe Burrow",pos:"QB",team:"CIN",stat:"Pass Yds",ou:4700.5},{name:"Joe Burrow",pos:"QB",team:"CIN",stat:"Pass TD",ou:36.5},
@@ -7571,6 +7622,41 @@ export default function App(){
           ),
           // ── PLAYER PROPS TAB ──
           vegasSubTab==="props"&&React.createElement("div",null,
+            // ── WEEKLY GAME PROPS ──
+            React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4}},"Week 1 Player Props"),
+            React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:14}},"Game-day O/U lines · Sun Sep 13 – Mon Sep 14"),
+            (function(){
+              var wcats=["Pass Yds","Rush Yds","Rec Yds","Receptions"];
+              var wcatColors:{[k:string]:string}={"Pass Yds":"#818cf8","Rush Yds":"#34d399","Rec Yds":"#c084fc","Receptions":"#f59e0b"};
+              var wcatIcons:{[k:string]:string}={"Pass Yds":"\uD83C\uDFC8","Rush Yds":"\uD83C\uDFC3","Rec Yds":"\uD83D\uDC50","Receptions":"\uD83C\uDFAF"};
+              var wgrouped:{[k:string]:typeof WEEKLY_PROPS}={};
+              WEEKLY_PROPS.forEach(function(p){if(!wgrouped[p.stat])wgrouped[p.stat]=[];wgrouped[p.stat].push(p);});
+              return wcats.filter(function(c){return wgrouped[c];}).map(function(cat){
+                var cc=wcatColors[cat]||T.text;
+                return React.createElement("div",{key:"wk"+cat,style:{marginBottom:16}},
+                  React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,marginBottom:8}},
+                    React.createElement("span",{style:{fontSize:13}},wcatIcons[cat]||""),
+                    React.createElement("div",{style:{fontWeight:800,fontSize:13,color:cc,letterSpacing:0.5,textTransform:"uppercase"}},cat)
+                  ),
+                  wgrouped[cat].map(function(p,pi){
+                    return React.createElement("div",{key:p.name+p.stat+"wk",style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"10px 14px",marginBottom:5,display:"flex",alignItems:"center",gap:10}},
+                      React.createElement("div",{style:{fontWeight:700,fontSize:10,color:T.textDim,width:16,textAlign:"right"}},pi+1),
+                      React.createElement(Avatar,{name:p.name,pos:p.pos,size:28}),
+                      React.createElement("div",{style:{flex:1,minWidth:0}},
+                        React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
+                        React.createElement("div",{style:{fontSize:10,color:T.textSub}},p.pos+" · "+p.team+" vs "+p.opp)
+                      ),
+                      React.createElement("div",{style:{textAlign:"right",flexShrink:0}},
+                        React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:600,marginBottom:2}},"O/U"),
+                        React.createElement("div",{style:{fontWeight:900,fontSize:16,color:cc}},p.ou)
+                      )
+                    );
+                  })
+                );
+              });
+            })(),
+            React.createElement("div",{style:{fontSize:10,color:T.textDim,textAlign:"center",marginTop:4,marginBottom:20}},"Consensus lines via DraftKings · Updated Sep 12 · For entertainment only"),
+            // ── SEASON-LONG PROPS ──
             React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4}},"Season-Long Player Props"),
             React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:14}},"Over/Under season stat totals · 2026-27 NFL season"),
             (function(){
