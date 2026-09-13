@@ -1999,15 +1999,53 @@ const WEEKLY_PROPS=[
 {name:"Malik Nabers",pos:"WR",team:"NYG",stat:"Rec Yds",ou:60.5,opp:"DAL"},
 {name:"Trey McBride",pos:"TE",team:"ARI",stat:"Rec Yds",ou:58.5,opp:"LAC"},
 {name:"Rashee Rice",pos:"WR",team:"KC",stat:"Rec Yds",ou:59.5,opp:"DEN"},
+// Passing TDs
+{name:"Joe Burrow",pos:"QB",team:"CIN",stat:"Pass TD",ou:2.5,opp:"TB"},
+{name:"Jared Goff",pos:"QB",team:"DET",stat:"Pass TD",ou:1.5,opp:"NO"},
+{name:"Dak Prescott",pos:"QB",team:"DAL",stat:"Pass TD",ou:1.5,opp:"NYG"},
+{name:"Matthew Stafford",pos:"QB",team:"LAR",stat:"Pass TD",ou:1.5,opp:"SF"},
+{name:"Brock Purdy",pos:"QB",team:"SF",stat:"Pass TD",ou:1.5,opp:"LAR"},
+{name:"Josh Allen",pos:"QB",team:"BUF",stat:"Pass TD",ou:1.5,opp:"HOU"},
+{name:"Patrick Mahomes",pos:"QB",team:"KC",stat:"Pass TD",ou:1.5,opp:"DEN"},
+{name:"Lamar Jackson",pos:"QB",team:"BAL",stat:"Pass TD",ou:1.5,opp:"IND"},
+{name:"Caleb Williams",pos:"QB",team:"CHI",stat:"Pass TD",ou:1.5,opp:"CAR"},
+{name:"Jordan Love",pos:"QB",team:"GB",stat:"Pass TD",ou:1.5,opp:"MIN"},
+{name:"Justin Herbert",pos:"QB",team:"LAC",stat:"Pass TD",ou:1.5,opp:"ARI"},
+{name:"Baker Mayfield",pos:"QB",team:"TB",stat:"Pass TD",ou:1.5,opp:"CIN"},
 // Receptions
 {name:"Puka Nacua",pos:"WR",team:"LAR",stat:"Receptions",ou:7.5,opp:"SF"},
 {name:"Ja'Marr Chase",pos:"WR",team:"CIN",stat:"Receptions",ou:7.5,opp:"TB"},
 {name:"CeeDee Lamb",pos:"WR",team:"DAL",stat:"Receptions",ou:6.5,opp:"NYG"},
 {name:"Trey McBride",pos:"TE",team:"ARI",stat:"Receptions",ou:6.5,opp:"LAC"},
 {name:"Jaxon Smith-Njigba",pos:"WR",team:"SEA",stat:"Receptions",ou:6.5,opp:"NE"},
+{name:"Chris Olave",pos:"WR",team:"NO",stat:"Receptions",ou:6.5,opp:"DET"},
 {name:"Justin Jefferson",pos:"WR",team:"MIN",stat:"Receptions",ou:5.5,opp:"GB"},
 {name:"Brock Bowers",pos:"TE",team:"LV",stat:"Receptions",ou:5.5,opp:"MIA"},
-{name:"Malik Nabers",pos:"WR",team:"NYG",stat:"Receptions",ou:5.5,opp:"DAL"}
+{name:"Malik Nabers",pos:"WR",team:"NYG",stat:"Receptions",ou:5.5,opp:"DAL"},
+{name:"DeVonta Smith",pos:"WR",team:"PHI",stat:"Receptions",ou:5.5,opp:"WAS"},
+{name:"Nico Collins",pos:"WR",team:"HOU",stat:"Receptions",ou:5.5,opp:"BUF"},
+{name:"Rashee Rice",pos:"WR",team:"KC",stat:"Receptions",ou:5.5,opp:"DEN"},
+// Anytime TD
+{name:"Jahmyr Gibbs",pos:"RB",team:"DET",stat:"Any TD",ou:0,opp:"NO",odds:"-155"},
+{name:"Saquon Barkley",pos:"RB",team:"PHI",stat:"Any TD",ou:0,opp:"WAS",odds:"-150"},
+{name:"Ja'Marr Chase",pos:"WR",team:"CIN",stat:"Any TD",ou:0,opp:"TB",odds:"-126"},
+{name:"Kyren Williams",pos:"RB",team:"LAR",stat:"Any TD",ou:0,opp:"SF",odds:"-140"},
+{name:"Derrick Henry",pos:"RB",team:"BAL",stat:"Any TD",ou:0,opp:"IND",odds:"-135"},
+{name:"Jonathan Taylor",pos:"RB",team:"IND",stat:"Any TD",ou:0,opp:"BAL",odds:"-120"},
+{name:"David Montgomery",pos:"RB",team:"HOU",stat:"Any TD",ou:0,opp:"BUF",odds:"-115"},
+{name:"James Cook",pos:"RB",team:"BUF",stat:"Any TD",ou:0,opp:"HOU",odds:"+105"},
+{name:"Amon-Ra St. Brown",pos:"WR",team:"DET",stat:"Any TD",ou:0,opp:"NO",odds:"+100"},
+{name:"Bijan Robinson",pos:"RB",team:"ATL",stat:"Any TD",ou:0,opp:"PIT",odds:"-110"},
+{name:"CeeDee Lamb",pos:"WR",team:"DAL",stat:"Any TD",ou:0,opp:"NYG",odds:"+105"},
+{name:"Christian McCaffrey",pos:"RB",team:"SF",stat:"Any TD",ou:0,opp:"LAR",odds:"-115"},
+{name:"Tony Pollard",pos:"RB",team:"TEN",stat:"Any TD",ou:0,opp:"NYJ",odds:"+150"},
+{name:"Brock Bowers",pos:"TE",team:"LV",stat:"Any TD",ou:0,opp:"MIA",odds:"+160"},
+{name:"Puka Nacua",pos:"WR",team:"LAR",stat:"Any TD",ou:0,opp:"SF",odds:"+110"},
+{name:"Justin Jefferson",pos:"WR",team:"MIN",stat:"Any TD",ou:0,opp:"GB",odds:"+115"},
+{name:"Aaron Jones",pos:"RB",team:"MIN",stat:"Any TD",ou:0,opp:"GB",odds:"+150"},
+{name:"Trey McBride",pos:"TE",team:"ARI",stat:"Any TD",ou:0,opp:"LAC",odds:"+200"},
+{name:"Rashee Rice",pos:"WR",team:"KC",stat:"Any TD",ou:0,opp:"DEN",odds:"+140"},
+{name:"Dalton Kincaid",pos:"TE",team:"BUF",stat:"Any TD",ou:0,opp:"HOU",odds:"+340"}
 ];
 const PLAYER_PROPS=[
 {name:"Josh Allen",pos:"QB",team:"BUF",stat:"Pass Yds",ou:4450.5},{name:"Josh Allen",pos:"QB",team:"BUF",stat:"Pass TD",ou:38.5},
@@ -7626,9 +7664,9 @@ export default function App(){
             React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4}},"Week 1 Player Props"),
             React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:14}},"Game-day O/U lines · Sun Sep 13 – Mon Sep 14"),
             (function(){
-              var wcats=["Pass Yds","Rush Yds","Rec Yds","Receptions"];
-              var wcatColors:{[k:string]:string}={"Pass Yds":"#818cf8","Rush Yds":"#34d399","Rec Yds":"#c084fc","Receptions":"#f59e0b"};
-              var wcatIcons:{[k:string]:string}={"Pass Yds":"\uD83C\uDFC8","Rush Yds":"\uD83C\uDFC3","Rec Yds":"\uD83D\uDC50","Receptions":"\uD83C\uDFAF"};
+              var wcats=["Pass Yds","Pass TD","Rush Yds","Rec Yds","Receptions","Any TD"];
+              var wcatColors:{[k:string]:string}={"Pass Yds":"#818cf8","Pass TD":"#60a5fa","Rush Yds":"#34d399","Rec Yds":"#c084fc","Receptions":"#f59e0b","Any TD":"#f87171"};
+              var wcatIcons:{[k:string]:string}={"Pass Yds":"\uD83C\uDFC8","Pass TD":"\uD83C\uDFC8","Rush Yds":"\uD83C\uDFC3","Rec Yds":"\uD83D\uDC50","Receptions":"\uD83C\uDFAF","Any TD":"\uD83C\uDFC6"};
               var wgrouped:{[k:string]:typeof WEEKLY_PROPS}={};
               WEEKLY_PROPS.forEach(function(p){if(!wgrouped[p.stat])wgrouped[p.stat]=[];wgrouped[p.stat].push(p);});
               return wcats.filter(function(c){return wgrouped[c];}).map(function(cat){
@@ -7639,6 +7677,10 @@ export default function App(){
                     React.createElement("div",{style:{fontWeight:800,fontSize:13,color:cc,letterSpacing:0.5,textTransform:"uppercase"}},cat)
                   ),
                   wgrouped[cat].map(function(p,pi){
+                    var isATD=cat==="Any TD";
+                    var displayVal=isATD?(p as any).odds||"":p.ou;
+                    var labelText=isATD?"ODDS":"O/U";
+                    var valColor=isATD?((p as any).odds&&(p as any).odds.charAt(0)==="-"?"#34d399":"#f59e0b"):cc;
                     return React.createElement("div",{key:p.name+p.stat+"wk",style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"10px 14px",marginBottom:5,display:"flex",alignItems:"center",gap:10}},
                       React.createElement("div",{style:{fontWeight:700,fontSize:10,color:T.textDim,width:16,textAlign:"right"}},pi+1),
                       React.createElement(Avatar,{name:p.name,pos:p.pos,size:28}),
@@ -7647,8 +7689,8 @@ export default function App(){
                         React.createElement("div",{style:{fontSize:10,color:T.textSub}},p.pos+" · "+p.team+" vs "+p.opp)
                       ),
                       React.createElement("div",{style:{textAlign:"right",flexShrink:0}},
-                        React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:600,marginBottom:2}},"O/U"),
-                        React.createElement("div",{style:{fontWeight:900,fontSize:16,color:cc}},p.ou)
+                        React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:600,marginBottom:2}},labelText),
+                        React.createElement("div",{style:{fontWeight:900,fontSize:16,color:valColor}},displayVal)
                       )
                     );
                   })
