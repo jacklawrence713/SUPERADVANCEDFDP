@@ -1888,17 +1888,17 @@ const DRAFT_PICKS=[
   {id:"p2029_5",name:"2029 5th Round",round:5,est:510,note:"Future 5th · dust"},
 ];
 
-// ── NFL Futures & Props (September 2026 season opener) ──────────────────────────
+// ── NFL Futures & Props (Week 1 — September 12, 2026) ──────────────────────────
 const SB_ODDS=[
-{team:"LAR",odds:"+550",pct:15.4},{team:"BAL",odds:"+1000",pct:9.1},{team:"BUF",odds:"+1000",pct:9.1},
-{team:"SEA",odds:"+1100",pct:8.3},{team:"NE",odds:"+1600",pct:5.9},{team:"KC",odds:"+1600",pct:5.9},
-{team:"PHI",odds:"+1600",pct:5.9},{team:"LAC",odds:"+1700",pct:5.6},{team:"HOU",odds:"+1800",pct:5.3},
-{team:"GB",odds:"+1800",pct:5.3},{team:"DET",odds:"+1900",pct:5.0},{team:"SF",odds:"+1900",pct:5.0},
-{team:"CIN",odds:"+2000",pct:4.8},{team:"DEN",odds:"+2000",pct:4.8},{team:"CHI",odds:"+2400",pct:4.0},
-{team:"DAL",odds:"+2500",pct:3.8},{team:"JAX",odds:"+3000",pct:3.2},{team:"PIT",odds:"+5000",pct:2.0},
-{team:"MIN",odds:"+5000",pct:2.0},{team:"TB",odds:"+5500",pct:1.8},{team:"IND",odds:"+6000",pct:1.6},
+{team:"LAR",odds:"+600",pct:14.3},{team:"BUF",odds:"+1000",pct:9.1},{team:"BAL",odds:"+1000",pct:9.1},
+{team:"SEA",odds:"+1050",pct:8.7},{team:"SF",odds:"+1400",pct:6.7},{team:"KC",odds:"+1600",pct:5.9},
+{team:"PHI",odds:"+1700",pct:5.6},{team:"LAC",odds:"+1700",pct:5.6},{team:"DET",odds:"+1800",pct:5.3},
+{team:"CIN",odds:"+1800",pct:5.3},{team:"HOU",odds:"+1800",pct:5.3},{team:"NE",odds:"+1900",pct:5.0},
+{team:"GB",odds:"+2000",pct:4.8},{team:"DEN",odds:"+2000",pct:4.8},{team:"CHI",odds:"+2400",pct:4.0},
+{team:"DAL",odds:"+2500",pct:3.8},{team:"JAX",odds:"+3000",pct:3.2},{team:"MIN",odds:"+5000",pct:2.0},
+{team:"PIT",odds:"+5000",pct:2.0},{team:"TB",odds:"+5500",pct:1.8},{team:"IND",odds:"+6000",pct:1.6},
 {team:"WAS",odds:"+6000",pct:1.6},{team:"NYG",odds:"+7000",pct:1.4},{team:"NO",odds:"+9000",pct:1.1},
-{team:"CAR",odds:"+9000",pct:1.1},{team:"ATL",odds:"+13000",pct:0.8},{team:"TEN",odds:"+13000",pct:0.8},
+{team:"CAR",odds:"+9000",pct:1.1},{team:"TEN",odds:"+13000",pct:0.8},{team:"ATL",odds:"+13000",pct:0.8},
 {team:"LV",odds:"+15000",pct:0.7},{team:"NYJ",odds:"+20000",pct:0.5},{team:"CLE",odds:"+20000",pct:0.5},
 {team:"MIA",odds:"+35000",pct:0.3},{team:"ARI",odds:"+50000",pct:0.2}
 ];
@@ -1914,13 +1914,13 @@ const WIN_TOTALS=[
 const MVP_ODDS=[
 {name:"Josh Allen",pos:"QB",team:"BUF",odds:"+600"},{name:"Lamar Jackson",pos:"QB",team:"BAL",odds:"+800"},
 {name:"Joe Burrow",pos:"QB",team:"CIN",odds:"+850"},{name:"Justin Herbert",pos:"QB",team:"LAC",odds:"+1000"},
-{name:"Patrick Mahomes",pos:"QB",team:"KC",odds:"+1000"},{name:"Drake Maye",pos:"QB",team:"NE",odds:"+1100"},
-{name:"Dak Prescott",pos:"QB",team:"DAL",odds:"+1400"},{name:"Matthew Stafford",pos:"QB",team:"LAR",odds:"+1400"},
-{name:"Caleb Williams",pos:"QB",team:"CHI",odds:"+1400"},{name:"Jordan Love",pos:"QB",team:"GB",odds:"+1800"},
-{name:"Jayden Daniels",pos:"QB",team:"WAS",odds:"+2000"},{name:"Brock Purdy",pos:"QB",team:"SF",odds:"+2000"},
-{name:"Sam Darnold",pos:"QB",team:"SEA",odds:"+2200"},{name:"Trevor Lawrence",pos:"QB",team:"JAX",odds:"+2500"},
+{name:"Patrick Mahomes",pos:"QB",team:"KC",odds:"+1000"},{name:"Drake Maye",pos:"QB",team:"NE",odds:"+1000"},
+{name:"Dak Prescott",pos:"QB",team:"DAL",odds:"+1200"},{name:"Caleb Williams",pos:"QB",team:"CHI",odds:"+1200"},
+{name:"Matthew Stafford",pos:"QB",team:"LAR",odds:"+1400"},{name:"Jordan Love",pos:"QB",team:"GB",odds:"+2000"},
+{name:"Brock Purdy",pos:"QB",team:"SF",odds:"+2000"},{name:"Trevor Lawrence",pos:"QB",team:"JAX",odds:"+2000"},
+{name:"Sam Darnold",pos:"QB",team:"SEA",odds:"+2200"},{name:"Jayden Daniels",pos:"QB",team:"WAS",odds:"+2500"},
 {name:"Jalen Hurts",pos:"QB",team:"PHI",odds:"+2800"},{name:"Jared Goff",pos:"QB",team:"DET",odds:"+3000"},
-{name:"Bo Nix",pos:"QB",team:"DEN",odds:"+3500"},{name:"C.J. Stroud",pos:"QB",team:"HOU",odds:"+4000"},
+{name:"Bo Nix",pos:"QB",team:"DEN",odds:"+3500"},{name:"C.J. Stroud",pos:"QB",team:"HOU",odds:"+4500"},
 {name:"Jaxson Dart",pos:"QB",team:"NYG",odds:"+4500"},{name:"Baker Mayfield",pos:"QB",team:"TB",odds:"+5000"},
 {name:"Bijan Robinson",pos:"RB",team:"ATL",odds:"+10000"},{name:"Jahmyr Gibbs",pos:"RB",team:"DET",odds:"+12000"},
 {name:"Puka Nacua",pos:"WR",team:"LAR",odds:"+15000"},{name:"Christian McCaffrey",pos:"RB",team:"SF",odds:"+15000"}
@@ -1935,9 +1935,9 @@ const OPOY_ODDS=[
 {name:"Brock Bowers",pos:"TE",team:"LV",odds:"+4000"},{name:"Drake London",pos:"WR",team:"ATL",odds:"+5000"}
 ];
 const OROY_ODDS=[
-{name:"Jeremiyah Love",pos:"RB",team:"ARI",odds:"+425"},{name:"Fernando Mendoza",pos:"QB",team:"LV",odds:"+550"},
-{name:"Carnell Tate",pos:"WR",team:"TEN",odds:"+550"},{name:"Jordyn Tyson",pos:"WR",team:"NO",odds:"+625"},
-{name:"Jadarian Price",pos:"RB",team:"SEA",odds:"+650"},{name:"De'Zhaun Stribling",pos:"WR",team:"SF",odds:"+2000"},
+{name:"Jeremiyah Love",pos:"RB",team:"ARI",odds:"+550"},{name:"Carnell Tate",pos:"WR",team:"TEN",odds:"+600"},
+{name:"Jadarian Price",pos:"RB",team:"SEA",odds:"+650"},{name:"Jordyn Tyson",pos:"WR",team:"NO",odds:"+625"},
+{name:"Fernando Mendoza",pos:"QB",team:"LV",odds:"+750"},{name:"De'Zhaun Stribling",pos:"WR",team:"SF",odds:"+1000"},
 {name:"Kenyon Sadiq",pos:"TE",team:"NYJ",odds:"+1400"},{name:"Makai Lemon",pos:"WR",team:"PHI",odds:"+2200"},
 {name:"Ty Simpson",pos:"QB",team:"LAR",odds:"+3300"},{name:"Omar Cooper Jr.",pos:"WR",team:"NYJ",odds:"+4000"},
 {name:"KC Concepcion",pos:"WR",team:"CLE",odds:"+5000"},{name:"Kaelon Black",pos:"RB",team:"SF",odds:"+6000"}
@@ -1961,14 +1961,14 @@ const PLAYER_PROPS=[
 {name:"Brock Bowers",pos:"TE",team:"LV",stat:"Rec Yds",ou:950.5},{name:"Trey McBride",pos:"TE",team:"ARI",stat:"Rec Yds",ou:900.5}
 ];
 const DIV_ODDS=[
-{div:"AFC East",teams:[{team:"BUF",odds:"-136"},{team:"NE",odds:"+131"},{team:"NYJ",odds:"+1200"},{team:"MIA",odds:"+2500"}]},
+{div:"AFC East",teams:[{team:"BUF",odds:"-136"},{team:"NE",odds:"+145"},{team:"NYJ",odds:"+1200"},{team:"MIA",odds:"+2500"}]},
 {div:"AFC North",teams:[{team:"BAL",odds:"-109"},{team:"CIN",odds:"+225"},{team:"PIT",odds:"+520"},{team:"CLE",odds:"+2000"}]},
 {div:"AFC South",teams:[{team:"HOU",odds:"+110"},{team:"JAX",odds:"+245"},{team:"IND",odds:"+500"},{team:"TEN",odds:"+900"}]},
-{div:"AFC West",teams:[{team:"KC",odds:"+180"},{team:"LAC",odds:"+190"},{team:"DEN",odds:"+213"},{team:"LV",odds:"+1500"}]},
+{div:"AFC West",teams:[{team:"KC",odds:"+170"},{team:"LAC",odds:"+190"},{team:"DEN",odds:"+210"},{team:"LV",odds:"+1500"}]},
 {div:"NFC East",teams:[{team:"PHI",odds:"+140"},{team:"DAL",odds:"+235"},{team:"WAS",odds:"+450"},{team:"NYG",odds:"+700"}]},
 {div:"NFC North",teams:[{team:"DET",odds:"+165"},{team:"GB",odds:"+235"},{team:"CHI",odds:"+350"},{team:"MIN",odds:"+493"}]},
-{div:"NFC South",teams:[{team:"TB",odds:"+200"},{team:"CAR",odds:"+330"},{team:"ATL",odds:"+425"},{team:"NO",odds:"+500"}]},
-{div:"NFC West",teams:[{team:"LAR",odds:"-103"},{team:"SEA",odds:"+211"},{team:"SF",odds:"+302"},{team:"ARI",odds:"+10000"}]}
+{div:"NFC South",teams:[{team:"TB",odds:"+164"},{team:"CAR",odds:"+350"},{team:"ATL",odds:"+400"},{team:"NO",odds:"+255"}]},
+{div:"NFC West",teams:[{team:"LAR",odds:"+110"},{team:"SF",odds:"+200"},{team:"SEA",odds:"+225"},{team:"ARI",odds:"+10000"}]}
 ];
 
 // 2026 NFL Bye Weeks (weeks 5-14)
@@ -7314,7 +7314,7 @@ export default function App(){
             !hasData&&React.createElement("div",{style:{background:"linear-gradient(135deg,"+(darkMode?"#1a1a2e":"#f0fdf4")+","+(darkMode?"#16213e":"#ecfdf5")+")",border:"1px solid "+(darkMode?"#065f4633":"#bbf7d0"),borderRadius:16,padding:32,textAlign:"center",marginBottom:16}},
               React.createElement("div",{style:{fontSize:48,marginBottom:12}},"📅"),
               React.createElement("div",{style:{fontWeight:800,fontSize:18,color:T.text,marginBottom:8}},"No Current NFL Lines"),
-              React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.7,maxWidth:340,margin:"0 auto",marginBottom:16}},"Odds are posted Thursday–Sunday during the NFL season (September–January). Check back once Week 1 lines drop!"),
+              React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.7,maxWidth:340,margin:"0 auto",marginBottom:16}},"Odds are posted Thursday–Monday during the NFL season (September–January). Tap below to load this week's lines!"),
               React.createElement("button",{onClick:function(){setOddsChecking(true);setOddsChecked(false);_oddsCache=null;fetchOdds().then(function(d){setOddsChecking(false);setOddsChecked(true);if(Object.keys(d).length>0)setOddsData(d);}).catch(function(){setOddsChecking(false);setOddsChecked(true);});},disabled:oddsChecking,style:{padding:"12px 28px",borderRadius:12,border:"none",background:oddsChecking?"#6b7280":"linear-gradient(135deg,#059669,#047857)",color:"#fff",fontWeight:700,fontSize:13,cursor:oddsChecking?"wait":"pointer",boxShadow:"0 4px 12px rgba(5,150,105,0.3)",opacity:oddsChecking?0.7:1}},oddsChecking?"Checking...":"↻ Check for Lines"),
               oddsChecked&&!hasData&&React.createElement("div",{style:{marginTop:12,padding:"10px 16px",background:darkMode?"#1e293b":"#fef3c7",border:"1px solid "+(darkMode?"#475569":"#fcd34d"),borderRadius:12,fontSize:12,color:darkMode?"#fbbf24":"#92400e",fontWeight:600,textAlign:"center"}},"No lines available right now. NFL game lines are typically posted during the regular season (Sep–Jan).")
             ),
