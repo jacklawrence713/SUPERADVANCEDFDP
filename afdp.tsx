@@ -116,6 +116,10 @@ const PRIME={QB:[26,35],RB:[22,27],WR:[23,29],TE:[25,30],K:[25,38],DST:[0,99],DL
 const FREE_RANK_LIMIT=20;
 const FREE_TRADE_LIMIT=3;
 const DYNASTY_NEWS=[
+  {id:71,ts:"Sep 12",tag:"NEWS",pos:"WR",title:"49ers demolish Rams 27-7 in Melbourne — Purdy & Mike Evans shine",body:"San Francisco dominated the Rams in Australia as Brock Purdy threw for 285 yards and 3 TDs, including 2 to new acquisition Mike Evans. The 49ers' defense held Stafford to 142 yards and 2 INTs. Dynasty impact: SF's Super Bowl odds surged from +1900 to +1400. Evans (49.5 rec yds prop, went for 94) looks revitalized as SF's WR1. Kyren Williams was bottled up (12 carries, 31 yds). Puka Nacua had a quiet game (4/52) but is still the dynasty WR5 — chalk it up to SF's elite secondary."},
+  {id:70,ts:"Sep 12",tag:"NEWS",pos:"QB",title:"Seahawks defense smothers Maye — SEA 13, NE 10 in Super Bowl rematch",body:"Seattle's defense picked off Drake Maye 3 times in a low-scoring Week 1 opener. Maye finished 18/32, 187 yards, 1 TD, 3 INT. Jaxon Smith-Njigba was quiet (5/48) as NE's defense played tight coverage all night. Rookie RB Jadarian Price had 14 carries for 62 yards in his NFL debut — solid but unspectacular. Dynasty takeaway: Don't overreact. Maye is still a top-10 dynasty QB at 24, and JSN (9,400) will feast against weaker defenses. NE's Super Bowl odds dropped from +1600 to +1900."},
+  {id:69,ts:"Sep 12",tag:"NEWS",pos:"RB",title:"Jadarian Price debuts as Seahawks' lead back — 14 carries, 62 yards",body:"The rookie 1st-rounder got the start with Zach Charbonnet still on IR (torn ACL) and looked like the real deal. Price (5,826) ran with physicality and patience behind Seattle's revamped offensive line. George Holani spelled him with 6 carries for 19 yards. Price is a locked-in RB2 with RB1 upside as the bellcow on the defending Super Bowl champs. Buy now before Sunday games inflate his price."},
+  {id:68,ts:"Sep 12",tag:"NEWS",pos:"QB",title:"Week 1 Sunday slate preview — 13 games, plus MNF Chiefs-Broncos",body:"Biggest games to watch: Bills at Texans (Allen vs Stroud, both top-5 dynasty QBs), Lions -7 vs Saints (Gibbs 83.5 rush yd prop is Week 1's highest), Cowboys at Giants (Prescott 260.5 pass yd prop, SNF spotlight). Monday: Mahomes returns from torn ACL for Chiefs-Broncos at Arrowhead. Check our Game Lines and Player Props tabs for full Week 1 odds and O/U lines."},
   {id:67,ts:"Sep 4",tag:"NEWS",pos:"QB",title:"Mahomes Monday Night comeback — Chiefs vs Broncos Week 1",body:"Patrick Mahomes makes his long-awaited return from the torn ACL/LCL suffered in Week 15 last season. The Monday Night closer at Arrowhead against Denver is appointment television. Mahomes was a full camp participant and is fully cleared, but expect less rushing volume as KC protects his knee. He's a locked-in QB1 for Week 1 — the only question is ceiling vs. floor. Dynasty value unchanged at elite tier."},
   {id:66,ts:"Sep 4",tag:"NEWS",pos:"WR",title:"Season opener preview — Seahawks host Patriots Wed Sept 9",body:"The Super Bowl LX rematch kicks off the 2026 season Wednesday night at 8:20 PM ET on NBC/Peacock. Seattle defends its title at home. For fantasy, Jaxon Smith-Njigba (9,400) and Drake Maye are must-starts. The Seahawks also debut rookie RB Jadarian Price if Charbonnet remains out. High-scoring game expected — stack these offenses in DFS."},
   {id:65,ts:"Sep 3",tag:"INJURY",pos:"RB",title:"Ashton Jeanty sprained ankle — questionable for Week 1",body:"Raiders RB Ashton Jeanty (8,100) hasn't practiced due to a sprained ankle, but HC Klint Kubiak says he's 'optimistic' Jeanty plays Week 1 vs. Miami. Las Vegas only has 3 RBs on the 53-man roster, signaling confidence he'll suit up. If he sits, Zamir White becomes a desperation RB2 flex. Dynasty value unaffected — this is a minor short-term concern for a 22-year-old stud."},
@@ -5701,6 +5705,31 @@ export default function App(){
                   )
                 )
               ),
+              // Weekly Props for both players
+              (function(){
+                var wp1=WEEKLY_PROPS.filter(function(wp){return wp.name===sitP1.name;});
+                var wp2=WEEKLY_PROPS.filter(function(wp){return wp.name===sitP2.name;});
+                if(wp1.length===0&&wp2.length===0)return null;
+                return React.createElement("div",{style:{marginTop:12,marginBottom:12,paddingTop:12,borderTop:"1px solid "+T.border}},
+                  React.createElement("div",{style:{fontSize:10,color:T.textSub,textAlign:"center",fontWeight:600,marginBottom:8}},"WEEK 1 PROPS"),
+                  React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}},
+                    React.createElement("div",null,wp1.length>0?wp1.map(function(wp){
+                      var isATD=wp.stat==="Any TD";
+                      return React.createElement("div",{key:wp.stat,style:{fontSize:11,color:T.textSub,marginBottom:4,display:"flex",justifyContent:"space-between",padding:"4px 8px",background:T.bgInput,borderRadius:8}},
+                        React.createElement("span",null,wp.stat),
+                        React.createElement("span",{style:{fontWeight:700,color:isATD?(((wp as any).odds||"").charAt(0)==="-"?"#34d399":"#f59e0b"):T.purple}},isATD?(wp as any).odds:("O/U "+wp.ou))
+                      );
+                    }):React.createElement("div",{style:{fontSize:10,color:T.textDim,padding:4}},"No props")),
+                    React.createElement("div",null,wp2.length>0?wp2.map(function(wp){
+                      var isATD=wp.stat==="Any TD";
+                      return React.createElement("div",{key:wp.stat,style:{fontSize:11,color:T.textSub,marginBottom:4,display:"flex",justifyContent:"space-between",padding:"4px 8px",background:T.bgInput,borderRadius:8}},
+                        React.createElement("span",null,wp.stat),
+                        React.createElement("span",{style:{fontWeight:700,color:isATD?(((wp as any).odds||"").charAt(0)==="-"?"#34d399":"#f59e0b"):T.purple}},isATD?(wp as any).odds:("O/U "+wp.ou))
+                      );
+                    }):React.createElement("div",{style:{fontSize:10,color:T.textDim,padding:4}},"No props"))
+                  )
+                );
+              })(),
               React.createElement("div",{style:{display:"flex",gap:12,marginTop:4}},
                 React.createElement("div",{style:{flex:1,background:T.bgInput,borderRadius:10,padding:"10px 14px",textAlign:"center"}},
                   React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:4}},"SIT"),
