@@ -286,6 +286,31 @@ var WEEK1_LINES:[string,string,number,number][]=[
   ["MIN","GB",-1.5,46.5],["PHI","WAS",-6,44.5],["LAC","ARI",-9.5,47.5],
   ["NYG","DAL",3,48.5],["KC","DEN",-2.5,43.5]
 ];
+// Week 1 actual results: {home-away: [homeScore, awayScore]} — add scores as games finish
+var WEEK1_RESULTS:{[k:string]:[number,number]}={
+  // Wednesday
+  "SEA-NE":[13,10],
+  // Thursday
+  "LAR-SF":[7,27],
+  // Sunday early
+  "CIN-TB":[33,27],
+  "DET-NO":[31,30],
+  "TEN-NYJ":[10,23],
+  "IND-BAL":[23,41],
+  "PIT-ATL":[20,13],
+  "CAR-CHI":[37,59],
+  "JAX-CLE":[34,10],
+  "HOU-BUF":[31,36],
+  "LV-MIA":[27,13],
+  // Sunday afternoon
+  "MIN-GB":[39,22],
+  "PHI-WAS":[24,22],
+  "LAC-ARI":[14,26],
+  // Sunday Night Football
+  "NYG-DAL":[28,20],
+  // Monday Night Football
+  "KC-DEN":[31,10],
+};
 function buildHardcodedOdds():{[t:string]:{spread:number,total:number,opp:string}}{
   var r:{[t:string]:{spread:number,total:number,opp:string}}={};
   WEEK1_LINES.forEach(function(g){r[g[0]]={spread:g[2],total:g[3],opp:g[1]};r[g[1]]={spread:-g[2],total:g[3],opp:g[0]};});
@@ -7469,21 +7494,49 @@ export default function App(){
                 var gsAway=getGameScript(g.away,oddsData);
                 var totalNote=g.total>=50?"Shootout":g.total<=41?"Low Scoring":"";
                 var totalIcon=g.total>=50?"\uD83D\uDD25":g.total<=41?"\uD83D\uDEE1\uFE0F":"";
-                return React.createElement("div",{key:g.home+g.away,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,padding:0,marginBottom:10,overflow:"hidden"}},
+                var rKey=g.home+"-"+g.away;
+                var result=WEEK1_RESULTS[rKey]||null;
+                var homeScore=result?result[0]:null;
+                var awayScore=result?result[1]:null;
+                var isFinal=result!==null;
+                var actualTotal=isFinal?(homeScore as number)+(awayScore as number):0;
+                var actualMargin=isFinal?(homeScore as number)-(awayScore as number):0;
+                var spreadCover=isFinal?(actualMargin+g.spread>0?"HOME COVERS":actualMargin+g.spread<0?"AWAY COVERS":"PUSH"):"";
+                var ouResult=isFinal?(actualTotal>g.total?"OVER":actualTotal<g.total?"UNDER":"PUSH"):"";
+                var spreadColor=spreadCover==="HOME COVERS"?"#22c55e":spreadCover==="AWAY COVERS"?"#f87171":"#94a3b8";
+                var ouColor=ouResult==="OVER"?"#f59e0b":ouResult==="UNDER"?"#60a5fa":"#94a3b8";
+                return React.createElement("div",{key:g.home+g.away,style:{background:T.bgCard,border:"1px solid "+(isFinal?T.border:T.border),borderRadius:16,padding:0,marginBottom:10,overflow:"hidden"}},
                   // Game header
                   React.createElement("div",{style:{background:darkMode?"rgba(5,150,105,0.08)":"rgba(5,150,105,0.04)",padding:"12px 16px",borderBottom:"1px solid "+T.border,display:"flex",justifyContent:"space-between",alignItems:"center"}},
                     React.createElement("div",{style:{fontWeight:800,fontSize:15,color:T.text}},g.away+" @ "+g.home),
-                    totalNote&&React.createElement("div",{style:{fontSize:10,fontWeight:700,color:g.total>=50?"#f59e0b":"#60a5fa",background:(g.total>=50?"#f59e0b":"#60a5fa")+"14",padding:"3px 10px",borderRadius:10}},totalIcon+" "+totalNote)
+                    React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6}},
+                      isFinal&&React.createElement("div",{style:{fontSize:10,fontWeight:800,color:"#22c55e",background:"#22c55e18",padding:"3px 10px",borderRadius:10}},"FINAL"),
+                      !isFinal&&totalNote&&React.createElement("div",{style:{fontSize:10,fontWeight:700,color:g.total>=50?"#f59e0b":"#60a5fa",background:(g.total>=50?"#f59e0b":"#60a5fa")+"14",padding:"3px 10px",borderRadius:10}},totalIcon+" "+totalNote)
+                    )
+                  ),
+                  // Score bar (only if final)
+                  isFinal&&React.createElement("div",{style:{display:"flex",alignItems:"center",padding:"14px 16px",borderBottom:"1px solid "+T.border,background:darkMode?"rgba(34,197,94,0.04)":"rgba(34,197,94,0.02)"}},
+                    React.createElement("div",{style:{flex:1,display:"flex",alignItems:"center",gap:10}},
+                      React.createElement("div",{style:{fontWeight:900,fontSize:14,color:(awayScore as number)>(homeScore as number)?T.text:T.textDim,minWidth:32}},g.away),
+                      React.createElement("div",{style:{fontWeight:900,fontSize:28,color:(awayScore as number)>(homeScore as number)?"#22c55e":T.textDim}},awayScore)
+                    ),
+                    React.createElement("div",{style:{fontSize:11,fontWeight:800,color:T.textDim,padding:"0 12px"}},"FINAL"),
+                    React.createElement("div",{style:{flex:1,display:"flex",alignItems:"center",justifyContent:"flex-end",gap:10}},
+                      React.createElement("div",{style:{fontWeight:900,fontSize:28,color:(homeScore as number)>(awayScore as number)?"#22c55e":T.textDim}},homeScore),
+                      React.createElement("div",{style:{fontWeight:900,fontSize:14,color:(homeScore as number)>(awayScore as number)?T.text:T.textDim,minWidth:32,textAlign:"right"}},g.home)
+                    )
                   ),
                   React.createElement("div",{style:{padding:"12px 16px"}},
                     React.createElement("div",{style:{display:"flex",gap:8,marginBottom:10}},
                       React.createElement("div",{style:{flex:1,background:T.bgInput,borderRadius:12,padding:"10px 12px",textAlign:"center"}},
                         React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:700,letterSpacing:0.5,marginBottom:4}},"SPREAD"),
-                        React.createElement("div",{style:{fontWeight:900,fontSize:18,color:T.text}},(g.spread>0?"+":"")+g.spread)
+                        React.createElement("div",{style:{fontWeight:900,fontSize:18,color:T.text}},(g.spread>0?"+":"")+g.spread),
+                        isFinal&&React.createElement("div",{style:{fontSize:10,fontWeight:800,color:spreadColor,marginTop:4}},spreadCover)
                       ),
                       React.createElement("div",{style:{flex:1,background:T.bgInput,borderRadius:12,padding:"10px 12px",textAlign:"center"}},
                         React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:700,letterSpacing:0.5,marginBottom:4}},"O/U TOTAL"),
-                        React.createElement("div",{style:{fontWeight:900,fontSize:18,color:T.text}},g.total)
+                        React.createElement("div",{style:{fontWeight:900,fontSize:18,color:T.text}},g.total),
+                        isFinal&&React.createElement("div",{style:{fontSize:10,fontWeight:800,color:ouColor,marginTop:4}},ouResult+" ("+actualTotal+")")
                       )
                     ),
                     React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}},
