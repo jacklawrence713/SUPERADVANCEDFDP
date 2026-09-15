@@ -2076,6 +2076,42 @@ const WEEKLY_PROPS=[
 {name:"Rashee Rice",pos:"WR",team:"KC",stat:"Any TD",ou:0,opp:"DEN",odds:"+140"},
 {name:"Dalton Kincaid",pos:"TE",team:"BUF",stat:"Any TD",ou:0,opp:"HOU",odds:"+340"}
 ];
+// Week 1 actual results — key: "Name|Stat", value: number (yards/TDs/recs) or "YES"/"NO"/"DNP" for ATD
+var PROP_RESULTS:{[k:string]:number|string}={
+// Pass Yds
+"Joe Burrow|Pass Yds":254,"Matthew Stafford|Pass Yds":155,"Dak Prescott|Pass Yds":175,
+"Jared Goff|Pass Yds":206,"Tyler Shough|Pass Yds":410,"Brock Purdy|Pass Yds":205,
+"Jordan Love|Pass Yds":387,"Justin Herbert|Pass Yds":209,"Patrick Mahomes|Pass Yds":184,
+"Josh Allen|Pass Yds":334,"Lamar Jackson|Pass Yds":324,"Caleb Williams|Pass Yds":269,
+// Pass TD
+"Joe Burrow|Pass TD":1,"Jared Goff|Pass TD":2,"Dak Prescott|Pass TD":2,
+"Matthew Stafford|Pass TD":0,"Brock Purdy|Pass TD":3,"Josh Allen|Pass TD":2,
+"Patrick Mahomes|Pass TD":2,"Lamar Jackson|Pass TD":1,"Caleb Williams|Pass TD":2,
+"Jordan Love|Pass TD":2,"Justin Herbert|Pass TD":1,"Baker Mayfield|Pass TD":0,
+// Rush Yds
+"Jahmyr Gibbs|Rush Yds":156,"Derrick Henry|Rush Yds":144,"Jonathan Taylor|Rush Yds":98,
+"Saquon Barkley|Rush Yds":83,"Bijan Robinson|Rush Yds":83,"James Cook|Rush Yds":57,
+"Javonte Williams|Rush Yds":41,"D'Andre Swift|Rush Yds":124,"Devon Achane|Rush Yds":36,
+"Breece Hall|Rush Yds":102,"Kenneth Walker III|Rush Yds":173,"Christian McCaffrey|Rush Yds":68,
+// Rec Yds
+"Puka Nacua|Rec Yds":74,"Ja'Marr Chase|Rec Yds":12,"Jaxon Smith-Njigba|Rec Yds":122,
+"CeeDee Lamb|Rec Yds":44,"Chris Olave|Rec Yds":182,"Justin Jefferson|Rec Yds":92,
+"Nico Collins|Rec Yds":75,"Brock Bowers|Rec Yds":"DNP","Tee Higgins|Rec Yds":59,
+"Malik Nabers|Rec Yds":69,"Trey McBride|Rec Yds":95,"Rashee Rice|Rec Yds":52,
+// Receptions
+"Puka Nacua|Receptions":5,"Ja'Marr Chase|Receptions":2,"CeeDee Lamb|Receptions":5,
+"Trey McBride|Receptions":9,"Jaxon Smith-Njigba|Receptions":8,"Chris Olave|Receptions":10,
+"Justin Jefferson|Receptions":8,"Brock Bowers|Receptions":"DNP","Malik Nabers|Receptions":6,
+"DeVonta Smith|Receptions":3,"Nico Collins|Receptions":7,"Rashee Rice|Receptions":6,
+// Anytime TD — "YES" = scored, "NO" = did not score, "DNP" = did not play
+"Jahmyr Gibbs|Any TD":"YES","Saquon Barkley|Any TD":"NO","Ja'Marr Chase|Any TD":"NO",
+"Kyren Williams|Any TD":"YES","Derrick Henry|Any TD":"YES","Jonathan Taylor|Any TD":"YES",
+"David Montgomery|Any TD":"YES","James Cook|Any TD":"NO","Amon-Ra St. Brown|Any TD":"YES",
+"Bijan Robinson|Any TD":"NO","CeeDee Lamb|Any TD":"YES","Christian McCaffrey|Any TD":"NO",
+"Tony Pollard|Any TD":"NO","Brock Bowers|Any TD":"DNP","Puka Nacua|Any TD":"NO",
+"Justin Jefferson|Any TD":"YES","Aaron Jones|Any TD":"YES","Trey McBride|Any TD":"NO",
+"Rashee Rice|Any TD":"YES","Dalton Kincaid|Any TD":"NO",
+};
 const PLAYER_PROPS=[
 {name:"Josh Allen",pos:"QB",team:"BUF",stat:"Pass Yds",ou:4450.5},{name:"Josh Allen",pos:"QB",team:"BUF",stat:"Pass TD",ou:38.5},
 {name:"Joe Burrow",pos:"QB",team:"CIN",stat:"Pass Yds",ou:4700.5},{name:"Joe Burrow",pos:"QB",team:"CIN",stat:"Pass TD",ou:36.5},
@@ -7770,7 +7806,19 @@ export default function App(){
                     var displayVal=isATD?(p as any).odds||"":p.ou;
                     var labelText=isATD?"ODDS":"O/U";
                     var valColor=isATD?((p as any).odds&&(p as any).odds.charAt(0)==="-"?"#34d399":"#f59e0b"):cc;
-                    return React.createElement("div",{key:p.name+p.stat+"wk",style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"10px 14px",marginBottom:5,display:"flex",alignItems:"center",gap:10}},
+                    var rKey=p.name+"|"+p.stat;
+                    var actual=PROP_RESULTS[rKey];
+                    var hasResult=actual!==undefined;
+                    var isDNP=actual==="DNP";
+                    var isATDResult=isATD&&hasResult;
+                    var hitProp=false;
+                    if(hasResult&&!isDNP){
+                      if(isATD){hitProp=actual==="YES";}
+                      else{hitProp=(actual as number)>p.ou;}
+                    }
+                    var resultColor=isDNP?"#6b7280":hitProp?"#22c55e":"#f87171";
+                    var resultLabel=isDNP?"DNP":isATD?(actual==="YES"?"SCORED":"NO TD"):(hitProp?"OVER":"UNDER");
+                    return React.createElement("div",{key:p.name+p.stat+"wk",style:{background:T.bgCard,border:"1px solid "+(hasResult?resultColor+"33":T.border),borderRadius:12,padding:"10px 14px",marginBottom:5,display:"flex",alignItems:"center",gap:10}},
                       React.createElement("div",{style:{fontWeight:700,fontSize:10,color:T.textDim,width:16,textAlign:"right"}},pi+1),
                       React.createElement(Avatar,{name:p.name,pos:p.pos,size:28}),
                       React.createElement("div",{style:{flex:1,minWidth:0}},
@@ -7780,13 +7828,17 @@ export default function App(){
                       React.createElement("div",{style:{textAlign:"right",flexShrink:0}},
                         React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:600,marginBottom:2}},labelText),
                         React.createElement("div",{style:{fontWeight:900,fontSize:16,color:valColor}},displayVal)
+                      ),
+                      hasResult&&React.createElement("div",{style:{textAlign:"right",flexShrink:0,minWidth:52}},
+                        !isDNP&&!isATD&&React.createElement("div",{style:{fontWeight:900,fontSize:16,color:resultColor}},actual),
+                        React.createElement("div",{style:{fontSize:9,fontWeight:800,color:resultColor,marginTop:1,background:resultColor+"18",borderRadius:6,padding:"2px 6px",textAlign:"center"}},resultLabel)
                       )
                     );
                   })
                 );
               });
             })(),
-            React.createElement("div",{style:{fontSize:10,color:T.textDim,textAlign:"center",marginTop:4,marginBottom:20}},"Consensus lines via DraftKings · Updated Sep 12 · For entertainment only"),
+            React.createElement("div",{style:{fontSize:10,color:T.textDim,textAlign:"center",marginTop:4,marginBottom:20}},"Week 1 props via DraftKings · Results updated Sep 14 · For entertainment only"),
             // ── SEASON-LONG PROPS ──
             React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4}},"Season-Long Player Props"),
             React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:14}},"Over/Under season stat totals · 2026-27 NFL season"),
