@@ -2633,6 +2633,8 @@ export default function App(){
       if(d.fa)setFaabA(d.fa);
       if(d.fb)setFaabB(d.fb);
       setTab("trade");
+      // Dynamic title for shared trades
+      if(d.a&&d.b)document.title=d.a.join(", ")+" for "+d.b.join(", ")+" — Dynasty Trade Analysis | Fantasy Draft Pros";
       // Clean URL without reload
       window.history.replaceState({},"",window.location.pathname+"#trade");
     }catch(e){}
@@ -3975,6 +3977,11 @@ export default function App(){
             React.createElement("button",{onClick:function(){
               window.open("https://wa.me/?text="+encodeURIComponent("Check out this dynasty trade analysis: "+shareUrl),"_blank","noopener");
             },style:{padding:"13px",borderRadius:12,border:"1px solid #25d36644",background:"#25d36611",color:"#25d366",fontWeight:700,fontSize:14,cursor:"pointer"}},"Share on WhatsApp"),
+            React.createElement("button",{onClick:function(){
+              var redditTitle="Trade Analysis: "+tradeA.map(function(x:any){return x.name;}).join(", ")+" for "+tradeB.map(function(x:any){return x.name;}).join(", ");
+              var redditBody="Just ran this through Fantasy Draft Pros (free dynasty trade analyzer):\n\n**Team A gives:** "+tradeA.map(function(x:any){return x.name+" ("+x.pos+")";}).join(", ")+(faabA>0?" + $"+faabA+" FAAB":"")+"\n**Team B gives:** "+tradeB.map(function(x:any){return x.name+" ("+x.pos+")";}).join(", ")+(faabB>0?" + $"+faabB+" FAAB":"")+"\n\n**Value:** "+tvA.toFixed(0)+" vs "+tvB.toFixed(0)+" — "+(v?v.txt:"Fair Trade")+"\n\nFull analysis: "+shareUrl;
+              window.open("https://www.reddit.com/r/DynastyFF/submit?type=TEXT&title="+encodeURIComponent(redditTitle)+"&text="+encodeURIComponent(redditBody),"_blank","noopener");
+            },style:{padding:"13px",borderRadius:12,border:"1px solid #ff450044",background:"#ff450011",color:"#ff4500",fontWeight:700,fontSize:14,cursor:"pointer"}},"Share on r/DynastyFF"),
             typeof navigator.share==="function"&&React.createElement("button",{onClick:function(){
               navigator.share({title:"Fantasy Draft Pros Trade Analysis",text:summaryText}).catch(function(){});
             },style:{padding:"13px",borderRadius:12,border:"1px solid "+T.border,background:T.bgInput,color:T.text,fontWeight:700,fontSize:14,cursor:"pointer"}},"Share via Device")
@@ -4094,15 +4101,15 @@ export default function App(){
         React.createElement("div",{style:{display:"inline-flex",alignItems:"center",gap:6,background:T.purpleDim,border:"1px solid "+T.purple+"44",borderRadius:30,padding:"5px 14px",fontSize:10,color:T.purpleLight,fontWeight:700,letterSpacing:0.5,marginBottom:14}},"#1 DYNASTY FANTASY FOOTBALL TRADE CALCULATOR - FREE"),
         React.createElement("div",{style:{fontWeight:900,fontSize:28,lineHeight:1.15,marginBottom:10}},React.createElement("span",{style:{color:T.purple}},"Win Every Trade."),React.createElement("br",null),"Dominate Your Dynasty."),
         React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.7,marginBottom:16}},"The free dynasty fantasy football trade analyzer trusted by thousands. Combines offensive players, IDP, FAAB budget, and draft picks — 1,000+ player values updated daily."),
-        publicStats&&user&&user.isAdmin&&React.createElement("div",{style:{display:"flex",justifyContent:"center",gap:24,marginBottom:20}},
-          React.createElement("div",{style:{textAlign:"center"}},
-            React.createElement("div",{style:{fontWeight:900,fontSize:22,color:T.purple}},(publicStats.visitors||0).toLocaleString()),
-            React.createElement("div",{style:{fontSize:10,color:T.textSub,fontWeight:600,letterSpacing:0.5,marginTop:2}},"VISITORS")
-          ),
-          React.createElement("div",{style:{width:1,background:T.border}}),
+        publicStats&&publicStats.trades>0&&React.createElement("div",{style:{display:"flex",justifyContent:"center",gap:24,marginBottom:20}},
           React.createElement("div",{style:{textAlign:"center"}},
             React.createElement("div",{style:{fontWeight:900,fontSize:22,color:T.purple}},(publicStats.trades||0).toLocaleString()),
             React.createElement("div",{style:{fontSize:10,color:T.textSub,fontWeight:600,letterSpacing:0.5,marginTop:2}},"TRADES ANALYZED")
+          ),
+          React.createElement("div",{style:{width:1,background:T.border}}),
+          React.createElement("div",{style:{textAlign:"center"}},
+            React.createElement("div",{style:{fontWeight:900,fontSize:22,color:T.purple}},"1,000+"),
+            React.createElement("div",{style:{fontSize:10,color:T.textSub,fontWeight:600,letterSpacing:0.5,marginTop:2}},"PLAYER VALUES")
           )
         ),
         !user&&React.createElement("div",{style:{display:"flex",gap:10,justifyContent:"center",marginBottom:4}},
@@ -4373,9 +4380,9 @@ export default function App(){
               ),
               React.createElement("div",{style:{fontSize:12,color:T.text,lineHeight:1.8}},aiAnalysis)
             ),
-            React.createElement("div",{style:{display:"flex",gap:8,marginTop:12}},
+            React.createElement("button",{onClick:function(){setShowShareModal(true);},style:{width:"100%",padding:"14px",borderRadius:14,border:"none",cursor:"pointer",fontWeight:800,fontSize:15,marginTop:12,background:"linear-gradient(135deg,#7c3aed,#5b21b6)",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",gap:8,boxShadow:"0 4px 20px rgba(124,61,237,0.4)"}},"Share This Trade — Prove You Won"),
+            React.createElement("div",{style:{display:"flex",gap:8,marginTop:8}},
               React.createElement("button",{onClick:saveTrade,disabled:tradeSaved,style:{flex:1,padding:"10px",borderRadius:10,border:"1px solid "+(tradeSaved?T.green:T.border),cursor:tradeSaved?"default":"pointer",fontWeight:700,fontSize:12,background:tradeSaved?T.green:T.bgInput,color:tradeSaved?"#fff":T.textSub}},tradeSaved?"Saved ✓":"Save Trade"),
-              React.createElement("button",{onClick:function(){setShowShareModal(true);},style:{flex:1,padding:"10px",borderRadius:10,border:"1px solid "+T.purple,cursor:"pointer",fontWeight:700,fontSize:12,background:T.purpleDim,color:T.purpleLight}},"🔗 Share"),
               React.createElement("button",{onClick:async function(){setAiAnalysis("Analyzing...");try{var rr=await callEdgeFn("analyze-trade",{sideA:tradeA.map(function(p){return{name:p.name,pos:p.pos,age:p.age,val:p.ktcVal||0};}),sideB:tradeB.map(function(p){return{name:p.name,pos:p.pos,age:p.age,val:p.ktcVal||0};}),tvA,tvB,scoring},user?.token);setAiAnalysis(rr.analysis||genAiAnalysis(tradeA,tradeB,tvA,tvB));}catch(e){setAiAnalysis(genAiAnalysis(tradeA,tradeB,tvA,tvB));}},style:{flex:1,padding:"10px",borderRadius:10,border:"1px solid "+T.borderPurple,cursor:"pointer",fontWeight:700,fontSize:12,background:T.bgInput,color:T.textSub}},"↻")
             ),
             (function(){var v=verdict();var pct=v.pct;var isUnfair=Math.abs(tvA-tvB)/Math.max(1,Math.max(tvA,tvB))*100>=8;
