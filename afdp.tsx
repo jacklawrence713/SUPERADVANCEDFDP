@@ -283,38 +283,16 @@ const ODDS_TEAM_MAP:{[k:string]:string}={
 };
 // Hardcoded Week 1 lines (updated Sep 12, 2026)
 var WEEK1_LINES:[string,string,number,number][]=[
-  // [home, away, homeSpread, total]  — FINAL games included for game script context
-  ["SEA","NE",-3.5,45.5],["LAR","SF",3.5,48.5],
-  ["CIN","TB",-3.5,50.5],["DET","NO",-7,49.5],["TEN","NYJ",-1.5,38.5],
-  ["IND","BAL",3.5,47.5],["PIT","ATL",-5.5,41.5],["CAR","CHI",3,47.5],
-  ["JAX","CLE",-8.5,39.5],["HOU","BUF",1.5,44.5],["LV","MIA",-3,40.5],
-  ["MIN","GB",-1.5,46.5],["PHI","WAS",-6,44.5],["LAC","ARI",-9.5,47.5],
-  ["NYG","DAL",3,48.5],["KC","DEN",-2.5,43.5]
+  // [home, away, homeSpread, total]  — Week 2 lines (updated Sep 15)
+  ["BUF","DET",-4,53.5],["ATL","CAR",1.5,43.5],
+  ["HOU","CIN",-3,46.5],["TB","CLE",-8.5,41],["NYJ","GB",3.5,44.5],
+  ["CHI","MIN",-5.5,49],["BAL","NO",-8.5,47],["TEN","PHI",7,40],
+  ["NE","PIT",-5.5,41.5],["DEN","JAX",-2.5,44],["LAC","LV",-7,44],
+  ["SF","MIA",-13,46],["ARI","SEA",4.5,41.5],["DAL","WAS",-3.5,50.5],
+  ["KC","IND",-6.5,48],["LAR","NYG",-7.5,48.5]
 ];
-// Week 1 actual results: {home-away: [homeScore, awayScore]} — add scores as games finish
+// Week 2 actual results — add scores as games finish
 var WEEK1_RESULTS:{[k:string]:[number,number]}={
-  // Wednesday
-  "SEA-NE":[13,10],
-  // Thursday
-  "LAR-SF":[7,27],
-  // Sunday early
-  "CIN-TB":[33,27],
-  "DET-NO":[31,30],
-  "TEN-NYJ":[10,23],
-  "IND-BAL":[23,41],
-  "PIT-ATL":[20,13],
-  "CAR-CHI":[37,59],
-  "JAX-CLE":[34,10],
-  "HOU-BUF":[31,36],
-  "LV-MIA":[27,13],
-  // Sunday afternoon
-  "MIN-GB":[39,22],
-  "PHI-WAS":[24,22],
-  "LAC-ARI":[14,26],
-  // Sunday Night Football
-  "NYG-DAL":[28,20],
-  // Monday Night Football
-  "KC-DEN":[31,10],
 };
 function buildHardcodedOdds():{[t:string]:{spread:number,total:number,opp:string}}{
   var r:{[t:string]:{spread:number,total:number,opp:string}}={};
@@ -1994,128 +1972,95 @@ const OROY_ODDS=[
 ];
 // Week 1 Game Props (Sep 13-14, 2026) — updated weekly
 const WEEKLY_PROPS=[
-// Passing Yards
-{name:"Joe Burrow",pos:"QB",team:"CIN",stat:"Pass Yds",ou:264.5,opp:"TB"},
-{name:"Matthew Stafford",pos:"QB",team:"LAR",stat:"Pass Yds",ou:263.5,opp:"SF"},
-{name:"Dak Prescott",pos:"QB",team:"DAL",stat:"Pass Yds",ou:260.5,opp:"NYG"},
-{name:"Jared Goff",pos:"QB",team:"DET",stat:"Pass Yds",ou:261.5,opp:"NO"},
-{name:"Tyler Shough",pos:"QB",team:"NO",stat:"Pass Yds",ou:246.5,opp:"DET"},
-{name:"Brock Purdy",pos:"QB",team:"SF",stat:"Pass Yds",ou:244.5,opp:"LAR"},
-{name:"Jordan Love",pos:"QB",team:"GB",stat:"Pass Yds",ou:241.5,opp:"MIN"},
-{name:"Justin Herbert",pos:"QB",team:"LAC",stat:"Pass Yds",ou:236.5,opp:"ARI"},
-{name:"Patrick Mahomes",pos:"QB",team:"KC",stat:"Pass Yds",ou:232.5,opp:"DEN"},
-{name:"Josh Allen",pos:"QB",team:"BUF",stat:"Pass Yds",ou:220.5,opp:"HOU"},
-{name:"Lamar Jackson",pos:"QB",team:"BAL",stat:"Pass Yds",ou:219.5,opp:"IND"},
-{name:"Caleb Williams",pos:"QB",team:"CHI",stat:"Pass Yds",ou:226.5,opp:"CAR"},
-// Rushing Yards
-{name:"Jahmyr Gibbs",pos:"RB",team:"DET",stat:"Rush Yds",ou:83.5,opp:"NO"},
-{name:"Derrick Henry",pos:"RB",team:"BAL",stat:"Rush Yds",ou:80.5,opp:"IND"},
-{name:"Jonathan Taylor",pos:"RB",team:"IND",stat:"Rush Yds",ou:77.5,opp:"BAL"},
-{name:"Saquon Barkley",pos:"RB",team:"PHI",stat:"Rush Yds",ou:77.5,opp:"WAS"},
-{name:"Bijan Robinson",pos:"RB",team:"ATL",stat:"Rush Yds",ou:76.5,opp:"PIT"},
-{name:"James Cook",pos:"RB",team:"BUF",stat:"Rush Yds",ou:74.5,opp:"HOU"},
-{name:"Javonte Williams",pos:"RB",team:"DAL",stat:"Rush Yds",ou:73.5,opp:"NYG"},
-{name:"D'Andre Swift",pos:"RB",team:"CHI",stat:"Rush Yds",ou:69.5,opp:"CAR"},
-{name:"Devon Achane",pos:"RB",team:"MIA",stat:"Rush Yds",ou:66.5,opp:"LV"},
-{name:"Breece Hall",pos:"RB",team:"NYJ",stat:"Rush Yds",ou:64.5,opp:"TEN"},
-{name:"Kenneth Walker III",pos:"RB",team:"KC",stat:"Rush Yds",ou:63.5,opp:"DEN"},
-{name:"Christian McCaffrey",pos:"RB",team:"SF",stat:"Rush Yds",ou:60.5,opp:"LAR"},
-// Receiving Yards
-{name:"Puka Nacua",pos:"WR",team:"LAR",stat:"Rec Yds",ou:90.5,opp:"SF"},
-{name:"Ja'Marr Chase",pos:"WR",team:"CIN",stat:"Rec Yds",ou:87.5,opp:"TB"},
-{name:"Jaxon Smith-Njigba",pos:"WR",team:"SEA",stat:"Rec Yds",ou:81.5,opp:"NE"},
-{name:"CeeDee Lamb",pos:"WR",team:"DAL",stat:"Rec Yds",ou:76.5,opp:"NYG"},
-{name:"Chris Olave",pos:"WR",team:"NO",stat:"Rec Yds",ou:76.5,opp:"DET"},
-{name:"Justin Jefferson",pos:"WR",team:"MIN",stat:"Rec Yds",ou:74.5,opp:"GB"},
-{name:"Nico Collins",pos:"WR",team:"HOU",stat:"Rec Yds",ou:69.5,opp:"BUF"},
-{name:"Brock Bowers",pos:"TE",team:"LV",stat:"Rec Yds",ou:65.5,opp:"MIA"},
-{name:"Tee Higgins",pos:"WR",team:"CIN",stat:"Rec Yds",ou:61.5,opp:"TB"},
-{name:"Malik Nabers",pos:"WR",team:"NYG",stat:"Rec Yds",ou:60.5,opp:"DAL"},
-{name:"Trey McBride",pos:"TE",team:"ARI",stat:"Rec Yds",ou:58.5,opp:"LAC"},
-{name:"Rashee Rice",pos:"WR",team:"KC",stat:"Rec Yds",ou:59.5,opp:"DEN"},
-// Passing TDs
-{name:"Joe Burrow",pos:"QB",team:"CIN",stat:"Pass TD",ou:2.5,opp:"TB"},
-{name:"Jared Goff",pos:"QB",team:"DET",stat:"Pass TD",ou:1.5,opp:"NO"},
-{name:"Dak Prescott",pos:"QB",team:"DAL",stat:"Pass TD",ou:1.5,opp:"NYG"},
-{name:"Matthew Stafford",pos:"QB",team:"LAR",stat:"Pass TD",ou:1.5,opp:"SF"},
-{name:"Brock Purdy",pos:"QB",team:"SF",stat:"Pass TD",ou:1.5,opp:"LAR"},
-{name:"Josh Allen",pos:"QB",team:"BUF",stat:"Pass TD",ou:1.5,opp:"HOU"},
-{name:"Patrick Mahomes",pos:"QB",team:"KC",stat:"Pass TD",ou:1.5,opp:"DEN"},
-{name:"Lamar Jackson",pos:"QB",team:"BAL",stat:"Pass TD",ou:1.5,opp:"IND"},
-{name:"Caleb Williams",pos:"QB",team:"CHI",stat:"Pass TD",ou:1.5,opp:"CAR"},
-{name:"Jordan Love",pos:"QB",team:"GB",stat:"Pass TD",ou:1.5,opp:"MIN"},
-{name:"Justin Herbert",pos:"QB",team:"LAC",stat:"Pass TD",ou:1.5,opp:"ARI"},
-{name:"Baker Mayfield",pos:"QB",team:"TB",stat:"Pass TD",ou:1.5,opp:"CIN"},
-// Receptions
-{name:"Puka Nacua",pos:"WR",team:"LAR",stat:"Receptions",ou:7.5,opp:"SF"},
-{name:"Ja'Marr Chase",pos:"WR",team:"CIN",stat:"Receptions",ou:7.5,opp:"TB"},
-{name:"CeeDee Lamb",pos:"WR",team:"DAL",stat:"Receptions",ou:6.5,opp:"NYG"},
-{name:"Trey McBride",pos:"TE",team:"ARI",stat:"Receptions",ou:6.5,opp:"LAC"},
-{name:"Jaxon Smith-Njigba",pos:"WR",team:"SEA",stat:"Receptions",ou:6.5,opp:"NE"},
-{name:"Chris Olave",pos:"WR",team:"NO",stat:"Receptions",ou:6.5,opp:"DET"},
-{name:"Justin Jefferson",pos:"WR",team:"MIN",stat:"Receptions",ou:5.5,opp:"GB"},
-{name:"Brock Bowers",pos:"TE",team:"LV",stat:"Receptions",ou:5.5,opp:"MIA"},
-{name:"Malik Nabers",pos:"WR",team:"NYG",stat:"Receptions",ou:5.5,opp:"DAL"},
-{name:"DeVonta Smith",pos:"WR",team:"PHI",stat:"Receptions",ou:5.5,opp:"WAS"},
-{name:"Nico Collins",pos:"WR",team:"HOU",stat:"Receptions",ou:5.5,opp:"BUF"},
-{name:"Rashee Rice",pos:"WR",team:"KC",stat:"Receptions",ou:5.5,opp:"DEN"},
-// Anytime TD
-{name:"Jahmyr Gibbs",pos:"RB",team:"DET",stat:"Any TD",ou:0,opp:"NO",odds:"-155"},
-{name:"Saquon Barkley",pos:"RB",team:"PHI",stat:"Any TD",ou:0,opp:"WAS",odds:"-150"},
-{name:"Ja'Marr Chase",pos:"WR",team:"CIN",stat:"Any TD",ou:0,opp:"TB",odds:"-126"},
-{name:"Kyren Williams",pos:"RB",team:"LAR",stat:"Any TD",ou:0,opp:"SF",odds:"-140"},
-{name:"Derrick Henry",pos:"RB",team:"BAL",stat:"Any TD",ou:0,opp:"IND",odds:"-135"},
-{name:"Jonathan Taylor",pos:"RB",team:"IND",stat:"Any TD",ou:0,opp:"BAL",odds:"-120"},
-{name:"David Montgomery",pos:"RB",team:"HOU",stat:"Any TD",ou:0,opp:"BUF",odds:"-115"},
-{name:"James Cook",pos:"RB",team:"BUF",stat:"Any TD",ou:0,opp:"HOU",odds:"+105"},
-{name:"Amon-Ra St. Brown",pos:"WR",team:"DET",stat:"Any TD",ou:0,opp:"NO",odds:"+100"},
-{name:"Bijan Robinson",pos:"RB",team:"ATL",stat:"Any TD",ou:0,opp:"PIT",odds:"-110"},
-{name:"CeeDee Lamb",pos:"WR",team:"DAL",stat:"Any TD",ou:0,opp:"NYG",odds:"+105"},
-{name:"Christian McCaffrey",pos:"RB",team:"SF",stat:"Any TD",ou:0,opp:"LAR",odds:"-115"},
-{name:"Tony Pollard",pos:"RB",team:"TEN",stat:"Any TD",ou:0,opp:"NYJ",odds:"+150"},
-{name:"Brock Bowers",pos:"TE",team:"LV",stat:"Any TD",ou:0,opp:"MIA",odds:"+160"},
-{name:"Puka Nacua",pos:"WR",team:"LAR",stat:"Any TD",ou:0,opp:"SF",odds:"+110"},
-{name:"Justin Jefferson",pos:"WR",team:"MIN",stat:"Any TD",ou:0,opp:"GB",odds:"+115"},
-{name:"Aaron Jones",pos:"RB",team:"MIN",stat:"Any TD",ou:0,opp:"GB",odds:"+150"},
-{name:"Trey McBride",pos:"TE",team:"ARI",stat:"Any TD",ou:0,opp:"LAC",odds:"+200"},
-{name:"Rashee Rice",pos:"WR",team:"KC",stat:"Any TD",ou:0,opp:"DEN",odds:"+140"},
-{name:"Dalton Kincaid",pos:"TE",team:"BUF",stat:"Any TD",ou:0,opp:"HOU",odds:"+340"}
+// Week 2 Passing Yards
+{name:"Josh Allen",pos:"QB",team:"BUF",stat:"Pass Yds",ou:268.5,opp:"DET"},
+{name:"Jared Goff",pos:"QB",team:"DET",stat:"Pass Yds",ou:266.5,opp:"BUF"},
+{name:"Joe Burrow",pos:"QB",team:"CIN",stat:"Pass Yds",ou:258.5,opp:"HOU"},
+{name:"Dak Prescott",pos:"QB",team:"DAL",stat:"Pass Yds",ou:254.5,opp:"WAS"},
+{name:"Tyler Shough",pos:"QB",team:"NO",stat:"Pass Yds",ou:250.5,opp:"BAL"},
+{name:"C.J. Stroud",pos:"QB",team:"HOU",stat:"Pass Yds",ou:248.5,opp:"CIN"},
+{name:"Jordan Love",pos:"QB",team:"GB",stat:"Pass Yds",ou:246.5,opp:"NYJ"},
+{name:"Caleb Williams",pos:"QB",team:"CHI",stat:"Pass Yds",ou:244.5,opp:"MIN"},
+{name:"Patrick Mahomes",pos:"QB",team:"KC",stat:"Pass Yds",ou:244.5,opp:"IND"},
+{name:"Jayden Daniels",pos:"QB",team:"WAS",stat:"Pass Yds",ou:238.5,opp:"DAL"},
+{name:"Brock Purdy",pos:"QB",team:"SF",stat:"Pass Yds",ou:235.5,opp:"MIA"},
+{name:"Lamar Jackson",pos:"QB",team:"BAL",stat:"Pass Yds",ou:224.5,opp:"NO"},
+// Week 2 Rushing Yards
+{name:"Derrick Henry",pos:"RB",team:"BAL",stat:"Rush Yds",ou:84.5,opp:"NO"},
+{name:"Saquon Barkley",pos:"RB",team:"PHI",stat:"Rush Yds",ou:82.5,opp:"TEN"},
+{name:"Jahmyr Gibbs",pos:"RB",team:"DET",stat:"Rush Yds",ou:79.5,opp:"BUF"},
+{name:"Kenneth Walker III",pos:"RB",team:"KC",stat:"Rush Yds",ou:78.5,opp:"IND"},
+{name:"D'Andre Swift",pos:"RB",team:"CHI",stat:"Rush Yds",ou:73.5,opp:"MIN"},
+{name:"Bijan Robinson",pos:"RB",team:"ATL",stat:"Rush Yds",ou:72.5,opp:"CAR"},
+{name:"Breece Hall",pos:"RB",team:"NYJ",stat:"Rush Yds",ou:68.5,opp:"GB"},
+{name:"Christian McCaffrey",pos:"RB",team:"SF",stat:"Rush Yds",ou:66.5,opp:"MIA"},
+{name:"Jonathan Taylor",pos:"RB",team:"IND",stat:"Rush Yds",ou:64.5,opp:"KC"},
+{name:"James Cook",pos:"RB",team:"BUF",stat:"Rush Yds",ou:62.5,opp:"DET"},
+{name:"Ashton Jeanty",pos:"RB",team:"LV",stat:"Rush Yds",ou:58.5,opp:"LAC"},
+{name:"Chase Brown",pos:"RB",team:"CIN",stat:"Rush Yds",ou:56.5,opp:"HOU"},
+// Week 2 Receiving Yards
+{name:"Puka Nacua",pos:"WR",team:"LAR",stat:"Rec Yds",ou:82.5,opp:"NYG"},
+{name:"Justin Jefferson",pos:"WR",team:"MIN",stat:"Rec Yds",ou:78.5,opp:"CHI"},
+{name:"Jaxon Smith-Njigba",pos:"WR",team:"SEA",stat:"Rec Yds",ou:76.5,opp:"ARI"},
+{name:"Nico Collins",pos:"WR",team:"HOU",stat:"Rec Yds",ou:76.5,opp:"CIN"},
+{name:"Chris Olave",pos:"WR",team:"NO",stat:"Rec Yds",ou:72.5,opp:"BAL"},
+{name:"CeeDee Lamb",pos:"WR",team:"DAL",stat:"Rec Yds",ou:72.5,opp:"WAS"},
+{name:"Ja'Marr Chase",pos:"WR",team:"CIN",stat:"Rec Yds",ou:69.5,opp:"HOU"},
+{name:"Amon-Ra St. Brown",pos:"WR",team:"DET",stat:"Rec Yds",ou:68.5,opp:"BUF"},
+{name:"Malik Nabers",pos:"WR",team:"NYG",stat:"Rec Yds",ou:64.5,opp:"LAR"},
+{name:"Trey McBride",pos:"TE",team:"ARI",stat:"Rec Yds",ou:62.5,opp:"SEA"},
+{name:"Dalton Kincaid",pos:"TE",team:"BUF",stat:"Rec Yds",ou:62.5,opp:"DET"},
+{name:"Tee Higgins",pos:"WR",team:"CIN",stat:"Rec Yds",ou:58.5,opp:"HOU"},
+// Week 2 Passing TDs
+{name:"Josh Allen",pos:"QB",team:"BUF",stat:"Pass TD",ou:1.5,opp:"DET"},
+{name:"Caleb Williams",pos:"QB",team:"CHI",stat:"Pass TD",ou:1.5,opp:"MIN"},
+{name:"Joe Burrow",pos:"QB",team:"CIN",stat:"Pass TD",ou:1.5,opp:"HOU"},
+{name:"Patrick Mahomes",pos:"QB",team:"KC",stat:"Pass TD",ou:1.5,opp:"IND"},
+{name:"Jared Goff",pos:"QB",team:"DET",stat:"Pass TD",ou:1.5,opp:"BUF"},
+{name:"Brock Purdy",pos:"QB",team:"SF",stat:"Pass TD",ou:1.5,opp:"MIA"},
+{name:"Jordan Love",pos:"QB",team:"GB",stat:"Pass TD",ou:1.5,opp:"NYJ"},
+{name:"Lamar Jackson",pos:"QB",team:"BAL",stat:"Pass TD",ou:1.5,opp:"NO"},
+{name:"Dak Prescott",pos:"QB",team:"DAL",stat:"Pass TD",ou:1.5,opp:"WAS"},
+{name:"Tyler Shough",pos:"QB",team:"NO",stat:"Pass TD",ou:1.5,opp:"BAL"},
+{name:"C.J. Stroud",pos:"QB",team:"HOU",stat:"Pass TD",ou:1.5,opp:"CIN"},
+{name:"Jayden Daniels",pos:"QB",team:"WAS",stat:"Pass TD",ou:1.5,opp:"DAL"},
+// Week 2 Receptions
+{name:"Puka Nacua",pos:"WR",team:"LAR",stat:"Receptions",ou:7.5,opp:"NYG"},
+{name:"Chris Olave",pos:"WR",team:"NO",stat:"Receptions",ou:6.5,opp:"BAL"},
+{name:"Amon-Ra St. Brown",pos:"WR",team:"DET",stat:"Receptions",ou:6.5,opp:"BUF"},
+{name:"Justin Jefferson",pos:"WR",team:"MIN",stat:"Receptions",ou:6.5,opp:"CHI"},
+{name:"CeeDee Lamb",pos:"WR",team:"DAL",stat:"Receptions",ou:6.5,opp:"WAS"},
+{name:"Trey McBride",pos:"TE",team:"ARI",stat:"Receptions",ou:6.5,opp:"SEA"},
+{name:"Jaxon Smith-Njigba",pos:"WR",team:"SEA",stat:"Receptions",ou:6.5,opp:"ARI"},
+{name:"Ja'Marr Chase",pos:"WR",team:"CIN",stat:"Receptions",ou:5.5,opp:"HOU"},
+{name:"Nico Collins",pos:"WR",team:"HOU",stat:"Receptions",ou:5.5,opp:"CIN"},
+{name:"Malik Nabers",pos:"WR",team:"NYG",stat:"Receptions",ou:5.5,opp:"LAR"},
+{name:"Dalton Kincaid",pos:"TE",team:"BUF",stat:"Receptions",ou:4.5,opp:"DET"},
+{name:"DeVonta Smith",pos:"WR",team:"PHI",stat:"Receptions",ou:4.5,opp:"TEN"},
+// Week 2 Anytime TD
+{name:"Derrick Henry",pos:"RB",team:"BAL",stat:"Any TD",ou:0,opp:"NO",odds:"-165"},
+{name:"Saquon Barkley",pos:"RB",team:"PHI",stat:"Any TD",ou:0,opp:"TEN",odds:"-155"},
+{name:"Jahmyr Gibbs",pos:"RB",team:"DET",stat:"Any TD",ou:0,opp:"BUF",odds:"-150"},
+{name:"Kenneth Walker III",pos:"RB",team:"KC",stat:"Any TD",ou:0,opp:"IND",odds:"-140"},
+{name:"D'Andre Swift",pos:"RB",team:"CHI",stat:"Any TD",ou:0,opp:"MIN",odds:"-120"},
+{name:"Christian McCaffrey",pos:"RB",team:"SF",stat:"Any TD",ou:0,opp:"MIA",odds:"-120"},
+{name:"Bijan Robinson",pos:"RB",team:"ATL",stat:"Any TD",ou:0,opp:"CAR",odds:"-115"},
+{name:"Ja'Marr Chase",pos:"WR",team:"CIN",stat:"Any TD",ou:0,opp:"HOU",odds:"-110"},
+{name:"James Cook",pos:"RB",team:"BUF",stat:"Any TD",ou:0,opp:"DET",odds:"+120"},
+{name:"Josh Allen",pos:"QB",team:"BUF",stat:"Any TD",ou:0,opp:"DET",odds:"+120"},
+{name:"Amon-Ra St. Brown",pos:"WR",team:"DET",stat:"Any TD",ou:0,opp:"BUF",odds:"+100"},
+{name:"CeeDee Lamb",pos:"WR",team:"DAL",stat:"Any TD",ou:0,opp:"WAS",odds:"+105"},
+{name:"Puka Nacua",pos:"WR",team:"LAR",stat:"Any TD",ou:0,opp:"NYG",odds:"+105"},
+{name:"Justin Jefferson",pos:"WR",team:"MIN",stat:"Any TD",ou:0,opp:"CHI",odds:"+110"},
+{name:"Breece Hall",pos:"RB",team:"NYJ",stat:"Any TD",ou:0,opp:"GB",odds:"+130"},
+{name:"Jonathan Taylor",pos:"RB",team:"IND",stat:"Any TD",ou:0,opp:"KC",odds:"+130"},
+{name:"Nico Collins",pos:"WR",team:"HOU",stat:"Any TD",ou:0,opp:"CIN",odds:"+140"},
+{name:"Chris Olave",pos:"WR",team:"NO",stat:"Any TD",ou:0,opp:"BAL",odds:"+150"},
+{name:"Trey McBride",pos:"TE",team:"ARI",stat:"Any TD",ou:0,opp:"SEA",odds:"+210"},
+{name:"Dalton Kincaid",pos:"TE",team:"BUF",stat:"Any TD",ou:0,opp:"DET",odds:"+280"}
 ];
-// Week 1 actual results — key: "Name|Stat", value: number (yards/TDs/recs) or "YES"/"NO"/"DNP" for ATD
+// Week 2 actual results — add as games finish
 var PROP_RESULTS:{[k:string]:number|string}={
-// Pass Yds
-"Joe Burrow|Pass Yds":254,"Matthew Stafford|Pass Yds":155,"Dak Prescott|Pass Yds":175,
-"Jared Goff|Pass Yds":206,"Tyler Shough|Pass Yds":410,"Brock Purdy|Pass Yds":205,
-"Jordan Love|Pass Yds":387,"Justin Herbert|Pass Yds":209,"Patrick Mahomes|Pass Yds":184,
-"Josh Allen|Pass Yds":334,"Lamar Jackson|Pass Yds":324,"Caleb Williams|Pass Yds":269,
-// Pass TD
-"Joe Burrow|Pass TD":1,"Jared Goff|Pass TD":2,"Dak Prescott|Pass TD":2,
-"Matthew Stafford|Pass TD":0,"Brock Purdy|Pass TD":3,"Josh Allen|Pass TD":2,
-"Patrick Mahomes|Pass TD":2,"Lamar Jackson|Pass TD":1,"Caleb Williams|Pass TD":2,
-"Jordan Love|Pass TD":2,"Justin Herbert|Pass TD":1,"Baker Mayfield|Pass TD":0,
-// Rush Yds
-"Jahmyr Gibbs|Rush Yds":156,"Derrick Henry|Rush Yds":144,"Jonathan Taylor|Rush Yds":98,
-"Saquon Barkley|Rush Yds":83,"Bijan Robinson|Rush Yds":83,"James Cook|Rush Yds":57,
-"Javonte Williams|Rush Yds":41,"D'Andre Swift|Rush Yds":124,"Devon Achane|Rush Yds":36,
-"Breece Hall|Rush Yds":102,"Kenneth Walker III|Rush Yds":173,"Christian McCaffrey|Rush Yds":68,
-// Rec Yds
-"Puka Nacua|Rec Yds":74,"Ja'Marr Chase|Rec Yds":12,"Jaxon Smith-Njigba|Rec Yds":122,
-"CeeDee Lamb|Rec Yds":44,"Chris Olave|Rec Yds":182,"Justin Jefferson|Rec Yds":92,
-"Nico Collins|Rec Yds":75,"Brock Bowers|Rec Yds":"DNP","Tee Higgins|Rec Yds":59,
-"Malik Nabers|Rec Yds":69,"Trey McBride|Rec Yds":95,"Rashee Rice|Rec Yds":52,
-// Receptions
-"Puka Nacua|Receptions":5,"Ja'Marr Chase|Receptions":2,"CeeDee Lamb|Receptions":5,
-"Trey McBride|Receptions":9,"Jaxon Smith-Njigba|Receptions":8,"Chris Olave|Receptions":10,
-"Justin Jefferson|Receptions":8,"Brock Bowers|Receptions":"DNP","Malik Nabers|Receptions":6,
-"DeVonta Smith|Receptions":3,"Nico Collins|Receptions":7,"Rashee Rice|Receptions":6,
-// Anytime TD — "YES" = scored, "NO" = did not score, "DNP" = did not play
-"Jahmyr Gibbs|Any TD":"YES","Saquon Barkley|Any TD":"NO","Ja'Marr Chase|Any TD":"NO",
-"Kyren Williams|Any TD":"YES","Derrick Henry|Any TD":"YES","Jonathan Taylor|Any TD":"YES",
-"David Montgomery|Any TD":"YES","James Cook|Any TD":"NO","Amon-Ra St. Brown|Any TD":"YES",
-"Bijan Robinson|Any TD":"NO","CeeDee Lamb|Any TD":"YES","Christian McCaffrey|Any TD":"NO",
-"Tony Pollard|Any TD":"NO","Brock Bowers|Any TD":"DNP","Puka Nacua|Any TD":"NO",
-"Justin Jefferson|Any TD":"YES","Aaron Jones|Any TD":"YES","Trey McBride|Any TD":"NO",
-"Rashee Rice|Any TD":"YES","Dalton Kincaid|Any TD":"NO",
 };
 const PLAYER_PROPS=[
 {name:"Josh Allen",pos:"QB",team:"BUF",stat:"Pass Yds",ou:4450.5},{name:"Josh Allen",pos:"QB",team:"BUF",stat:"Pass TD",ou:38.5},
@@ -7843,7 +7788,7 @@ export default function App(){
                 );
               });
             })(),
-            React.createElement("div",{style:{fontSize:10,color:T.textDim,textAlign:"center",marginTop:4,marginBottom:20}},"Week 1 props via DraftKings · Results updated Sep 14 · For entertainment only"),
+            React.createElement("div",{style:{fontSize:10,color:T.textDim,textAlign:"center",marginTop:4,marginBottom:20}},"Week 2 props via DraftKings/FanDuel · Updated Sep 15 · For entertainment only"),
             // ── SEASON-LONG PROPS ──
             React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4}},"Season-Long Player Props"),
             React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:14}},"Over/Under season stat totals · 2026-27 NFL season"),
