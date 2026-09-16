@@ -281,8 +281,8 @@ const ODDS_TEAM_MAP:{[k:string]:string}={
   "San Francisco 49ers":"SF","Seattle Seahawks":"SEA","Tampa Bay Buccaneers":"TB",
   "Tennessee Titans":"TEN","Washington Commanders":"WAS"
 };
-// Hardcoded Week 1 lines (updated Sep 12, 2026)
-var WEEK1_LINES:[string,string,number,number][]=[
+// Current week's lines (Week 2, updated Sep 15)
+var WEEKLY_LINES:[string,string,number,number][]=[
   // [home, away, homeSpread, total]  — Week 2 lines (updated Sep 15)
   ["BUF","DET",-4,53.5],["ATL","CAR",1.5,43.5],
   ["HOU","CIN",-3,46.5],["TB","CLE",-8.5,41],["NYJ","GB",3.5,44.5],
@@ -291,12 +291,12 @@ var WEEK1_LINES:[string,string,number,number][]=[
   ["SF","MIA",-13,46],["ARI","SEA",4.5,41.5],["DAL","WAS",-3.5,50.5],
   ["KC","IND",-6.5,48],["LAR","NYG",-7.5,48.5]
 ];
-// Week 2 actual results — add scores as games finish
-var WEEK1_RESULTS:{[k:string]:[number,number]}={
+// Current week's results — add scores as games finish
+var WEEKLY_RESULTS:{[k:string]:[number,number]}={
 };
 function buildHardcodedOdds():{[t:string]:{spread:number,total:number,opp:string}}{
   var r:{[t:string]:{spread:number,total:number,opp:string}}={};
-  WEEK1_LINES.forEach(function(g){r[g[0]]={spread:g[2],total:g[3],opp:g[1]};r[g[1]]={spread:-g[2],total:g[3],opp:g[0]};});
+  WEEKLY_LINES.forEach(function(g){r[g[0]]={spread:g[2],total:g[3],opp:g[1]};r[g[1]]={spread:-g[2],total:g[3],opp:g[0]};});
   return r;
 }
 var _oddsCache:{data:{[t:string]:{spread:number,total:number,opp:string}};ts:number}|null=null;
@@ -2059,7 +2059,7 @@ const WEEKLY_PROPS=[
 {name:"Trey McBride",pos:"TE",team:"ARI",stat:"Any TD",ou:0,opp:"SEA",odds:"+210"},
 {name:"Dalton Kincaid",pos:"TE",team:"BUF",stat:"Any TD",ou:0,opp:"DET",odds:"+280"}
 ];
-// Week 2 actual results — add as games finish
+// Current week's prop results — add as games finish
 var PROP_RESULTS:{[k:string]:number|string}={
 };
 const PLAYER_PROPS=[
@@ -7481,7 +7481,7 @@ export default function App(){
                 var totalNote=g.total>=50?"Shootout":g.total<=41?"Low Scoring":"";
                 var totalIcon=g.total>=50?"\uD83D\uDD25":g.total<=41?"\uD83D\uDEE1\uFE0F":"";
                 var rKey=g.home+"-"+g.away;
-                var result=WEEK1_RESULTS[rKey]||null;
+                var result=WEEKLY_RESULTS[rKey]||null;
                 var homeScore=result?result[0]:null;
                 var awayScore=result?result[1]:null;
                 var isFinal=result!==null;
