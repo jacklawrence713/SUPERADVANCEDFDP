@@ -281,6 +281,29 @@ const ODDS_TEAM_MAP:{[k:string]:string}={
   "San Francisco 49ers":"SF","Seattle Seahawks":"SEA","Tampa Bay Buccaneers":"TB",
   "Tennessee Titans":"TEN","Washington Commanders":"WAS"
 };
+// ── PAST WEEKS ARCHIVE ──
+var PAST_WEEKS=[
+{week:1,label:"Week 1 · Sep 10–14",
+lines:[
+["SEA","NE",-3.5,45.5],["LAR","SF",3.5,48.5],
+["CIN","TB",-3.5,50.5],["DET","NO",-7,49.5],["TEN","NYJ",-1.5,38.5],
+["IND","BAL",3.5,47.5],["PIT","ATL",-5.5,41.5],["CAR","CHI",3,47.5],
+["JAX","CLE",-8.5,39.5],["HOU","BUF",1.5,44.5],["LV","MIA",-3,40.5],
+["MIN","GB",-1.5,46.5],["PHI","WAS",-6,44.5],["LAC","ARI",-9.5,47.5],
+["NYG","DAL",3,48.5],["KC","DEN",-2.5,43.5]
+] as [string,string,number,number][],
+results:{
+"SEA-NE":[13,10] as [number,number],"LAR-SF":[7,27] as [number,number],
+"CIN-TB":[33,27] as [number,number],"DET-NO":[31,30] as [number,number],
+"TEN-NYJ":[10,23] as [number,number],"IND-BAL":[23,41] as [number,number],
+"PIT-ATL":[20,13] as [number,number],"CAR-CHI":[37,59] as [number,number],
+"JAX-CLE":[34,10] as [number,number],"HOU-BUF":[31,36] as [number,number],
+"LV-MIA":[27,13] as [number,number],"MIN-GB":[39,22] as [number,number],
+"PHI-WAS":[24,22] as [number,number],"LAC-ARI":[14,26] as [number,number],
+"NYG-DAL":[28,20] as [number,number],"KC-DEN":[31,10] as [number,number]
+} as {[k:string]:[number,number]}
+}
+];
 // Current week's lines (Week 2, updated Sep 15)
 var WEEKLY_LINES:[string,string,number,number][]=[
   // [home, away, homeSpread, total]  — Week 2 lines (updated Sep 15)
@@ -7436,7 +7459,7 @@ export default function App(){
         var hasData=games.length>0;
         var TEAM_FULL:{[k:string]:string}={"ARI":"Cardinals","ATL":"Falcons","BAL":"Ravens","BUF":"Bills","CAR":"Panthers","CHI":"Bears","CIN":"Bengals","CLE":"Browns","DAL":"Cowboys","DEN":"Broncos","DET":"Lions","GB":"Packers","HOU":"Texans","IND":"Colts","JAX":"Jaguars","KC":"Chiefs","LAC":"Chargers","LAR":"Rams","LV":"Raiders","MIA":"Dolphins","MIN":"Vikings","NE":"Patriots","NO":"Saints","NYG":"Giants","NYJ":"Jets","PHI":"Eagles","PIT":"Steelers","SF":"49ers","SEA":"Seahawks","TB":"Buccaneers","TEN":"Titans","WAS":"Commanders"};
         var sbTier=function(i:number){return i<4?"#22c55e":i<10?"#4ade80":i<17?"#94a3b8":i<24?"#fb923c":"#f87171";};
-        var tabIcon:{[k:string]:string}={"lines":"\uD83C\uDFC8","futures":"\uD83C\uDFC6","wintotals":"\uD83D\uDCCA","awards":"\u2B50","props":"\uD83C\uDFAF","divisions":"\uD83D\uDDFA\uFE0F"};
+        var tabIcon:{[k:string]:string}={"lines":"\uD83C\uDFC8","futures":"\uD83C\uDFC6","wintotals":"\uD83D\uDCCA","awards":"\u2B50","props":"\uD83C\uDFAF","divisions":"\uD83D\uDDFA\uFE0F","history":"\uD83D\uDCC5"};
         return React.createElement("div",{style:{padding:"16px"}},
           // Header with gradient
           React.createElement("div",{style:{background:"linear-gradient(135deg,#065f46,#047857,#059669)",borderRadius:16,padding:"20px 18px",marginBottom:16,position:"relative",overflow:"hidden"}},
@@ -7454,8 +7477,8 @@ export default function App(){
           ),
           // Sub-tabs with icons
           React.createElement("div",{style:{display:"flex",gap:6,flexWrap:"wrap",marginBottom:16}},
-            ["lines","futures","divisions","wintotals","awards","props"].map(function(tab){
-              var labels:{[k:string]:string}={"lines":"Game Lines","futures":"Super Bowl","wintotals":"Win Totals","awards":"Awards","props":"Player Props","divisions":"Divisions"};
+            ["lines","futures","divisions","wintotals","awards","props","history"].map(function(tab){
+              var labels:{[k:string]:string}={"lines":"Game Lines","futures":"Super Bowl","wintotals":"Win Totals","awards":"Awards","props":"Player Props","divisions":"Divisions","history":"Prior Weeks"};
               var active=vegasSubTab===tab;
               return React.createElement("button",{key:tab,onClick:function(){setVegasSubTab(tab);},style:{padding:"8px 14px",borderRadius:22,border:"1px solid "+(active?"#059669":T.border),background:active?"linear-gradient(135deg,#059669,#047857)":"transparent",color:active?"#fff":T.textSub,fontWeight:700,fontSize:11,cursor:"pointer",display:"flex",alignItems:"center",gap:5,transition:"all 0.2s"}},
                 React.createElement("span",{style:{fontSize:12}},tabIcon[tab]||""),labels[tab]);
@@ -7823,6 +7846,81 @@ export default function App(){
               });
             })(),
             React.createElement("div",{style:{fontSize:10,color:T.textDim,textAlign:"center",marginTop:8}},"Consensus lines · Updated Aug 2026 · For entertainment only")
+          ),
+          // ── PRIOR WEEKS HISTORY TAB ──
+          vegasSubTab==="history"&&React.createElement("div",null,
+            React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4}},"Prior Weeks Results"),
+            React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:14}},"Game lines, scores, and ATS results from completed weeks"),
+            PAST_WEEKS.slice().reverse().map(function(pw){
+              var pwGames=pw.lines.map(function(g){
+                var home=g[0],away=g[1],spread=g[2],total=g[3];
+                var rKey=home+"-"+away;
+                var result=pw.results[rKey]||null;
+                var homeScore=result?result[0]:null;
+                var awayScore=result?result[1]:null;
+                var isFinal=result!==null;
+                var actualTotal=isFinal?(homeScore as number)+(awayScore as number):0;
+                var actualMargin=isFinal?(homeScore as number)-(awayScore as number):0;
+                var spreadCover=isFinal?(actualMargin+spread>0?"HOME":actualMargin+spread<0?"AWAY":"PUSH"):"";
+                var ouResult=isFinal?(actualTotal>total?"OVER":actualTotal<total?"UNDER":"PUSH"):"";
+                return{home,away,spread,total,homeScore,awayScore,isFinal,actualTotal,spreadCover,ouResult};
+              });
+              var totalGames=pwGames.length;
+              var favCovers=pwGames.filter(function(g){return g.isFinal&&((g.spread<=0&&g.spreadCover==="HOME")||(g.spread>0&&g.spreadCover==="AWAY"));}).length;
+              var dogCovers=pwGames.filter(function(g){return g.isFinal&&((g.spread<=0&&g.spreadCover==="AWAY")||(g.spread>0&&g.spreadCover==="HOME"));}).length;
+              var overs=pwGames.filter(function(g){return g.ouResult==="OVER";}).length;
+              var unders=pwGames.filter(function(g){return g.ouResult==="UNDER";}).length;
+              return React.createElement("div",{key:pw.week,style:{marginBottom:20}},
+                React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:10}},
+                  React.createElement("div",{style:{fontWeight:800,fontSize:14,color:"#059669"}},pw.label),
+                  React.createElement("div",{style:{background:"#059669",color:"#fff",borderRadius:10,padding:"2px 8px",fontSize:10,fontWeight:800}},totalGames+" games")
+                ),
+                // Summary row
+                React.createElement("div",{style:{display:"flex",gap:8,marginBottom:12}},
+                  React.createElement("div",{style:{flex:1,background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"10px 12px",textAlign:"center"}},
+                    React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:700,letterSpacing:0.5,marginBottom:3}},"FAVORITES"),
+                    React.createElement("div",{style:{fontWeight:900,fontSize:18,color:"#22c55e"}},favCovers+"-"+(totalGames-favCovers))
+                  ),
+                  React.createElement("div",{style:{flex:1,background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"10px 12px",textAlign:"center"}},
+                    React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:700,letterSpacing:0.5,marginBottom:3}},"DOGS"),
+                    React.createElement("div",{style:{fontWeight:900,fontSize:18,color:"#f87171"}},dogCovers+"-"+(totalGames-dogCovers))
+                  ),
+                  React.createElement("div",{style:{flex:1,background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"10px 12px",textAlign:"center"}},
+                    React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:700,letterSpacing:0.5,marginBottom:3}},"O/U"),
+                    React.createElement("div",{style:{fontWeight:900,fontSize:18,color:"#f59e0b"}},overs+"O / "+unders+"U")
+                  )
+                ),
+                // Game cards
+                pwGames.map(function(g){
+                  var favTeam=g.spread<=0?g.home:g.away;
+                  var dogTeam=g.spread<=0?g.away:g.home;
+                  var favSpread=g.spread<=0?g.spread:-g.spread;
+                  var favCovered=g.spreadCover===(g.spread<=0?"HOME":"AWAY");
+                  var spreadColor=favCovered?"#22c55e":"#f87171";
+                  var ouColor=g.ouResult==="OVER"?"#f59e0b":g.ouResult==="UNDER"?"#60a5fa":"#94a3b8";
+                  var homeWon=g.isFinal&&(g.homeScore as number)>(g.awayScore as number);
+                  var awayWon=g.isFinal&&(g.awayScore as number)>(g.homeScore as number);
+                  return React.createElement("div",{key:g.home+g.away,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"10px 14px",marginBottom:6,display:"flex",alignItems:"center",gap:8}},
+                    // Away team + score
+                    React.createElement("div",{style:{flex:1,minWidth:0}},
+                      React.createElement("div",{style:{fontWeight:awayWon?900:600,fontSize:13,color:awayWon?"#22c55e":T.text}},g.away+(g.isFinal?" "+g.awayScore:"")),
+                      React.createElement("div",{style:{fontWeight:homeWon?900:600,fontSize:13,color:homeWon?"#22c55e":T.text}},g.home+(g.isFinal?" "+g.homeScore:""))
+                    ),
+                    // Spread + result
+                    React.createElement("div",{style:{textAlign:"center",minWidth:52}},
+                      React.createElement("div",{style:{fontSize:12,fontWeight:800,color:T.text}},(favSpread>0?"+":"")+favSpread),
+                      g.isFinal&&React.createElement("div",{style:{fontSize:9,fontWeight:800,color:spreadColor,marginTop:2}},favCovered?favTeam+" covers":dogTeam+" covers")
+                    ),
+                    // O/U + result
+                    React.createElement("div",{style:{textAlign:"center",minWidth:52}},
+                      React.createElement("div",{style:{fontSize:12,fontWeight:800,color:T.text}},g.total),
+                      g.isFinal&&React.createElement("div",{style:{fontSize:9,fontWeight:800,color:ouColor,marginTop:2}},g.ouResult+" ("+g.actualTotal+")")
+                    )
+                  );
+                })
+              );
+            }),
+            PAST_WEEKS.length===0&&React.createElement("div",{style:{textAlign:"center",padding:40,color:T.textDim,fontSize:13}},"No prior weeks yet — check back after Week 2!")
           )
         );
       })(),
