@@ -301,7 +301,78 @@ results:{
 "LV-MIA":[27,13] as [number,number],"MIN-GB":[39,22] as [number,number],
 "PHI-WAS":[24,22] as [number,number],"LAC-ARI":[14,26] as [number,number],
 "NYG-DAL":[28,20] as [number,number],"KC-DEN":[31,10] as [number,number]
-} as {[k:string]:[number,number]}
+} as {[k:string]:[number,number]},
+props:[
+// Pass Yds
+{name:"Joe Burrow",pos:"QB",team:"CIN",stat:"Pass Yds",ou:264.5,opp:"TB"},
+{name:"Matthew Stafford",pos:"QB",team:"LAR",stat:"Pass Yds",ou:263.5,opp:"SF"},
+{name:"Dak Prescott",pos:"QB",team:"DAL",stat:"Pass Yds",ou:260.5,opp:"NYG"},
+{name:"Jared Goff",pos:"QB",team:"DET",stat:"Pass Yds",ou:261.5,opp:"NO"},
+{name:"Tyler Shough",pos:"QB",team:"NO",stat:"Pass Yds",ou:246.5,opp:"DET"},
+{name:"Brock Purdy",pos:"QB",team:"SF",stat:"Pass Yds",ou:244.5,opp:"LAR"},
+{name:"Jordan Love",pos:"QB",team:"GB",stat:"Pass Yds",ou:241.5,opp:"MIN"},
+{name:"Justin Herbert",pos:"QB",team:"LAC",stat:"Pass Yds",ou:236.5,opp:"ARI"},
+{name:"Patrick Mahomes",pos:"QB",team:"KC",stat:"Pass Yds",ou:232.5,opp:"DEN"},
+{name:"Josh Allen",pos:"QB",team:"BUF",stat:"Pass Yds",ou:220.5,opp:"HOU"},
+{name:"Lamar Jackson",pos:"QB",team:"BAL",stat:"Pass Yds",ou:219.5,opp:"IND"},
+{name:"Caleb Williams",pos:"QB",team:"CHI",stat:"Pass Yds",ou:226.5,opp:"CAR"},
+// Rush Yds
+{name:"Jahmyr Gibbs",pos:"RB",team:"DET",stat:"Rush Yds",ou:83.5,opp:"NO"},
+{name:"Derrick Henry",pos:"RB",team:"BAL",stat:"Rush Yds",ou:80.5,opp:"IND"},
+{name:"Jonathan Taylor",pos:"RB",team:"IND",stat:"Rush Yds",ou:77.5,opp:"BAL"},
+{name:"Saquon Barkley",pos:"RB",team:"PHI",stat:"Rush Yds",ou:77.5,opp:"WAS"},
+{name:"Bijan Robinson",pos:"RB",team:"ATL",stat:"Rush Yds",ou:76.5,opp:"PIT"},
+{name:"James Cook",pos:"RB",team:"BUF",stat:"Rush Yds",ou:74.5,opp:"HOU"},
+{name:"Javonte Williams",pos:"RB",team:"DAL",stat:"Rush Yds",ou:73.5,opp:"NYG"},
+{name:"D'Andre Swift",pos:"RB",team:"CHI",stat:"Rush Yds",ou:69.5,opp:"CAR"},
+{name:"Devon Achane",pos:"RB",team:"MIA",stat:"Rush Yds",ou:66.5,opp:"LV"},
+{name:"Breece Hall",pos:"RB",team:"NYJ",stat:"Rush Yds",ou:64.5,opp:"TEN"},
+{name:"Kenneth Walker III",pos:"RB",team:"KC",stat:"Rush Yds",ou:63.5,opp:"DEN"},
+{name:"Christian McCaffrey",pos:"RB",team:"SF",stat:"Rush Yds",ou:60.5,opp:"LAR"},
+// Rec Yds
+{name:"Puka Nacua",pos:"WR",team:"LAR",stat:"Rec Yds",ou:90.5,opp:"SF"},
+{name:"Ja'Marr Chase",pos:"WR",team:"CIN",stat:"Rec Yds",ou:87.5,opp:"TB"},
+{name:"Jaxon Smith-Njigba",pos:"WR",team:"SEA",stat:"Rec Yds",ou:81.5,opp:"NE"},
+{name:"CeeDee Lamb",pos:"WR",team:"DAL",stat:"Rec Yds",ou:76.5,opp:"NYG"},
+{name:"Chris Olave",pos:"WR",team:"NO",stat:"Rec Yds",ou:76.5,opp:"DET"},
+{name:"Justin Jefferson",pos:"WR",team:"MIN",stat:"Rec Yds",ou:74.5,opp:"GB"},
+{name:"Nico Collins",pos:"WR",team:"HOU",stat:"Rec Yds",ou:69.5,opp:"BUF"},
+{name:"Tee Higgins",pos:"WR",team:"CIN",stat:"Rec Yds",ou:61.5,opp:"TB"},
+{name:"Malik Nabers",pos:"WR",team:"NYG",stat:"Rec Yds",ou:60.5,opp:"DAL"},
+{name:"Trey McBride",pos:"TE",team:"ARI",stat:"Rec Yds",ou:58.5,opp:"LAC"},
+{name:"Rashee Rice",pos:"WR",team:"KC",stat:"Rec Yds",ou:59.5,opp:"DEN"},
+// Any TD
+{name:"Jahmyr Gibbs",pos:"RB",team:"DET",stat:"Any TD",ou:0,opp:"NO",odds:"-155"},
+{name:"Saquon Barkley",pos:"RB",team:"PHI",stat:"Any TD",ou:0,opp:"WAS",odds:"-150"},
+{name:"Ja'Marr Chase",pos:"WR",team:"CIN",stat:"Any TD",ou:0,opp:"TB",odds:"-126"},
+{name:"Derrick Henry",pos:"RB",team:"BAL",stat:"Any TD",ou:0,opp:"IND",odds:"-135"},
+{name:"Jonathan Taylor",pos:"RB",team:"IND",stat:"Any TD",ou:0,opp:"BAL",odds:"-120"},
+{name:"Amon-Ra St. Brown",pos:"WR",team:"DET",stat:"Any TD",ou:0,opp:"NO",odds:"+100"},
+{name:"CeeDee Lamb",pos:"WR",team:"DAL",stat:"Any TD",ou:0,opp:"NYG",odds:"+105"},
+{name:"Christian McCaffrey",pos:"RB",team:"SF",stat:"Any TD",ou:0,opp:"LAR",odds:"-115"},
+{name:"Justin Jefferson",pos:"WR",team:"MIN",stat:"Any TD",ou:0,opp:"GB",odds:"+115"},
+{name:"Rashee Rice",pos:"WR",team:"KC",stat:"Any TD",ou:0,opp:"DEN",odds:"+140"},
+{name:"Dalton Kincaid",pos:"TE",team:"BUF",stat:"Any TD",ou:0,opp:"HOU",odds:"+340"}
+] as {name:string,pos:string,team:string,stat:string,ou:number,opp:string,odds?:string}[],
+propResults:{
+"Joe Burrow|Pass Yds":254,"Matthew Stafford|Pass Yds":155,"Dak Prescott|Pass Yds":175,
+"Jared Goff|Pass Yds":206,"Tyler Shough|Pass Yds":410,"Brock Purdy|Pass Yds":205,
+"Jordan Love|Pass Yds":387,"Justin Herbert|Pass Yds":209,"Patrick Mahomes|Pass Yds":184,
+"Josh Allen|Pass Yds":334,"Lamar Jackson|Pass Yds":324,"Caleb Williams|Pass Yds":269,
+"Jahmyr Gibbs|Rush Yds":156,"Derrick Henry|Rush Yds":144,"Jonathan Taylor|Rush Yds":98,
+"Saquon Barkley|Rush Yds":83,"Bijan Robinson|Rush Yds":83,"James Cook|Rush Yds":57,
+"Javonte Williams|Rush Yds":41,"D'Andre Swift|Rush Yds":124,"Devon Achane|Rush Yds":36,
+"Breece Hall|Rush Yds":102,"Kenneth Walker III|Rush Yds":173,"Christian McCaffrey|Rush Yds":68,
+"Puka Nacua|Rec Yds":74,"Ja'Marr Chase|Rec Yds":12,"Jaxon Smith-Njigba|Rec Yds":122,
+"CeeDee Lamb|Rec Yds":44,"Chris Olave|Rec Yds":182,"Justin Jefferson|Rec Yds":92,
+"Nico Collins|Rec Yds":75,"Tee Higgins|Rec Yds":59,"Malik Nabers|Rec Yds":69,
+"Trey McBride|Rec Yds":95,"Rashee Rice|Rec Yds":52,
+"Jahmyr Gibbs|Any TD":"YES","Saquon Barkley|Any TD":"NO","Ja'Marr Chase|Any TD":"NO",
+"Derrick Henry|Any TD":"YES","Jonathan Taylor|Any TD":"YES",
+"Amon-Ra St. Brown|Any TD":"YES","CeeDee Lamb|Any TD":"YES",
+"Christian McCaffrey|Any TD":"NO","Justin Jefferson|Any TD":"YES",
+"Rashee Rice|Any TD":"YES","Dalton Kincaid|Any TD":"NO"
+} as {[k:string]:number|string}
 }
 ];
 // Current week's lines (Week 2, updated Sep 15)
@@ -7901,23 +7972,74 @@ export default function App(){
                   var homeWon=g.isFinal&&(g.homeScore as number)>(g.awayScore as number);
                   var awayWon=g.isFinal&&(g.awayScore as number)>(g.homeScore as number);
                   return React.createElement("div",{key:g.home+g.away,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"10px 14px",marginBottom:6,display:"flex",alignItems:"center",gap:8}},
-                    // Away team + score
                     React.createElement("div",{style:{flex:1,minWidth:0}},
                       React.createElement("div",{style:{fontWeight:awayWon?900:600,fontSize:13,color:awayWon?"#22c55e":T.text}},g.away+(g.isFinal?" "+g.awayScore:"")),
                       React.createElement("div",{style:{fontWeight:homeWon?900:600,fontSize:13,color:homeWon?"#22c55e":T.text}},g.home+(g.isFinal?" "+g.homeScore:""))
                     ),
-                    // Spread + result
                     React.createElement("div",{style:{textAlign:"center",minWidth:52}},
                       React.createElement("div",{style:{fontSize:12,fontWeight:800,color:T.text}},(favSpread>0?"+":"")+favSpread),
                       g.isFinal&&React.createElement("div",{style:{fontSize:9,fontWeight:800,color:spreadColor,marginTop:2}},favCovered?favTeam+" covers":dogTeam+" covers")
                     ),
-                    // O/U + result
                     React.createElement("div",{style:{textAlign:"center",minWidth:52}},
                       React.createElement("div",{style:{fontSize:12,fontWeight:800,color:T.text}},g.total),
                       g.isFinal&&React.createElement("div",{style:{fontSize:9,fontWeight:800,color:ouColor,marginTop:2}},g.ouResult+" ("+g.actualTotal+")")
                     )
                   );
-                })
+                }),
+                // ── Player Props Results ──
+                pw.props&&pw.props.length>0&&(function(){
+                  var pCats=["Pass Yds","Rush Yds","Rec Yds","Any TD"];
+                  var pCatColors:{[k:string]:string}={"Pass Yds":"#818cf8","Rush Yds":"#34d399","Rec Yds":"#c084fc","Any TD":"#f87171"};
+                  var pCatIcons:{[k:string]:string}={"Pass Yds":"\uD83C\uDFC8","Rush Yds":"\uD83C\uDFC3","Rec Yds":"\uD83D\uDC50","Any TD":"\uD83C\uDFC6"};
+                  var pGrouped:{[k:string]:typeof pw.props}={};
+                  pw.props.forEach(function(p){if(!pGrouped[p.stat])pGrouped[p.stat]=[];pGrouped[p.stat].push(p);});
+                  var totalProps=pw.props.filter(function(p){return pw.propResults[p.name+"|"+p.stat]!==undefined;}).length;
+                  var hits=pw.props.filter(function(p){
+                    var a=pw.propResults[p.name+"|"+p.stat];
+                    if(a===undefined)return false;
+                    if(p.stat==="Any TD")return a==="YES";
+                    return(a as number)>p.ou;
+                  }).length;
+                  return React.createElement("div",{style:{marginTop:14}},
+                    React.createElement("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}},
+                      React.createElement("div",{style:{fontWeight:800,fontSize:13,color:"#c084fc"}},"Player Props Results"),
+                      totalProps>0&&React.createElement("div",{style:{fontSize:11,fontWeight:700,color:T.textSub}},"Overs: "+hits+"/"+totalProps+" ("+Math.round(hits/totalProps*100)+"%)")
+                    ),
+                    pCats.filter(function(c){return pGrouped[c];}).map(function(cat){
+                      var cc=pCatColors[cat]||T.text;
+                      return React.createElement("div",{key:"ph"+cat,style:{marginBottom:10}},
+                        React.createElement("div",{style:{display:"flex",alignItems:"center",gap:5,marginBottom:6}},
+                          React.createElement("span",{style:{fontSize:11}},pCatIcons[cat]||""),
+                          React.createElement("div",{style:{fontWeight:800,fontSize:11,color:cc,letterSpacing:0.5,textTransform:"uppercase"}},cat)
+                        ),
+                        pGrouped[cat].map(function(p){
+                          var isATD=cat==="Any TD";
+                          var rKey2=p.name+"|"+p.stat;
+                          var actual2=pw.propResults[rKey2];
+                          var hasR=actual2!==undefined;
+                          var hit2=false;
+                          if(hasR){hit2=isATD?actual2==="YES":(actual2 as number)>p.ou;}
+                          var rColor=hit2?"#22c55e":"#f87171";
+                          var rLabel=isATD?(actual2==="YES"?"SCORED":"NO TD"):(hit2?"OVER":"UNDER");
+                          var displayLine=isATD?((p as any).odds||""):p.ou;
+                          return React.createElement("div",{key:p.name+p.stat+"ph",style:{background:T.bgCard,border:"1px solid "+(hasR?rColor+"33":T.border),borderRadius:10,padding:"8px 12px",marginBottom:4,display:"flex",alignItems:"center",gap:8}},
+                            React.createElement("div",{style:{flex:1,minWidth:0}},
+                              React.createElement("div",{style:{fontWeight:700,fontSize:12,color:T.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
+                              React.createElement("div",{style:{fontSize:9,color:T.textSub}},p.team+" vs "+p.opp)
+                            ),
+                            React.createElement("div",{style:{textAlign:"center",minWidth:40}},
+                              React.createElement("div",{style:{fontSize:11,fontWeight:800,color:cc}},displayLine)
+                            ),
+                            hasR&&React.createElement("div",{style:{textAlign:"right",minWidth:48}},
+                              !isATD&&React.createElement("div",{style:{fontWeight:900,fontSize:13,color:rColor}},actual2),
+                              React.createElement("div",{style:{fontSize:8,fontWeight:800,color:rColor,background:rColor+"18",borderRadius:5,padding:"1px 5px",textAlign:"center",marginTop:1}},rLabel)
+                            )
+                          );
+                        })
+                      );
+                    })
+                  );
+                })()
               );
             }),
             PAST_WEEKS.length===0&&React.createElement("div",{style:{textAlign:"center",padding:40,color:T.textDim,fontSize:13}},"No prior weeks yet — check back after Week 2!")
