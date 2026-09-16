@@ -116,6 +116,9 @@ const PRIME={QB:[26,35],RB:[22,27],WR:[23,29],TE:[25,30],K:[25,38],DST:[0,99],DL
 const FREE_RANK_LIMIT=20;
 const FREE_TRADE_LIMIT=3;
 const DYNASTY_NEWS=[
+  {id:83,ts:"Sep 15",tag:"INJURY",pos:"WR",title:"A.J. Brown placed on IR — high ankle sprain out until Week 6+",body:"Patriots WR A.J. Brown suffered a high ankle sprain in the Wednesday night season opener vs. Seattle and has been placed on injured reserve. He's expected to miss at least 4-5 weeks. At 29, this is a brutal blow to his dynasty value — NE's passing game takes a massive hit without him. Drake Maye loses his WR1. Dynasty managers should sell if someone will buy at a discount. D.J. Moore and Keon Coleman see target bumps in Buffalo-style offenses. Brown's value drops from 5,800 to 4,800."},
+  {id:82,ts:"Sep 15",tag:"INJURY",pos:"QB",title:"Kyler Murray concussion — Carson Wentz leads Vikings comeback",body:"Minnesota QB Kyler Murray exited in the first quarter with a concussion after a hit from GB LB Quay Walker. Carson Wentz entered and was brilliant — 12/19, 133 yards, 3 TDs, 0 INT — leading a 29-0 run to beat the Packers 39-22. Murray is week-to-week. Dynasty impact: Murray's value dips on injury concern at 29. J.J. McCarthy could get an opportunity if Murray misses extended time. Wentz is a streaming QB2 in the interim."},
+  {id:81,ts:"Sep 15",tag:"INJURY",pos:"WR",title:"Zay Flowers hamstring injury — left after 150-yard first half",body:"Ravens WR Zay Flowers was having a career day with 5 catches for 150 yards before leaving the game with a hamstring injury. The severity is TBD — hamstrings can linger for weeks. At 26, Flowers' long-term dynasty value is fine, but short-term he could miss 2-4 weeks. Rashod Bateman and Nelson Agholor would see increased targets if Flowers sits. Monitor Wednesday practice reports."},
   {id:80,ts:"Sep 14",tag:"NEWS",pos:"QB",title:"Mahomes dominates in return — Chiefs crush Broncos 31-10 on MNF",body:"Patrick Mahomes looked fully healthy in his first game since tearing his ACL in Week 15 last year, going 184 yards and 2 TDs with zero turnovers. Kenneth Walker III exploded for 173 rushing yards as KC's ground game was unstoppable. Rashee Rice caught 6 passes including a TD. Dynasty takeaway: Mahomes is still elite, and Walker (traded from SEA in the offseason) looks like a league-winner at his depressed dynasty price. Buy Walker immediately."},
   {id:79,ts:"Sep 14",tag:"NEWS",pos:"QB",title:"Bears drop 59 on Panthers — Caleb Williams arrives as dynasty QB1",body:"Chicago put up 59 points in the most lopsided Week 1 game in decades. Caleb Williams threw for 269 yards and 2 TDs while rushing for 65 yards. D'Andre Swift gashed Carolina for 124 rushing yards. Bryce Young threw for 361 yards and 3 TDs in garbage time but the Panthers allowed the most points in franchise history. Dynasty impact: Williams' value spikes — he's a top-5 dynasty QB. Swift is an RB1. Young is a sell if anyone will buy."},
   {id:78,ts:"Sep 14",tag:"NEWS",pos:"RB",title:"Gibbs 156 rush yards, Henry 3 TDs — elite RBs dominate Week 1",body:"Jahmyr Gibbs ran for 156 yards on 29 carries as Detroit survived New Orleans 31-30 in OT. Derrick Henry had 144 yards and 3 TDs as Baltimore routed Indianapolis 41-23. Jonathan Taylor fought back with 98 yards and 2 TDs in a losing effort. Kenneth Walker III led all rushers with 173 yards for KC. Dynasty takeaway: Gibbs and Henry are locked-in top-5 RBs. Walker's value is surging."},
@@ -3021,6 +3024,10 @@ export default function App(){
   var [aiAnalysis,setAiAnalysis]=useState("");
   var [showShareModal,setShowShareModal]=useState(false);
   var [shareCopied,setShareCopied]=useState(false);
+  var [pollVote,setPollVote]=useState<string|null>(null);
+  var [pollResults,setPollResults]=useState<{a:number,b:number,even:number}|null>(null);
+  var [newsletterEmail,setNewsletterEmail]=useState("");
+  var [newsletterStatus,setNewsletterStatus]=useState("");
   var [sleeperTrending,setSleeperTrending]=useState(null);
   var [sleeperRawDb,setSleeperRawDb]=useState(function(){try{var c=localStorage.getItem('fdp_sp_v1');if(c){var d=JSON.parse(c);initSleeperNameMap(d);return d;}return{};}catch(e){return{};}});
   var [leagueTrades,setLeagueTrades]=useState(null);
@@ -4222,6 +4229,24 @@ export default function App(){
           React.createElement("button",{onClick:function(){setAuthMode("signin");setShowAuth(true);},style:{padding:"13px 24px",borderRadius:30,border:"1px solid "+T.border,cursor:"pointer",fontWeight:700,fontSize:14,background:"transparent",color:T.text}},"Sign In")
         )
       ),
+      // NEWSLETTER SIGNUP
+      !user&&React.createElement("div",{style:{background:"linear-gradient(135deg,"+T.purple+"11,"+T.purpleDim+"33)",border:"1px solid "+T.purple+"33",borderRadius:16,padding:"14px 16px",marginBottom:16,textAlign:"center"}},
+        React.createElement("div",{style:{fontWeight:800,fontSize:14,color:T.text,marginBottom:4}},"📬 Weekly Dynasty Movers Newsletter"),
+        React.createElement("div",{style:{fontSize:11,color:T.textSub,marginBottom:10}},"Get value changes, trade targets & news every Tuesday. Free."),
+        newsletterStatus==="done"?React.createElement("div",{style:{color:T.green,fontWeight:700,fontSize:13}},"✓ Subscribed! Check your inbox."):
+        React.createElement("div",{style:{display:"flex",gap:8,maxWidth:380,margin:"0 auto"}},
+          React.createElement("input",{type:"email",value:newsletterEmail,onChange:function(e:any){setNewsletterEmail(e.target.value);},placeholder:"your@email.com",style:{flex:1,padding:"10px 14px",borderRadius:10,border:"1px solid "+T.border,background:T.bgInput,color:T.text,fontSize:13,outline:"none"}}),
+          React.createElement("button",{onClick:async function(){
+            if(!newsletterEmail||!newsletterEmail.includes("@"))return;
+            setNewsletterStatus("sending");
+            try{
+              await callEdgeFn("send-email",{type:"welcome",email:newsletterEmail,name:newsletterEmail.split("@")[0]});
+              if(analyticsClient)await analyticsClient.from("analytics_events").insert({visitor_id:getVisitorId(),event_type:"newsletter_signup",event_data:{email:newsletterEmail}});
+              setNewsletterStatus("done");
+            }catch(e){setNewsletterStatus("done");}
+          },disabled:newsletterStatus==="sending",style:{padding:"10px 18px",borderRadius:10,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",whiteSpace:"nowrap"}},newsletterStatus==="sending"?"...":"Subscribe")
+        )
+      ),
       React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:20,padding:18,marginBottom:20}},
         React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:2}},
           React.createElement("div",{style:{fontWeight:800,fontSize:16}},"Free Dynasty Trade Analyzer - 2026"),
@@ -4314,7 +4339,7 @@ export default function App(){
         React.createElement("button",{onClick:async function(){
           if(tradeA.length===0&&tradeB.length===0)return;
           if(!isPro&&tradeCount>=FREE_TRADE_LIMIT){setAuthMode("signup");setShowAuth(true);return;}
-          setAnalyzed(true);setAiAnalysis("Analyzing...");setTradeSaved(false);if(!isPro)setTradeCount(function(c){var n=c+1;try{var today=new Date().toISOString().slice(0,10);localStorage.setItem('fdp_tc_v2',JSON.stringify({n,d:today}));}catch(e){}return n;});
+          setAnalyzed(true);setAiAnalysis("Analyzing...");setTradeSaved(false);setPollVote(null);setPollResults(null);if(!isPro)setTradeCount(function(c){var n=c+1;try{var today=new Date().toISOString().slice(0,10);localStorage.setItem('fdp_tc_v2',JSON.stringify({n,d:today}));}catch(e){}return n;});
           try{var aiRes=await callEdgeFn("analyze-trade",{sideA:tradeA.map(function(p){return{name:p.name,pos:p.pos,age:p.age,val:p.ktcVal||0};}),sideB:tradeB.map(function(p){return{name:p.name,pos:p.pos,age:p.age,val:p.ktcVal||0};}),tvA,tvB,scoring},user?.token);setAiAnalysis(aiRes.analysis||genAiAnalysis(tradeA,tradeB,tvA,tvB));}catch(e){setAiAnalysis(genAiAnalysis(tradeA,tradeB,tvA,tvB));}
           var device=window.innerWidth>=1024?"desktop":"mobile";
           var ua=navigator.userAgent.toLowerCase();
@@ -4486,6 +4511,50 @@ export default function App(){
               React.createElement("div",{style:{fontSize:12,color:T.text,lineHeight:1.8}},aiAnalysis)
             ),
             React.createElement("button",{onClick:function(){setShowShareModal(true);},style:{width:"100%",padding:"14px",borderRadius:14,border:"none",cursor:"pointer",fontWeight:800,fontSize:15,marginTop:12,background:"linear-gradient(135deg,#7c3aed,#5b21b6)",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",gap:8,boxShadow:"0 4px 20px rgba(124,61,237,0.4)"}},"Share This Trade — Prove You Won"),
+            // WHO WON THIS TRADE? POLL
+            (function(){
+              var tradeKey=tradeA.map(function(x){return x.name;}).sort().join(",")+"|"+tradeB.map(function(x){return x.name;}).sort().join(",");
+              function castVote(side:string){
+                setPollVote(side);
+                // Load existing results from localStorage or start fresh
+                var stored:{[k:string]:{a:number,b:number,even:number}}={};
+                try{var s=localStorage.getItem("fdp_polls_v1");if(s)stored=JSON.parse(s);}catch(e){}
+                var prev=stored[tradeKey]||{a:0,b:0,even:0};
+                if(side==="a")prev.a++;else if(side==="b")prev.b++;else prev.even++;
+                stored[tradeKey]=prev;
+                try{localStorage.setItem("fdp_polls_v1",JSON.stringify(stored));}catch(e){}
+                setPollResults(prev);
+                trackEvent("trade_poll_vote",{side:side,tradeA:tradeA.map(function(x){return x.name;}),tradeB:tradeB.map(function(x){return x.name;})});
+              }
+              // Check if already voted
+              if(!pollVote&&!pollResults){
+                try{var s2=localStorage.getItem("fdp_polls_v1");if(s2){var st=JSON.parse(s2);if(st[tradeKey])setPollResults(st[tradeKey]);}}catch(e){}
+              }
+              var total=pollResults?(pollResults.a+pollResults.b+pollResults.even):0;
+              return React.createElement("div",{style:{marginTop:12,background:T.bgInput,border:"1px solid "+T.border,borderRadius:14,padding:"14px 16px"}},
+                React.createElement("div",{style:{fontSize:13,fontWeight:800,color:T.text,textAlign:"center",marginBottom:10}},"🗳 Who Won This Trade?"),
+                !pollVote&&!pollResults?React.createElement("div",{style:{display:"flex",gap:8}},
+                  React.createElement("button",{onClick:function(){castVote("a");},style:{flex:1,padding:"11px",borderRadius:10,border:"1px solid "+T.purple+"44",background:T.purple+"11",color:T.purpleLight,fontWeight:700,fontSize:13,cursor:"pointer"}},"Team A"),
+                  React.createElement("button",{onClick:function(){castVote("even");},style:{flex:1,padding:"11px",borderRadius:10,border:"1px solid "+T.border,background:T.bgCard,color:T.textSub,fontWeight:700,fontSize:13,cursor:"pointer"}},"Even"),
+                  React.createElement("button",{onClick:function(){castVote("b");},style:{flex:1,padding:"11px",borderRadius:10,border:"1px solid "+T.gold+"44",background:T.gold+"11",color:T.gold,fontWeight:700,fontSize:13,cursor:"pointer"}},"Team B")
+                ):React.createElement("div",null,
+                  [["a","Team A",T.purple],["even","Even",T.textSub],["b","Team B",T.gold]].map(function(item){
+                    var pct=total>0?Math.round(((pollResults as any)[item[0]]/total)*100):0;
+                    var isVoted=pollVote===item[0];
+                    return React.createElement("div",{key:item[0],style:{marginBottom:6}},
+                      React.createElement("div",{style:{display:"flex",justifyContent:"space-between",fontSize:11,fontWeight:isVoted?800:600,color:isVoted?item[2]:T.textSub,marginBottom:3}},
+                        React.createElement("span",null,item[1]+(isVoted?" ✓":"")),
+                        React.createElement("span",null,pct+"%"+(total>0?" ("+((pollResults as any)[item[0]])+")":""))
+                      ),
+                      React.createElement("div",{style:{background:T.border,borderRadius:99,height:6,overflow:"hidden"}},
+                        React.createElement("div",{style:{width:pct+"%",height:"100%",background:item[2] as string,borderRadius:99,transition:"width 0.5s"}})
+                      )
+                    );
+                  }),
+                  React.createElement("div",{style:{textAlign:"center",fontSize:10,color:T.textDim,marginTop:6}},total+" vote"+(total!==1?"s":""))
+                )
+              );
+            })(),
             React.createElement("div",{style:{display:"flex",gap:8,marginTop:8}},
               React.createElement("button",{onClick:saveTrade,disabled:tradeSaved,style:{flex:1,padding:"10px",borderRadius:10,border:"1px solid "+(tradeSaved?T.green:T.border),cursor:tradeSaved?"default":"pointer",fontWeight:700,fontSize:12,background:tradeSaved?T.green:T.bgInput,color:tradeSaved?"#fff":T.textSub}},tradeSaved?"Saved ✓":"Save Trade"),
               React.createElement("button",{onClick:async function(){setAiAnalysis("Analyzing...");try{var rr=await callEdgeFn("analyze-trade",{sideA:tradeA.map(function(p){return{name:p.name,pos:p.pos,age:p.age,val:p.ktcVal||0};}),sideB:tradeB.map(function(p){return{name:p.name,pos:p.pos,age:p.age,val:p.ktcVal||0};}),tvA,tvB,scoring},user?.token);setAiAnalysis(rr.analysis||genAiAnalysis(tradeA,tradeB,tvA,tvB));}catch(e){setAiAnalysis(genAiAnalysis(tradeA,tradeB,tvA,tvB));}},style:{flex:1,padding:"10px",borderRadius:10,border:"1px solid "+T.borderPurple,cursor:"pointer",fontWeight:700,fontSize:12,background:T.bgInput,color:T.textSub}},"↻")
