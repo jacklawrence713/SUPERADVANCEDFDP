@@ -2708,10 +2708,24 @@ function AnalyticsDashboard({T,data,loading,onLoad}:{T:any,data:any,loading:bool
   );
 }
 
+function playerSlug(name:string){return name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");}
+function findPlayerBySlug(slug:string){return PLAYERS.find(function(p){return playerSlug(p.name)===slug;})||null;}
+
 export default function App(){
   var validTabs=["trade","league","rankings","reports","admin"];
-  var [tab,setTabRaw]=useState(function(){var h=window.location.hash.replace("#","");return validTabs.includes(h)?h:"trade";});
-  function setTab(t:string){setTabRaw(t);window.location.hash=t;}
+  var [tab,setTabRaw]=useState(function(){
+    var h=window.location.hash.replace("#","");if(validTabs.includes(h))return h;
+    var path=window.location.pathname;
+    if(path.indexOf("rankings")!==-1)return "rankings";
+    if(path.indexOf("trade")!==-1)return "trade";
+    return "trade";
+  });
+  function setTab(t:string){setTabRaw(t);if(playerPage){setPlayerPage(null);window.history.pushState({},"","/");}window.location.hash=t;}
+  var [playerPage,setPlayerPage]=useState<any>(function(){
+    var m=window.location.pathname.match(/^\/players\/([a-z0-9-]+)\/?$/);
+    if(m){var p=findPlayerBySlug(m[1]);if(p){document.title=p.name+" Dynasty Value & Trade Analysis | Fantasy Draft Pros";var meta=document.querySelector('meta[name="description"]');if(meta)meta.setAttribute("content",p.name+" dynasty fantasy football value, trade analysis, rankings, and news. Current value: "+(p.ktcVal||0).toLocaleString()+". Free trade calculator at Fantasy Draft Pros.");return p;}}
+    return null;
+  });
   var [isDesktop,setIsDesktop]=useState(function(){return window.innerWidth>=1024;});
   useEffect(function(){
     function onResize(){setIsDesktop(window.innerWidth>=1024);}
@@ -3864,6 +3878,143 @@ export default function App(){
   // ── LEAGUE TEAMS mock data helper ──
   var activeTeams=powerRankingTeams||LEAGUE_TEAMS;
   var leagueTeamNames=activeTeams.map(function(t){return t.name;});
+
+  // ── PLAYER PROFILE PAGE ──
+  if(playerPage){
+    var pp=playerPage;
+    var ppPos=pp.pos||"QB";
+    var ppColor=POS_COLORS[ppPos]||"#a78bfa";
+    var ppVal=pp.ktcVal||0;
+    var ppTier=ppVal>=8000?"Elite":ppVal>=6000?"Star":ppVal>=4000?"Starter":ppVal>=2000?"Depth":"Bench";
+    var ppPrime=PRIME[ppPos]||[23,30];
+    var ppInPrime=pp.age>=ppPrime[0]&&pp.age<=ppPrime[1];
+    var ppYearsLeft=Math.max(0,ppPrime[1]-pp.age);
+    // Find related news
+    var ppNews=DYNASTY_NEWS.filter(function(n){return n.body.indexOf(pp.name)!==-1||n.title.indexOf(pp.name)!==-1;}).slice(0,4);
+    // Find similar-value players for trade comps
+    var ppComps=rankedPlayers.filter(function(x){return x.name!==pp.name&&Math.abs((x.ktcVal||0)-ppVal)<1500&&x.pos===ppPos;}).sort(function(a,b){return Math.abs((a.ktcVal||0)-ppVal)-Math.abs((b.ktcVal||0)-ppVal);}).slice(0,5);
+    // Rank among position
+    var ppPosRank=rankedPlayers.filter(function(x){return x.pos===ppPos;}).sort(function(a,b){return(b.ktcVal||0)-(a.ktcVal||0);}).findIndex(function(x){return x.name===pp.name;})+1;
+    var ppOverallRank=rankedPlayers.sort(function(a,b){return(b.ktcVal||0)-(a.ktcVal||0);}).findIndex(function(x){return x.name===pp.name;})+1;
+    // Game script
+    var ppOdds=buildHardcodedOdds();
+    var ppScript=getGameScript(pp.team,ppOdds);
+    return React.createElement("div",{style:{background:T.bg,minHeight:"100vh",color:T.text,fontFamily:"-apple-system,BlinkMacSystemFont,'Inter',sans-serif"}},
+      // Header bar
+      React.createElement("div",{style:{background:T.bgCard,borderBottom:"1px solid "+T.border,padding:"12px 20px",display:"flex",alignItems:"center",gap:12}},
+        React.createElement("a",{href:"/",onClick:function(e:any){e.preventDefault();setPlayerPage(null);window.history.pushState({},"","/");document.title="Fantasy Draft Pros — Free Dynasty Trade Analyzer 2026";},style:{color:T.purple,fontWeight:700,fontSize:13,textDecoration:"none",cursor:"pointer"}},"← Back to Trade Analyzer"),
+        React.createElement("div",{style:{flex:1}}),
+        React.createElement("img",{src:appLogoSrc,alt:"Fantasy Draft Pros",style:{height:24}})
+      ),
+      React.createElement("div",{style:{maxWidth:720,margin:"0 auto",padding:"20px 16px"}},
+        // Player hero card
+        React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:20,padding:"24px 20px",marginBottom:20}},
+          React.createElement("div",{style:{display:"flex",alignItems:"center",gap:16,marginBottom:16}},
+            React.createElement(Avatar,{name:pp.name,pos:ppPos,size:64}),
+            React.createElement("div",{style:{flex:1}},
+              React.createElement("h1",{style:{fontSize:24,fontWeight:900,margin:0,color:T.text}},pp.name),
+              React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginTop:4,flexWrap:"wrap"}},
+                React.createElement(PBadge,{pos:ppPos}),
+                React.createElement("span",{style:{fontSize:13,color:T.textSub,fontWeight:600}},pp.team),
+                React.createElement("span",{style:{fontSize:13,color:T.textDim}},"Age "+pp.age.toFixed(1)),
+                ppPosRank>0&&React.createElement("span",{style:{fontSize:11,fontWeight:700,color:ppColor,background:ppColor+"18",padding:"2px 8px",borderRadius:99}},ppPos+ppPosRank)
+              )
+            ),
+            React.createElement("div",{style:{textAlign:"right"}},
+              React.createElement("div",{style:{fontSize:32,fontWeight:900,color:T.purple}},ppVal.toLocaleString()),
+              React.createElement("div",{style:{fontSize:11,color:T.textSub,fontWeight:600}},"FDP Dynasty Value")
+            )
+          ),
+          // Value bar
+          React.createElement("div",{style:{display:"flex",gap:12,marginBottom:16,flexWrap:"wrap"}},
+            [["Tier",ppTier,ppVal>=8000?T.gold:ppVal>=6000?T.green:ppVal>=4000?T.purple:T.textDim],
+             ["Overall",ppOverallRank>0?"#"+ppOverallRank:"—",T.purple],
+             ["Prime",ppInPrime?"In Prime":""+ppYearsLeft.toFixed(1)+"y left",ppInPrime?T.green:ppYearsLeft>2?T.gold:T.red],
+             ["ADP",pp.adp?pp.adp.toFixed(1):"—",T.textSub]
+            ].map(function(item){
+              return React.createElement("div",{key:item[0] as string,style:{flex:1,minWidth:70,background:T.bgInput,borderRadius:12,padding:"10px 12px",textAlign:"center"}},
+                React.createElement("div",{style:{fontSize:10,fontWeight:700,color:T.textDim,letterSpacing:0.5,marginBottom:2}},item[0]),
+                React.createElement("div",{style:{fontSize:16,fontWeight:800,color:item[2]}},item[1])
+              );
+            })
+          ),
+          // Note / scouting report
+          pp.note&&React.createElement("div",{style:{background:T.bgInput,borderRadius:12,padding:"12px 14px",fontSize:13,color:T.textSub,lineHeight:1.7}},
+            React.createElement("span",{style:{fontWeight:700,color:T.text}},"Scouting Report: "),pp.note
+          )
+        ),
+        // Game Script (if available)
+        ppScript&&React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,padding:"16px 18px",marginBottom:20}},
+          React.createElement("div",{style:{fontSize:12,fontWeight:800,color:T.textDim,letterSpacing:1,marginBottom:8}},"WEEK 2 GAME SCRIPT"),
+          React.createElement("div",{style:{display:"flex",alignItems:"center",gap:12}},
+            React.createElement("div",{style:{fontSize:18,fontWeight:900,color:T.text}},pp.team+" vs "+ppScript.opp),
+            React.createElement("div",{style:{fontSize:13,fontWeight:700,color:ppScript.color}},ppScript.spread>0?"+"+ppScript.spread:ppScript.spread),
+            React.createElement("div",{style:{fontSize:13,color:T.textSub}},"O/U "+ppScript.total),
+            React.createElement("div",{style:{fontSize:11,fontWeight:700,color:ppScript.color,background:ppScript.color+"18",padding:"3px 10px",borderRadius:99}},ppScript.label)
+          )
+        ),
+        // Trade Comps
+        ppComps.length>0&&React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,padding:"16px 18px",marginBottom:20}},
+          React.createElement("div",{style:{fontSize:12,fontWeight:800,color:T.textDim,letterSpacing:1,marginBottom:10}},"SIMILAR VALUE "+ppPos+"s — TRADE COMPS"),
+          ppComps.map(function(c){
+            var cv=c.ktcVal||0;var diff=cv-ppVal;
+            return React.createElement("a",{key:c.name,href:"/players/"+playerSlug(c.name)+"/",onClick:function(e:any){e.preventDefault();setPlayerPage(c);window.history.pushState({},"","/players/"+playerSlug(c.name)+"/");document.title=c.name+" Dynasty Value & Trade Analysis | Fantasy Draft Pros";window.scrollTo(0,0);},style:{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:"1px solid "+T.border+"44",textDecoration:"none",color:"inherit"}},
+              React.createElement(Avatar,{name:c.name,pos:c.pos,size:32}),
+              React.createElement("div",{style:{flex:1}},
+                React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text}},c.name),
+                React.createElement("div",{style:{fontSize:11,color:T.textSub}},c.team+" · Age "+c.age.toFixed(1))
+              ),
+              React.createElement("div",{style:{textAlign:"right"}},
+                React.createElement("div",{style:{fontWeight:800,fontSize:14,color:T.purple}},cv.toLocaleString()),
+                React.createElement("div",{style:{fontSize:10,color:diff>0?T.green:diff<0?T.red:T.textDim,fontWeight:600}},(diff>0?"+":"")+diff.toLocaleString())
+              )
+            );
+          })
+        ),
+        // Related News
+        ppNews.length>0&&React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,padding:"16px 18px",marginBottom:20}},
+          React.createElement("div",{style:{fontSize:12,fontWeight:800,color:T.textDim,letterSpacing:1,marginBottom:10}},"RELATED NEWS"),
+          ppNews.map(function(n){
+            return React.createElement("div",{key:n.id,style:{padding:"10px 0",borderBottom:"1px solid "+T.border+"44"}},
+              React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,marginBottom:4}},
+                React.createElement("span",{style:{fontSize:10,fontWeight:700,color:n.tag==="INJURY"?T.red:n.tag==="TRADE"?T.gold:T.purple,background:(n.tag==="INJURY"?T.red:n.tag==="TRADE"?T.gold:T.purple)+"18",padding:"1px 6px",borderRadius:4}},n.tag),
+                React.createElement("span",{style:{fontSize:10,color:T.textDim}},n.ts)
+              ),
+              React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text,marginBottom:4}},n.title),
+              React.createElement("div",{style:{fontSize:12,color:T.textSub,lineHeight:1.6}},n.body.length>200?n.body.slice(0,200)+"...":n.body)
+            );
+          })
+        ),
+        // CTA
+        React.createElement("div",{style:{background:"linear-gradient(135deg,"+T.purple+"22,"+T.purpleDim+"44)",border:"1px solid "+T.purple+"44",borderRadius:16,padding:"20px",textAlign:"center",marginBottom:20}},
+          React.createElement("div",{style:{fontWeight:900,fontSize:18,color:T.text,marginBottom:6}},"Trade "+pp.name+"?"),
+          React.createElement("div",{style:{fontSize:13,color:T.textSub,marginBottom:14}},"Use our free dynasty trade analyzer to see if you're getting fair value."),
+          React.createElement("a",{href:"/",onClick:function(e:any){e.preventDefault();setPlayerPage(null);window.history.pushState({},"","/");document.title="Fantasy Draft Pros — Free Dynasty Trade Analyzer 2026";setTab("trade");},style:{display:"inline-block",padding:"14px 32px",borderRadius:14,border:"none",background:"linear-gradient(135deg,#7c3aed,#5b21b6)",color:"#fff",fontWeight:800,fontSize:15,textDecoration:"none",cursor:"pointer"}},"Analyze Trade Now"),
+          React.createElement("div",{style:{marginTop:12,fontSize:11,color:T.textDim}},"Free · No account required · 1,000+ player values")
+        ),
+        // Browse other players
+        React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,padding:"16px 18px",marginBottom:20}},
+          React.createElement("div",{style:{fontSize:12,fontWeight:800,color:T.textDim,letterSpacing:1,marginBottom:10}},"TOP DYNASTY PLAYERS"),
+          rankedPlayers.filter(function(x){return(x.ktcVal||0)>=7000;}).sort(function(a,b){return(b.ktcVal||0)-(a.ktcVal||0);}).slice(0,12).map(function(p){
+            return React.createElement("a",{key:p.name,href:"/players/"+playerSlug(p.name)+"/",onClick:function(e:any){e.preventDefault();setPlayerPage(p);window.history.pushState({},"","/players/"+playerSlug(p.name)+"/");document.title=p.name+" Dynasty Value & Trade Analysis | Fantasy Draft Pros";window.scrollTo(0,0);},style:{display:"inline-flex",alignItems:"center",gap:4,padding:"5px 10px",margin:"0 6px 6px 0",borderRadius:8,background:T.bgInput,border:"1px solid "+T.border,fontSize:11,fontWeight:600,color:T.text,textDecoration:"none"}},
+              React.createElement(PBadge,{pos:p.pos}),p.name
+            );
+          })
+        ),
+        // Footer
+        React.createElement("div",{style:{textAlign:"center",padding:"20px 0 40px",fontSize:11,color:T.textDim}},
+          React.createElement("div",null,"© 2026 Fantasy Draft Pros — Free Dynasty Trade Analyzer"),
+          React.createElement("div",{style:{marginTop:4}},
+            React.createElement("a",{href:"/",style:{color:T.purple,textDecoration:"none"}},"Trade Analyzer")," · ",
+            React.createElement("a",{href:"/dynasty-rankings/",style:{color:T.purple,textDecoration:"none"}},"Dynasty Rankings")," · ",
+            React.createElement("a",{href:"/dynasty-trade-value-chart/",style:{color:T.purple,textDecoration:"none"}},"Value Chart")
+          )
+        )
+      ),
+      // JSON-LD for player page
+      React.createElement("script",{type:"application/ld+json",dangerouslySetInnerHTML:{__html:JSON.stringify({"@context":"https://schema.org","@type":"Person","name":pp.name,"description":pp.name+" dynasty fantasy football player profile. Position: "+ppPos+", Team: "+pp.team+", Dynasty Value: "+ppVal.toLocaleString(),"url":"https://fantasydraftpros.com/players/"+playerSlug(pp.name)+"/","memberOf":{"@type":"SportsTeam","name":pp.team}})}})
+    );
+  }
 
   return React.createElement("div",{style:{background:T.bg,height:"100vh",color:T.text,fontFamily:"-apple-system,BlinkMacSystemFont,'Inter',sans-serif",maxWidth:isDesktop?"100%":480,margin:"0 auto",display:"flex",flexDirection:isDesktop?"row":"column",overflow:"hidden"}},
 
