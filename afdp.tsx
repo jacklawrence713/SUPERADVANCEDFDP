@@ -2067,7 +2067,7 @@ const OROY_ODDS=[
 {name:"Ty Simpson",pos:"QB",team:"LAR",odds:"+3300"},{name:"Omar Cooper Jr.",pos:"WR",team:"NYJ",odds:"+4000"},
 {name:"KC Concepcion",pos:"WR",team:"CLE",odds:"+5000"},{name:"Kaelon Black",pos:"RB",team:"SF",odds:"+6000"}
 ];
-// Week 1 Game Props (Sep 13-14, 2026) — updated weekly
+// Week 2 Game Props (Sep 18-21, 2026) — updated weekly
 const WEEKLY_PROPS=[
 // Week 2 Passing Yards (updated Sep 17)
 {name:"Josh Allen",pos:"QB",team:"BUF",stat:"Pass Yds",ou:268.5,opp:"DET"},
@@ -6128,7 +6128,7 @@ export default function App(){
                 var wp2=WEEKLY_PROPS.filter(function(wp){return wp.name===sitP2.name;});
                 if(wp1.length===0&&wp2.length===0)return null;
                 return React.createElement("div",{style:{marginTop:12,marginBottom:12,paddingTop:12,borderTop:"1px solid "+T.border}},
-                  React.createElement("div",{style:{fontSize:10,color:T.textSub,textAlign:"center",fontWeight:600,marginBottom:8}},"WEEK 1 PROPS"),
+                  React.createElement("div",{style:{fontSize:10,color:T.textSub,textAlign:"center",fontWeight:600,marginBottom:8}},"WEEK 2 PROPS"),
                   React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}},
                     React.createElement("div",null,wp1.length>0?wp1.map(function(wp){
                       var isATD=wp.stat==="Any TD";
@@ -8135,8 +8135,8 @@ export default function App(){
           // ── PLAYER PROPS TAB ──
           vegasSubTab==="props"&&React.createElement("div",null,
             // ── WEEKLY GAME PROPS ──
-            React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4}},"Week 1 Player Props"),
-            React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:14}},"Game-day O/U lines · Sun Sep 13 – Mon Sep 14"),
+            React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4}},"Week 2 Player Props"),
+            React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:14}},"Game-day O/U lines · Thu Sep 17 – Mon Sep 21"),
             (function(){
               var wcats=["Pass Yds","Pass TD","Rush Yds","Rec Yds","Receptions","Any TD"];
               var wcatColors:{[k:string]:string}={"Pass Yds":"#818cf8","Pass TD":"#60a5fa","Rush Yds":"#34d399","Rec Yds":"#c084fc","Receptions":"#f59e0b","Any TD":"#f87171"};
