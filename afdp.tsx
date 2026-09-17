@@ -4380,6 +4380,75 @@ export default function App(){
           React.createElement("button",{onClick:function(){setAuthMode("signin");setShowAuth(true);},style:{padding:"13px 24px",borderRadius:30,border:"1px solid "+T.border,cursor:"pointer",fontWeight:700,fontSize:14,background:"transparent",color:T.text}},"Sign In")
         )
       ),
+      // WEEK 1 VALUE MOVERS
+      (function(){
+        var movers=[
+          {name:"Trevor Lawrence",pos:"QB",team:"JAX",before:4997,after:5500,note:"18/23 245yds 4TD 150.6 rating"},
+          {name:"Kenneth Walker III",pos:"RB",team:"KC",before:6200,after:6800,note:"173 rush yds — led all rushers"},
+          {name:"Derrick Henry",pos:"RB",team:"BAL",before:4500,after:5000,note:"144 yds 3 TD — still elite at 32"},
+          {name:"Trey McBride",pos:"TE",team:"ARI",before:7100,after:7500,note:"9/95/1 TD on 13 targets"},
+          {name:"Caleb Williams",pos:"QB",team:"CHI",before:6800,after:7200,note:"269 pass + 65 rush in 59-pt explosion"},
+          {name:"Chris Olave",pos:"WR",team:"NO",before:6300,after:6800,note:"10/182 yds — alpha WR1"},
+          {name:"A.J. Brown",pos:"WR",team:"NE",before:5851,after:4800,note:"High ankle sprain — IR until Week 6+"},
+          {name:"Colston Loveland",pos:"TE",team:"CHI",before:7050,after:6500,note:"0 catches despite CHI scoring 59"},
+          {name:"MarShawn Lloyd",pos:"RB",team:"GB",before:3800,after:3400,note:"13 carries 37 yds 2.8 YPC"},
+          {name:"Ja'Marr Chase",pos:"WR",team:"CIN",before:9980,after:9980,note:"2/12 yds — buy-low window (hold)"},
+          {name:"Kyler Murray",pos:"QB",team:"MIN",before:4239,after:3800,note:"Concussion exit — week-to-week"},
+          {name:"De'Von Achane",pos:"RB",team:"MIA",before:7600,after:7200,note:"36 rush yds in loss to LV"}
+        ];
+        var risers=movers.filter(function(m){return m.after>m.before;}).sort(function(a,b){return(b.after-b.before)-(a.after-a.before);});
+        var fallers=movers.filter(function(m){return m.after<m.before;}).sort(function(a,b){return(a.after-a.before)-(b.after-b.before);});
+        return React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:16,padding:"16px",marginBottom:16}},
+          React.createElement("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}},
+            React.createElement("div",{style:{fontWeight:900,fontSize:15,color:T.text}},"Week 1 Value Movers"),
+            React.createElement("div",{style:{fontSize:10,fontWeight:700,color:T.textDim,background:T.bgInput,padding:"4px 10px",borderRadius:8}},"Updated Sep 16")
+          ),
+          React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}},
+            // Risers column
+            React.createElement("div",null,
+              React.createElement("div",{style:{fontSize:10,fontWeight:800,color:T.green,letterSpacing:1,marginBottom:8}},"▲ RISERS"),
+              risers.map(function(m){
+                var diff=m.after-m.before;
+                return React.createElement("a",{key:m.name,href:"/players/"+playerSlug(m.name)+"/",onClick:function(e:any){e.preventDefault();var p=findPlayerBySlug(playerSlug(m.name));if(p){setPlayerPage(p);window.history.pushState({},"","/players/"+playerSlug(m.name)+"/");document.title=p.name+" Dynasty Value | Fantasy Draft Pros";}},style:{display:"block",padding:"8px 0",borderBottom:"1px solid "+T.border+"33",textDecoration:"none",color:"inherit"}},
+                  React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6}},
+                    React.createElement(Avatar,{name:m.name,pos:m.pos,size:24}),
+                    React.createElement("div",{style:{flex:1,minWidth:0}},
+                      React.createElement("div",{style:{fontWeight:700,fontSize:12,color:T.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},m.name),
+                      React.createElement("div",{style:{fontSize:9,color:T.textSub}},m.team+" · "+m.pos)
+                    ),
+                    React.createElement("div",{style:{textAlign:"right",flexShrink:0}},
+                      React.createElement("div",{style:{fontWeight:800,fontSize:12,color:T.green}},"+"+diff),
+                      React.createElement("div",{style:{fontSize:9,color:T.textDim}},m.after.toLocaleString())
+                    )
+                  ),
+                  React.createElement("div",{style:{fontSize:9,color:T.textSub,marginTop:3,lineHeight:1.3}},m.note)
+                );
+              })
+            ),
+            // Fallers column
+            React.createElement("div",null,
+              React.createElement("div",{style:{fontSize:10,fontWeight:800,color:T.red,letterSpacing:1,marginBottom:8}},"▼ FALLERS"),
+              fallers.map(function(m){
+                var diff=m.after-m.before;
+                return React.createElement("a",{key:m.name,href:"/players/"+playerSlug(m.name)+"/",onClick:function(e:any){e.preventDefault();var p=findPlayerBySlug(playerSlug(m.name));if(p){setPlayerPage(p);window.history.pushState({},"","/players/"+playerSlug(m.name)+"/");document.title=p.name+" Dynasty Value | Fantasy Draft Pros";}},style:{display:"block",padding:"8px 0",borderBottom:"1px solid "+T.border+"33",textDecoration:"none",color:"inherit"}},
+                  React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6}},
+                    React.createElement(Avatar,{name:m.name,pos:m.pos,size:24}),
+                    React.createElement("div",{style:{flex:1,minWidth:0}},
+                      React.createElement("div",{style:{fontWeight:700,fontSize:12,color:T.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},m.name),
+                      React.createElement("div",{style:{fontSize:9,color:T.textSub}},m.team+" · "+m.pos)
+                    ),
+                    React.createElement("div",{style:{textAlign:"right",flexShrink:0}},
+                      React.createElement("div",{style:{fontWeight:800,fontSize:12,color:T.red}},diff),
+                      React.createElement("div",{style:{fontSize:9,color:T.textDim}},m.after.toLocaleString())
+                    )
+                  ),
+                  React.createElement("div",{style:{fontSize:9,color:T.textSub,marginTop:3,lineHeight:1.3}},m.note)
+                );
+              })
+            )
+          )
+        );
+      })(),
       // NEWSLETTER SIGNUP
       !user&&React.createElement("div",{style:{background:"linear-gradient(135deg,"+T.purple+"11,"+T.purpleDim+"33)",border:"1px solid "+T.purple+"33",borderRadius:16,padding:"14px 16px",marginBottom:16,textAlign:"center"}},
         React.createElement("div",{style:{fontWeight:800,fontSize:14,color:T.text,marginBottom:4}},"📬 Weekly Dynasty Movers Newsletter"),
@@ -6832,7 +6901,7 @@ export default function App(){
                 React.createElement("div",{style:{position:"absolute",top:-3,left:-3,background:T.bgCard,border:"1px solid "+T.border,borderRadius:4,padding:"0 3px",fontSize:8,fontWeight:800,color:T.textDim}},idx+1)
               ),
               React.createElement("div",null,
-                React.createElement("div",{style:{fontWeight:700,fontSize:14,color:T.text,marginBottom:3}},p.name),
+                React.createElement("a",{href:"/players/"+playerSlug(p.name)+"/",onClick:function(e:any){e.preventDefault();e.stopPropagation();var fp=findPlayerBySlug(playerSlug(p.name));if(fp){setPlayerPage(fp);window.history.pushState({},"","/players/"+playerSlug(p.name)+"/");document.title=fp.name+" Dynasty Value | Fantasy Draft Pros";window.scrollTo(0,0);}},style:{fontWeight:700,fontSize:14,color:T.text,marginBottom:3,textDecoration:"none",display:"block"}},p.name),
                 React.createElement("div",{style:{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap"}},
                   React.createElement(PBadge,{pos:p.pos}),
                   React.createElement("span",{style:{fontSize:11,color:T.textSub,fontWeight:600}},p.team),
