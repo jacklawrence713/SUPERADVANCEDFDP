@@ -5,6 +5,7 @@ import {
   playerSlug,
   VALUES_UPDATED_AT,
   PRIME,
+  PRODUCT_STATS,
 } from './logic'
 import { readFileSync } from 'fs'
 import { resolve, dirname } from 'path'
@@ -463,5 +464,109 @@ describe('value consistency: full player pool', () => {
       return tv > 9999
     })
     expect(violations.map(p => p.name)).toEqual([])
+  })
+})
+
+// ── Product statistics consistency ──────────────────────────────
+
+describe('product statistics: centralized and truthful', () => {
+  const thisDir = dirname(fileURLToPath(import.meta.url))
+  const afdpSrc = readFileSync(resolve(thisDir, '..', 'afdp.tsx'), 'utf-8')
+  const indexSrc = readFileSync(resolve(thisDir, '..', 'index.html'), 'utf-8')
+
+  it('PRODUCT_STATS.PLATFORM_COUNT matches SUPPORTED_PLATFORMS length', () => {
+    expect(PRODUCT_STATS.PLATFORM_COUNT).toBe(PRODUCT_STATS.SUPPORTED_PLATFORMS.length)
+  })
+
+  it('supported platforms are only those with real API import', () => {
+    // Sleeper has live API import; ESPN has API import
+    expect(PRODUCT_STATS.SUPPORTED_PLATFORMS).toContain('Sleeper')
+    expect(PRODUCT_STATS.SUPPORTED_PLATFORMS).toContain('ESPN')
+    // Yahoo is manual paste only — not a real integration
+    expect(PRODUCT_STATS.SUPPORTED_PLATFORMS).not.toContain('Yahoo')
+    // MFL, NFL.com, Fleaflicker are Coming Soon
+    expect(PRODUCT_STATS.SUPPORTED_PLATFORMS).not.toContain('MFL')
+    expect(PRODUCT_STATS.SUPPORTED_PLATFORMS).not.toContain('NFL.com')
+    expect(PRODUCT_STATS.SUPPORTED_PLATFORMS).not.toContain('Fleaflicker')
+  })
+
+  it('each supported platform has a real import function in afdp.tsx', () => {
+    // Sleeper: importSleeper() calls api.sleeper.app
+    expect(afdpSrc).toContain('function importSleeper()')
+    expect(afdpSrc).toContain('api.sleeper.app')
+    // ESPN: doEspnImport() calls fantasy.espn.com API
+    expect(afdpSrc).toContain('function doEspnImport()')
+    expect(afdpSrc).toContain('fantasy.espn.com')
+  })
+
+  it('Yahoo import is manual paste (not counted as supported)', () => {
+    // Yahoo "import" calls doManualImport — same as manual entry
+    expect(afdpSrc).toContain('doManualImport("My Yahoo League"')
+    // No Yahoo API calls exist
+    expect(afdpSrc).not.toMatch(/api\.yahoo\.|fantasysports\.yahooapis/)
+  })
+
+  it('no "updated daily" or "updated weekly" claims in public copy', () => {
+    const publicCopyMatches = [...afdpSrc.matchAll(/updated (?:daily|weekly)/gi)]
+      .filter(m => {
+        const lineStart = afdpSrc.lastIndexOf('\n', m.index!) + 1
+        const line = afdpSrc.substring(lineStart, m.index! + m[0].length + 50)
+        return !line.trimStart().startsWith('//')
+      })
+    expect(publicCopyMatches.length, 'found unsupported cadence claim in public copy').toBe(0)
+  })
+
+  it('no "updated daily" or "updated weekly" in index.html', () => {
+    expect(indexSrc).not.toMatch(/updated daily/i)
+    expect(indexSrc).not.toMatch(/updated weekly/i)
+  })
+
+  it('no MFL or Yahoo in FAQ platform support claims', () => {
+    const faqSection = afdpSrc.match(/var FAQS=\[.*?\];/s)?.[0] || ''
+    expect(faqSection).not.toContain('MFL')
+    // Yahoo should only appear in context of manual roster entry
+    const yahooInFaq = faqSection.match(/Yahoo/g) || []
+    if (yahooInFaq.length > 0) {
+      expect(faqSection).toContain('manual roster entry')
+    }
+  })
+
+  it('no conflicting player count claims', () => {
+    const rankingClaims = [...afdpSrc.matchAll(/(?:Full|all)\s+(\d+)\+\s+(?:rank|player)/gi)]
+    for (const m of rankingClaims) {
+      const count = parseInt(m[1])
+      expect(count, `claim "${m[0]}" is too low`).toBeGreaterThanOrEqual(600)
+    }
+  })
+
+  it('no false live/real-time claims for static data', () => {
+    expect(afdpSrc).not.toContain('"Real-time value adjustments"')
+    expect(afdpSrc).not.toContain('"Real-time buy-low')
+  })
+
+  it('VALUES_UPDATED_AT is used for market trends timestamp', () => {
+    expect(afdpSrc).toContain('"Values as of "+VALUES_UPDATED_AT')
+  })
+
+  it('SCORING_FORMATS count matches actual base scoring options', () => {
+    // PPR, Half PPR, Standard — the three base scoring systems
+    expect(PRODUCT_STATS.SCORING_FORMATS.length).toBe(3)
+    expect(PRODUCT_STATS.SCORING_FORMATS).toContain('PPR')
+    expect(PRODUCT_STATS.SCORING_FORMATS).toContain('Half PPR')
+    expect(PRODUCT_STATS.SCORING_FORMATS).toContain('Standard')
+  })
+
+  it('1,000+ player claim is truthful', () => {
+    const marker = 'const PLAYERS=['
+    const startIdx = afdpSrc.indexOf(marker)
+    expect(startIdx).toBeGreaterThan(-1)
+    const arrayStart = afdpSrc.indexOf('[', startIdx)
+    let depth = 0, i = arrayStart
+    for (; i < afdpSrc.length; i++) {
+      if (afdpSrc[i] === '[') depth++
+      else if (afdpSrc[i] === ']') { depth--; if (depth === 0) break }
+    }
+    const players = new Function('return ' + afdpSrc.substring(arrayStart, i + 1))() as any[]
+    expect(players.length, 'PLAYERS count should justify 1,000+ claim').toBeGreaterThanOrEqual(1000)
   })
 })

@@ -140,6 +140,20 @@ export function playerSlug(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
+// ── Centralized product statistics ──────────────────────────────
+// Single source of truth for public-facing claims. Derived from
+// the actual PLAYERS dataset or verified feature inventory.
+export const PRODUCT_STATS = {
+  // Platform import support — only platforms with real API/automated import
+  // Yahoo is manual paste (same as Manual Import with Yahoo instructions) — not counted
+  SUPPORTED_PLATFORMS: ["Sleeper", "ESPN"] as const,
+  PLATFORM_COUNT: 2,
+  // Scoring formats: PPR, Half PPR, Standard — the three base scoring systems
+  SCORING_FORMATS: ["PPR", "Half PPR", "Standard"] as const,
+  // Additional mode toggles: Superflex, TE Premium, IDP
+  MODE_TOGGLES: ["Superflex", "TE Premium", "IDP"] as const,
+} as const;
+
 export function tVal(
   side: Array<{ pos: string; tradeVal?: number; est?: number }>,
   fa: number,

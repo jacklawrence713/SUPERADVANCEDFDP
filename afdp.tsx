@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { computeDynastyTradeVal, VALUES_UPDATED_AT } from "./src/logic";
+import { computeDynastyTradeVal, VALUES_UPDATED_AT, PRODUCT_STATS } from "./src/logic";
 
 // ── Supabase ─────────────────────────────────────────────────────────────────
 const SUPA_URL = "https://wizdxspglxpvvogiivsv.supabase.co";
@@ -2264,8 +2264,8 @@ function Chip(props){
 }
 
 var PLANS=[{id:"free",label:"Free",priceStr:"$0",sub:"forever"},{id:"pro",label:"Pro",priceStr:"$2.99",sub:"/mo"},{id:"elite",label:"Elite",priceStr:"$9.99",sub:"/mo"}];
-var COMPARE_ROWS=[["Trade Analyzer",true,true,true],["FAAB + Draft Picks",true,true,true],["IDP Rankings",true,true,true],["Top 20 Rankings",true,true,true],["Full 200+ Rankings",false,true,true],["League Import",false,true,true],["AI Trade Suggestions",false,true,true],["Market Alerts",false,true,true],["Roster Grades",false,true,true],["Power Rankings",false,true,true],["API Access",false,false,true],["Priority Support",false,false,true],["CSV Export",false,false,true]];
-var FAQS=[{q:"What makes Fantasy Draft Pros the best dynasty trade analyzer?",a:"We combine 1,000+ player values updated daily across all positions including IDP, with FAAB budget tracking, draft pick values, and support for every major scoring format."},{q:"Is the dynasty trade calculator free?",a:"Yes! The core trade analyzer with 2026 player values is completely free — no account required. Pro features (unlimited trades, league import, full rankings) include a 7-day free trial."},{q:"Does it support IDP dynasty leagues?",a:"Absolutely. We rank DL, LB, and DB with full VBD scoring, age grades, and trade values."},{q:"Does Fantasy Draft Pros have superflex rankings?",a:"Yes — Superflex mode boosts QB values appropriately for SF leagues."},{q:"How often are player values updated?",a:"Player values are updated daily based on the latest news, injury reports, and 2026 projection data."},{q:"What league platforms are supported?",a:"Sleeper (live API), ESPN, Yahoo, and MFL — plus manual roster entry."}];
+var COMPARE_ROWS=[["Trade Analyzer",true,true,true],["FAAB + Draft Picks",true,true,true],["IDP Rankings",true,true,true],["Top 20 Rankings",true,true,true],["Full 600+ Rankings",false,true,true],["League Import",false,true,true],["AI Trade Suggestions",false,true,true],["Market Alerts",false,true,true],["Roster Grades",false,true,true],["Power Rankings",false,true,true],["API Access",false,false,true],["Priority Support",false,false,true],["CSV Export",false,false,true]];
+var FAQS=[{q:"What makes Fantasy Draft Pros the best dynasty trade analyzer?",a:"We combine 1,000+ player values updated throughout the season across all positions including IDP, with FAAB budget tracking, draft pick values, and support for every major scoring format."},{q:"Is the dynasty trade calculator free?",a:"Yes! The core trade analyzer with 2026 player values is completely free — no account required. Pro features (unlimited trades, league import, full rankings) include a 7-day free trial."},{q:"Does it support IDP dynasty leagues?",a:"Absolutely. We rank DL, LB, and DB with full VBD scoring, age grades, and trade values."},{q:"Does Fantasy Draft Pros have superflex rankings?",a:"Yes — Superflex mode boosts QB values appropriately for SF leagues."},{q:"How often are player values updated?",a:"Player values are regularly updated based on the latest news, injury reports, and 2026 projection data."},{q:"What league platforms are supported?",a:"Sleeper (live API) and ESPN — plus manual roster entry for Yahoo and other platforms."}];
 
 function AuthModal(props){
   var T=props.T||DARK,onClose=props.onClose,onAuth=props.onAuth,initMode=props.mode||"signup";
@@ -4151,9 +4151,9 @@ export default function App(){
         (function(){
           var steps=[
             {title:"Welcome to Fantasy Draft Pros",sub:"The #1 free dynasty trade analyzer. Let's show you around in 30 seconds.",icon:"⚖️",btn:"Let's Go"},
-            {title:"Analyze Any Trade",sub:"Search for players, add them to Team A or Team B, then hit Analyze. We'll tell you who wins — with 1,000+ player values updated daily.",icon:"🔍",btn:"Next"},
+            {title:"Analyze Any Trade",sub:"Search for players, add them to Team A or Team B, then hit Analyze. We'll tell you who wins — with 1,000+ player values updated throughout the season.",icon:"🔍",btn:"Next"},
             {title:"All Scoring Formats",sub:"Toggle between Dynasty, Keeper, and Redraft. Switch PPR, Half, Standard, Superflex, TE Premium, and IDP with one tap.",icon:"⚙️",btn:"Next"},
-            {title:"Import Your League",sub:"Connect your Sleeper, ESPN, Yahoo, or MFL league for power rankings, trade finder, waiver wire, and lineup optimization.",icon:"🏈",btn:"Next"},
+            {title:"Import Your League",sub:"Connect your Sleeper or ESPN league for power rankings, trade finder, waiver wire, and lineup optimization.",icon:"🏈",btn:"Next"},
             {title:"Share & Win Trades",sub:"Share trade analysis as a branded image, link, or text. Send it to your group chat and prove you won the trade.",icon:"🔗",btn:"Next"},
             {title:"You're All Set!",sub:"Start by searching for a player above. Build smarter trades, win your dynasty league.",icon:"🏆",btn:"Start Trading"}
           ];
@@ -4355,7 +4355,7 @@ export default function App(){
       React.createElement("div",{style:{textAlign:"center",marginTop:8,marginBottom:20}},
         React.createElement("div",{style:{display:"inline-flex",alignItems:"center",gap:6,background:T.purpleDim,border:"1px solid "+T.purple+"44",borderRadius:30,padding:"5px 14px",fontSize:10,color:T.purpleLight,fontWeight:700,letterSpacing:0.5,marginBottom:14}},"#1 DYNASTY FANTASY FOOTBALL TRADE CALCULATOR - FREE"),
         React.createElement("div",{style:{fontWeight:900,fontSize:28,lineHeight:1.15,marginBottom:10}},React.createElement("span",{style:{color:T.purple}},"Win Every Trade."),React.createElement("br",null),"Dominate Your Dynasty."),
-        React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.7,marginBottom:16}},"The free dynasty fantasy football trade analyzer trusted by thousands. Combines offensive players, IDP, FAAB budget, and draft picks — 1,000+ player values updated daily."),
+        React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.7,marginBottom:16}},"The free dynasty fantasy football trade analyzer. Combines offensive players, IDP, FAAB budget, and draft picks — 1,000+ player values updated throughout the season."),
         publicStats&&publicStats.trades>0&&React.createElement("div",{style:{display:"flex",justifyContent:"center",gap:24,marginBottom:20}},
           React.createElement("div",{style:{textAlign:"center"}},
             React.createElement("div",{style:{fontWeight:900,fontSize:22,color:T.purple}},(publicStats.trades||0).toLocaleString()),
@@ -4900,7 +4900,7 @@ export default function App(){
         );
       })(),
       !isPro&&React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:28,padding:"0 4px"}},
-        [["1,000+","PLAYERS RANKED"],["4","LEAGUE PLATFORMS"],["6","SCORING COMBOS"],["Daily","VALUE UPDATES"]].map(function(s){return React.createElement("div",{key:s[0],style:{textAlign:"center"}},React.createElement("div",{style:{fontWeight:900,fontSize:26,color:T.purple}},s[0]),React.createElement("div",{style:{fontSize:10,color:T.textSub,letterSpacing:1.5,fontWeight:600}},s[1]));})
+        [["1,000+","PLAYERS RANKED"],[String(PRODUCT_STATS.PLATFORM_COUNT),"LEAGUE PLATFORMS"],[String(PRODUCT_STATS.SCORING_FORMATS.length),"SCORING FORMATS"],["Regular","VALUE UPDATES"]].map(function(s){return React.createElement("div",{key:s[0],style:{textAlign:"center"}},React.createElement("div",{style:{fontWeight:900,fontSize:26,color:T.purple}},s[0]),React.createElement("div",{style:{fontSize:10,color:T.textSub,letterSpacing:1.5,fontWeight:600}},s[1]));})
       ),
       // Pricing
       !isPro&&React.createElement("div",{style:{marginBottom:32}},
@@ -4911,13 +4911,13 @@ export default function App(){
         ),
         React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:20,padding:20,marginBottom:12}},
           React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}},React.createElement("div",null,React.createElement("div",{style:{fontWeight:900,fontSize:18,marginBottom:2}},"Free"),React.createElement("div",{style:{fontSize:12,color:T.textSub}},"No account required")),React.createElement("div",{style:{textAlign:"right"}},React.createElement("div",{style:{fontWeight:900,fontSize:28}},"$0"),React.createElement("div",{style:{fontSize:10,color:T.textDim}},"forever"))),
-          [["Trade analyzer with 2026 values",true],["FAAB money + draft pick values",true],["Offensive + IDP players",true],["All scoring formats",true],["Top 20 player rankings",true],["Full 200+ rankings",false],["League import",false],["AI trade suggestions",false]].map(function(f){return React.createElement("div",{key:f[0],style:{display:"flex",alignItems:"flex-start",gap:10,marginBottom:7,opacity:f[1]?1:0.38}},React.createElement("span",{style:{color:f[1]?T.green:T.textDim,fontSize:14,flexShrink:0,marginTop:1}},f[1]?"v":"x"),React.createElement("span",{style:{fontSize:13,color:f[1]?T.textSub:T.textDim}},f[0]));}),
+          [["Trade analyzer with 2026 values",true],["FAAB money + draft pick values",true],["Offensive + IDP players",true],["All scoring formats",true],["Top 20 player rankings",true],["Full 600+ rankings",false],["League import",false],["AI trade suggestions",false]].map(function(f){return React.createElement("div",{key:f[0],style:{display:"flex",alignItems:"flex-start",gap:10,marginBottom:7,opacity:f[1]?1:0.38}},React.createElement("span",{style:{color:f[1]?T.green:T.textDim,fontSize:14,flexShrink:0,marginTop:1}},f[1]?"v":"x"),React.createElement("span",{style:{fontSize:13,color:f[1]?T.textSub:T.textDim}},f[0]));}),
           React.createElement("button",{onClick:function(){setAuthMode("signup");setShowAuth(true);},style:{width:"100%",marginTop:14,padding:"12px",borderRadius:12,border:"1px solid "+T.border,background:"transparent",color:T.text,cursor:"pointer",fontWeight:700,fontSize:13}},"Get Started Free")
         ),
         React.createElement("div",{style:{background:"linear-gradient(135deg,#1e1040,#1a1035)",border:"2px solid "+T.purple,borderRadius:20,padding:20,marginBottom:12,position:"relative",overflow:"hidden"}},
           React.createElement("div",{style:{position:"absolute",top:0,right:0,background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",borderBottomLeftRadius:12,padding:"4px 14px",fontSize:10,fontWeight:800,color:"#fff"}},"MOST POPULAR"),
           React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16,marginTop:6}},React.createElement("div",null,React.createElement("div",{style:{fontWeight:900,fontSize:18,color:T.purple,marginBottom:2}},"Pro"),React.createElement("div",{style:{fontSize:12,color:T.textSub}},"7-day free trial")),React.createElement("div",{style:{textAlign:"right"}},React.createElement("div",{style:{fontWeight:900,fontSize:28}},"$2.99",React.createElement("span",{style:{fontSize:14,fontWeight:400,color:T.textSub}},"/mo")),React.createElement("div",{style:{fontSize:10,color:T.textDim}},"cancel anytime"))),
-          ["Everything in Free","Full rankings - 200+ players","Live Sleeper league import","ESPN Yahoo MFL import","AI trade suggestions + analysis","Roster grades + team strategy","Power rankings + playoff odds","Market alerts - buy low sell high"].map(function(f){return React.createElement("div",{key:f,style:{display:"flex",alignItems:"flex-start",gap:10,marginBottom:7}},React.createElement("span",{style:{color:T.purple,fontSize:14,flexShrink:0,marginTop:1}},"v"),React.createElement("span",{style:{fontSize:13,color:"#fff",lineHeight:1.4}},f));}),
+          ["Everything in Free","Full rankings - 600+ players","Live Sleeper league import","ESPN import + manual roster entry","AI trade suggestions + analysis","Roster grades + team strategy","Power rankings + playoff odds","Market alerts - buy low sell high"].map(function(f){return React.createElement("div",{key:f,style:{display:"flex",alignItems:"flex-start",gap:10,marginBottom:7}},React.createElement("span",{style:{color:T.purple,fontSize:14,flexShrink:0,marginTop:1}},"v"),React.createElement("span",{style:{fontSize:13,color:"#fff",lineHeight:1.4}},f));}),
           React.createElement("button",{disabled:checkoutLoading,onClick:function(){user?handleCheckout("pro","monthly"):(setAuthMode("signup"),setShowAuth(true));},style:{width:"100%",marginTop:16,padding:"14px",borderRadius:12,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",cursor:checkoutLoading?"wait":"pointer",fontWeight:800,fontSize:14,opacity:checkoutLoading?0.7:1}},checkoutLoading?"Processing...":user?"Upgrade to Pro →":"Start 7-Day Free Trial"),
           checkoutErr&&React.createElement("div",{style:{marginTop:8,padding:"8px 12px",background:"#ff000020",border:"1px solid #ff000044",borderRadius:8,fontSize:12,color:"#ff6b6b",textAlign:"center"}},checkoutErr),
           React.createElement("div",{style:{textAlign:"center",marginTop:8,fontSize:11,color:T.textDim}},"No credit card required - Cancel anytime")
@@ -6898,7 +6898,7 @@ export default function App(){
         })(),
         (!user||!user.isPro)&&React.createElement("div",{style:{background:T.purpleDim,border:"1px solid "+T.purple+"44",borderRadius:14,padding:"16px",textAlign:"center",margin:"16px"}},
           React.createElement("div",{style:{fontWeight:700,fontSize:14,color:T.purpleLight,marginBottom:6}},"Unlock Full Rankings"),
-          React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:12}},"See all 200+ players with Pro"),
+          React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:12}},"See all 600+ players with Pro"),
           React.createElement("button",{onClick:function(){user?handleCheckout("pro","monthly"):(setAuthMode("signup"),setShowAuth(true));},style:{padding:"10px 24px",borderRadius:12,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}},user?"Upgrade to Pro →":"Start Free Trial")
         )
       ),
@@ -6984,7 +6984,7 @@ export default function App(){
         })(),
         (!user||!user.isPro)&&React.createElement("div",{style:{background:T.purpleDim,border:"1px solid "+T.purple+"44",borderRadius:14,padding:"16px",textAlign:"center",margin:"16px"}},
           React.createElement("div",{style:{fontWeight:700,fontSize:14,color:T.purpleLight,marginBottom:6}},"Unlock Full Rankings"),
-          React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:12}},"See all 200+ players with Pro"),
+          React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:12}},"See all 600+ players with Pro"),
           React.createElement("button",{onClick:function(){user?handleCheckout("pro","monthly"):(setAuthMode("signup"),setShowAuth(true));},style:{padding:"10px 24px",borderRadius:12,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}},user?"Upgrade to Pro →":"Start Free Trial")
         )
       ),
@@ -8317,7 +8317,7 @@ export default function App(){
                 React.createElement("span",{style:{fontSize:20,color:T.green}},"~"),
                 React.createElement("div",{style:{fontWeight:900,fontSize:22}},"Trending Players")
               ),
-              React.createElement("div",{style:{fontSize:12,color:T.textSub}},"Real-time value adjustments")
+              React.createElement("div",{style:{fontSize:12,color:T.textSub}},"Value movement and trends")
             ),
             React.createElement("button",{style:{width:36,height:36,borderRadius:10,border:"1px solid "+T.border,background:T.bgInput,cursor:"pointer",color:T.textSub,fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}},"o")
           ),
@@ -8392,8 +8392,8 @@ export default function App(){
           React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}},
             React.createElement("div",{style:{flex:1,marginRight:16}},
               React.createElement("div",{style:{fontWeight:900,fontSize:26,lineHeight:1.15,marginBottom:8,color:T.text}},"Dynasty Market",React.createElement("br",null),"Trends"),
-              React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.5,marginBottom:10}},"Real-time buy-low and sell-high opportunities based on value movement"),
-              React.createElement("div",{style:{fontSize:11,color:T.textDim}},"Last updated: "+(new Date().toLocaleString()))
+              React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.5,marginBottom:10}},"Buy-low and sell-high opportunities based on value movement"),
+              React.createElement("div",{style:{fontSize:11,color:T.textDim}},"Values as of "+VALUES_UPDATED_AT)
             ),
             React.createElement("button",{onClick:function(){var cur=marketFilter;setMarketFilter("");setTimeout(function(){setMarketFilter(cur);},50);},style:{padding:"10px 14px",borderRadius:10,border:"none",background:"#2563eb",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",gap:6,flexShrink:0,whiteSpace:"nowrap"}},"↻ Refresh")
           )
@@ -9431,7 +9431,7 @@ export default function App(){
             React.createElement("span",{style:{fontSize:13,color:"#22c55e",fontWeight:700}},"$35.88/year")
           ),
           React.createElement("div",{style:{display:"inline-block",background:"#ccfbf1",color:"#065f46",fontWeight:700,fontSize:12,padding:"4px 12px",borderRadius:20,marginBottom:16}},"7-Day Free Trial"),
-          ["Unlimited trade analyses","Full dynasty rankings (600+ players)","League import (Sleeper, ESPN, Yahoo)","AI trade analysis & suggestions","Dynasty market reports","Team strategy advice","Buy-low / sell-high alerts","Unlimited watchlist","Pick value calculator","Start/Sit tool","Priority support"].map(function(f){
+          ["Unlimited trade analyses","Full dynasty rankings (600+ players)","League import (Sleeper, ESPN)","AI trade analysis & suggestions","Dynasty market reports","Team strategy advice","Buy-low / sell-high alerts","Unlimited watchlist","Pick value calculator","Start/Sit tool","Priority support"].map(function(f){
             return React.createElement("div",{key:f,style:{display:"flex",alignItems:"center",gap:10,marginBottom:10,fontSize:14,color:"#1a1a2e"}},
               React.createElement("span",{style:{color:"#22c55e",fontWeight:700,fontSize:16}},"\u2713"),f
             );
@@ -9564,7 +9564,7 @@ export default function App(){
         ),
         [
           {icon:"⚖️",title:"Using the Trade Analyzer",steps:["Go to the Trade tab","Select your league type (Dynasty/Redraft) and scoring format","Search for and add players to Team A and Team B","Optionally add FAAB dollars or draft picks","Hit Analyze Trade to see the verdict and value breakdown"]},
-          {icon:"🏈",title:"Importing Your League",steps:["Go to the League tab (Pro required)","Choose your platform: Sleeper, ESPN, or Yahoo","For Sleeper: enter your username and select your league","For ESPN: enter your League ID, year, and session cookies","Your rosters and team data will sync automatically"]},
+          {icon:"🏈",title:"Importing Your League",steps:["Go to the League tab (Pro required)","Choose your platform: Sleeper, ESPN, Yahoo (manual), or Manual","For Sleeper: enter your username and select your league","For ESPN: enter your League ID, year, and session cookies","Your rosters and team data will sync automatically"]},
           {icon:"📊",title:"Reading Player Values",steps:["Values are based on FDP dynasty rankings adjusted for age and scoring format","Toggle SF to boost QB values for Superflex leagues","Toggle TEP to boost TE values for TE Premium leagues","Use the Rankings tab to see full position-by-position values","Tier 1 = elite, Tier 5 = borderline starter"]},
           {icon:"🔄",title:"Sharing a Trade",steps:["Build your trade in the Trade Analyzer","Click Analyze Trade then Share Trade","Copy the link to send anyone — it auto-loads the trade","Or share directly to X/Twitter or WhatsApp"]},
           {icon:"⭐",title:"Pro Features",steps:["Upgrade to Pro for unlimited trades and full rankings","Pro unlocks league import, power rankings, waiver wire, and lineup optimizer","Go to Reports → Upgrade to see all Pro features and pricing"]}
