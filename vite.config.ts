@@ -1,12 +1,11 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
-import { writeFileSync, readFileSync, readdirSync, statSync } from 'fs'
-import { computeDynastyTradeVal, playerSlug, VALUES_UPDATED_AT } from './src/logic'
+import { writeFileSync, readFileSync, mkdirSync, existsSync } from 'fs'
+import { computeDynastyTradeVal, playerSlug, tierLabel, VALUES_UPDATED_AT } from './src/logic'
 
 // Parse the PLAYERS array from afdp.tsx source at build time.
-// Uses bracket-counting to find the array boundaries, then evaluates it.
-function parsePlayers(srcPath: string): Array<{ name: string; pos: string; age: number; team: string; ktcVal?: number; proj: { PPR: number; Half: number; Standard: number } }> {
+function parsePlayers(srcPath: string): Array<{ name: string; pos: string; age: number; team: string; ktcVal?: number; proj: { PPR: number; Half: number; Standard: number }; note?: string }> {
   const src = readFileSync(srcPath, 'utf-8')
   const marker = 'const PLAYERS=['
   const startIdx = src.indexOf(marker)
@@ -18,24 +17,25 @@ function parsePlayers(srcPath: string): Array<{ name: string; pos: string; age: 
     if (src[i] === '[') depth++
     else if (src[i] === ']') { depth--; if (depth === 0) break }
   }
-  const arrayStr = src.substring(arrayStart, i + 1)
-  return new Function('return ' + arrayStr)() as any
+  return new Function('return ' + src.substring(arrayStart, i + 1))() as any
 }
 
-// Compute canonical dynasty PPR trade values for all players, returning
-// sorted list with posRank and overall rank assigned.
-function rankAllPlayers(players: ReturnType<typeof parsePlayers>) {
+type RankedPlayer = {
+  name: string; pos: string; age: number; team: string; ktcVal?: number
+  slug: string; tradeVal: number; posRank: number; rank: number
+  proj: { PPR: number; Half: number; Standard: number }; note?: string
+}
+
+// Compute canonical dynasty PPR trade values for all players.
+function rankAllPlayers(players: ReturnType<typeof parsePlayers>): RankedPlayer[] {
   const defaultOpts = { isSF: false, sKey: 'PPR', tePremium: 0, idpMode: false }
   const withVals = players.map(p => ({
-    name: p.name,
-    pos: p.pos,
-    age: p.age,
-    team: p.team,
-    ktcVal: p.ktcVal,
+    name: p.name, pos: p.pos, age: p.age, team: p.team, ktcVal: p.ktcVal,
     slug: playerSlug(p.name),
     tradeVal: computeDynastyTradeVal(p.pos, p.age, p.ktcVal, 1, p.proj?.PPR || 0, defaultOpts),
-    posRank: 0,
-    rank: 0,
+    posRank: 0, rank: 0,
+    proj: p.proj || { PPR: 0, Half: 0, Standard: 0 },
+    note: p.note,
   }))
   withVals.sort((a, b) => b.tradeVal - a.tradeVal)
   const posCount: Record<string, number> = {}
@@ -47,25 +47,71 @@ function rankAllPlayers(players: ReturnType<typeof parsePlayers>) {
   return withVals
 }
 
-// Generate player-specific HTML that includes:
-// - Player-specific title, meta description, canonical URL, OG, Twitter, JSON-LD
-// - The SPA app scripts (React hydrates on load, replacing the fallback content)
-// Crawlers see unique, canonical metadata; users get the full SPA experience.
+// Eligibility: player gets a generated page (accessible via URL).
+function isPageEligible(p: RankedPlayer): boolean {
+  if (!p.team || p.team === 'FA') return false
+  if (p.pos === 'K' || p.pos === 'DST') return false
+  if (p.tradeVal < 100) return false
+  return true
+}
+
+// Index eligibility: page gets indexed by Google (in sitemap, robots=index).
+// Higher bar than page eligibility — only fantasy-relevant players.
+const INDEX_THRESHOLD = 1000
+function isIndexEligible(p: RankedPlayer): boolean {
+  return p.tradeVal >= INDEX_THRESHOLD
+}
+
+// Legacy slugs that may already be indexed by Google.
+const LEGACY_SLUG_REDIRECTS: Record<string, string> = {
+  'jamarr-chase': 'ja-marr-chase',
+  'dandre-swift': 'd-andre-swift',
+  'devon-achane': 'de-von-achane',
+}
+
+function escHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+function escJson(s: string): string {
+  return s.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+}
+
+// Generate player-specific SEO HTML with real FDP data in the fallback content.
 function generatePlayerHtml(
-  player: { name: string; pos: string; age: number; team: string; tradeVal: number; posRank: number; rank: number; slug: string },
+  player: RankedPlayer,
+  comps: RankedPlayer[],
   appScripts: string,
   appPreloads: string,
   darkModeScript: string,
+  shouldIndex: boolean,
 ): string {
-  const { pos, team, age, tradeVal, posRank, slug } = player
-  // Escape for safe HTML attribute and JSON-LD insertion
-  const name = player.name.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-  const jsonName = player.name.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+  const { pos, team, age, tradeVal, posRank, rank, slug, proj, note } = player
+  const name = escHtml(player.name)
+  const jsonName = escJson(player.name)
   const url = `https://fantasydraftpros.com/players/${slug}/`
   const valStr = tradeVal.toLocaleString('en-US')
+  const tier = tierLabel(posRank, pos)
   const title = `${name} Dynasty Value & Trade Analysis 2026 | Fantasy Draft Pros`
   const desc = `${name} dynasty trade value: ${valStr}. ${pos}${posRank} for ${team}. Age ${age}. Dynasty rankings, comparable players, and trade analysis at Fantasy Draft Pros.`
   const ogDesc = `${name} dynasty trade value: ${valStr}. ${pos} for ${team}. Rankings and trade analysis.`
+  const robotsMeta = shouldIndex
+    ? 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1'
+    : 'noindex, follow'
+
+  // Build comparable players HTML for fallback
+  const compsHtml = comps.length > 0
+    ? `<div style="margin-top:16px"><div style="font-size:13px;font-weight:700;color:#7c4dff;margin-bottom:6px">Comparable Players</div>${comps.map(c =>
+        `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #2a254044;font-size:13px"><span style="color:#e0dce8">${escHtml(c.name)} <span style="color:#9b96b8">${c.pos} · ${c.team}</span></span><span style="color:#f59e0b;font-weight:700">${c.tradeVal.toLocaleString('en-US')}</span></div>`
+      ).join('')}</div>`
+    : ''
+
+  // Build projection + note HTML
+  const projHtml = proj.PPR > 0
+    ? `<div style="display:flex;gap:16px;justify-content:center;margin-top:8px;font-size:12px;color:#9b96b8"><span>PPR: <b style="color:#e0dce8">${proj.PPR}</b></span><span>Half: <b style="color:#e0dce8">${proj.Half}</b></span><span>Std: <b style="color:#e0dce8">${proj.Standard}</b></span></div>`
+    : ''
+  const noteHtml = note
+    ? `<div style="font-size:12px;color:#9b96b8;margin-top:8px;font-style:italic">${escHtml(note)}</div>`
+    : ''
 
   return `<!doctype html>
 <html lang="en">
@@ -75,7 +121,7 @@ function generatePlayerHtml(
   <title>${title}</title>
   <meta name="description" content="${desc}" />
   <meta name="author" content="Fantasy Draft Pros" />
-  <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+  <meta name="robots" content="${robotsMeta}" />
   <link rel="canonical" href="${url}" />
   <meta property="og:type" content="article" />
   <meta property="og:site_name" content="Fantasy Draft Pros" />
@@ -119,21 +165,70 @@ ${darkModeScript}
     <h1 style="color:#7c4dff;font-size:28px;margin-bottom:8px">${name} — Dynasty Profile</h1>
     <p style="font-size:16px;color:#ffffff;margin-bottom:8px">${pos} | ${team} | Age ${age}</p>
     <p style="font-size:24px;color:#f59e0b;font-weight:800;margin-bottom:8px">FDP Dynasty Value: ${valStr}</p>
-    <p style="font-size:13px;color:#5c5880;margin-bottom:24px">Values as of ${VALUES_UPDATED_AT}</p>
-    <p style="font-size:14px;color:#9b96b8">Loading full analysis...</p>
+    <div style="display:flex;gap:16px;justify-content:center;margin-bottom:8px;font-size:13px">
+      <span style="color:#9b96b8">Overall: <b style="color:#e0dce8">#${rank}</b></span>
+      <span style="color:#9b96b8">${pos}: <b style="color:#e0dce8">#${posRank}</b></span>
+      <span style="color:#9b96b8">Tier: <b style="color:${tier.c}">${tier.t}</b></span>
+    </div>${projHtml}${noteHtml}
+    <p style="font-size:13px;color:#5c5880;margin-top:12px;margin-bottom:16px">Values as of ${VALUES_UPDATED_AT}</p>${compsHtml}
+    <p style="font-size:14px;color:#9b96b8;margin-top:16px">Loading full analysis...</p>
   </div></div>
   <noscript>
     <div style="background:#13111e;color:#ffffff;padding:40px 20px;font-family:sans-serif;text-align:center">
       <h1 style="color:#7c4dff">${name} — Dynasty Value &amp; Trade Analysis</h1>
-      <p>${name} is a ${pos} for ${team}. FDP dynasty value: ${valStr}. Visit <a href="https://fantasydraftpros.com/" style="color:#7c4dff">Fantasy Draft Pros</a> for full trade analysis, dynasty rankings, and comparable players.</p>
+      <p>${name} is a ${pos} for ${team}. FDP dynasty value: ${valStr}. Overall rank #${rank}, ${pos}${posRank}. Visit <a href="https://fantasydraftpros.com/" style="color:#7c4dff">Fantasy Draft Pros</a> for full trade analysis, dynasty rankings, and comparable players.</p>
     </div>
   </noscript>
 </body>
 </html>`
 }
 
-// Build-time plugin: generates 404.html for SPA routing and player-specific
-// SEO pages with canonical FDP values from the shared valuation engine.
+// Generate a redirect page for legacy slugs.
+function generateRedirectHtml(oldSlug: string, canonicalSlug: string): string {
+  const url = `https://fantasydraftpros.com/players/${canonicalSlug}/`
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Redirecting...</title>
+  <link rel="canonical" href="${url}" />
+  <meta http-equiv="refresh" content="0;url=${url}" />
+  <meta name="robots" content="noindex, follow" />
+  <script>window.location.replace("${url}");</script>
+</head>
+<body>
+  <p>Redirecting to <a href="${url}">${url}</a>...</p>
+</body>
+</html>`
+}
+
+// Generate sitemap.xml — only includes indexable pages.
+// Player lastmod uses VALUES_UPDATED_AT (the date player data was last updated).
+// Static pages omit lastmod — no legitimate modification date available at build time.
+function generateSitemap(indexableSlugs: string[], valuesDate: string): string {
+  const staticRoutes = [
+    { loc: '/', priority: '1.0', freq: 'daily' },
+    { loc: '/dynasty-trade-analyzer/', priority: '0.9', freq: 'weekly' },
+    { loc: '/dynasty-trade-calculator/', priority: '0.9', freq: 'weekly' },
+    { loc: '/dynasty-trade-value-chart/', priority: '0.9', freq: 'weekly' },
+    { loc: '/fantasy-football-trade-analyzer/', priority: '0.9', freq: 'weekly' },
+    { loc: '/fantasy-football-trade-calculator/', priority: '0.9', freq: 'weekly' },
+    { loc: '/dynasty-rankings/', priority: '0.9', freq: 'weekly' },
+    { loc: '/sleeper-trade-calculator/', priority: '0.8', freq: 'weekly' },
+    { loc: '/superflex-trade-calculator/', priority: '0.8', freq: 'weekly' },
+  ]
+  let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`
+  for (const r of staticRoutes) {
+    xml += `  <url><loc>https://fantasydraftpros.com${r.loc}</loc><changefreq>${r.freq}</changefreq><priority>${r.priority}</priority></url>\n`
+  }
+  for (const slug of indexableSlugs) {
+    xml += `  <url><loc>https://fantasydraftpros.com/players/${slug}/</loc><lastmod>${valuesDate}</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>\n`
+  }
+  xml += `</urlset>\n`
+  return xml
+}
+
+// Build-time plugin: generates player SEO pages, redirects, sitemap.
 function spaRoutesPlugin() {
   return {
     name: 'spa-routes',
@@ -147,54 +242,74 @@ function spaRoutesPlugin() {
       // Extract SPA script/preload tags from built index.html
       const scriptMatch = index.match(/<script type="module"[^>]*src="[^"]*"[^>]*><\/script>/g) || []
       const preloadMatch = index.match(/<link rel="modulepreload"[^>]*>/g) || []
-      // Extract entire inline script block (dark mode + error handlers)
       const inlineScriptMatch = index.match(/<script>\n?([\s\S]*?)<\/script>/)
       const appScripts = scriptMatch.join('\n  ')
       const appPreloads = preloadMatch.join('\n  ')
       const darkModeScript = inlineScriptMatch ? inlineScriptMatch[1].trim() : ''
 
       // Parse PLAYERS from afdp.tsx and compute canonical values
-      let ranked: ReturnType<typeof rankAllPlayers>
+      let ranked: RankedPlayer[]
       try {
         const players = parsePlayers(resolve(__dirname, 'afdp.tsx'))
         ranked = rankAllPlayers(players)
         console.log(`[spa-routes] Parsed ${players.length} players, computed canonical values`)
       } catch (e) {
         console.error('[spa-routes] Failed to parse PLAYERS:', e)
-        // Fallback: overwrite with SPA shell (better than stale static pages)
-        const playersDir = resolve(distDir, 'players')
-        try {
-          const slugs = readdirSync(playersDir).filter(f => statSync(resolve(playersDir, f)).isDirectory())
-          for (const slug of slugs) { writeFileSync(resolve(playersDir, slug, 'index.html'), index) }
-          console.log(`[spa-routes] Fallback: overwrote ${slugs.length} player pages with SPA shell`)
-        } catch { /* no player dirs */ }
         return
       }
 
-      // Build slug→player lookup
-      const bySlug = new Map(ranked.map(p => [p.slug, p]))
-
-      // Generate player-specific SEO pages for each existing directory
-      const playersDir = resolve(distDir, 'players')
-      try {
-        const slugDirs = readdirSync(playersDir).filter(f => statSync(resolve(playersDir, f)).isDirectory())
-        let generated = 0
-        for (const slug of slugDirs) {
-          const player = bySlug.get(slug)
-          if (player) {
-            const html = generatePlayerHtml(player, appScripts, appPreloads, darkModeScript)
-            writeFileSync(resolve(playersDir, slug, 'index.html'), html)
-            generated++
-          } else {
-            // Unknown slug — use SPA shell as fallback
-            writeFileSync(resolve(playersDir, slug, 'index.html'), index)
-            console.warn(`[spa-routes] Unknown player slug "${slug}" — using SPA shell`)
-          }
+      // Filter and deduplicate
+      const pageEligible = ranked.filter(isPageEligible)
+      const slugSet = new Set<string>()
+      const deduped: RankedPlayer[] = []
+      for (const p of pageEligible) {
+        if (!slugSet.has(p.slug)) {
+          slugSet.add(p.slug)
+          deduped.push(p)
         }
-        console.log(`[spa-routes] Generated ${generated} player-specific SEO pages`)
-      } catch {
-        // No player directories — that's fine
       }
+
+      // Split into indexable vs noindex
+      const indexable = deduped.filter(isIndexEligible)
+      const noindex = deduped.filter(p => !isIndexEligible(p))
+
+      // Build lookup for comparable players (same position, close value)
+      const bySlug = new Map(deduped.map(p => [p.slug, p]))
+
+      // Generate player pages
+      const playersDir = resolve(distDir, 'players')
+      if (!existsSync(playersDir)) mkdirSync(playersDir, { recursive: true })
+      let generated = 0
+      for (const player of deduped) {
+        const shouldIndex = isIndexEligible(player)
+        // Find 3 comparable players (same position, closest value, excluding self)
+        const comps = deduped
+          .filter(c => c.name !== player.name && c.pos === player.pos)
+          .sort((a, b) => Math.abs(a.tradeVal - player.tradeVal) - Math.abs(b.tradeVal - player.tradeVal))
+          .slice(0, 3)
+        const dir = resolve(playersDir, player.slug)
+        if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
+        writeFileSync(resolve(dir, 'index.html'), generatePlayerHtml(player, comps, appScripts, appPreloads, darkModeScript, shouldIndex))
+        generated++
+      }
+      console.log(`[spa-routes] Generated ${generated} player pages (${indexable.length} indexed, ${noindex.length} noindex)`)
+
+      // Generate redirect pages for legacy slugs
+      let redirects = 0
+      for (const [oldSlug, canonicalSlug] of Object.entries(LEGACY_SLUG_REDIRECTS)) {
+        if (bySlug.has(canonicalSlug) && !slugSet.has(oldSlug)) {
+          const dir = resolve(playersDir, oldSlug)
+          if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
+          writeFileSync(resolve(dir, 'index.html'), generateRedirectHtml(oldSlug, canonicalSlug))
+          redirects++
+        }
+      }
+      if (redirects > 0) console.log(`[spa-routes] Generated ${redirects} legacy slug redirects`)
+
+      // Generate sitemap — only indexable pages, lastmod from VALUES_UPDATED_AT
+      const sitemap = generateSitemap(indexable.map(p => p.slug), VALUES_UPDATED_AT)
+      writeFileSync(resolve(distDir, 'sitemap.xml'), sitemap)
+      console.log(`[spa-routes] Generated sitemap.xml with ${indexable.length} player URLs`)
     }
   }
 }
