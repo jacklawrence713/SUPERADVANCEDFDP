@@ -2867,12 +2867,6 @@ export default function App(){
   var [contactSent,setContactSent]=useState(false);
   var [user,setUser]=useState(function(){try{var s=localStorage.getItem('fdp_user_v1');if(s){var u=JSON.parse(s);setTrackedUser(u?.email||"");return u;}return null;}catch(e){return null;}});
   function saveAndSetUser(u){try{if(u)localStorage.setItem('fdp_user_v1',JSON.stringify(u));else localStorage.removeItem('fdp_user_v1');if(u?.isPro){localStorage.removeItem('fdp_tc_v2');}}catch(e){}setUser(u);setTrackedUser(u?.email||"");if(u?.isPro)setTradeCount(0);}
-  var STRIPE_LINKS:Record<string,string>={
-    pro_monthly:"https://buy.stripe.com/14A3cv8pu7Px7vdbeq3VC00",
-    pro_yearly:"https://buy.stripe.com/fZubJ149efhZeXF0zM3VC01",
-    elite_monthly:"https://buy.stripe.com/9B66oH35a6Lt8zhaam3VC02",
-    elite_yearly:"https://buy.stripe.com/cNi8wP8pu0n56r92HU3VC03",
-  };
   var [showPostPayment,setShowPostPayment]=useState(false);
   var [postPaymentLoading,setPostPaymentLoading]=useState(false);
   var [postPaymentStatus,setPostPaymentStatus]=useState("");
@@ -2932,20 +2926,18 @@ export default function App(){
       window.addEventListener("focus",onFocus);
       setTimeout(function(){window.removeEventListener("focus",onFocus);},1800000);
     }
-    // Try dynamic checkout session first — embeds supabase_user_id in metadata for reliable webhook matching
+    // Dynamic checkout — embeds supabase_user_id in metadata for reliable webhook matching
     try{
-      var geo=await getGeo().catch(function(){return null;});
-      var result=await callEdgeFn("create-checkout",{plan,billing,signup_ip:geo?.ip||undefined,visitor_id:getVisitorId()},user.token);
+      var result=await callEdgeFn("create-checkout",{plan,billing,visitor_id:getVisitorId()},user.token);
       if(result?.url){navigateTo(result.url);return;}
-    }catch(e){}
-    // Fallback: static payment links with pre-filled email for webhook email matching
-    var link=STRIPE_LINKS[plan+"_"+billing]||STRIPE_LINKS[plan+"_monthly"]||"";
-    if(link){
-      navigateTo(user.email?link+"?prefilled_email="+encodeURIComponent(user.email):link);
-      return;
+      // Dynamic checkout returned no URL — show error
+      console.error("create-checkout returned no URL:", result);
+    }catch(e){
+      console.error("create-checkout failed:", e);
     }
+    // No insecure fallback — close the blank tab and show a retry-friendly error
     if(newTab)newTab.close();
-    setCheckoutErr("Checkout unavailable — please contact support.");
+    setCheckoutErr("Checkout failed — please try again. If the problem persists, contact support at fantasydraftproshelp@gmail.com");
     setCheckoutLoading(false);
   }
   var [showAuth,setShowAuth]=useState(false);

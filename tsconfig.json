@@ -12,5 +12,5 @@
     "noImplicitAny": false,
     "skipLibCheck": true
   },
-  "include": ["src", "afdp.tsx", "nfl_rankings.tsx"]
+  "include": ["src", "afdp.tsx"]
 }

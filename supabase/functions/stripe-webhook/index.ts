@@ -12,6 +12,36 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
 );
 
+// Resolve user by Supabase user ID stored in Stripe metadata.
+// Falls back to stripe_customer_id lookup (reliable — set during checkout).
+// Does NOT fall back to email matching (ambiguous, could match wrong account).
+async function resolveUserId(
+  metadataUserId: string | undefined,
+  stripeCustomerId: string | null,
+  eventType: string,
+): Promise<string | null> {
+  // 1. Metadata is authoritative
+  if (metadataUserId) return metadataUserId;
+
+  // 2. Fall back to customer_id lookup (set by create-checkout)
+  if (stripeCustomerId) {
+    const { data: profile } = await supabase
+      .from("users")
+      .select("id")
+      .eq("stripe_customer_id", stripeCustomerId)
+      .single();
+    if (profile?.id) return profile.id;
+  }
+
+  // 3. No match — log for reconciliation, do NOT guess
+  console.error("stripe-webhook: cannot resolve user", {
+    eventType,
+    metadataUserId,
+    stripeCustomerId,
+  });
+  return null;
+}
+
 Deno.serve(async (req) => {
   const signature = req.headers.get("stripe-signature")?.trim();
   const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET")?.trim();
@@ -34,70 +64,103 @@ Deno.serve(async (req) => {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.CheckoutSession;
         const plan = session.metadata?.plan || "pro";
-        // Try metadata first (Checkout Sessions), fall back to email (Payment Links)
-        let userId = session.metadata?.supabase_user_id;
+        const userId = await resolveUserId(
+          session.metadata?.supabase_user_id,
+          session.customer as string | null,
+          event.type,
+        );
         if (!userId) {
-          const email = session.customer_details?.email || session.customer_email;
-          if (email) {
-            const { data: profile } = await supabase
-              .from("users")
-              .select("id")
-              .eq("email", email)
-              .single();
-            userId = profile?.id;
-          }
+          // Log and return 200 so Stripe doesn't retry — needs manual reconciliation
+          console.error("checkout.session.completed: unresolved user, skipping update", {
+            eventId: event.id,
+            sessionId: session.id,
+            customerId: session.customer,
+          });
+          break;
         }
-        if (userId) {
-          const { error: coreErr } = await supabase.from("users").update({
-            plan,
-            is_pro: true,
-            trial_used: true,
-            stripe_customer_id: session.customer as string,
-            stripe_subscription_id: session.subscription as string,
-            subscription_status: "active",
-            updated_at: new Date().toISOString(),
-          }).eq("id", userId);
-          if (coreErr) console.error("checkout.session.completed update failed:", coreErr);
+        const subId = session.subscription as string;
+        const custId = session.customer as string;
+        // Idempotency: only update if subscription_status is not already 'active'
+        // for this specific subscription, or if this is a different subscription
+        const { data: current } = await supabase
+          .from("users")
+          .select("stripe_subscription_id, subscription_status")
+          .eq("id", userId)
+          .single();
+        if (current?.stripe_subscription_id === subId && current?.subscription_status === "active") {
+          // Already processed — idempotent skip
+          break;
         }
+        const { error: coreErr } = await supabase.from("users").update({
+          plan,
+          is_pro: true,
+          trial_used: true,
+          stripe_customer_id: custId,
+          stripe_subscription_id: subId,
+          subscription_status: "active",
+          updated_at: new Date().toISOString(),
+        }).eq("id", userId);
+        if (coreErr) console.error("checkout.session.completed update failed:", coreErr);
         break;
       }
 
       case "customer.subscription.updated": {
         const sub = event.data.object as Stripe.Subscription;
-        let userId = sub.metadata?.supabase_user_id;
-        if (!userId) {
-          const { data: profile } = await supabase.from("users").select("id").eq("stripe_customer_id", sub.customer as string).single();
-          userId = profile?.id;
+        const userId = await resolveUserId(
+          sub.metadata?.supabase_user_id,
+          sub.customer as string | null,
+          event.type,
+        );
+        if (!userId) break;
+        const isActive = sub.status === "active" || sub.status === "trialing";
+        // Detect plan from subscription metadata if available
+        const plan = sub.metadata?.plan;
+        const updatePayload: Record<string, unknown> = {
+          is_pro: isActive,
+          subscription_status: sub.status,
+          updated_at: new Date().toISOString(),
+        };
+        if (plan) updatePayload.plan = plan;
+        if (!isActive) {
+          updatePayload.plan = "free";
+          updatePayload.is_pro = false;
         }
-        if (userId) {
-          const isActive = sub.status === "active" || sub.status === "trialing";
-          const { error: updErr } = await supabase.from("users").update({
-            is_pro: isActive,
-            subscription_status: sub.status,
-            updated_at: new Date().toISOString(),
-          }).eq("id", userId);
-          if (updErr) console.error("subscription.updated failed:", updErr);
-        }
+        const { error: updErr } = await supabase.from("users").update(updatePayload).eq("id", userId);
+        if (updErr) console.error("subscription.updated failed:", updErr);
         break;
       }
 
       case "customer.subscription.deleted": {
         const sub = event.data.object as Stripe.Subscription;
-        let userId = sub.metadata?.supabase_user_id;
-        if (!userId) {
-          const { data: profile } = await supabase.from("users").select("id").eq("stripe_customer_id", sub.customer as string).single();
-          userId = profile?.id;
+        const userId = await resolveUserId(
+          sub.metadata?.supabase_user_id,
+          sub.customer as string | null,
+          event.type,
+        );
+        if (!userId) break;
+        // Idempotency: only downgrade if currently tied to this subscription
+        const { data: current } = await supabase
+          .from("users")
+          .select("stripe_subscription_id")
+          .eq("id", userId)
+          .single();
+        if (current?.stripe_subscription_id && current.stripe_subscription_id !== sub.id) {
+          // User has a different active subscription — don't downgrade
+          console.log("subscription.deleted: user has different active sub, skipping", {
+            userId,
+            deletedSubId: sub.id,
+            currentSubId: current.stripe_subscription_id,
+          });
+          break;
         }
-        if (userId) {
-          const { error: delErr } = await supabase.from("users").update({
-            plan: "free",
-            is_pro: false,
-            stripe_subscription_id: null,
-            subscription_status: "cancelled",
-            updated_at: new Date().toISOString(),
-          }).eq("id", userId);
-          if (delErr) console.error("subscription.deleted failed:", delErr);
-        }
+        const { error: delErr } = await supabase.from("users").update({
+          plan: "free",
+          is_pro: false,
+          stripe_subscription_id: null,
+          subscription_status: "cancelled",
+          updated_at: new Date().toISOString(),
+        }).eq("id", userId);
+        if (delErr) console.error("subscription.deleted failed:", delErr);
         break;
       }
 

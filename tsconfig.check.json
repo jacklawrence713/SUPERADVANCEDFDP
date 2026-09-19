@@ -1,0 +1,4 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["src/logic.ts", "src/logic.test.ts", "src/edge-functions.test.ts", "src/test-setup.ts"]
+}

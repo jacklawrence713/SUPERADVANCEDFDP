@@ -3,18 +3,54 @@
 import { Resend } from "npm:resend@3.2.0";
 import { createClient } from "npm:@supabase/supabase-js@2.39.0";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+const ALLOWED_ORIGINS = [
+  "https://fantasydraftpros.com",
+  "http://localhost:5173",
+  "http://localhost:3000",
+];
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get("origin") || "";
+  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Vary": "Origin",
+  };
+}
 
 const FROM = "Fantasy Draft Pros <noreply@fantasydraftpros.com>";
+
+const ADMIN_EMAILS = [
+  "jacklawrence713@gmail.com", "modgy28@hotmail.com",
+  "sbesk787@gmail.com", "starrrya@yahoo.com",
+];
 
 function escHtml(s: string): string {
   return String(s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 }
 
+// Allowed origins for password reset URLs
+const ALLOWED_RESET_ORIGINS = [
+  "https://fantasydraftpros.com",
+  "http://localhost:5173",         // local dev
+  "http://localhost:3000",         // alt local dev
+];
+
+function isValidResetUrl(url: string): boolean {
+  if (!url || typeof url !== "string") return false;
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return false;
+    // Compare parsed origin (scheme + host + port) against allowlist
+    return ALLOWED_RESET_ORIGINS.includes(parsed.origin);
+  } catch {
+    return false;
+  }
+}
+
 Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -23,8 +59,11 @@ Deno.serve(async (req) => {
     const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
     const { type, to, name, subject, message, userId, plan } = await req.json();
 
+    const supaAuth = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+
     // Auth check — exempt welcome emails (sent during signup before session exists)
-    if (type !== "welcome" && type !== "welcome_pro") {
+    let authenticatedUserId: string | null = null;
+    if (type !== "welcome") {
       const authHeader = req.headers.get("Authorization");
       if (!authHeader) {
         return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -32,7 +71,6 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      const supaAuth = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
       const token = authHeader.replace("Bearer ", "");
       const { data: { user: authUser }, error: authError } = await supaAuth.auth.getUser(token);
       if (authError || !authUser) {
@@ -41,6 +79,7 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+      authenticatedUserId = authUser.id;
     }
 
     let emailPayload: any = null;
@@ -64,11 +103,31 @@ Deno.serve(async (req) => {
       }
 
       case "welcome_pro": {
-        const supabase = createClient(
-          Deno.env.get("SUPABASE_URL")!,
-          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-        );
-        const { data: profile } = await supabase
+        // Ownership check: userId must match the authenticated user, or caller must be admin
+        if (!userId) {
+          return new Response(JSON.stringify({ error: "Missing userId" }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        const isAdmin = authenticatedUserId
+          ? await (async () => {
+              const { data } = await supaAuth.auth.admin.getUserById(authenticatedUserId!);
+              return ADMIN_EMAILS.includes((data?.user?.email || "").toLowerCase().trim());
+            })()
+          : false;
+        if (authenticatedUserId !== userId && !isAdmin) {
+          console.error("welcome_pro ownership violation:", {
+            authenticatedUserId,
+            requestedUserId: userId,
+          });
+          return new Response(JSON.stringify({ error: "Forbidden: cannot send email for another user" }), {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        const { data: profile } = await supaAuth
           .from("users")
           .select("email, name")
           .eq("id", userId)
@@ -119,6 +178,13 @@ Deno.serve(async (req) => {
 
       case "password_reset": {
         // Supabase handles password reset emails natively — this is a fallback
+        if (!isValidResetUrl(message)) {
+          console.error("password_reset: invalid reset URL rejected:", message);
+          return new Response(JSON.stringify({ error: "Invalid reset URL" }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
         emailPayload = {
           from: FROM,
           to: [to],
@@ -128,7 +194,7 @@ Deno.serve(async (req) => {
               <img src="https://fantasydraftpros.com/logo-horizontal.png" alt="Fantasy Draft Pros" style="height:48px;margin-bottom:24px"/>
               <h1 style="font-size:22px;font-weight:900;margin:0 0 12px">Password Reset</h1>
               <p style="font-size:15px;color:#9b96b8;margin:0 0 20px">Click the link below to reset your password. This link expires in 1 hour.</p>
-              <a href="${message}" style="display:inline-block;background:#7c4dff;color:#fff;font-weight:800;font-size:15px;padding:14px 28px;border-radius:12px;text-decoration:none">Reset Password →</a>
+              <a href="${escHtml(message)}" style="display:inline-block;background:#7c4dff;color:#fff;font-weight:800;font-size:15px;padding:14px 28px;border-radius:12px;text-decoration:none">Reset Password →</a>
             </div>`,
         };
         break;

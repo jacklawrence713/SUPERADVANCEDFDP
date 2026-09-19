@@ -33,7 +33,33 @@ enable_confirmations = true
 [auth.sms]
 enable_signup = false
 
+# ── Edge Function Auth & CORS Decisions ───────────────────────────
+#
+# verify_jwt = Supabase gateway-level JWT check (before function runs).
+#
+# analyze-trade:   verify_jwt=false — manual Bearer → getUser for JSON 401.
+#                  CORS: origin-checked (fantasydraftpros.com + localhost dev).
+#
+# cancel-subscription: verify_jwt=false — manual Bearer → getUser.
+#                  CORS: origin-checked.
+#
+# create-checkout: verify_jwt=false — manual Bearer → getUser.
+#                  CORS: origin-checked.
+#
+# stripe-webhook:  verify_jwt=false — MUST be false. Stripe sends raw
+#                  POST with stripe-signature, NOT a Supabase JWT.
+#                  Auth via Stripe webhook signature verification.
+#                  CORS: none (server-to-server, no browser requests).
+#
+# send-email:      verify_jwt=false — welcome emails sent before session
+#                  exists. Other types do manual auth. welcome_pro
+#                  validates userId ownership server-side.
+#                  CORS: origin-checked.
+#
 [functions.analyze-trade]
+verify_jwt = false
+
+[functions.cancel-subscription]
 verify_jwt = false
 
 [functions.create-checkout]

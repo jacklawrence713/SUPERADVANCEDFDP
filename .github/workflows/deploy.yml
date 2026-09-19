@@ -23,6 +23,8 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm install
+      - run: npm run typecheck
+      - run: npm run test:run
       - run: npm run build
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
