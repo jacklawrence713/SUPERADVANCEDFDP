@@ -94,10 +94,13 @@ export function makePick(pk: { round: number; est: number; [key: string]: any })
 
 // Dynasty trade value computation — the ONE canonical implementation.
 // Used by: afdp.tsx rankedPlayers, SEO page generator (vite.config.ts), tests.
+// uncapped=true returns the raw calculated value (internal use for tie-breaking only).
+// uncapped=false (default) returns the capped 0–9,999 FDP Value shown to users.
 export function computeDynastyTradeVal(
   pos: string, age: number, ktcVal: number | undefined,
   posRank: number, projSKey: number,
   opts: { isSF: boolean; sKey: string; tePremium: number; idpMode: boolean },
+  uncapped?: boolean,
 ): number {
   var isIDP = pos === "DL" || pos === "LB" || pos === "DB";
   var cfg = pos === "QB" ? (opts.isSF ? { pk: 7660, dc: 0.927 } : { pk: 5800, dc: 0.912 })
@@ -120,15 +123,17 @@ export function computeDynastyTradeVal(
   }
   var tepAdj = (opts.tePremium > 0 && pos === "TE") ? 1.15 : 1;
   var idpAdj = (opts.idpMode && isIDP) ? 1.12 : 1;
+  var result: number;
   if (ktcVal) {
-    var rawVal = Math.round(ktcVal * ab * sfQbBoost * fmtAdj * tepAdj * idpAdj);
-    return (opts.isSF && pos === "QB") ? rawVal : Math.min(9999, rawVal);
+    result = Math.round(ktcVal * ab * sfQbBoost * fmtAdj * tepAdj * idpAdj);
+  } else {
+    var rv = cfg.pk * Math.pow(cfg.dc, posRank - 1);
+    var rankVal = Math.round(Math.max(100, Math.min(9500, rv * ab)));
+    var rawFloor = pos !== "QB" ? Math.round((projSKey || 0) * (isIDP ? 5 : 15) * ab) : 0;
+    var formulaVal = pos !== "QB" ? Math.max(rankVal, Math.min(3500, rawFloor)) : rankVal;
+    result = Math.round(formulaVal * fmtAdj * tepAdj * idpAdj);
   }
-  var rv = cfg.pk * Math.pow(cfg.dc, posRank - 1);
-  var rankVal = Math.round(Math.max(100, (opts.isSF && pos === "QB") ? rv * ab : Math.min(9500, rv * ab)));
-  var rawFloor = pos !== "QB" ? Math.round((projSKey || 0) * (isIDP ? 5 : 15) * ab) : 0;
-  var formulaVal = pos !== "QB" ? Math.max(rankVal, Math.min(3500, rawFloor)) : rankVal;
-  return Math.round(formulaVal * fmtAdj * tepAdj * idpAdj);
+  return uncapped ? result : Math.min(9999, result);
 }
 
 export function playerSlug(name: string): string {

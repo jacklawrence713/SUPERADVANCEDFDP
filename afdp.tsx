@@ -2995,12 +2995,9 @@ export default function App(){
   var _setRankSubTab=setRankSubTab;setRankSubTab=function(v){_setRankSubTab(v);try{localStorage.setItem('fdp_rankSubTab',v);}catch(e){}};
   var [rankPos,setRankPos]=useState("QB");
 
-  var [rankFormat,setRankFormat]=useState("SF");
-  var [pvTep,setPvTep]=useState(false);
   var [sfMode,setSfMode]=useState(false);
   var [idpMode,setIdpMode]=useState(function(){try{var s=localStorage.getItem('fdp_idp_v1');return s==="true";}catch(e){return false;}});
   var [pvPos,setPvPos]=useState("All");
-  var [rankTep,setRankTep]=useState(false);
   var [rankSearch,setRankSearch]=useState("");
   var [rankTeamFilter,setRankTeamFilter]=useState("All Teams");
   var [rankIdpPos,setRankIdpPos]=useState("DL");
@@ -3157,6 +3154,7 @@ export default function App(){
       var aVbd=isSF&&p.pos==="QB"?aRaw*1.38:aRaw;
       return Object.assign({},p,{pts:+pts.toFixed(1),vbd:+vbd.toFixed(1),aVbd:+Math.max(0,aVbd).toFixed(1),ag:ageGrade(p.pos,p.age)});
     });
+    // Pass 1: Sort by VBD for preliminary posRank (used as fallback input for non-ktcVal dynasty tradeVal)
     list.sort(function(a,b){return b.vbd-a.vbd;});
     var totVbd=list.reduce(function(s,p){return s+Math.max(0,p.vbd);},0)||1;
     var aTotVbd=list.reduce(function(s,p){return s+(p.aVbd||0);},0)||1;
@@ -3164,19 +3162,15 @@ export default function App(){
     list.forEach(function(p,i){
       prc[p.pos]=(prc[p.pos]||0)+1;
       p.posRank=prc[p.pos];p.rank=i+1;
-      p.tier=tierLabel(p.posRank,p.pos);
-      p.scarcity=scarcityLabel(p.posRank,bl[p.pos]||teams);
       p.auction=p.aVbd>0?Math.max(1,Math.round((p.aVbd/aTotVbd)*(budget*teams-teams*15)*0.88+1)):1;
       if(p.pos==="K"||p.pos==="DST") p.auction=Math.min(p.auction,5);
       p.ffabVal=p.vbd>0?Math.max(1,Math.round((p.vbd/totVbd)*ffab*4)):1;
       var baseTV=Math.round(p.vbd*adminTvMult);
       if(isDynasty){
         p.tradeVal=computeDynastyTradeVal(p.pos,p.age,p.ktcVal,p.posRank,p.proj[sKey]||0,{isSF:isSF,sKey:sKey,tePremium:tePremium,idpMode:idpMode});
+        p._rawTV=computeDynastyTradeVal(p.pos,p.age,p.ktcVal,p.posRank,p.proj[sKey]||0,{isSF:isSF,sKey:sKey,tePremium:tePremium,idpMode:idpMode},true);
       } else {
         // Redraft (PPR/Half/Standard/Superflex): VBD-based with position-rank floor
-        // Floor prevents depth players from cliffing to 10 when below baseline
-        // Mirrors dynasty scale so values look consistent across format switches
-        var isIDPrd=p.pos==="DL"||p.pos==="LB"||p.pos==="DB";
         var rdPk=p.pos==="QB"?(isSF?7000:3500)
           :p.pos==="RB"?8000
           :p.pos==="TE"?5000
@@ -3190,6 +3184,23 @@ export default function App(){
         p.tradeVal=Math.max(rdFloor,Math.min(9500,Math.max(100,baseTV)));
       }
     });
+    // Pass 2 (Dynasty): Re-sort by canonical FDP Value for final ranks/tier/scarcity
+    if(isDynasty){
+      list.sort(function(a,b){return b.tradeVal-a.tradeVal||(b._rawTV||0)-(a._rawTV||0)||a.name.localeCompare(b.name);});
+      var fprc={};
+      list.forEach(function(p,i){
+        fprc[p.pos]=(fprc[p.pos]||0)+1;
+        p.posRank=fprc[p.pos];p.rank=i+1;
+        p.tier=tierLabel(p.posRank,p.pos);
+        p.scarcity=scarcityLabel(p.posRank,bl[p.pos]||teams);
+      });
+    } else {
+      // Redraft: VBD-based ranks are final
+      list.forEach(function(p){
+        p.tier=tierLabel(p.posRank,p.pos);
+        p.scarcity=scarcityLabel(p.posRank,bl[p.pos]||teams);
+      });
+    }
     return list;
   },[leagueType,format,teams,budget,ffab,sKey,isDynasty,isSF,tePremium,idpMode,liveProj,adminTvMult,customPPRVal]);
 
@@ -6810,9 +6821,9 @@ export default function App(){
           React.createElement("div",{style:{fontWeight:900,fontSize:20,marginBottom:2}},"FDP Player Values"),
           React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:12}},"Fantasy Draft Pros dynasty values"),
           React.createElement("div",{style:{display:"flex",gap:6,flexWrap:"wrap"}},
-            React.createElement("button",{onClick:function(){setRankFormat(rankFormat==="SF"?"1QB":"SF");},style:{padding:"7px 18px",borderRadius:10,border:"1px solid "+(rankFormat==="SF"?T.purple:T.border),background:rankFormat==="SF"?T.purple:"transparent",color:rankFormat==="SF"?"#fff":T.textSub,fontWeight:700,fontSize:13,cursor:"pointer"}},"SF"),
-            React.createElement("button",{onClick:function(){setRankFormat(rankFormat==="SF"?"SF":"1QB");},style:{padding:"7px 18px",borderRadius:10,border:"1px solid "+(rankFormat==="1QB"?T.purple:T.border),background:rankFormat==="1QB"?T.purple:"transparent",color:rankFormat==="1QB"?"#fff":T.textSub,fontWeight:700,fontSize:13,cursor:"pointer"}},"1QB"),
-            React.createElement("button",{onClick:function(){setPvTep(function(v){return !v;});},style:{padding:"7px 18px",borderRadius:10,border:"1px solid "+(pvTep?"#f59e0b":T.border),background:pvTep?"#f59e0b":"transparent",color:pvTep?"#000":T.textSub,fontWeight:700,fontSize:13,cursor:"pointer"}},"TEP")
+            React.createElement("button",{onClick:function(){setSfMode(true);},style:{padding:"7px 18px",borderRadius:10,border:"1px solid "+(sfMode?T.purple:T.border),background:sfMode?T.purple:"transparent",color:sfMode?"#fff":T.textSub,fontWeight:700,fontSize:13,cursor:"pointer"}},"SF"),
+            React.createElement("button",{onClick:function(){setSfMode(false);},style:{padding:"7px 18px",borderRadius:10,border:"1px solid "+(!sfMode?T.purple:T.border),background:!sfMode?T.purple:"transparent",color:!sfMode?"#fff":T.textSub,fontWeight:700,fontSize:13,cursor:"pointer"}},"1QB"),
+            React.createElement("button",{onClick:function(){setTePremium(function(v){return v>0?0:1;});},style:{padding:"7px 18px",borderRadius:10,border:"1px solid "+(tePremium>0?"#f59e0b":T.border),background:tePremium>0?"#f59e0b":"transparent",color:tePremium>0?"#000":T.textSub,fontWeight:700,fontSize:13,cursor:"pointer"}},"TEP")
           ),
           React.createElement("div",{style:{display:"flex",gap:6,marginTop:8,flexWrap:"wrap"}},
             ["All","QB","RB","WR","TE","DL","LB","DB"].map(function(pos){var active=pvPos===pos;return React.createElement("button",{key:pos,onClick:function(){setPvPos(pos);},style:{padding:"5px 12px",borderRadius:8,border:"1px solid "+(active?T.purple:T.border),background:active?T.purple:"transparent",color:active?"#fff":T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},pos);})
@@ -6845,35 +6856,18 @@ export default function App(){
         React.createElement("div",{style:{display:"grid",gridTemplateColumns:"44px 1fr 96px",padding:"10px 16px",borderTop:"1px solid "+T.border,borderBottom:"1px solid "+T.border,marginTop:12,background:T.bgInput,gap:4}},
           React.createElement("div",null),
           React.createElement("div",{style:{fontSize:9,fontWeight:700,color:T.textDim,letterSpacing:1}},"DETAILS"),
-          React.createElement("div",{style:{fontSize:9,fontWeight:700,color:T.purple,letterSpacing:1,textAlign:"right"}},"FDP VALUE ("+(rankFormat==="SF"?("SF"+(pvTep?"+TEP":"")):(pvTep?"1QB+TEP":"1QB"))+")")
+          React.createElement("div",{style:{fontSize:9,fontWeight:700,color:T.purple,letterSpacing:1,textAlign:"right"}},"FDP VALUE ("+(sfMode?("SF"+(tePremium>0?"+TEP":"")):(tePremium>0?"1QB+TEP":"1QB"))+")")
         ),
         (function(){
-          var wantSF=rankFormat==="SF";
-          var wantTEP=pvTep;
-          function pvVal(p){
-            var ab=dynastyBonus(p.pos,p.age);
-            var sfBoost=wantSF&&p.pos==="QB"?1.25:1;
-            var tepBoost=wantTEP&&p.pos==="TE"?1.2:1;
-            if(p.ktcVal)return Math.min(9999,Math.round(p.ktcVal*ab*sfBoost*tepBoost));
-            var cfg=p.pos==="QB"?(wantSF?{pk:7660,dc:0.927}:{pk:5800,dc:0.912})
-              :p.pos==="RB"?{pk:9987,dc:0.921}
-              :p.pos==="TE"?(wantTEP?{pk:10500,dc:0.833}:{pk:8756,dc:0.833})
-              :p.pos==="DL"?{pk:5500,dc:0.940}
-              :p.pos==="LB"?{pk:4500,dc:0.935}
-              :p.pos==="DB"?{pk:4200,dc:0.930}
-              :{pk:9950,dc:0.927};
-            var rv=cfg.pk*Math.pow(cfg.dc,(p.posRank||1)-1);
-            return Math.round(Math.max(100,Math.min(9999,rv*ab)));
-          }
-          // Compute replacement-level values per position (rank 12)
+          // Compute replacement-level values per position (rank 12) using canonical tradeVal
           var replVals={};
           ["QB","RB","WR","TE","DL","LB","DB"].forEach(function(pos){
-            var posPlrs=rankedPlayers.filter(function(pp){return pp.pos===pos;}).sort(function(a,b){return pvVal(b)-pvVal(a);});
-            replVals[pos]=posPlrs[11]?pvVal(posPlrs[11]):0;
+            var posPlrs=rankedPlayers.filter(function(pp){return pp.pos===pos;});
+            replVals[pos]=posPlrs[11]?(posPlrs[11].tradeVal||0):0;
           });
-          return rankedPlayers.filter(function(p){return p.pos!=="K"&&p.pos!=="DST"&&(pvPos==="All"||p.pos===pvPos)&&(!pvSearch||p.name.toLowerCase().includes(pvSearch.toLowerCase()))&&(!user||user.isPro||p.rank<=FREE_RANK_LIMIT);}).slice().sort(function(a,b){return pvVal(b)-pvVal(a);}).map(function(p,idx){
+          return rankedPlayers.filter(function(p){return p.pos!=="K"&&p.pos!=="DST"&&(pvPos==="All"||p.pos===pvPos)&&(!pvSearch||p.name.toLowerCase().includes(pvSearch.toLowerCase()))&&(!user||user.isPro||p.rank<=FREE_RANK_LIMIT);}).map(function(p,idx){
             var gs=getGameScript(p.team,oddsData);
-            var displayVal=pvVal(p);
+            var displayVal=p.tradeVal||0;
             var pvAg=ageGrade(p.pos,p.age);
             var vor=displayVal-(replVals[p.pos]||0);
             return React.createElement("div",{key:p.name,onClick:function(){addToTrade(p);},style:{display:"grid",gridTemplateColumns:"44px 1fr 96px",padding:"10px 16px",borderBottom:"1px solid "+T.border,alignItems:"center",gap:4,cursor:"pointer"}},
@@ -6889,7 +6883,7 @@ export default function App(){
                   p.age&&React.createElement("span",{style:{fontSize:10,color:T.textDim}},p.age),
                   React.createElement("span",{style:{fontSize:9,fontWeight:700,color:pvAg.c}},pvAg.g),
                   gs&&React.createElement("span",{style:{fontSize:9,fontWeight:700,color:gs.color,background:gs.color+"18",border:"1px solid "+gs.color+"33",borderRadius:4,padding:"1px 5px"}},gs.script.toUpperCase()),
-                  (function(){var ppv=displayVal>0?p.pts/displayVal*1000:0;var posAvg=(function(){var pp=rankedPlayers.filter(function(x){return x.pos===p.pos&&pvVal(x)>500;});if(pp.length<3)return ppv;return pp.reduce(function(s,x){return s+x.pts/Math.max(pvVal(x),1)*1000;},0)/pp.length;})();if(posAvg===0)return null;var ratio=ppv/posAvg;if(ratio>1.3&&p.posRank<=20)return React.createElement("span",{style:{fontSize:8,fontWeight:800,color:T.green,background:T.green+"18",borderRadius:4,padding:"1px 4px"}},"BUY LOW");if(ratio<0.7&&p.posRank<=20)return React.createElement("span",{style:{fontSize:8,fontWeight:800,color:T.red,background:T.red+"18",borderRadius:4,padding:"1px 4px"}},"SELL HIGH");return null;})()
+                  (function(){var ppv=displayVal>0?p.pts/displayVal*1000:0;var posAvg=(function(){var pp=rankedPlayers.filter(function(x){return x.pos===p.pos&&(x.tradeVal||0)>500;});if(pp.length<3)return ppv;return pp.reduce(function(s,x){return s+x.pts/Math.max(x.tradeVal||1,1)*1000;},0)/pp.length;})();if(posAvg===0)return null;var ratio=ppv/posAvg;if(ratio>1.3&&p.posRank<=20)return React.createElement("span",{style:{fontSize:8,fontWeight:800,color:T.green,background:T.green+"18",borderRadius:4,padding:"1px 4px"}},"BUY LOW");if(ratio<0.7&&p.posRank<=20)return React.createElement("span",{style:{fontSize:8,fontWeight:800,color:T.red,background:T.red+"18",borderRadius:4,padding:"1px 4px"}},"SELL HIGH");return null;})()
                 )
               ),
               React.createElement("div",{style:{textAlign:"right"}},
@@ -6931,10 +6925,10 @@ export default function App(){
           React.createElement("div",{style:{fontSize:12,color:T.textSub,fontWeight:600,marginBottom:8}},"Format"),
           React.createElement("div",{style:{display:"flex",gap:8}},
             ["SF","1QB"].map(function(fmt){
-              var active=rankFormat===fmt;
-              return React.createElement("button",{key:fmt,onClick:function(){setRankFormat(fmt);},style:{padding:"10px 22px",borderRadius:10,border:"none",background:active?"#22c55e":T.bgInput,color:active?"#fff":T.textSub,fontWeight:700,fontSize:14,cursor:"pointer"}},fmt);
+              var active=fmt==="SF"?sfMode:!sfMode;
+              return React.createElement("button",{key:fmt,onClick:function(){setSfMode(fmt==="SF");},style:{padding:"10px 22px",borderRadius:10,border:"none",background:active?"#22c55e":T.bgInput,color:active?"#fff":T.textSub,fontWeight:700,fontSize:14,cursor:"pointer"}},fmt);
             }),
-            React.createElement("button",{key:"TEP",onClick:function(){setRankTep(!rankTep);},style:{padding:"10px 22px",borderRadius:10,border:"none",background:rankTep?"#22c55e":T.bgInput,color:rankTep?"#fff":T.textSub,fontWeight:700,fontSize:14,cursor:"pointer"}},"TEP")
+            React.createElement("button",{key:"TEP",onClick:function(){setTePremium(function(v){return v>0?0:1;});},style:{padding:"10px 22px",borderRadius:10,border:"none",background:tePremium>0?"#22c55e":T.bgInput,color:tePremium>0?"#fff":T.textSub,fontWeight:700,fontSize:14,cursor:"pointer"}},"TEP")
           )
         ),
         React.createElement("div",{style:{padding:"0 16px 12px"}},
@@ -6956,9 +6950,6 @@ export default function App(){
           var filtered=rankedPlayers.filter(function(p){
             return p.pos===posF&&(!rankSearch||p.name.toLowerCase().includes(rankSearch.toLowerCase()))&&(rankTeamFilter==="All Teams"||p.team.toUpperCase()===rankTeamFilter.toUpperCase());
           });
-          var wSF=rankFormat==="SF";var wTEP=rankTep;
-          function rankVal(p){var sf=wSF&&p.pos==="QB"?1.25:1;var tp=wTEP&&p.pos==="TE"?1.2:1;return p.tradeVal*sf*tp;}
-          filtered=filtered.slice().sort(function(a,b){return rankVal(b)-rankVal(a);});
           return filtered.filter(function(_,i){return !user||user.isPro||i<FREE_RANK_LIMIT;}).map(function(p,i){
             var gs=getGameScript(p.team,oddsData);
             var rAg=ageGrade(p.pos,p.age);
@@ -6966,7 +6957,7 @@ export default function App(){
             var isWatched=watchlist.indexOf(p.name)!==-1;
             var isOnBlock=tradeBlock.indexOf(p.name)!==-1;
             return React.createElement("div",{key:p.name,onClick:function(){addToTrade(p);},style:{display:"grid",gridTemplateColumns:"32px 1fr 80px 52px",padding:"10px 16px",borderBottom:"1px solid "+T.border,alignItems:"center",cursor:"pointer"}},
-              React.createElement("div",{style:{fontWeight:800,fontSize:13,color:i<3?T.gold:T.textDim}},i+1),
+              React.createElement("div",{style:{fontWeight:800,fontSize:13,color:p.posRank<=3?T.gold:T.textDim}},p.posRank),
               React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10}},
                 React.createElement(Avatar,{name:p.name,pos:p.pos,size:36}),
                 React.createElement("div",null,
@@ -7009,7 +7000,7 @@ export default function App(){
           var idpAg=ageGrade(p.pos,p.age);
           var idpTier=tierLabel(p.posRank||99,p.pos);
           return React.createElement("div",{key:p.name,onClick:function(){addToTrade(p);},style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"12px 14px",marginBottom:6,display:"flex",alignItems:"center",gap:10,cursor:"pointer"}},
-            React.createElement("div",{style:{fontWeight:800,fontSize:12,color:i<3?(POS_COLORS[rankIdpPos]||T.gold):T.textDim,width:24,flexShrink:0,textAlign:"center"}},i+1),
+            React.createElement("div",{style:{fontWeight:800,fontSize:12,color:p.posRank<=3?(POS_COLORS[rankIdpPos]||T.gold):T.textDim,width:24,flexShrink:0,textAlign:"center"}},p.posRank),
             React.createElement(Avatar,{name:p.name,pos:p.pos,size:36}),
             React.createElement("div",{style:{flex:1,minWidth:0}},
               React.createElement("div",{style:{fontWeight:700,fontSize:13}},p.name),
@@ -9865,7 +9856,7 @@ export default function App(){
           adminTvDraft!==null&&React.createElement("div",{style:{background:"#f97316"+"18",border:"1px solid #f97316",borderRadius:8,padding:"10px 12px",fontSize:12,color:"#f97316",fontWeight:600}},"Unsaved — hit Save Changes to apply"),
           React.createElement("div",{style:{background:T.bgInput,border:"1px solid "+T.border,borderRadius:8,padding:"10px 12px",display:"flex",gap:8}},
             React.createElement("span",{style:{color:T.textSub,flexShrink:0}},"\u24D8"),
-            React.createElement("div",{style:{fontSize:12,color:T.textSub,lineHeight:1.6}},"Recommended: 80 puts top players at ~8,000-10,000, matching the pick scale (1.01=7,500, 3rd round=100-400). Increase if you want larger numbers.")
+            React.createElement("div",{style:{fontSize:12,color:T.textSub,lineHeight:1.6}},"Recommended: 80 puts top players at ~8,000-9,999, matching the pick scale (1.01=7,500, 3rd round=100-400). Increase if you want larger numbers.")
           )
         ),
         React.createElement("div",{style:{padding:"24px 0 8px",borderTop:"1px solid "+T.border,textAlign:"center"}},
@@ -10033,7 +10024,7 @@ export default function App(){
             React.createElement("span",{style:{fontSize:18,color:"#3730a3"}},"\uD83D\uDCC4"),
             React.createElement("span",{style:{fontWeight:800,fontSize:15,color:"#1e1b4b"}},"CSV Format Requirements")
           ),
-          [["Required columns:","full_name, position, base_value, rank"],["Optional columns:","sub_position, team"],["Valid positions:","DL, LB, DB"],["Valid sub_positions:","EDGE, DT, NT, ILB, OLB, MLB, CB, S, FS, SS"],["Value range:","0 - 10,000 (similar to offensive player scale)"]].map(function(r){
+          [["Required columns:","full_name, position, base_value, rank"],["Optional columns:","sub_position, team"],["Valid positions:","DL, LB, DB"],["Valid sub_positions:","EDGE, DT, NT, ILB, OLB, MLB, CB, S, FS, SS"],["Value range:","0 - 9,999 (similar to offensive player scale)"]].map(function(r){
             return React.createElement("div",{key:r[0],style:{fontSize:13,color:"#4338ca",marginBottom:6,lineHeight:1.5}},
               React.createElement("b",null,r[0])," "+r[1]
             );

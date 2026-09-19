@@ -62,11 +62,14 @@ describe('value consistency: canonical tradeVal for 10 representative players', 
 })
 
 describe('value consistency: superflex adjustments', () => {
-  it('Josh Allen QB value increases in SF', () => {
+  it('Josh Allen QB value increases in SF (capped at 9999)', () => {
     const base = computeTradeVal(REPRESENTATIVE_PLAYERS[2], DEFAULT_OPTS)
     const sf = computeTradeVal(REPRESENTATIVE_PLAYERS[2], SF_OPTS)
     expect(sf).toBeGreaterThan(base)
-    expect(sf).toBe(Math.round(REPRESENTATIVE_PLAYERS[2].ktcVal * dynastyBonus('QB', 30.3) * 1.25))
+    // SF QB raw value exceeds 9999 but is capped
+    const rawExpected = Math.round(REPRESENTATIVE_PLAYERS[2].ktcVal * dynastyBonus('QB', 30.3) * 1.25)
+    expect(rawExpected).toBeGreaterThan(9999)
+    expect(sf).toBe(9999)
   })
 
   it('RB value unchanged in SF', () => {
