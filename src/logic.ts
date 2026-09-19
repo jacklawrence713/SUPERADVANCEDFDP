@@ -154,6 +154,89 @@ export const PRODUCT_STATS = {
   MODE_TOGGLES: ["Superflex", "TE Premium", "IDP"] as const,
 } as const;
 
+// ── Format context label ─────────────────────────────────────
+// Returns a human-readable label for the active scoring configuration.
+export function formatContextLabel(
+  isDynasty: boolean, isSF: boolean, sKey: string, tePremium: number,
+): string {
+  var parts: string[] = [];
+  parts.push(isDynasty ? "Dynasty" : "Redraft");
+  parts.push(isSF ? "Superflex" : "1QB");
+  parts.push(sKey === "Standard" ? "Standard" : sKey === "Half" ? "Half PPR" : "PPR");
+  if (tePremium > 0) parts.push("TEP");
+  return parts.join(" \u00B7 ");
+}
+
+// ── "Why this value?" explanation ────────────────────────────
+// Returns only the factors that ACTUALLY influenced a specific player's
+// FDP Value via computeDynastyTradeVal(). Never references factors not
+// in the canonical calculation.
+export type ValueFactor = { label: string; detail: string; impact: "positive" | "negative" | "neutral" };
+
+export function explainFdpValue(
+  pos: string, age: number, ktcVal: number | undefined,
+  opts: { isSF: boolean; sKey: string; tePremium: number; idpMode: boolean },
+): ValueFactor[] {
+  var factors: ValueFactor[] = [];
+  var isIDP = pos === "DL" || pos === "LB" || pos === "DB";
+
+  // Base valuation source
+  if (ktcVal) {
+    factors.push({ label: "Base valuation", detail: "Market-informed player value", impact: "neutral" });
+  } else {
+    factors.push({ label: "Base valuation", detail: "Position rank decay model", impact: "neutral" });
+  }
+
+  // Age / dynasty bonus
+  var ab = dynastyBonus(pos, age);
+  if (pos !== "DST" && pos !== "K" && pos !== "PICK") {
+    var lo = PRIME[pos] ? PRIME[pos][0] : 25;
+    if (ab > 1) {
+      factors.push({ label: "Age adjustment", detail: "Pre-prime youth bonus (age " + age.toFixed(1) + ")", impact: "positive" });
+    } else if (ab < 1) {
+      factors.push({ label: "Age adjustment", detail: "Post-prime aging curve (age " + age.toFixed(1) + ")", impact: "negative" });
+    } else {
+      factors.push({ label: "Age adjustment", detail: "In or near prime window (age " + age.toFixed(1) + ")", impact: "neutral" });
+    }
+  }
+
+  // Superflex QB boost
+  if (opts.isSF && pos === "QB") {
+    factors.push({ label: "Superflex boost", detail: "QB value increased for SF leagues", impact: "positive" });
+  }
+
+  // Scoring format
+  var fmtAdj = 1;
+  if (opts.sKey === "Standard") {
+    if (pos === "RB") fmtAdj = 1.06;
+    else if (pos === "WR") fmtAdj = 0.95;
+    else if (pos === "TE") fmtAdj = 0.92;
+  } else if (opts.sKey === "Half") {
+    if (pos === "RB") fmtAdj = 1.03;
+    else if (pos === "TE") fmtAdj = 0.96;
+  }
+  if (fmtAdj !== 1) {
+    var fmtName = opts.sKey === "Standard" ? "Standard" : "Half PPR";
+    factors.push({
+      label: "Scoring format",
+      detail: fmtName + " adjustment (" + (fmtAdj > 1 ? "+" : "") + ((fmtAdj - 1) * 100).toFixed(0) + "%)",
+      impact: fmtAdj > 1 ? "positive" : "negative",
+    });
+  }
+
+  // TE Premium
+  if (opts.tePremium > 0 && pos === "TE") {
+    factors.push({ label: "TE Premium", detail: "TE value boosted for TEP leagues (+15%)", impact: "positive" });
+  }
+
+  // IDP mode
+  if (opts.idpMode && isIDP) {
+    factors.push({ label: "IDP mode", detail: "IDP player value boosted (+12%)", impact: "positive" });
+  }
+
+  return factors;
+}
+
 export function tVal(
   side: Array<{ pos: string; tradeVal?: number; est?: number }>,
   fa: number,

@@ -216,6 +216,7 @@ function generateSitemap(indexableSlugs: string[], valuesDate: string): string {
     { loc: '/dynasty-rankings/', priority: '0.9', freq: 'weekly' },
     { loc: '/sleeper-trade-calculator/', priority: '0.8', freq: 'weekly' },
     { loc: '/superflex-trade-calculator/', priority: '0.8', freq: 'weekly' },
+    { loc: '/fdp-value/', priority: '0.7', freq: 'monthly' },
   ]
   let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`
   for (const r of staticRoutes) {
@@ -305,6 +306,53 @@ function spaRoutesPlugin() {
         }
       }
       if (redirects > 0) console.log(`[spa-routes] Generated ${redirects} legacy slug redirects`)
+
+      // Generate /fdp-value/ SEO page
+      const fdpValueDir = resolve(distDir, 'fdp-value')
+      if (!existsSync(fdpValueDir)) mkdirSync(fdpValueDir, { recursive: true })
+      const fdpValueHtml = `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>What is FDP Value? — Dynasty Player Valuation Explained | Fantasy Draft Pros</title>
+  <meta name="description" content="Learn how FDP Value works. Fantasy Draft Pros uses a 0-9,999 scale to rank 1,000+ dynasty players. Understand age adjustments, Superflex, TE Premium, and scoring format impacts." />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://fantasydraftpros.com/fdp-value/" />
+  <meta property="og:title" content="What is FDP Value? — Fantasy Draft Pros" />
+  <meta property="og:description" content="FDP Value is Fantasy Draft Pros' proprietary dynasty valuation system. 0-9,999 scale with age, Superflex, TE Premium, and format adjustments." />
+  <meta property="og:url" content="https://fantasydraftpros.com/fdp-value/" />
+  <meta property="og:type" content="article" />
+  <meta property="og:image" content="https://fantasydraftpros.com/logo-horizontal.png" />
+  <link rel="icon" type="image/png" href="/logo-shield.png" />
+  <meta name="theme-color" content="#7c4dff" />
+  <script>${darkModeScript}</script>
+  ${appPreloads}
+</head>
+<body>
+  <div id="root"><div style="background:#13111e;color:#e0dce8;padding:40px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:680px;margin:0 auto;line-height:1.7">
+    <h1 style="color:#7c4dff;font-size:28px;margin-bottom:8px">What is FDP Value?</h1>
+    <p style="font-size:13px;color:#9b96b8;margin-bottom:24px">Values as of ${VALUES_UPDATED_AT}</p>
+    <h2 style="color:#7c4dff;font-size:18px">The FDP Value Scale</h2>
+    <p>FDP Value is Fantasy Draft Pros' own dynasty player valuation system. Every player is assigned a value from 0 to 9,999 based on their dynasty fantasy football trade worth. Higher value = greater dynasty trade value.</p>
+    <h2 style="font-size:18px">What Determines FDP Value?</h2>
+    <ul>
+      <li><strong>Base Valuation</strong> — Market-informed base value or position-rank decay model</li>
+      <li><strong>Age &amp; Dynasty Bonus</strong> — Youth bonus for pre-prime players, decline for post-prime</li>
+      <li><strong>Superflex</strong> — QB values boosted in SF leagues</li>
+      <li><strong>Scoring Format</strong> — Standard, Half PPR, and PPR affect positional values</li>
+      <li><strong>TE Premium</strong> — TE values boosted when TEP is enabled</li>
+      <li><strong>IDP Mode</strong> — DL, LB, DB values boosted when IDP is on</li>
+    </ul>
+    <h2 style="font-size:18px">Rankings</h2>
+    <p>Players are ranked by FDP Value. The highest value is Overall Rank #1. Position Rank determines Tier (Tier 1 = elite, Tier 5 = borderline starter).</p>
+    <p><a href="/" style="color:#7c4dff">Back to Trade Analyzer</a></p>
+  </div></div>
+  ${appScripts}
+</body>
+</html>`
+      writeFileSync(resolve(fdpValueDir, 'index.html'), fdpValueHtml)
+      console.log('[spa-routes] Generated /fdp-value/ info page')
 
       // Generate sitemap — only indexable pages, lastmod from VALUES_UPDATED_AT
       const sitemap = generateSitemap(indexable.map(p => p.slug), VALUES_UPDATED_AT)

@@ -570,3 +570,225 @@ describe('product statistics: centralized and truthful', () => {
     expect(players.length, 'PLAYERS count should justify 1,000+ claim').toBeGreaterThanOrEqual(1000)
   })
 })
+
+// ── FDP Value presentation tests (Prompt 11) ─────────────────────
+import {
+  formatContextLabel,
+  explainFdpValue,
+} from './logic'
+
+describe('FDP Value presentation: formatContextLabel', () => {
+  it('produces Dynasty · 1QB · PPR by default', () => {
+    expect(formatContextLabel(true, false, 'PPR', 0)).toBe('Dynasty \u00B7 1QB \u00B7 PPR')
+  })
+  it('produces Dynasty · Superflex · PPR when SF', () => {
+    expect(formatContextLabel(true, true, 'PPR', 0)).toBe('Dynasty \u00B7 Superflex \u00B7 PPR')
+  })
+  it('includes TEP suffix', () => {
+    expect(formatContextLabel(true, false, 'PPR', 1)).toBe('Dynasty \u00B7 1QB \u00B7 PPR \u00B7 TEP')
+  })
+  it('handles Standard scoring', () => {
+    expect(formatContextLabel(true, false, 'Standard', 0)).toBe('Dynasty \u00B7 1QB \u00B7 Standard')
+  })
+  it('handles Redraft mode', () => {
+    expect(formatContextLabel(false, false, 'PPR', 0)).toBe('Redraft \u00B7 1QB \u00B7 PPR')
+  })
+})
+
+describe('FDP Value presentation: explainFdpValue', () => {
+  const defaultOpts = { isSF: false, sKey: 'PPR', tePremium: 0, idpMode: false }
+
+  it('always includes base valuation factor', () => {
+    const factors = explainFdpValue('QB', 26, 8000, defaultOpts)
+    expect(factors.some(f => f.label === 'Base valuation')).toBe(true)
+  })
+
+  it('always includes age adjustment for non-DST/K', () => {
+    const factors = explainFdpValue('RB', 22, 5000, defaultOpts)
+    expect(factors.some(f => f.label === 'Age adjustment')).toBe(true)
+  })
+
+  it('shows youth bonus for young player', () => {
+    const factors = explainFdpValue('RB', 20, 5000, defaultOpts)
+    const age = factors.find(f => f.label === 'Age adjustment')!
+    expect(age.impact).toBe('positive')
+    expect(age.detail).toContain('Pre-prime')
+  })
+
+  it('shows aging decline for old player', () => {
+    const factors = explainFdpValue('RB', 32, 3000, defaultOpts)
+    const age = factors.find(f => f.label === 'Age adjustment')!
+    expect(age.impact).toBe('negative')
+    expect(age.detail).toContain('Post-prime')
+  })
+
+  it('shows SF boost only for QB in SF mode', () => {
+    const sfFactors = explainFdpValue('QB', 26, 8000, { ...defaultOpts, isSF: true })
+    expect(sfFactors.some(f => f.label === 'Superflex boost')).toBe(true)
+    const noSf = explainFdpValue('RB', 24, 5000, { ...defaultOpts, isSF: true })
+    expect(noSf.some(f => f.label === 'Superflex boost')).toBe(false)
+  })
+
+  it('shows TEP factor only for TE with tePremium > 0', () => {
+    const tep = explainFdpValue('TE', 25, 5000, { ...defaultOpts, tePremium: 1 })
+    expect(tep.some(f => f.label === 'TE Premium')).toBe(true)
+    const noTep = explainFdpValue('TE', 25, 5000, defaultOpts)
+    expect(noTep.some(f => f.label === 'TE Premium')).toBe(false)
+  })
+
+  it('shows IDP factor only for IDP pos with idpMode on', () => {
+    const idp = explainFdpValue('LB', 25, undefined, { ...defaultOpts, idpMode: true })
+    expect(idp.some(f => f.label === 'IDP mode')).toBe(true)
+    const noIdp = explainFdpValue('LB', 25, undefined, defaultOpts)
+    expect(noIdp.some(f => f.label === 'IDP mode')).toBe(false)
+  })
+
+  it('shows scoring format only when adjustment is non-1', () => {
+    const std = explainFdpValue('RB', 24, 5000, { ...defaultOpts, sKey: 'Standard' })
+    expect(std.some(f => f.label === 'Scoring format')).toBe(true)
+    const ppr = explainFdpValue('RB', 24, 5000, defaultOpts) // PPR has fmtAdj=1 for RB
+    expect(ppr.some(f => f.label === 'Scoring format')).toBe(false)
+  })
+
+  it('never references injuries, Vegas, news, matchup, or sentiment', () => {
+    const allPositions = ['QB', 'RB', 'WR', 'TE', 'DL', 'LB', 'DB']
+    const allOpts = [
+      defaultOpts,
+      { isSF: true, sKey: 'PPR', tePremium: 0, idpMode: false },
+      { isSF: false, sKey: 'Standard', tePremium: 1, idpMode: true },
+    ]
+    const banned = ['injur', 'vegas', 'odds', 'news', 'matchup', 'sentiment', 'trade volume', 'depth chart']
+    for (const pos of allPositions) {
+      for (const opts of allOpts) {
+        const factors = explainFdpValue(pos, 25, 5000, opts)
+        for (const f of factors) {
+          const text = (f.label + ' ' + f.detail).toLowerCase()
+          for (const b of banned) {
+            expect(text).not.toContain(b)
+          }
+        }
+      }
+    }
+  })
+})
+
+describe('FDP Value presentation: no fake history or raw values', () => {
+  const thisDir = dirname(fileURLToPath(import.meta.url))
+  const rootDir = resolve(thisDir, '..')
+  const afdpSrc = readFileSync(resolve(rootDir, 'afdp.tsx'), 'utf-8')
+
+  it('no fake sparkline delta (up/down with sparkline difference) in Value Trends', () => {
+    // Value Trends should not show fake sparkline-based deltas
+    expect(afdpSrc).not.toContain('pts[pts.length-1]-pts[0]')
+  })
+
+  it('no raw uncapped _rawTV exposed in UI', () => {
+    // _rawTV should only appear in computation and sort, never in createElement display
+    const rawTVMatches = afdpSrc.match(/_rawTV/g) || []
+    // Allowed: 3 occurrences (computation p._rawTV= and sort b._rawTV, a._rawTV)
+    // Never displayed to users — only used for internal tie-breaking
+    expect(rawTVMatches.length).toBeLessThanOrEqual(3)
+  })
+
+  it('FDP Value display never exceeds 9,999', () => {
+    const allPositions = ['QB', 'RB', 'WR', 'TE', 'DL', 'LB', 'DB']
+    for (const pos of allPositions) {
+      for (let age = 18; age <= 40; age++) {
+        const val = computeDynastyTradeVal(pos, age, 15000, 1, 300, {
+          isSF: true, sKey: 'PPR', tePremium: 1, idpMode: true,
+        })
+        expect(val).toBeLessThanOrEqual(9999)
+      }
+    }
+  })
+
+  it('VALUES_UPDATED_AT used for trending tab timestamp', () => {
+    expect(afdpSrc).toContain('" Values as of "+VALUES_UPDATED_AT')
+  })
+
+  it('/fdp-value/ page exists in vite.config.ts', () => {
+    const viteSrc = readFileSync(resolve(rootDir, 'vite.config.ts'), 'utf-8')
+    expect(viteSrc).toContain("fdp-value")
+    expect(viteSrc).toContain("What is FDP Value?")
+  })
+
+  it('/fdp-value/ route is in sitemap', () => {
+    const viteSrc = readFileSync(resolve(rootDir, 'vite.config.ts'), 'utf-8')
+    expect(viteSrc).toContain("/fdp-value/")
+  })
+
+  it('afdp.tsx has fdpValuePage state and route handler', () => {
+    expect(afdpSrc).toContain('fdpValuePage')
+    expect(afdpSrc).toContain('"What is FDP Value?"')
+  })
+
+  it('WhyThisValue component exists in afdp.tsx', () => {
+    expect(afdpSrc).toContain('function WhyThisValue')
+    expect(afdpSrc).toContain('"Why this value?"')
+  })
+
+  it('no "updated daily" or "updated weekly" in UI copy', () => {
+    expect(afdpSrc).not.toContain('"updated daily"')
+    expect(afdpSrc).not.toContain('"updated weekly"')
+    expect(afdpSrc).not.toContain('"Updated daily"')
+    expect(afdpSrc).not.toContain('"Updated weekly"')
+  })
+
+  it('Market tab descriptions do not imply historical movement', () => {
+    expect(afdpSrc).not.toContain('values have dropped significantly')
+    expect(afdpSrc).not.toContain('values have spiked recently')
+    expect(afdpSrc).not.toContain('steady upward momentum')
+    expect(afdpSrc).not.toContain('declining values')
+  })
+
+  it('Value Trends renamed to Player Value Browser', () => {
+    expect(afdpSrc).toContain('"Player Value Browser"')
+  })
+
+  it('auction labels say "Auction value" not "FDP value: $"', () => {
+    expect(afdpSrc).not.toContain('"FDP value: $"')
+  })
+
+  it('sparkline function has been removed', () => {
+    expect(afdpSrc).not.toContain('function sparkline(')
+    expect(afdpSrc).not.toContain('pseudo-random sparkline')
+  })
+
+  it('no pseudo-history name-hash code remains', () => {
+    // The old sparkline used a name hash to generate fake trend data
+    expect(afdpSrc).not.toContain('hash*(w+1)*7919')
+    expect(afdpSrc).not.toContain('Math.pow(trend,w-6)')
+  })
+
+  it('Buy Low subtitle does not claim market mispricing or historical movement', () => {
+    // "undervalued" may appear in editorial news content but not in product UI labels
+    expect(afdpSrc).not.toContain('"Undervalued')
+    expect(afdpSrc).not.toContain('acquire before they rise')
+  })
+
+  it('Sell High subtitle does not claim historical movement', () => {
+    expect(afdpSrc).not.toContain('sell before decline')
+    expect(afdpSrc).not.toContain('sell before drop')
+  })
+
+  it('Trade Targets subtitle describes profile-based signals', () => {
+    expect(afdpSrc).toContain('age and value profile')
+  })
+
+  it('Breakout label replaced with Young Upside', () => {
+    expect(afdpSrc).toContain('"YOUNG UPSIDE"')
+    expect(afdpSrc).not.toContain('"BREAKOUT"')
+  })
+
+  it('Market Alerts copy does not claim market mispricing', () => {
+    expect(afdpSrc).not.toContain('buy before breakout')
+    expect(afdpSrc).not.toContain('trading below ceiling')
+    expect(afdpSrc).not.toContain('value will decline')
+  })
+
+  it('Player Values inline tags use VALUE/PRICEY not BUY LOW/SELL HIGH', () => {
+    // The production-efficiency ratio tags in Player Values table
+    expect(afdpSrc).toContain('"VALUE"')
+    expect(afdpSrc).toContain('"PRICEY"')
+  })
+})
