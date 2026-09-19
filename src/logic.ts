@@ -8,6 +8,7 @@ export const PRIME: Record<string, [number, number]> = {
 
 export const FREE_RANK_LIMIT = 20;
 export const FREE_TRADE_LIMIT = 3;
+export const VALUES_UPDATED_AT = "2026-09-19";
 
 export const ADMIN_EMAILS = [
   "jacklawrence713@gmail.com", "modgy28@hotmail.com",
@@ -89,6 +90,45 @@ export function makePick(pk: { round: number; est: number; [key: string]: any })
     scarcity: { l: "—", c: "#5c5880" },
     auction: tv, ffabVal: tv, rank: 999, team: "—",
   });
+}
+
+// Dynasty trade value computation — the ONE canonical implementation.
+// Used by: afdp.tsx rankedPlayers, SEO page generator (vite.config.ts), tests.
+export function computeDynastyTradeVal(
+  pos: string, age: number, ktcVal: number | undefined,
+  posRank: number, projSKey: number,
+  opts: { isSF: boolean; sKey: string; tePremium: number; idpMode: boolean },
+): number {
+  var isIDP = pos === "DL" || pos === "LB" || pos === "DB";
+  var cfg = pos === "QB" ? (opts.isSF ? { pk: 7660, dc: 0.927 } : { pk: 5800, dc: 0.912 })
+    : pos === "RB" ? { pk: 9987, dc: 0.921 }
+    : pos === "TE" ? { pk: 8756, dc: 0.833 }
+    : pos === "DL" ? { pk: 5500, dc: 0.940 }
+    : pos === "LB" ? { pk: 4500, dc: 0.935 }
+    : pos === "DB" ? { pk: 4200, dc: 0.930 }
+    : { pk: 9950, dc: 0.927 }; // WR
+  var ab = dynastyBonus(pos, age);
+  var sfQbBoost = (opts.isSF && pos === "QB") ? 1.25 : 1;
+  var fmtAdj = 1;
+  if (opts.sKey === "Standard") {
+    if (pos === "RB") fmtAdj = 1.06;
+    else if (pos === "WR") fmtAdj = 0.95;
+    else if (pos === "TE") fmtAdj = 0.92;
+  } else if (opts.sKey === "Half") {
+    if (pos === "RB") fmtAdj = 1.03;
+    else if (pos === "TE") fmtAdj = 0.96;
+  }
+  var tepAdj = (opts.tePremium > 0 && pos === "TE") ? 1.15 : 1;
+  var idpAdj = (opts.idpMode && isIDP) ? 1.12 : 1;
+  if (ktcVal) {
+    var rawVal = Math.round(ktcVal * ab * sfQbBoost * fmtAdj * tepAdj * idpAdj);
+    return (opts.isSF && pos === "QB") ? rawVal : Math.min(9999, rawVal);
+  }
+  var rv = cfg.pk * Math.pow(cfg.dc, posRank - 1);
+  var rankVal = Math.round(Math.max(100, (opts.isSF && pos === "QB") ? rv * ab : Math.min(9500, rv * ab)));
+  var rawFloor = pos !== "QB" ? Math.round((projSKey || 0) * (isIDP ? 5 : 15) * ab) : 0;
+  var formulaVal = pos !== "QB" ? Math.max(rankVal, Math.min(3500, rawFloor)) : rankVal;
+  return Math.round(formulaVal * fmtAdj * tepAdj * idpAdj);
 }
 
 export function playerSlug(name: string): string {

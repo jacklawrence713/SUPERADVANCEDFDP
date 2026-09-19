@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { createClient } from "@supabase/supabase-js";
+import { computeDynastyTradeVal, VALUES_UPDATED_AT } from "./src/logic";
 
 // ── Supabase ─────────────────────────────────────────────────────────────────
 const SUPA_URL = "https://wizdxspglxpvvogiivsv.supabase.co";
@@ -2739,7 +2740,7 @@ export default function App(){
   function setTab(t:string){setTabRaw(t);if(playerPage){setPlayerPage(null);window.history.pushState({},"","/");}window.location.hash=t;}
   var [playerPage,setPlayerPage]=useState<any>(function(){
     var m=window.location.pathname.match(/^\/players\/([a-z0-9-]+)\/?$/);
-    if(m){var p=findPlayerBySlug(m[1]);if(p){document.title=p.name+" Dynasty Value & Trade Analysis | Fantasy Draft Pros";var meta=document.querySelector('meta[name="description"]');if(meta)meta.setAttribute("content",p.name+" dynasty fantasy football value, trade analysis, rankings, and news. Current value: "+(p.ktcVal||0).toLocaleString()+". Free trade calculator at Fantasy Draft Pros.");return p;}}
+    if(m){var p=findPlayerBySlug(m[1]);if(p){document.title=p.name+" Dynasty Value & Trade Analysis | Fantasy Draft Pros";return p;}}
     return null;
   });
   var [isDesktop,setIsDesktop]=useState(function(){return window.innerWidth>=1024;});
@@ -3170,40 +3171,7 @@ export default function App(){
       p.ffabVal=p.vbd>0?Math.max(1,Math.round((p.vbd/totVbd)*ffab*4)):1;
       var baseTV=Math.round(p.vbd*adminTvMult);
       if(isDynasty){
-        // Dynasty: KTC-fitted curves. Derived from confirmed KTC data points:
-        //   RB: Judkins(RB7)=6400, Skattebo(RB9)=5405 → dc=0.919, pk=10659
-        //   TE: Loveland(TE3)=6627, Fannin(TE4)=5522  → dc=0.833, pk=8756
-        //   WR: JSN(WR1)=9950                          → dc=0.927, pk=9950
-        //   QB: Dart(QB9,SF)=5461                      → dc=0.927, pk=9200
-        // Age factor applied linearly (ab, not ab²) — matches KTC methodology
-        var isIDP=p.pos==="DL"||p.pos==="LB"||p.pos==="DB";
-        var cfg=p.pos==="QB"?(isSF?{pk:7660,dc:0.927}:{pk:5800,dc:0.912})
-          :p.pos==="RB"?{pk:9987,dc:0.921}
-          :p.pos==="TE"?{pk:8756,dc:0.833}
-          :p.pos==="DL"?{pk:5500,dc:0.940}
-          :p.pos==="LB"?{pk:4500,dc:0.935}
-          :p.pos==="DB"?{pk:4200,dc:0.930}
-          :{pk:9950,dc:0.927}; // WR
-        var rv=cfg.pk*Math.pow(cfg.dc,p.posRank-1);
-        var ab=dynastyBonus(p.pos,p.age);
-        // Linear age factor (not squared) — derived from KTC data
-        var rankVal=Math.round(Math.max(100,(isSF&&p.pos==="QB")?rv*ab:Math.min(9500,rv*ab)));
-        // IDP proj values are smaller in absolute terms than offensive players — use lower multiplier
-        var rawFloor=p.pos!=="QB"?Math.round((p.proj[sKey]||0)*(isIDP?5:15)*ab):0;
-        var formulaVal=p.pos!=="QB"?Math.max(rankVal,Math.min(3500,rawFloor)):rankVal;
-        // KTC anchor + FDP age intelligence: apply dynastyBonus on top of KTC base
-        // ab=1 for prime-age players (no change), youth gets slight boost, aging gets discount
-        var sfQbBoost=(isSF&&p.pos==="QB")?1.25:1;
-        // Format adjustments: PPR boosts pass-catchers, Standard boosts RBs
-        var fmtAdj=1;
-        if(sKey==="Standard"){if(p.pos==="RB")fmtAdj=1.06;else if(p.pos==="WR")fmtAdj=0.95;else if(p.pos==="TE")fmtAdj=0.92;}
-        else if(sKey==="Half"){if(p.pos==="RB")fmtAdj=1.03;else if(p.pos==="TE")fmtAdj=0.96;}
-        // TEP boost for TEs
-        var tepAdj=(tePremium>0&&p.pos==="TE")?1.15:1;
-        // IDP boost when IDP mode active
-        var idpAdj=(idpMode&&isIDP)?1.12:1;
-        var rawVal=Math.round(p.ktcVal*ab*sfQbBoost*fmtAdj*tepAdj*idpAdj);
-        p.tradeVal=p.ktcVal?(isSF&&p.pos==="QB"?rawVal:Math.min(9999,rawVal)):Math.round(formulaVal*fmtAdj*tepAdj*idpAdj);
+        p.tradeVal=computeDynastyTradeVal(p.pos,p.age,p.ktcVal,p.posRank,p.proj[sKey]||0,{isSF:isSF,sKey:sKey,tePremium:tePremium,idpMode:idpMode});
       } else {
         // Redraft (PPR/Half/Standard/Superflex): VBD-based with position-rank floor
         // Floor prevents depth players from cliffing to 10 when below baseline
@@ -3889,21 +3857,26 @@ export default function App(){
 
   // ── PLAYER PROFILE PAGE ──
   if(playerPage){
-    var pp=playerPage;
+    // Resolve canonical player from rankedPlayers (has tradeVal, posRank, tier, etc.)
+    var ppCanonical=rankedPlayers.find(function(x){return x.name===playerPage.name;})||playerPage;
+    var pp=ppCanonical;
     var ppPos=pp.pos||"QB";
     var ppColor=POS_COLORS[ppPos]||"#a78bfa";
-    var ppVal=pp.ktcVal||0;
+    var ppVal=pp.tradeVal||pp.ktcVal||0;
     var ppTier=ppVal>=8000?"Elite":ppVal>=6000?"Star":ppVal>=4000?"Starter":ppVal>=2000?"Depth":"Bench";
     var ppPrime=PRIME[ppPos]||[23,30];
     var ppInPrime=pp.age>=ppPrime[0]&&pp.age<=ppPrime[1];
     var ppYearsLeft=Math.max(0,ppPrime[1]-pp.age);
+    // Update meta description with canonical value
+    var metaDesc=document.querySelector('meta[name="description"]');
+    if(metaDesc)metaDesc.setAttribute("content",pp.name+" dynasty fantasy football value, trade analysis, rankings, and news. Current FDP value: "+ppVal.toLocaleString()+". Free trade calculator at Fantasy Draft Pros.");
     // Find related news
     var ppNews=DYNASTY_NEWS.filter(function(n){return n.body.indexOf(pp.name)!==-1||n.title.indexOf(pp.name)!==-1;}).slice(0,4);
-    // Find similar-value players for trade comps
-    var ppComps=rankedPlayers.filter(function(x){return x.name!==pp.name&&Math.abs((x.ktcVal||0)-ppVal)<1500&&x.pos===ppPos;}).sort(function(a,b){return Math.abs((a.ktcVal||0)-ppVal)-Math.abs((b.ktcVal||0)-ppVal);}).slice(0,5);
-    // Rank among position
-    var ppPosRank=rankedPlayers.filter(function(x){return x.pos===ppPos;}).sort(function(a,b){return(b.ktcVal||0)-(a.ktcVal||0);}).findIndex(function(x){return x.name===pp.name;})+1;
-    var ppOverallRank=rankedPlayers.sort(function(a,b){return(b.ktcVal||0)-(a.ktcVal||0);}).findIndex(function(x){return x.name===pp.name;})+1;
+    // Find similar-value players for trade comps (use tradeVal for consistency)
+    var ppComps=rankedPlayers.filter(function(x){return x.name!==pp.name&&Math.abs((x.tradeVal||0)-ppVal)<1500&&x.pos===ppPos;}).sort(function(a,b){return Math.abs((a.tradeVal||0)-ppVal)-Math.abs((b.tradeVal||0)-ppVal);}).slice(0,5);
+    // Use canonical posRank/rank from rankedPlayers (same as rankings tab and trade analyzer)
+    var ppPosRank=pp.posRank||0;
+    var ppOverallRank=pp.rank||0;
     // Game script
     var ppOdds=buildHardcodedOdds();
     var ppScript=getGameScript(pp.team,ppOdds);
@@ -3930,7 +3903,7 @@ export default function App(){
             ),
             React.createElement("div",{style:{textAlign:"right"}},
               React.createElement("div",{style:{fontSize:32,fontWeight:900,color:T.purple}},ppVal.toLocaleString()),
-              React.createElement("div",{style:{fontSize:11,color:T.textSub,fontWeight:600}},"FDP Dynasty Value")
+              React.createElement("div",{style:{fontSize:11,color:T.textSub,fontWeight:600}},"FDP Value · "+VALUES_UPDATED_AT)
             )
           ),
           // Value bar
@@ -3965,7 +3938,7 @@ export default function App(){
         ppComps.length>0&&React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,padding:"16px 18px",marginBottom:20}},
           React.createElement("div",{style:{fontSize:12,fontWeight:800,color:T.textDim,letterSpacing:1,marginBottom:10}},"SIMILAR VALUE "+ppPos+"s — TRADE COMPS"),
           ppComps.map(function(c){
-            var cv=c.ktcVal||0;var diff=cv-ppVal;
+            var cv=c.tradeVal||c.ktcVal||0;var diff=cv-ppVal;
             return React.createElement("a",{key:c.name,href:"/players/"+playerSlug(c.name)+"/",onClick:function(e:any){e.preventDefault();setPlayerPage(c);window.history.pushState({},"","/players/"+playerSlug(c.name)+"/");document.title=c.name+" Dynasty Value & Trade Analysis | Fantasy Draft Pros";window.scrollTo(0,0);},style:{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:"1px solid "+T.border+"44",textDecoration:"none",color:"inherit"}},
               React.createElement(Avatar,{name:c.name,pos:c.pos,size:32}),
               React.createElement("div",{style:{flex:1}},
@@ -4003,7 +3976,7 @@ export default function App(){
         // Browse other players
         React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,padding:"16px 18px",marginBottom:20}},
           React.createElement("div",{style:{fontSize:12,fontWeight:800,color:T.textDim,letterSpacing:1,marginBottom:10}},"TOP DYNASTY PLAYERS"),
-          rankedPlayers.filter(function(x){return(x.ktcVal||0)>=7000;}).sort(function(a,b){return(b.ktcVal||0)-(a.ktcVal||0);}).slice(0,12).map(function(p){
+          rankedPlayers.filter(function(x){return(x.tradeVal||0)>=7000;}).sort(function(a,b){return(b.tradeVal||0)-(a.tradeVal||0);}).slice(0,12).map(function(p){
             return React.createElement("a",{key:p.name,href:"/players/"+playerSlug(p.name)+"/",onClick:function(e:any){e.preventDefault();setPlayerPage(p);window.history.pushState({},"","/players/"+playerSlug(p.name)+"/");document.title=p.name+" Dynasty Value & Trade Analysis | Fantasy Draft Pros";window.scrollTo(0,0);},style:{display:"inline-flex",alignItems:"center",gap:4,padding:"5px 10px",margin:"0 6px 6px 0",borderRadius:8,background:T.bgInput,border:"1px solid "+T.border,fontSize:11,fontWeight:600,color:T.text,textDecoration:"none"}},
               React.createElement(PBadge,{pos:p.pos}),p.name
             );
