@@ -3961,7 +3961,8 @@ export default function App(){
     var ppPos=pp.pos||"QB";
     var ppColor=POS_COLORS[ppPos]||"#a78bfa";
     var ppVal=pp.tradeVal||pp.ktcVal||0;
-    var ppTier=ppVal>=8000?"Elite":ppVal>=6000?"Star":ppVal>=4000?"Starter":ppVal>=2000?"Depth":"Bench";
+    var ppTier=pp.tier?"Tier "+pp.tier.t:"—";
+    var ppTierColor=pp.tier?pp.tier.c:T.textDim;
     var ppPrime=PRIME[ppPos]||[23,30];
     var ppInPrime=pp.age>=ppPrime[0]&&pp.age<=ppPrime[1];
     var ppYearsLeft=Math.max(0,ppPrime[1]-pp.age);
@@ -3972,12 +3973,15 @@ export default function App(){
     var ppNews=DYNASTY_NEWS.filter(function(n){return n.body.indexOf(pp.name)!==-1||n.title.indexOf(pp.name)!==-1;}).slice(0,4);
     // Find similar-value players for trade comps (use tradeVal for consistency)
     var ppComps=rankedPlayers.filter(function(x){return x.name!==pp.name&&Math.abs((x.tradeVal||0)-ppVal)<1500&&x.pos===ppPos;}).sort(function(a,b){return Math.abs((a.tradeVal||0)-ppVal)-Math.abs((b.tradeVal||0)-ppVal);}).slice(0,5);
+    // Find same-team players for team context
+    var ppTeammates=rankedPlayers.filter(function(x:any){return x.name!==pp.name&&x.team===pp.team&&(x.tradeVal||0)>500;}).sort(function(a:any,b:any){return(b.tradeVal||0)-(a.tradeVal||0);}).slice(0,6);
     // Use canonical posRank/rank from rankedPlayers (same as rankings tab and trade analyzer)
     var ppPosRank=pp.posRank||0;
     var ppOverallRank=pp.rank||0;
-    // Game script
-    var ppOdds=buildHardcodedOdds();
-    var ppScript=getGameScript(pp.team,ppOdds);
+    // Game script — consume centralized oddsData only (populated by fetchOdds → manual fallback in useEffect)
+    var ppScript=getGameScript(pp.team,oddsData);
+    // Projections
+    var ppProj=pp.proj||{};
     return React.createElement("div",{style:{background:T.bg,minHeight:"100vh",color:T.text,fontFamily:"-apple-system,BlinkMacSystemFont,'Inter',sans-serif"}},
       // Header bar
       React.createElement("div",{style:{background:T.bgCard,borderBottom:"1px solid "+T.border,padding:"12px 20px",display:"flex",alignItems:"center",gap:12}},
@@ -3985,7 +3989,7 @@ export default function App(){
         React.createElement("div",{style:{flex:1}}),
         React.createElement("img",{src:appLogoSrc,alt:"Fantasy Draft Pros",style:{height:24}})
       ),
-      React.createElement("div",{style:{maxWidth:720,margin:"0 auto",padding:"20px 16px"}},
+      React.createElement("main",{style:{maxWidth:720,margin:"0 auto",padding:"20px 16px"}},
         // Player hero card
         React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:20,padding:"24px 20px",marginBottom:20}},
           React.createElement("div",{style:{display:"flex",alignItems:"center",gap:16,marginBottom:16}},
@@ -4005,15 +4009,16 @@ export default function App(){
             )
           ),
           // Value bar
-          React.createElement("div",{style:{display:"flex",gap:12,marginBottom:16,flexWrap:"wrap"}},
-            [["Tier",ppTier,ppVal>=8000?T.gold:ppVal>=6000?T.green:ppVal>=4000?T.purple:T.textDim],
+          React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(64px, 1fr))",gap:8,marginBottom:16}},
+            [["Tier",ppTier,ppTierColor],
              ["Overall",ppOverallRank>0?"#"+ppOverallRank:"—",T.purple],
+             [ppPos+" Rank",ppPosRank>0?"#"+ppPosRank:"—",ppColor],
              ["Prime",ppInPrime?"In Prime":""+ppYearsLeft.toFixed(1)+"y left",ppInPrime?T.green:ppYearsLeft>2?T.gold:T.red],
              ["ADP",pp.adp?pp.adp.toFixed(1):"—",T.textSub]
             ].map(function(item){
-              return React.createElement("div",{key:item[0] as string,style:{flex:1,minWidth:70,background:T.bgInput,borderRadius:12,padding:"10px 12px",textAlign:"center"}},
-                React.createElement("div",{style:{fontSize:10,fontWeight:700,color:T.textDim,letterSpacing:0.5,marginBottom:2}},item[0]),
-                React.createElement("div",{style:{fontSize:16,fontWeight:800,color:item[2]}},item[1])
+              return React.createElement("div",{key:item[0] as string,style:{background:T.bgInput,borderRadius:12,padding:"10px 8px",textAlign:"center"}},
+                React.createElement("div",{style:{fontSize:9,fontWeight:700,color:T.textDim,letterSpacing:0.5,marginBottom:2}},item[0]),
+                React.createElement("div",{style:{fontSize:15,fontWeight:800,color:item[2]}},item[1])
               );
             })
           ),
@@ -4027,17 +4032,47 @@ export default function App(){
         ),
         // Game Script (if available)
         ppScript&&React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,padding:"16px 18px",marginBottom:20}},
-          React.createElement("div",{style:{fontSize:12,fontWeight:800,color:T.textDim,letterSpacing:1,marginBottom:8}},"WEEK 2 GAME SCRIPT"),
-          React.createElement("div",{style:{display:"flex",alignItems:"center",gap:12}},
+          React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:8}},
+            React.createElement("h2",{style:{fontSize:12,fontWeight:800,color:T.textDim,letterSpacing:1,margin:0}},(oddsSource==="api"||oddsSource==="cache"?"GAME SCRIPT":"ARCHIVED GAME SCRIPT")),
+            oddsStale&&(oddsSource==="api"||oddsSource==="cache")&&React.createElement("span",{style:{fontSize:9,color:"#f59e0b",fontWeight:600}},"Updating\u2026"),
+            oddsSource==="manual"&&React.createElement("span",{style:{fontSize:9,color:T.textDim,fontWeight:600}},"May not reflect current week")
+          ),
+          React.createElement("div",{style:{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}},
             React.createElement("div",{style:{fontSize:18,fontWeight:900,color:T.text}},pp.team+" vs "+ppScript.opp),
             React.createElement("div",{style:{fontSize:13,fontWeight:700,color:ppScript.color}},ppScript.spread>0?"+"+ppScript.spread:ppScript.spread),
             React.createElement("div",{style:{fontSize:13,color:T.textSub}},"O/U "+ppScript.total),
             React.createElement("div",{style:{fontSize:11,fontWeight:700,color:ppScript.color,background:ppScript.color+"18",padding:"3px 10px",borderRadius:99}},ppScript.label)
           )
         ),
+        // Season Projections
+        (ppProj.PPR||ppProj.Half||ppProj.Standard)&&React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,padding:"16px 18px",marginBottom:20}},
+          React.createElement("h2",{style:{fontSize:12,fontWeight:800,color:T.textDim,letterSpacing:1,margin:"0 0 4px"}},"2026 SEASON PROJECTIONS"),
+          React.createElement("div",{style:{fontSize:10,color:T.textDim,marginBottom:8}},"Projected fantasy points"),
+          React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}},
+            [["PPR",ppProj.PPR],["Half PPR",ppProj.Half],["Standard",ppProj.Standard]].map(function(item){
+              var isActive=item[0]==="PPR"&&sKey==="PPR"||item[0]==="Half PPR"&&sKey==="Half"||item[0]==="Standard"&&sKey==="Standard";
+              return React.createElement("div",{key:item[0] as string,style:{background:isActive?T.purple+"15":T.bgInput,borderRadius:10,padding:"10px 8px",textAlign:"center",border:isActive?"1px solid "+T.purple+"44":"1px solid transparent"}},
+                React.createElement("div",{style:{fontSize:9,fontWeight:700,color:isActive?T.purple:T.textDim,letterSpacing:0.5,marginBottom:2}},item[0]),
+                React.createElement("div",{style:{fontSize:18,fontWeight:900,color:isActive?T.purple:T.text}},typeof item[1]==="number"&&isFinite(item[1] as number)?(item[1] as number).toFixed(1):"—")
+              );
+            })
+          )
+        ),
+        // Teammates
+        ppTeammates.length>0&&React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,padding:"16px 18px",marginBottom:20}},
+          React.createElement("h2",{style:{fontSize:12,fontWeight:800,color:T.textDim,letterSpacing:1,margin:"0 0 10px"}},pp.team+" TEAMMATES"),
+          ppTeammates.map(function(tm:any){
+            return React.createElement("a",{key:tm.name,href:"/players/"+playerSlug(tm.name)+"/",onClick:function(e:any){e.preventDefault();setPlayerPage(tm);window.history.pushState({},"","/players/"+playerSlug(tm.name)+"/");document.title=tm.name+" Dynasty Value & Trade Analysis | Fantasy Draft Pros";window.scrollTo(0,0);},style:{display:"flex",alignItems:"center",gap:10,padding:"7px 0",borderBottom:"1px solid "+T.border+"44",textDecoration:"none",color:"inherit"}},
+              React.createElement(Avatar,{name:tm.name,pos:tm.pos,size:28} as any),
+              React.createElement(PBadge,{pos:tm.pos} as any),
+              React.createElement("div",{style:{flex:1,fontSize:13,fontWeight:700,color:T.text}},tm.name),
+              React.createElement("div",{style:{fontWeight:800,fontSize:13,color:T.purple}},(tm.tradeVal||0).toLocaleString())
+            );
+          })
+        ),
         // Trade Comps
         ppComps.length>0&&React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,padding:"16px 18px",marginBottom:20}},
-          React.createElement("div",{style:{fontSize:12,fontWeight:800,color:T.textDim,letterSpacing:1,marginBottom:10}},"SIMILAR VALUE "+ppPos+"s — TRADE COMPS"),
+          React.createElement("h2",{style:{fontSize:12,fontWeight:800,color:T.textDim,letterSpacing:1,margin:"0 0 10px"}},"SIMILAR VALUE "+ppPos+"s — TRADE COMPS"),
           ppComps.map(function(c){
             var cv=c.tradeVal||c.ktcVal||0;var diff=cv-ppVal;
             return React.createElement("a",{key:c.name,href:"/players/"+playerSlug(c.name)+"/",onClick:function(e:any){e.preventDefault();setPlayerPage(c);window.history.pushState({},"","/players/"+playerSlug(c.name)+"/");document.title=c.name+" Dynasty Value & Trade Analysis | Fantasy Draft Pros";window.scrollTo(0,0);},style:{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:"1px solid "+T.border+"44",textDecoration:"none",color:"inherit"}},
@@ -4055,7 +4090,7 @@ export default function App(){
         ),
         // Related News
         ppNews.length>0&&React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,padding:"16px 18px",marginBottom:20}},
-          React.createElement("div",{style:{fontSize:12,fontWeight:800,color:T.textDim,letterSpacing:1,marginBottom:10}},"RELATED NEWS"),
+          React.createElement("h2",{style:{fontSize:12,fontWeight:800,color:T.textDim,letterSpacing:1,margin:"0 0 10px"}},"RELATED NEWS"),
           ppNews.map(function(n){
             return React.createElement("div",{key:n.id,style:{padding:"10px 0",borderBottom:"1px solid "+T.border+"44"}},
               React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,marginBottom:4}},
@@ -4076,7 +4111,7 @@ export default function App(){
         ),
         // Browse other players
         React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,padding:"16px 18px",marginBottom:20}},
-          React.createElement("div",{style:{fontSize:12,fontWeight:800,color:T.textDim,letterSpacing:1,marginBottom:10}},"TOP DYNASTY PLAYERS"),
+          React.createElement("h2",{style:{fontSize:12,fontWeight:800,color:T.textDim,letterSpacing:1,margin:"0 0 10px"}},"TOP DYNASTY PLAYERS"),
           rankedPlayers.filter(function(x){return(x.tradeVal||0)>=7000;}).sort(function(a,b){return(b.tradeVal||0)-(a.tradeVal||0);}).slice(0,12).map(function(p){
             return React.createElement("a",{key:p.name,href:"/players/"+playerSlug(p.name)+"/",onClick:function(e:any){e.preventDefault();setPlayerPage(p);window.history.pushState({},"","/players/"+playerSlug(p.name)+"/");document.title=p.name+" Dynasty Value & Trade Analysis | Fantasy Draft Pros";window.scrollTo(0,0);},style:{display:"inline-flex",alignItems:"center",gap:4,padding:"5px 10px",margin:"0 6px 6px 0",borderRadius:8,background:T.bgInput,border:"1px solid "+T.border,fontSize:11,fontWeight:600,color:T.text,textDecoration:"none"}},
               React.createElement(PBadge,{pos:p.pos}),p.name
