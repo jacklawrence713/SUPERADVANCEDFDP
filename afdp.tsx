@@ -2342,7 +2342,7 @@ function AuthModal(props){
   var LogoSvg=React.createElement("img",{src:logoSrc,alt:"Fantasy DraftPros",style:{height:48,width:"auto"}});
   return React.createElement("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}},
     React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:20,padding:28,width:"100%",maxWidth:400,position:"relative"}},
-      React.createElement("button",{onClick:onClose,style:{position:"absolute",top:14,right:16,background:"none",border:"none",color:T.textDim,cursor:"pointer",fontSize:20}},"x"),
+      React.createElement("button",{onClick:onClose,"aria-label":"Close",style:{position:"absolute",top:10,right:10,background:"none",border:"none",color:T.textDim,cursor:"pointer",fontSize:20,minWidth:44,minHeight:44,display:"flex",alignItems:"center",justifyContent:"center"}},"×"),
       React.createElement("div",{style:{textAlign:"center",marginBottom:18}},
         React.createElement("img",{src:logoSrc,alt:"Fantasy DraftPros",style:{height:56,width:"auto",maxWidth:240}})
       ),
@@ -2557,7 +2557,7 @@ function AnalyticsDashboard({T,data,loading,onLoad}:{T:any,data:any,loading:bool
     ),
 
     // Summary cards
-    React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr 1fr",gap:6,marginBottom:20}},
+    React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(90px, 1fr))",gap:6,marginBottom:20}},
       [["Today",todayVisitors,"📅"],["7d",weekVisitors,"📆"],["14d",totalUnique,"🗓️"],["All Time",data.totalVisitors,"👥"],["Trades",data.trades,"⚖️"]].map(function(s:any){
         return React.createElement("div",{key:s[0] as string,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"12px 8px",textAlign:"center"}},
           React.createElement("div",{style:{fontSize:20,marginBottom:4}},s[2]),
@@ -3885,7 +3885,7 @@ export default function App(){
           React.createElement("h2",{style:{fontSize:18,fontWeight:800,margin:"0 0 10px",color:T.purple}},"The FDP Value Scale"),
           React.createElement("p",{style:{fontSize:14,color:T.textSub,lineHeight:1.7,margin:"0 0 12px"}},"FDP Value is Fantasy Draft Pros\u2019 own dynasty player valuation system. Every player is assigned a value from 0 to 9,999 based on their dynasty fantasy football trade worth in the selected scoring format."),
           React.createElement("p",{style:{fontSize:14,color:T.textSub,lineHeight:1.7,margin:"0 0 12px"}},"Higher value = greater dynasty trade value. FDP Value is not a dollar amount and is not sourced from any single external provider \u2014 it is Fantasy Draft Pros\u2019 proprietary valuation."),
-          React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,marginTop:16}},
+          React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(70px, 1fr))",gap:8,marginTop:16}},
             [["8,000+","Elite","#f1c40f"],["5,000\u20137,999","Star","#818cf8"],["2,000\u20134,999","Starter","#10b981"],["< 2,000","Depth/Bench","#4b5563"]].map(function(t){
               return React.createElement("div",{key:t[0],style:{textAlign:"center",padding:"10px 6px",background:T.bgInput,borderRadius:10}},
                 React.createElement("div",{style:{fontWeight:800,fontSize:15,color:t[2]}},t[0]),
@@ -4170,14 +4170,14 @@ export default function App(){
               React.createElement("div",{style:{fontWeight:900,fontSize:18}},team.name),
               React.createElement("div",{style:{fontSize:11,color:T.textSub,marginTop:2}},rosterPlayers.length+" players"+(team.faab!=null?" · $"+team.faab+" FAAB":"")+(team.picks?" · "+team.picks+" picks":""))
             ),
-            React.createElement("button",{onClick:function(){setRosterViewTeam(null);},style:{background:"none",border:"none",color:T.textDim,cursor:"pointer",fontSize:22,lineHeight:1}},"×")
+            React.createElement("button",{onClick:function(){setRosterViewTeam(null);},style:{background:"none",border:"none",color:T.textDim,cursor:"pointer",fontSize:22,lineHeight:1,minWidth:44,minHeight:44,display:"flex",alignItems:"center",justifyContent:"center"}},"×")
           ),
           React.createElement("div",{style:{background:T.bgInput,borderRadius:12,padding:"10px 14px",marginBottom:12}},
             React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}},
               React.createElement("span",{style:{fontSize:11,fontWeight:700,color:T.textSub}},"Total Roster Value"),
               React.createElement("span",{style:{fontWeight:900,fontSize:16,color:T.purpleLight}},rTotalVal.toLocaleString())
             ),
-            React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6}},
+            React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6}},
               ["QB","RB","WR","TE"].map(function(pos){return React.createElement("div",{key:pos,style:{textAlign:"center",background:T.bgCard,borderRadius:8,padding:"6px 4px"}},
                 React.createElement("div",{style:{fontSize:9,fontWeight:800,color:POS_COLORS[pos]||T.textSub}},pos),
                 React.createElement("div",{style:{fontWeight:800,fontSize:12,color:T.text}},rPosTotals[pos]>=1000?(rPosTotals[pos]/1000).toFixed(1)+"k":rPosTotals[pos])
@@ -4218,7 +4218,7 @@ export default function App(){
       React.createElement("div",{style:{background:T.bgCard,border:"1px solid #f1c40f44",borderRadius:20,padding:24,maxWidth:460,margin:"0 auto"}},
         React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}},
           React.createElement("div",null,React.createElement("div",{style:{fontWeight:900,fontSize:20,color:"#f1c40f"}},"Admin Panel"),React.createElement("div",{style:{fontSize:11,color:T.textSub,marginTop:2}},user.email)),
-          React.createElement("button",{onClick:function(){setShowAdmin(false);},style:{background:"none",border:"none",color:T.textDim,cursor:"pointer",fontSize:20}},"x")
+          React.createElement("button",{onClick:function(){setShowAdmin(false);},style:{background:"none",border:"none",color:T.textDim,cursor:"pointer",fontSize:20,minWidth:44,minHeight:44,display:"flex",alignItems:"center",justifyContent:"center"}},"×")
         ),
         [["Platform Analytics","User signups, retention, feature usage","#818cf8","analytics"],["Value Tuner","Override trade value multiplier for all players","#c084fc","valuetuner"],["RB Context","RB role definitions and depth chart adjustments","#f59e0b","rbcontext"],["RB AI","Generate AI RB role and value suggestions","#34d399","rbai"],["Headshots","Bulk player photo and avatar management","#f87171","headshots"],["IDP Upload","Bulk import IDP player data and rankings","#06b6d4","idpupload"],["System Health","Platform health, DB sync, rebuild controls","#fb923c","system"]].map(function(f){
           return React.createElement("div",{key:f[0],onClick:function(){setShowAdmin(false);setAdminSubTab(f[3]);setTab("admin");},style:{display:"flex",alignItems:"center",gap:12,background:T.bgInput,border:"1px solid "+T.border,borderRadius:12,padding:"12px 14px",marginBottom:8,cursor:"pointer"}},
@@ -4236,7 +4236,7 @@ export default function App(){
       React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:20,padding:20,width:"100%",maxWidth:440,marginTop:40}},
         React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}},
           React.createElement("div",{style:{fontWeight:900,fontSize:20}},"League Settings"),
-          React.createElement("button",{onClick:function(){setShowSettings(false);},style:{background:"none",border:"none",color:T.textDim,cursor:"pointer",fontSize:24,lineHeight:1}},"×")
+          React.createElement("button",{onClick:function(){setShowSettings(false);},style:{background:"none",border:"none",color:T.textDim,cursor:"pointer",fontSize:24,lineHeight:1,minWidth:44,minHeight:44,display:"flex",alignItems:"center",justifyContent:"center"}},"×")
         ),
         React.createElement("div",{style:{background:T.bgInput,borderRadius:12,padding:"14px 16px",marginBottom:14}},
           React.createElement("div",{style:{fontWeight:700,fontSize:14,marginBottom:4}},"TE Premium"),
@@ -4315,7 +4315,7 @@ export default function App(){
         React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:"20px 20px 0 0",padding:"20px 16px 32px",width:"100%",maxWidth:480,maxHeight:"90vh",overflowY:"auto"},onClick:function(e:any){e.stopPropagation();}},
           React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}},
             React.createElement("div",{style:{fontWeight:900,fontSize:18,color:T.text}},"Share Trade"),
-            React.createElement("button",{onClick:function(){setShowShareModal(false);},style:{background:"none",border:"none",color:T.textDim,cursor:"pointer",fontSize:24,lineHeight:1}},"×")
+            React.createElement("button",{onClick:function(){setShowShareModal(false);},style:{background:"none",border:"none",color:T.textDim,cursor:"pointer",fontSize:24,lineHeight:1,minWidth:44,minHeight:44,display:"flex",alignItems:"center",justifyContent:"center"}},"×")
           ),
           React.createElement("div",{style:{background:T.bgInput,borderRadius:14,padding:14,marginBottom:14,border:"1px solid "+v.c+"33"}},
             React.createElement("div",{style:{textAlign:"center",marginBottom:10}},
@@ -4397,12 +4397,12 @@ export default function App(){
       React.createElement("div",{style:{display:"flex",justifyContent:"center",paddingTop:12}},
         React.createElement("img",{src:appLogoSrc,alt:"Fantasy DraftPros",style:{height:72,width:"auto",maxWidth:280}})
       ),
-      React.createElement("div",{style:{display:"flex",justifyContent:"center",alignItems:"center",gap:8,marginTop:8}},
-        React.createElement("button",{onClick:toggleDarkMode,style:{padding:"8px 12px",minHeight:40,borderRadius:20,border:"1px solid "+T.border,background:T.bgInput,color:T.textSub,cursor:"pointer",fontSize:12,lineHeight:1,WebkitTapHighlightColor:"transparent"}},darkMode?"☀ Light":"🌙 Dark"),
-        React.createElement("button",{onClick:function(){setShowSettings(true);},style:{padding:"8px 12px",minHeight:40,borderRadius:20,border:"1px solid "+T.border,background:T.bgInput,color:T.textSub,cursor:"pointer",fontSize:12,lineHeight:1,display:"flex",alignItems:"center",gap:4,WebkitTapHighlightColor:"transparent"}},"⚙ Settings"),
+      React.createElement("div",{style:{display:"flex",justifyContent:"center",alignItems:"center",gap:8,marginTop:8,flexWrap:"wrap",padding:"0 12px"}},
+        React.createElement("button",{onClick:toggleDarkMode,style:{padding:"8px 12px",minHeight:44,borderRadius:20,border:"1px solid "+T.border,background:T.bgInput,color:T.textSub,cursor:"pointer",fontSize:12,lineHeight:1,WebkitTapHighlightColor:"transparent"}},darkMode?"☀ Light":"🌙 Dark"),
+        React.createElement("button",{onClick:function(){setShowSettings(true);},style:{padding:"8px 12px",minHeight:44,borderRadius:20,border:"1px solid "+T.border,background:T.bgInput,color:T.textSub,cursor:"pointer",fontSize:12,lineHeight:1,display:"flex",alignItems:"center",gap:4,WebkitTapHighlightColor:"transparent"}},"⚙ Settings"),
         !user?React.createElement(React.Fragment,null,
-          React.createElement("button",{onClick:function(){setAuthMode("signin");setShowAuth(true);},style:{padding:"8px 16px",minHeight:40,borderRadius:20,border:"1px solid "+T.border,background:"transparent",color:T.textSub,cursor:"pointer",fontWeight:600,fontSize:12,WebkitTapHighlightColor:"transparent"}},"Sign In"),
-          React.createElement("button",{onClick:function(){setAuthMode("signup");setShowAuth(true);},style:{padding:"8px 18px",minHeight:40,borderRadius:20,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",cursor:"pointer",fontWeight:700,fontSize:12,WebkitTapHighlightColor:"transparent"}},"Sign Up Free")
+          React.createElement("button",{onClick:function(){setAuthMode("signin");setShowAuth(true);},style:{padding:"8px 16px",minHeight:44,borderRadius:20,border:"1px solid "+T.border,background:"transparent",color:T.textSub,cursor:"pointer",fontWeight:600,fontSize:12,WebkitTapHighlightColor:"transparent"}},"Sign In"),
+          React.createElement("button",{onClick:function(){setAuthMode("signup");setShowAuth(true);},style:{padding:"8px 18px",minHeight:44,borderRadius:20,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",cursor:"pointer",fontWeight:700,fontSize:12,WebkitTapHighlightColor:"transparent"}},"Sign Up Free")
         ):React.createElement(UserMenu,{user:user,T:T,onSignOut:function(){authClient?.auth.signOut();saveAndSetUser(null);setShowAdmin(false);},onUpgrade:function(){if(user){setReportSubTab("upgrade");setTab("reports");}else{setAuthMode("signup");setShowAuth(true);}},onAdmin:function(){setTab("admin");}})
       )
     ),
@@ -5010,7 +5010,7 @@ export default function App(){
         React.createElement("div",{style:{fontWeight:800,fontSize:14,color:T.text,marginBottom:4}},"\uD83D\uDCEC Weekly Dynasty Movers Newsletter"),
         React.createElement("div",{style:{fontSize:11,color:T.textSub,marginBottom:10}},"Get value changes, trade targets & news every Tuesday. Free."),
         newsletterStatus==="done"?React.createElement("div",{style:{color:T.green,fontWeight:700,fontSize:13}},"\u2713 Subscribed! Check your inbox."):
-        React.createElement("div",{style:{display:"flex",gap:8,maxWidth:380,margin:"0 auto"}},
+        React.createElement("div",{style:{display:"flex",gap:8,maxWidth:380,margin:"0 auto",flexWrap:"wrap"}},
           React.createElement("input",{type:"email",value:newsletterEmail,onChange:function(e:any){setNewsletterEmail(e.target.value);},placeholder:"your@email.com",style:{flex:1,padding:"10px 14px",borderRadius:10,border:"1px solid "+T.border,background:T.bgInput,color:T.text,fontSize:13,outline:"none"}}),
           React.createElement("button",{onClick:async function(){
             if(!newsletterEmail||!newsletterEmail.includes("@"))return;
@@ -5121,10 +5121,10 @@ export default function App(){
         ),
         React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,overflow:"hidden"}},
           React.createElement("div",{style:{padding:"14px 16px",borderBottom:"1px solid "+T.border,fontWeight:800,fontSize:14}},"Feature Comparison"),
-          React.createElement("table",{style:{width:"100%",borderCollapse:"collapse",fontSize:12}},
+          React.createElement("div",{style:{overflowX:"auto"}},React.createElement("table",{style:{width:"100%",minWidth:320,borderCollapse:"collapse",fontSize:12}},
             React.createElement("thead",null,React.createElement("tr",{style:{background:T.bgInput}},React.createElement("th",{style:{padding:"10px 14px",textAlign:"left",color:T.textSub,fontWeight:700,fontSize:11}},"Feature"),["Free","Pro","Elite"].map(function(p){return React.createElement("th",{key:p,style:{padding:"10px 8px",textAlign:"center",color:p==="Pro"?T.purple:T.textSub,fontWeight:800,fontSize:11,width:58}},p);}))),
             React.createElement("tbody",null,COMPARE_ROWS.map(function(row,i){return React.createElement("tr",{key:row[0],style:{borderTop:"1px solid "+T.border,background:i%2===0?"transparent":T.bgInput+"88"}},React.createElement("td",{style:{padding:"10px 14px",color:T.textSub,fontSize:12}},row[0]),[row[1],row[2],row[3]].map(function(v,vi){return React.createElement("td",{key:vi,style:{padding:"10px 8px",textAlign:"center"}},v?React.createElement("span",{style:{color:vi===1?T.purple:T.green,fontSize:15,fontWeight:900}},"v"):React.createElement("span",{style:{color:T.textDim,fontSize:13}},"-"));}));}))
-          )
+          ))
         )
       ),
       // FAQ
@@ -6611,7 +6611,7 @@ export default function App(){
             React.createElement("div",{style:{background:T.border,borderRadius:99,height:8,overflow:"hidden",marginBottom:8}},
               React.createElement("div",{style:{width:Math.min(100,pctSpent)+"%",height:"100%",background:pctSpent>90?T.red:pctSpent>70?T.gold:T.green,borderRadius:99,transition:"width 0.3s"}})
             ),
-            React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:4}},
+            React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(70px, 1fr))",gap:4}},
               [["Spent","$"+spent,T.red],["Left","$"+remaining,remaining<20?T.red:T.green],["Max Bid","$"+Math.max(1,maxBid),T.gold],["Slots Left",slotsLeft+"/"+rosterSize,T.textSub]].map(function(s){
                 return React.createElement("div",{key:s[0],style:{textAlign:"center"}},
                   React.createElement("div",{style:{fontSize:8,color:T.textDim,fontWeight:700,letterSpacing:0.5,marginBottom:2}},s[0]),
@@ -6631,7 +6631,7 @@ export default function App(){
           // Best Available quick-pick bar
           React.createElement("div",{style:{background:"linear-gradient(135deg,#1e1040,#0f172a)",border:"1px solid "+T.borderPurple,borderRadius:14,padding:"12px 14px",marginBottom:12}},
             React.createElement("div",{style:{fontSize:10,fontWeight:800,color:T.purpleLight,letterSpacing:1,marginBottom:8}},"BEST AVAILABLE"),
-            React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6}},
+            React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(70px, 1fr))",gap:6}},
               ["QB","RB","WR","TE"].map(function(pos){
                 var posAvail=rankedPlayers.filter(function(p){return p.pos===pos&&!soldNames.has(p.name);}).sort(function(a,b){return (b.auction||0)-(a.auction||0);});
                 var bp=posAvail[0];
@@ -7936,7 +7936,7 @@ export default function App(){
           trades.sort(function(a,b){return a.pct-b.pct;});
           var filteredTrades=tfPosNeed==="ALL"?trades:trades.filter(function(t){return t.buy.pos===tfPosNeed;});
           return React.createElement(React.Fragment,null,
-            React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:16}},
+            React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(70px, 1fr))",gap:8,marginBottom:16}},
               ["QB","RB","WR","TE"].map(function(pos){
                 var need=needs.find(function(n){return n.pos===pos;});
                 var str=strengths.find(function(s){return s.pos===pos;});
@@ -8599,7 +8599,7 @@ export default function App(){
           )
         ),
         React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,margin:"0 16px 12px",overflow:"hidden"}},
-          React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr"}},
+          React.createElement("div",{style:{display:"grid",gridTemplateColumns:isDesktop?"1fr 1fr 1fr 1fr":"1fr 1fr"}},
             [["buylow","Buy Low","Aging or post-prime players to acquire","#22c55e"],["sellhigh","Sell High","Pre-prime players with peak trade value","#818cf8"],["rising","Rising","Young players approaching their prime","#60a5fa"],["falling","Falling","Players past their prime window","#9b96b8"]].map(function(cat){
               var active=marketFilter===cat[0];
               return React.createElement("div",{key:cat[0],onClick:function(){setMarketFilter(cat[0]);},style:{padding:"14px 10px",cursor:"pointer",borderLeft:"3px solid "+(active?cat[3]:"transparent"),background:active?cat[3]+"11":"transparent",borderBottom:"1px solid "+T.border}},
@@ -8664,7 +8664,7 @@ export default function App(){
                 React.createElement("div",{style:{fontSize:11,color:T.textSub,marginBottom:2}},"Trade Value"),
                 React.createElement("div",{style:{fontWeight:800,fontSize:22,color:T.purpleLight,marginBottom:10}},p.tradeVal.toLocaleString())
               ),
-              React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,paddingTop:10,borderTop:"1px solid "+T.border}},
+              React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(70px, 1fr))",gap:8,paddingTop:10,borderTop:"1px solid "+T.border}},
                 React.createElement("div",null,
                   React.createElement("div",{style:{fontSize:11,color:T.textSub,marginBottom:3}},"Proj Pts"),
                   React.createElement("div",{style:{fontWeight:700,fontSize:14,color:T.text}},p.pts.toFixed(1))
@@ -10012,7 +10012,7 @@ export default function App(){
             React.createElement("span",{style:{color:T.textSub}},"FDP Value")
           )
         ),
-        React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"6px",marginBottom:12,display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:4}},
+        React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"6px",marginBottom:12,display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(60px, 1fr))",gap:4}},
           [["format","\u2AE5"],["tiers","\u2261"],["situation","\u25C7"],["bulk","\uD83D\uDC65"]].map(function(l){
             var active=valueTunerLayer===l[0];
             return React.createElement("button",{key:l[0],onClick:function(){setValueTunerLayer(l[0]);},style:{padding:"10px",borderRadius:8,border:"none",background:active?"#fff":"transparent",color:active?"#1a1a2e":T.textSub,fontSize:18,cursor:"pointer"}},l[1]);
@@ -10079,11 +10079,11 @@ export default function App(){
           React.createElement("span",{style:{color:T.green,fontSize:18}},"\u2713"),
           React.createElement("span",{style:{color:T.green,fontWeight:600,fontSize:14}},PLAYERS.filter(function(p){return p.pos==="RB";}).length+" RBs loaded from player database")
         ),
-        React.createElement("div",{style:{background:T.bgCard,borderRadius:10,padding:"10px 12px",marginBottom:16,display:"grid",gridTemplateColumns:"2fr 1.5fr 1fr 1.5fr 1.5fr",gap:4}},
+        React.createElement("div",{style:{overflowX:"auto",marginBottom:16}},React.createElement("div",{style:{background:T.bgCard,borderRadius:10,padding:"10px 12px",display:"grid",gridTemplateColumns:"2fr 1.5fr 1fr 1.5fr 1.5fr",gap:4,minWidth:420}},
           ["PLAYER","SOURCE","AGE","DEPTH ROLE","WORKLOAD"].map(function(h){
             return React.createElement("span",{key:h,style:{fontSize:10,fontWeight:800,color:T.textSub,letterSpacing:0.5}},h);
           })
-        ),
+        )),
         React.createElement("div",{style:{background:"#eef2ff",borderRadius:14,padding:"18px"}},
           React.createElement("div",{style:{fontWeight:800,fontSize:16,color:"#3730a3",marginBottom:14}},"Adjustment Guide"),
           React.createElement("div",{style:{fontWeight:700,fontSize:13,color:"#1e1b4b",marginBottom:8}},"Context Data Sources:"),
