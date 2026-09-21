@@ -70,3 +70,10 @@ verify_jwt = false
 
 [functions.send-email]
 verify_jwt = false
+
+# fetch-odds:     verify_jwt=false — public endpoint for odds data.
+#                 No user auth required (odds are shown to all users).
+#                 Provider API key stored server-side only (THE_ODDS_API_KEY).
+#                 CORS: origin-checked.
+[functions.fetch-odds]
+verify_jwt = false

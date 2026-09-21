@@ -271,21 +271,7 @@ var _sleeperNameMap:{[k:string]:string}={};
 function initSleeperNameMap(db:{[id:string]:{name?:string}}){_sleeperNameMap={};Object.keys(db).forEach(function(id){var p=db[id];if(p&&p.name)_sleeperNameMap[p.name]=id;});}
 function headshot(n:string){var id=SLEEPER_IDS[n]||_sleeperNameMap[n];return id?"https://sleepercdn.com/content/nfl/players/thumb/"+id+".jpg":null;}
 
-// ── Vegas Lines / Game Script (The Odds API) ─────────────────────────────────
-const ODDS_API_KEY=(import.meta as any).env?.VITE_ODDS_API_KEY||"";
-const ODDS_TEAM_MAP:{[k:string]:string}={
-  "Arizona Cardinals":"ARI","Atlanta Falcons":"ATL","Baltimore Ravens":"BAL",
-  "Buffalo Bills":"BUF","Carolina Panthers":"CAR","Chicago Bears":"CHI",
-  "Cincinnati Bengals":"CIN","Cleveland Browns":"CLE","Dallas Cowboys":"DAL",
-  "Denver Broncos":"DEN","Detroit Lions":"DET","Green Bay Packers":"GB",
-  "Houston Texans":"HOU","Indianapolis Colts":"IND","Jacksonville Jaguars":"JAX",
-  "Kansas City Chiefs":"KC","Las Vegas Raiders":"LV","Los Angeles Chargers":"LAC",
-  "Los Angeles Rams":"LAR","Miami Dolphins":"MIA","Minnesota Vikings":"MIN",
-  "New England Patriots":"NE","New Orleans Saints":"NO","New York Giants":"NYG",
-  "New York Jets":"NYJ","Philadelphia Eagles":"PHI","Pittsburgh Steelers":"PIT",
-  "San Francisco 49ers":"SF","Seattle Seahawks":"SEA","Tampa Bay Buccaneers":"TB",
-  "Tennessee Titans":"TEN","Washington Commanders":"WAS"
-};
+// ── Vegas Lines / Game Script (via fetch-odds Edge Function) ─────────────────
 // ── PAST WEEKS ARCHIVE ──
 var PAST_WEEKS=[
 {week:1,label:"Week 1 · Sep 10–14",
@@ -398,32 +384,19 @@ function buildHardcodedOdds():{[t:string]:{spread:number,total:number,opp:string
   WEEKLY_LINES.forEach(function(g){r[g[0]]={spread:g[2],total:g[3],opp:g[1]};r[g[1]]={spread:-g[2],total:g[3],opp:g[0]};});
   return r;
 }
-var _oddsCache:{data:{[t:string]:{spread:number,total:number,opp:string}};ts:number}|null=null;
-async function fetchOdds():Promise<{[t:string]:{spread:number,total:number,opp:string}}>{
-  if(_oddsCache&&Date.now()-_oddsCache.ts<3600000)return _oddsCache.data;
+// fetchOdds calls the server-side fetch-odds Edge Function (never the provider directly).
+// Returns {odds, source} — source distinguishes "api" / "cache" / "manual" / "unavailable".
+async function fetchOdds():Promise<{odds:{[t:string]:{spread:number,total:number,opp:string}},source:string,fetchedAt:string,stale:boolean}>{
   try{
-    if(!ODDS_API_KEY){var hc=buildHardcodedOdds();_oddsCache={data:hc,ts:Date.now()};return hc;}
-    var r=await fetch("https://api.the-odds-api.com/v4/sports/americanfootball_nfl/odds/?apiKey="+ODDS_API_KEY+"&regions=us&markets=spreads,totals");
-    var games=await r.json();
-    if(!Array.isArray(games)||games.length===0){var hc2=buildHardcodedOdds();_oddsCache={data:hc2,ts:Date.now()};return hc2;}
-    var result:{[t:string]:{spread:number,total:number,opp:string}}={};
-    games.forEach(function(game:any){
-      var home=ODDS_TEAM_MAP[game.home_team],away=ODDS_TEAM_MAP[game.away_team];
-      if(!home||!away)return;
-      var spreadHome=0,spreadAway=0,total=45;
-      var bk=game.bookmakers&&(game.bookmakers.find(function(b:any){return b.key==="draftkings";})||game.bookmakers[0]);
-      if(bk){
-        var sm=bk.markets.find(function(m:any){return m.key==="spreads";});
-        var tm=bk.markets.find(function(m:any){return m.key==="totals";});
-        if(sm)sm.outcomes.forEach(function(o:any){if(ODDS_TEAM_MAP[o.name]===home)spreadHome=o.point;if(ODDS_TEAM_MAP[o.name]===away)spreadAway=o.point;});
-        if(tm&&tm.outcomes[0])total=tm.outcomes[0].point;
-      }
-      result[home]={spread:spreadHome,total,opp:away};
-      result[away]={spread:spreadAway,total,opp:home};
-    });
-    _oddsCache={data:result,ts:Date.now()};
-    return result;
-  }catch{var hc3=buildHardcodedOdds();_oddsCache={data:hc3,ts:Date.now()};return hc3;}
+    var r=await fetch(EDGE_URL+"/fetch-odds",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPA_KEY},body:"{}"});
+    var data=await r.json();
+    if(data&&data.odds&&Object.keys(data.odds).length>0){
+      return {odds:data.odds,source:data.source||"api",fetchedAt:data.fetchedAt||new Date().toISOString(),stale:data.stale||false};
+    }
+    return {odds:{},source:data?.source||"unavailable",fetchedAt:data?.fetchedAt||new Date().toISOString(),stale:false};
+  }catch{
+    return {odds:{},source:"unavailable",fetchedAt:new Date().toISOString(),stale:false};
+  }
 }
 function getGameScript(team:string,odds:{[t:string]:{spread:number,total:number,opp:string}}|null):{spread:number,total:number,script:string,label:string,color:string,opp:string}|null{
   if(!odds)return null;
@@ -3068,6 +3041,9 @@ export default function App(){
   var [sitS2,setSitS2]=useState("");
   var [sitFormat,setSitFormat]=useState("PPR");
   var [oddsData,setOddsData]=useState<{[t:string]:{spread:number,total:number,opp:string}}|null>(null);
+  var [oddsSource,setOddsSource]=useState<string>("none");
+  var [oddsFetchedAt,setOddsFetchedAt]=useState<string>("");
+  var [oddsStale,setOddsStale]=useState(false);
   var [oddsChecking,setOddsChecking]=useState(false);
   var [oddsChecked,setOddsChecked]=useState(false);
   var [tradeHistory,setTradeHistory]=useState(function(){try{var s=localStorage.getItem('fdp_th_v1');return s?JSON.parse(s):[];}catch(e){return [];}});
@@ -3272,7 +3248,7 @@ export default function App(){
   useEffect(function(){
     try{var key="fdp_tracked_"+new Date().toDateString();if(!sessionStorage.getItem(key)){sessionStorage.setItem(key,"1");trackEvent("page_view",{referrer:document.referrer||"direct",path:window.location.pathname});}}catch(e){trackEvent("page_view",{referrer:document.referrer||"direct",path:window.location.pathname});}
     loadPublicStats().then(function(s){if(s)setPublicStats(s);});
-    fetchOdds().then(function(d){if(Object.keys(d).length>0)setOddsData(d);});
+    fetchOdds().then(function(d){if(Object.keys(d.odds).length>0){setOddsData(d.odds);setOddsSource(d.source);setOddsFetchedAt(d.fetchedAt);setOddsStale(d.stale);}else{var hc=buildHardcodedOdds();if(Object.keys(hc).length>0){setOddsData(hc);setOddsSource("manual");setOddsFetchedAt("");setOddsStale(false);}}});
   },[]);
 
   function doEspnImport(){
@@ -8008,13 +7984,16 @@ export default function App(){
               React.createElement("div",{style:{fontSize:48,marginBottom:12}},"📅"),
               React.createElement("div",{style:{fontWeight:800,fontSize:18,color:T.text,marginBottom:8}},"No Current NFL Lines"),
               React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.7,maxWidth:340,margin:"0 auto",marginBottom:16}},"Odds are posted Thursday–Monday during the NFL season (September–January). Tap below to load this week's lines!"),
-              React.createElement("button",{onClick:function(){setOddsChecking(true);setOddsChecked(false);_oddsCache=null;fetchOdds().then(function(d){setOddsChecking(false);setOddsChecked(true);if(Object.keys(d).length>0)setOddsData(d);}).catch(function(){setOddsChecking(false);setOddsChecked(true);});},disabled:oddsChecking,style:{padding:"12px 28px",borderRadius:12,border:"none",background:oddsChecking?"#6b7280":"linear-gradient(135deg,#059669,#047857)",color:"#fff",fontWeight:700,fontSize:13,cursor:oddsChecking?"wait":"pointer",boxShadow:"0 4px 12px rgba(5,150,105,0.3)",opacity:oddsChecking?0.7:1}},oddsChecking?"Checking...":"↻ Check for Lines"),
+              React.createElement("button",{onClick:function(){setOddsChecking(true);setOddsChecked(false);fetchOdds().then(function(d){setOddsChecking(false);setOddsChecked(true);if(Object.keys(d.odds).length>0){setOddsData(d.odds);setOddsSource(d.source);setOddsFetchedAt(d.fetchedAt);setOddsStale(d.stale);}}).catch(function(){setOddsChecking(false);setOddsChecked(true);var hc=buildHardcodedOdds();if(Object.keys(hc).length>0){setOddsData(hc);setOddsSource("manual");setOddsFetchedAt("");setOddsStale(false);}});},disabled:oddsChecking,style:{padding:"12px 28px",borderRadius:12,border:"none",background:oddsChecking?"#6b7280":"linear-gradient(135deg,#059669,#047857)",color:"#fff",fontWeight:700,fontSize:13,cursor:oddsChecking?"wait":"pointer",boxShadow:"0 4px 12px rgba(5,150,105,0.3)",opacity:oddsChecking?0.7:1}},oddsChecking?"Checking...":"↻ Check for Lines"),
               oddsChecked&&!hasData&&React.createElement("div",{style:{marginTop:12,padding:"10px 16px",background:darkMode?"#1e293b":"#fef3c7",border:"1px solid "+(darkMode?"#475569":"#fcd34d"),borderRadius:12,fontSize:12,color:darkMode?"#fbbf24":"#92400e",fontWeight:600,textAlign:"center"}},"No lines available right now. NFL game lines are typically posted during the regular season (Sep–Jan).")
             ),
             hasData&&React.createElement("div",{style:{marginBottom:12}},
-              React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:12}},
-                React.createElement("div",{style:{fontSize:10,fontWeight:800,color:"#059669",letterSpacing:1}},"THIS WEEK'S GAMES"),
-                React.createElement("div",{style:{background:"#059669",color:"#fff",borderRadius:10,padding:"2px 8px",fontSize:10,fontWeight:800}},games.length)
+              React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:12,flexWrap:"wrap"}},
+                React.createElement("div",{style:{fontSize:10,fontWeight:800,color:"#059669",letterSpacing:1}},oddsSource==="api"||oddsSource==="cache"?"THIS WEEK'S GAMES":"ARCHIVED LINES"),
+                React.createElement("div",{style:{background:"#059669",color:"#fff",borderRadius:10,padding:"2px 8px",fontSize:10,fontWeight:800}},games.length),
+                oddsStale&&(oddsSource==="api"||oddsSource==="cache")&&React.createElement("div",{style:{fontSize:9,color:"#f59e0b",fontWeight:600}},"Updating lines\u2026"),
+                !oddsStale&&oddsFetchedAt&&(oddsSource==="api"||oddsSource==="cache")&&React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:500}},"Updated "+new Date(oddsFetchedAt).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})),
+                oddsSource!=="api"&&oddsSource!=="cache"&&React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:600}},"Showing manual lines \u2014 may not reflect current week")
               ),
               games.map(function(g){
                 var gsHome=getGameScript(g.home,oddsData);
