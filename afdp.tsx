@@ -2993,6 +2993,10 @@ export default function App(){
   function saveAndSetActiveLeague(lg){try{if(lg)localStorage.setItem('fdp_league_v1',JSON.stringify(lg));else localStorage.removeItem('fdp_league_v1');}catch(e){}setActiveLeague(lg);}
   var [leagueRosters,setLeagueRosters]=useState(null);
   var [leagueUsers,setLeagueUsers]=useState(null);
+  var [sleeperUserId,setSleeperUserId]=useState(function(){try{return localStorage.getItem('fdp_sluid_v1')||null;}catch(e){return null;}});
+  var [myTeamOwnerId,setMyTeamOwnerId]=useState(function(){try{var s=localStorage.getItem('fdp_myowner_v2');if(!s)return null;var d=JSON.parse(s);var al=localStorage.getItem('fdp_league_v1');var lid=al?JSON.parse(al).league_id:null;return(d&&d.leagueId&&d.leagueId===lid)?d.ownerId:null;}catch(e){return null;}});
+  function saveMyTeamOwnerId(id,leagueId?){var lid=leagueId||(activeLeague&&activeLeague.league_id)||null;try{if(id&&lid)localStorage.setItem('fdp_myowner_v2',JSON.stringify({ownerId:id,leagueId:lid}));else localStorage.removeItem('fdp_myowner_v2');}catch(e){}setMyTeamOwnerId(id);}
+  var [leagueRosterPositions,setLeagueRosterPositions]=useState(function(){try{var s=localStorage.getItem('fdp_rpos_v2');if(!s)return null;var d=JSON.parse(s);var al=localStorage.getItem('fdp_league_v1');var lid=al?JSON.parse(al).league_id:null;return(d&&d.leagueId&&d.leagueId===lid)?d.positions:null;}catch(e){return null;}});
   // Rankings
   var [rankSubTab,setRankSubTab]=useState(function(){try{return localStorage.getItem('fdp_rankSubTab')||"allrankings";}catch(e){return"allrankings";}});
   var [vegasSubTab,setVegasSubTab]=useState("lines");
@@ -3305,11 +3309,13 @@ export default function App(){
         var totalVal=players.reduce(function(s,p){return s+p.tradeVal;},0);
         var w=t.record&&t.record.overall&&t.record.overall.wins||0;
         var l=t.record&&t.record.overall&&t.record.overall.losses||0;
-        return {name:name,owner:owner,players:players,totalVal:totalVal,faab:null,picks:0,wins:w,losses:l};
+        return {name:name,owner:owner,ownerId:ownerId||("espn_team_"+t.id),rosterId:String(t.id||""),players:players,totalVal:totalVal,faab:null,picks:0,wins:w,losses:l};
       });
       if(!teams.length){setLeagueImportErr("No teams found. If this is a private league, ESPN is blocking access — use Manual Import instead.");setLeagueImportStatus("error");return;}
       teams.sort(function(a,b){return b.totalVal-a.totalVal;});
       saveAndSetImportedTeams(teams);setLeagueRosters(null);setLeagueUsers(null);
+      // Clear Sleeper-specific identity and roster positions — ESPN does not supply these
+      saveMyTeamOwnerId(null);setLeagueRosterPositions(null);try{localStorage.removeItem('fdp_rpos_v2');}catch(e){}
       saveAndSetActiveLeague({league_id:"espn_"+espnLeagueId,name:(data.settings&&data.settings.name)||"ESPN League"});
       setLeagueImportStatus("connected");setLeagueSubTab("power");
     }
@@ -3333,9 +3339,11 @@ export default function App(){
       }
     });
     if(cur)teams.push(cur);
-    teams.forEach(function(t){t.players.sort(function(a,b){return b.tradeVal-a.tradeVal;});t.totalVal=t.players.reduce(function(s,p){return s+p.tradeVal;},0);});
+    teams.forEach(function(t,i){t.players.sort(function(a,b){return b.tradeVal-a.tradeVal;});t.totalVal=t.players.reduce(function(s,p){return s+p.tradeVal;},0);t.ownerId="manual_"+(i+1);t.rosterId=String(i+1);});
     teams.sort(function(a,b){return b.totalVal-a.totalVal;});
     saveAndSetImportedTeams(teams);setLeagueRosters(null);setLeagueUsers(null);
+    // Clear Sleeper-specific identity and roster positions — manual import does not supply these
+    saveMyTeamOwnerId(null);setLeagueRosterPositions(null);try{localStorage.removeItem('fdp_rpos_v2');}catch(e){}
     saveAndSetActiveLeague({league_id:"manual",name:leagueName||"My League"});
     setLeagueImportStatus("connected");setLeagueSubTab("power");
   }
@@ -3432,9 +3440,13 @@ export default function App(){
         var draftPicks=details.length;
         // Estimate pick value using DRAFT_PICKS KTC values; discounted 15%/yr out
         var pickValue=details.reduce(function(s,pk){var base=[0,6407,3728,2652,1900,1250][Math.min(pk.round,5)]||200;return s+Math.round(base*Math.pow(0.85,Math.max(0,pk.season-curSeason)));},0);
-        return {name:teamName,owner:u.display_name||"",players:players,totalVal:totalVal,faab:faabBudget-faabUsed,picks:draftPicks,pickDetails:details,pickValue:pickValue,wins:(r.settings&&r.settings.wins)||0,losses:(r.settings&&r.settings.losses)||0,ties:(r.settings&&r.settings.ties)||0};
+        return {name:teamName,owner:u.display_name||"",ownerId:r.owner_id||"",rosterId:r.roster_id||"",players:players,totalVal:totalVal,faab:faabBudget-faabUsed,picks:draftPicks,pickDetails:details,pickValue:pickValue,wins:(r.settings&&r.settings.wins)||0,losses:(r.settings&&r.settings.losses)||0,ties:(r.settings&&r.settings.ties)||0};
       });
       teams.sort(function(a,b){return b.totalVal-a.totalVal;});
+      // Identify user's team via sleeperUserId — always resolve (null clears stale identity from different league)
+      var myOid=null;if(sleeperUserId){rosters.forEach(function(r){if(r.owner_id===sleeperUserId)myOid=r.owner_id;});}saveMyTeamOwnerId(myOid,lg.league_id);
+      // Store roster positions for starter/bench distinction — scoped to league
+      if(lg.roster_positions){setLeagueRosterPositions(lg.roster_positions);try{localStorage.setItem('fdp_rpos_v2',JSON.stringify({leagueId:lg.league_id,positions:lg.roster_positions}));}catch(e){}}else{setLeagueRosterPositions(null);try{localStorage.removeItem('fdp_rpos_v2');}catch(e){}}
       saveAndSetImportedTeams(teams);setLeagueRosters(null);setLeagueUsers(null);saveAndSetActiveLeague(lg);
       // Auto-sync scoring format from league settings
       var rec=lg.scoring_settings&&lg.scoring_settings.rec!=null?lg.scoring_settings.rec:null;
@@ -3442,7 +3454,7 @@ export default function App(){
       if(lg.roster_positions&&lg.roster_positions.indexOf("SUPER_FLEX")!==-1)setSfMode(true);
       if(lg.roster_positions&&(lg.roster_positions.indexOf("IDP_FLEX")!==-1||lg.roster_positions.indexOf("DL")!==-1||lg.roster_positions.indexOf("LB")!==-1||lg.roster_positions.indexOf("DB")!==-1)){setIdpMode(true);try{localStorage.setItem('fdp_idp_v1','true');}catch(e){}}
       if(lg.settings&&(lg.settings.type===2||lg.settings.type==="2"))setLeagueType("Dynasty");
-      setLeagueImportStatus("connected");if(leagueSubTab==="leagimport")setLeagueSubTab("power");
+      setLeagueImportStatus("connected");if(leagueSubTab==="leagimport")setLeagueSubTab("overview");
     }).catch(function(e){setLeagueImportErr(e.message||"Failed to load league");setLeagueImportStatus("error");});
   }
 
@@ -3456,6 +3468,61 @@ export default function App(){
       return {rank:i+1,name:name,totalVal:baseVal,playoffOdds:+po.toFixed(1),champOdds:+co.toFixed(1),weeklyWin:+ww.toFixed(1),makePlayoffs:+Math.max(15,58-(i*3.2)).toFixed(1),firstRoundBye:+Math.max(3,23-(i*1.8)).toFixed(1),winChamp:+Math.max(1,12.9-(i*1.1)).toFixed(1),players:Math.floor(22+Math.random()*14),picks:Math.floor(3+Math.random()*6),faab:Math.floor(50+Math.random()*150),record:"0-0",projW:+(6.9-i*0.3).toFixed(1)};
     });
   },[]);
+
+  // ── LEAGUE INTELLIGENCE ENGINE ──
+  var myTeamIdx=powerRankingTeams&&myTeamOwnerId?powerRankingTeams.findIndex(function(t){return t.ownerId===myTeamOwnerId;}):- 1;
+  if(myTeamIdx===-1)myTeamIdx=null;
+  var leagueIntel=useMemo(function(){
+    if(!powerRankingTeams||powerRankingTeams.length===0)return null;
+    // Parse starter slot counts from roster positions — only when legitimately available
+    var hasSlotData=!!leagueRosterPositions&&leagueRosterPositions.length>0;
+    var ss=hasSlotData?{QB:0,RB:0,WR:0,TE:0,FLEX:0,SUPER_FLEX:0,IDP_FLEX:0,DL:0,LB:0,DB:0}:null;
+    if(ss&&leagueRosterPositions){leagueRosterPositions.forEach(function(p){if(p==="QB")ss.QB++;else if(p==="RB")ss.RB++;else if(p==="WR")ss.WR++;else if(p==="TE")ss.TE++;else if(p==="FLEX"||p==="REC_FLEX")ss.FLEX++;else if(p==="SUPER_FLEX")ss.SUPER_FLEX++;else if(p==="IDP_FLEX")ss.IDP_FLEX++;else if(p==="DL")ss.DL++;else if(p==="LB")ss.LB++;else if(p==="DB")ss.DB++;});}
+    var totalStarters=ss?ss.QB+ss.RB+ss.WR+ss.TE+ss.FLEX+ss.SUPER_FLEX:null;
+    var n=powerRankingTeams.length;
+    // Slot-aware optimal lineup calculator — only when slot data is available
+    function computeOptimalLineup(plrs){
+      if(!ss)return null;
+      var used={};var starters=[];
+      function fillSlot(pos,count){var elig=plrs.filter(function(p){return p.pos===pos&&!used[p.name];}).sort(function(a,b){return(b.tradeVal||0)-(a.tradeVal||0);});for(var j=0;j<count&&j<elig.length;j++){starters.push(elig[j]);used[elig[j].name]=true;}}
+      fillSlot("QB",ss.QB);fillSlot("RB",ss.RB);fillSlot("WR",ss.WR);fillSlot("TE",ss.TE);
+      // FLEX: RB/WR/TE eligible
+      var flexElig=plrs.filter(function(p){return["RB","WR","TE"].indexOf(p.pos)>=0&&!used[p.name];}).sort(function(a,b){return(b.tradeVal||0)-(a.tradeVal||0);});
+      for(var j=0;j<ss.FLEX&&j<flexElig.length;j++){starters.push(flexElig[j]);used[flexElig[j].name]=true;}
+      // SUPER_FLEX: QB/RB/WR/TE eligible
+      var sfElig=plrs.filter(function(p){return["QB","RB","WR","TE"].indexOf(p.pos)>=0&&!used[p.name];}).sort(function(a,b){return(b.tradeVal||0)-(a.tradeVal||0);});
+      for(var j=0;j<ss.SUPER_FLEX&&j<sfElig.length;j++){starters.push(sfElig[j]);used[sfElig[j].name]=true;}
+      var bench=plrs.filter(function(p){return!used[p.name];});
+      return{starters:starters,bench:bench,starterVal:starters.reduce(function(s,p){return s+(p.tradeVal||0);},0),benchVal:bench.reduce(function(s,p){return s+(p.tradeVal||0);},0)};
+    }
+    // Per-team analysis
+    var td=powerRankingTeams.map(function(team,idx){
+      var plrs=(team.players||[]).filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;});
+      var posVal={QB:0,RB:0,WR:0,TE:0},posCt={QB:0,RB:0,WR:0,TE:0};
+      plrs.forEach(function(p){posVal[p.pos]+=(p.tradeVal||0);posCt[p.pos]++;});
+      var lineup=computeOptimalLineup(plrs);
+      var ageSum=0,ageCt=0;plrs.forEach(function(p){if(p.age&&p.age>0){ageSum+=p.age;ageCt++;}});
+      var avgAge=ageCt>0?ageSum/ageCt:null;
+      var agedPlrs=plrs.filter(function(p){return p.age&&p.age>0;});
+      var youngCt=agedPlrs.filter(function(p){return p.age<(PRIME[p.pos]?PRIME[p.pos][0]:25);}).length;
+      var primeCt=agedPlrs.filter(function(p){var lo=PRIME[p.pos]?PRIME[p.pos][0]:25,hi=PRIME[p.pos]?PRIME[p.pos][1]:30;return p.age>=lo&&p.age<=hi;}).length;
+      var postCt=agedPlrs.filter(function(p){return p.age>(PRIME[p.pos]?PRIME[p.pos][1]:30);}).length;
+      var offVal=plrs.reduce(function(s,p){return s+(p.tradeVal||0);},0);
+      return{idx:idx,name:team.name,owner:team.owner,totalVal:team.totalVal||0,offensiveVal:offVal,starterVal:lineup?lineup.starterVal:null,benchVal:lineup?lineup.benchVal:null,posVal:posVal,posCt:posCt,avgAge:avgAge,youngCt:youngCt,primeCt:primeCt,postCt:postCt,playerCount:plrs.length,pickValue:team.pickValue||0,picks:team.picks||0,overallRank:0,starterRank:0};
+    });
+    // League averages — starter/bench only when slot data exists
+    var avg={totalVal:0,starterVal:null,benchVal:null,posVal:{QB:0,RB:0,WR:0,TE:0}};
+    td.forEach(function(t){avg.totalVal+=t.totalVal;avg.posVal.QB+=t.posVal.QB;avg.posVal.RB+=t.posVal.RB;avg.posVal.WR+=t.posVal.WR;avg.posVal.TE+=t.posVal.TE;});
+    if(hasSlotData){var svSum=0,bvSum=0;td.forEach(function(t){svSum+=(t.starterVal||0);bvSum+=(t.benchVal||0);});avg.starterVal=n>0?Math.round(svSum/n):null;avg.benchVal=n>0?Math.round(bvSum/n):null;}
+    if(n>0){avg.totalVal=Math.round(avg.totalVal/n);avg.posVal.QB=Math.round(avg.posVal.QB/n);avg.posVal.RB=Math.round(avg.posVal.RB/n);avg.posVal.WR=Math.round(avg.posVal.WR/n);avg.posVal.TE=Math.round(avg.posVal.TE/n);}
+    // Position ranks per team
+    var posRanks={};
+    ["QB","RB","WR","TE"].forEach(function(pos){var s=td.slice().sort(function(a,b){return b.posVal[pos]-a.posVal[pos];});s.forEach(function(t,r){if(!posRanks[t.idx])posRanks[t.idx]={};posRanks[t.idx][pos]=r+1;});});
+    // Overall ranks (always available) and starter ranks (only with slot data)
+    td.slice().sort(function(a,b){return b.totalVal-a.totalVal;}).forEach(function(t,r){t.overallRank=r+1;});
+    if(hasSlotData){td.slice().sort(function(a,b){return(b.starterVal||0)-(a.starterVal||0);}).forEach(function(t,r){t.starterRank=r+1;});}
+    return{teams:td,avg:avg,posRanks:posRanks,n:n,starterSlots:ss,totalStarters:totalStarters,hasSlotData:hasSlotData};
+  },[powerRankingTeams,leagueRosterPositions]);
 
   function tVal(side,fa){return side.reduce(function(s,x){return s+(x.pos==="PICK"?x.est:Math.max(0,x.tradeVal));},0)+((fa||0)*(2000/Math.max(50,budget)));}
   var tvA=tVal(tradeA,faabA),tvB=tVal(tradeB,faabB);
@@ -3845,6 +3912,7 @@ export default function App(){
     setLeagueImportStatus("loading");setLeagueImportErr("");setLeagueImportData(null);
     fetch("https://api.sleeper.app/v1/user/"+leagueImportUser.trim()).then(function(r){if(!r.ok)throw new Error("User not found");return r.json();}).then(function(u){
       var uid=u.user_id;
+      setSleeperUserId(uid);try{localStorage.setItem('fdp_sluid_v1',uid);}catch(e){}
       return Promise.all([
         fetch("https://api.sleeper.app/v1/user/"+uid+"/leagues/nfl/2025").then(function(r){return r.json();}).catch(function(){return[];}),
         fetch("https://api.sleeper.app/v1/user/"+uid+"/leagues/nfl/2026").then(function(r){return r.json();}).catch(function(){return[];})
@@ -5148,7 +5216,7 @@ export default function App(){
       React.createElement("div",{style:{position:"relative",borderBottom:"1px solid "+T.border}},
         isDesktop&&React.createElement("button",{onClick:function(){leagueTabsRef.current&&leagueTabsRef.current.scrollBy({left:-200,behavior:"smooth"});},style:{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",zIndex:2,background:T.bgCard,border:"1px solid "+T.border,borderRadius:"50%",width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:T.text,fontSize:14,padding:0}},"‹"),
         React.createElement("div",{ref:leagueTabsRef,style:{display:"flex",gap:8,overflowX:"auto",padding:isDesktop?"12px 36px":"12px 16px",scrollbarWidth:"none"}},
-          [["power","Power Rankings"],["pickpower","Pick Power Rankings"],["playoff","Playoff Odds"],["champ","Championship"],["advice","Team Advice"],["roster","Roster Health"],["waiver","Waiver Wire"],["lineup","Lineup"],["startsit","Start/Sit"],["trades","League Trades"],["auction","Draft Room"],["rivalry","Rivalry"],["recap","Recap"],["chat","Chat"],["alerts","Alerts"],["leagimport","Import"]].map(function(st){
+          [["overview","League Intelligence"],["power","Power Rankings"],["pickpower","Pick Power Rankings"],["playoff","Playoff Odds"],["champ","Championship"],["advice","Team Advice"],["roster","Roster Health"],["waiver","Waiver Wire"],["lineup","Lineup"],["startsit","Start/Sit"],["trades","League Trades"],["auction","Draft Room"],["rivalry","Rivalry"],["recap","Recap"],["chat","Chat"],["alerts","Alerts"],["leagimport","Import"]].map(function(st){
             var active=leagueSubTab===st[0];
             return React.createElement("button",{key:st[0],onClick:function(){
               setLeagueSubTab(st[0]);
@@ -5157,6 +5225,172 @@ export default function App(){
           })
         ),
         isDesktop&&React.createElement("button",{onClick:function(){leagueTabsRef.current&&leagueTabsRef.current.scrollBy({left:200,behavior:"smooth"});},style:{position:"absolute",right:0,top:"50%",transform:"translateY(-50%)",zIndex:2,background:T.bgCard,border:"1px solid "+T.border,borderRadius:"50%",width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:T.text,fontSize:14,padding:0}},"›")
+      ),
+
+      // LEAGUE INTELLIGENCE OVERVIEW
+      leagueSubTab==="overview"&&React.createElement("div",{style:{padding:"16px"}},
+        !powerRankingTeams&&React.createElement("div",{style:{background:T.bgInput,border:"1px solid "+T.border,borderRadius:14,padding:24,textAlign:"center"}},
+          React.createElement("div",{style:{fontSize:28,marginBottom:8}},"📊"),
+          React.createElement("div",{style:{fontWeight:800,fontSize:16,marginBottom:6}},"League Intelligence"),
+          React.createElement("div",{style:{fontSize:13,color:T.textSub,marginBottom:14}},"Import your Sleeper or ESPN league to unlock personalized roster analysis, position rankings, and actionable advice."),
+          React.createElement("button",{onClick:function(){setLeagueSubTab("leagimport");},style:{padding:"10px 24px",borderRadius:10,border:"none",background:T.purple,color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}},"Import League")
+        ),
+        powerRankingTeams&&leagueIntel&&(function(){
+          var n=leagueIntel.n;
+          var myIdx2=myTeamIdx;
+          var myData=myIdx2!=null?leagueIntel.teams[myIdx2]:null;
+          var myTeam=myIdx2!=null?powerRankingTeams[myIdx2]:null;
+          var pr=leagueIntel.posRanks;var avg=leagueIntel.avg;
+          function ordSuf(r){var s=r%100;if(s>=11&&s<=13)return r+"th";var l=r%10;return r+(l===1?"st":l===2?"nd":l===3?"rd":"th");}
+          function fmtV(v){return v>=1000?(v/1000).toFixed(1)+"k":String(v);}
+          // Roster grade uses offensive value only — thresholds calibrated for QB/RB/WR/TE
+          var gradeVal=myData?(idpMode?myData.offensiveVal:myData.totalVal):0;
+          var grade=gradeVal>=120000?"A+":gradeVal>=100000?"A":gradeVal>=85000?"A-":gradeVal>=70000?"B+":gradeVal>=58000?"B":gradeVal>=47000?"B-":gradeVal>=38000?"C+":gradeVal>=30000?"C":"D";
+          var gc=grade.startsWith("A")?T.green:grade.startsWith("B")?"#60a5fa":grade.startsWith("C")?T.gold:T.red;
+          // League context header
+          var provLabel=activeLeague&&activeLeague.league_id?(activeLeague.league_id==="manual"?"Manual":activeLeague.league_id.startsWith("espn_")?"ESPN":"Sleeper"):"—";
+          var isSleeper=provLabel==="Sleeper";
+          // Sleeper: scoring/SF/IDP/dynasty are provider-confirmed; TE Premium is user-selected
+          var fmtLabel2=isSleeper?"League Format: "+(isDynasty?"Dynasty":"Redraft")+" · "+(sKey==="PPR"?"PPR":sKey==="Half"?"Half PPR":"Standard")+(sfMode?" · Superflex":"")+(idpMode?" · IDP":"")+(tePremium>0?" · FDP: TE Premium":""):"FDP Context: "+(isDynasty?"Dynasty":"Redraft")+" · "+(sKey==="PPR"?"PPR":sKey==="Half"?"Half PPR":"Standard")+(sfMode?" · Superflex":"")+(tePremium>0?" · TE Premium":"")+(idpMode?" · IDP":"");
+          return React.createElement("div",null,
+            // League header
+            React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:16,padding:16,marginBottom:14}},
+              React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},
+                React.createElement("div",null,
+                  React.createElement("div",{style:{fontWeight:900,fontSize:22,marginBottom:4}},"League Intelligence"),
+                  React.createElement("div",{style:{fontSize:12,color:T.textSub}},(activeLeague?activeLeague.name:"League")+" · "+provLabel+" · "+n+" teams"),
+                  React.createElement("div",{style:{fontSize:11,color:T.textDim,marginTop:2}},fmtLabel2)
+                ),
+                React.createElement("button",{onClick:function(){if(activeLeague){if(activeLeague.league_id.startsWith("espn_"))doEspnImport();else connectLeague(activeLeague);}},disabled:leagueImportStatus==="connecting",style:{padding:"8px 14px",borderRadius:10,border:"1px solid "+T.borderPurple,background:T.purpleDim,color:T.purple,fontWeight:700,fontSize:11,cursor:"pointer",flexShrink:0,opacity:leagueImportStatus==="connecting"?0.6:1}},leagueImportStatus==="connecting"?"Syncing...":"↻ Refresh")
+              )
+            ),
+            // Your Team or team selector
+            myData&&myTeam?React.createElement("div",{style:{background:"linear-gradient(135deg,#1a0533,#0f0e17)",border:"1px solid "+T.purple+"55",borderRadius:16,padding:16,marginBottom:14}},
+              React.createElement("div",{style:{fontSize:10,fontWeight:800,color:T.purple,letterSpacing:1,marginBottom:6}},"YOUR TEAM"),
+              React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}},
+                React.createElement("div",null,
+                  React.createElement("div",{style:{fontWeight:900,fontSize:18,color:"#fff"}},myTeam.name),
+                  myTeam.owner&&React.createElement("div",{style:{fontSize:11,color:T.textSub,marginTop:2}},myTeam.owner+" · "+(myTeam.wins||0)+"-"+(myTeam.losses||0))
+                ),
+                React.createElement("div",{style:{textAlign:"right"}},
+                  React.createElement("div",{style:{fontWeight:900,fontSize:32,color:gc,lineHeight:1}},grade),
+                  React.createElement("div",{style:{fontSize:10,color:T.textSub,marginTop:2}},ordSuf(myData.overallRank)+" of "+n)
+                )
+              ),
+              // Stat cards — starter/bench only when lineup slot data is available; bench suppressed in IDP (offense-only lineup)
+              React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(90px, 1fr))",gap:8,marginBottom:14}},
+                [["Total Value",myData.totalVal,T.purpleLight]].concat(leagueIntel.hasSlotData?[[idpMode?"Off. Optimal Lineup":"Optimal Lineup",myData.starterVal,"#818cf8"]].concat(idpMode?[]:[["Bench",myData.benchVal,T.textSub]]):[]).concat([["Picks",myData.pickValue||0,T.gold]]).map(function(c){return React.createElement("div",{key:c[0],style:{background:"rgba(255,255,255,0.04)",borderRadius:10,padding:"10px 12px",textAlign:"center"}},React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:700,marginBottom:2}},c[0]),React.createElement("div",{style:{fontWeight:900,fontSize:16,color:c[2]}},c[1]!=null?fmtV(c[1]):"—"));})
+              ),
+              // Position strength with league-relative rank
+              React.createElement("div",{style:{background:"rgba(255,255,255,0.03)",borderRadius:12,padding:"12px 14px",marginBottom:14}},
+                React.createElement("div",{style:{fontSize:10,fontWeight:800,color:T.textDim,letterSpacing:0.5,marginBottom:8}},"POSITION STRENGTH"),
+                ["QB","RB","WR","TE"].map(function(pos){
+                  var val=myData.posVal[pos];
+                  var rank=pr[myData.idx]?pr[myData.idx][pos]:n;
+                  var pct=avg.posVal[pos]>0?Math.min(100,Math.round(val/avg.posVal[pos]*50)):50;
+                  var rc=rank<=Math.ceil(n*0.25)?T.green:rank<=Math.ceil(n*0.5)?"#818cf8":rank<=Math.ceil(n*0.75)?T.gold:T.red;
+                  var pc=POS_COLORS[pos]||"#888";
+                  return React.createElement("div",{key:pos,style:{display:"flex",alignItems:"center",gap:8,marginBottom:6}},
+                    React.createElement("span",{style:{fontSize:10,fontWeight:900,color:pc,width:22}},pos),
+                    React.createElement("div",{style:{flex:1,background:"rgba(255,255,255,0.06)",borderRadius:4,height:8,overflow:"hidden"}},
+                      React.createElement("div",{style:{width:Math.max(5,pct)+"%",height:"100%",background:pc,borderRadius:4}})
+                    ),
+                    React.createElement("span",{style:{fontSize:10,fontWeight:800,color:rc,width:50,textAlign:"right"}},ordSuf(rank)+" of "+n),
+                    React.createElement("span",{style:{fontSize:9,color:T.textSub,width:36,textAlign:"right"}},fmtV(val))
+                  );
+                })
+              ),
+              // Roster age context
+              React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(80px, 1fr))",gap:8}},
+                [["Avg Age",myData.avgAge!=null?myData.avgAge.toFixed(1):"—",T.text],["Pre-Prime",myData.youngCt,T.green],["In Prime",myData.primeCt,"#818cf8"],["Post-Prime",myData.postCt,T.gold]].map(function(c){return React.createElement("div",{key:c[0],style:{textAlign:"center",padding:"6px 0"}},React.createElement("div",{style:{fontWeight:900,fontSize:16,color:c[2]}},c[1]),React.createElement("div",{style:{fontSize:9,color:T.textDim}},c[0]));})
+              )
+            ):React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:16,marginBottom:14,textAlign:"center"}},
+              React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:8}},"Select your team to see personalized intelligence"),
+              React.createElement("select",{value:myTeamOwnerId||"",onChange:function(e){saveMyTeamOwnerId(e.target.value||null);},style:{background:T.bgInput,color:T.text,border:"1px solid "+T.border,borderRadius:10,padding:"10px 14px",fontSize:13,outline:"none"}},
+                React.createElement("option",{value:""},"Choose your team..."),
+                powerRankingTeams.map(function(t,i){return React.createElement("option",{key:i,value:t.ownerId},(t.name||"Team "+(i+1))+(t.owner?" ("+t.owner+")":""));})
+              )
+            ),
+            // Action Center
+            myData&&React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:14,padding:16,marginBottom:14}},
+              React.createElement("div",{style:{fontWeight:800,fontSize:15,marginBottom:12}},"Action Center"),
+              (function(){
+                var items=[];
+                ["QB","RB","WR","TE"].forEach(function(pos){
+                  var rank=pr[myData.idx]?pr[myData.idx][pos]:n;
+                  var val=myData.posVal[pos];var label=pos+" room";
+                  if(rank<=Math.ceil(n*0.25))items.push({icon:"↗",color:T.green,text:label+" ranks "+ordSuf(rank)+" — league-leading strength"});
+                  else if(rank>Math.ceil(n*0.75))items.push({icon:"↘",color:T.red,text:label+" needs attention ("+ordSuf(rank)+" of "+n+", "+fmtV(val)+" total)"});
+                  else if(rank>Math.ceil(n*0.5))items.push({icon:"→",color:T.gold,text:label+" ranks "+ordSuf(rank)+" of "+n+" — below league average"});
+                });
+                if(leagueIntel.hasSlotData&&myData.starterVal!=null&&avg.starterVal!=null){if(myData.starterVal>avg.starterVal*1.1)items.push({icon:"↗",color:T.green,text:"Optimal lineup above league average ("+fmtV(myData.starterVal)+" vs "+fmtV(avg.starterVal)+")"});else if(myData.starterVal<avg.starterVal*0.9)items.push({icon:"→",color:T.gold,text:"Optimal lineup trails league average ("+fmtV(myData.starterVal)+" vs "+fmtV(avg.starterVal)+")"});}
+                if(!idpMode&&leagueIntel.hasSlotData&&myData.benchVal!=null&&avg.benchVal!=null&&myData.benchVal>avg.benchVal*1.2)items.push({icon:"↗",color:T.green,text:"Bench carries significant depth value ("+fmtV(myData.benchVal)+")"});
+                var hasAgeData=(myData.youngCt+myData.primeCt+myData.postCt)>=Math.ceil(myData.playerCount*0.5);
+                if(hasAgeData&&myData.postCt>=3)items.push({icon:"→",color:T.gold,text:myData.postCt+" post-prime players — consider selling aging assets"});
+                if(hasAgeData&&myData.youngCt>=Math.ceil(myData.playerCount*0.5))items.push({icon:"↗",color:T.green,text:"Young core: "+myData.youngCt+" pre-prime players building for the future"});
+                if(items.length===0)items.push({icon:"→",color:T.textSub,text:"Roster is balanced — no urgent moves needed"});
+                return items.map(function(it,ii){return React.createElement("div",{key:ii,style:{display:"flex",alignItems:"flex-start",gap:8,marginBottom:8}},
+                  React.createElement("span",{style:{color:it.color,fontWeight:900,fontSize:14,flexShrink:0,marginTop:1}},it.icon),
+                  React.createElement("span",{style:{fontSize:12,color:T.text,lineHeight:1.4}},it.text));});
+              })()
+            ),
+            // Trade Partner Context
+            myData&&powerRankingTeams.length>1&&React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:16,marginBottom:14}},
+              React.createElement("div",{style:{fontWeight:800,fontSize:15,marginBottom:12}},"Potential Trade Partners"),
+              (function(){
+                var myWeakPos=[];var myStrongPos=[];
+                ["QB","RB","WR","TE"].forEach(function(pos){
+                  var rank=pr[myData.idx]?pr[myData.idx][pos]:n;
+                  if(rank>Math.ceil(n*0.6))myWeakPos.push(pos);
+                  if(rank<=Math.ceil(n*0.33))myStrongPos.push(pos);
+                });
+                if(myWeakPos.length===0&&myStrongPos.length===0)return React.createElement("div",{style:{fontSize:12,color:T.textSub,textAlign:"center",padding:8}},"Your roster is balanced across positions — no clear trade-partner matches.");
+                var partners=[];
+                leagueIntel.teams.forEach(function(otherData){
+                  if(otherData.idx===myData.idx)return;
+                  var otherPr=pr[otherData.idx]||{};
+                  var matches=[];
+                  myWeakPos.forEach(function(wp){
+                    if(otherPr[wp]&&otherPr[wp]<=Math.ceil(n*0.33)){
+                      var theirWeakInMyStrong=myStrongPos.find(function(sp){return otherPr[sp]&&otherPr[sp]>Math.ceil(n*0.5);});
+                      matches.push({theyHave:wp,youOffer:theirWeakInMyStrong||null});
+                    }
+                  });
+                  if(matches.length>0)partners.push({name:otherData.name,owner:otherData.owner,matches:matches,rank:otherData.overallRank});
+                });
+                partners.sort(function(a,b){return b.matches.length-a.matches.length;});
+                partners=partners.slice(0,4);
+                if(partners.length===0)return React.createElement("div",{style:{fontSize:12,color:T.textSub,textAlign:"center",padding:8}},"No clear positional complements found among league teams.");
+                return partners.map(function(pt,pi){return React.createElement("div",{key:pi,style:{background:T.bgInput,borderRadius:10,padding:"10px 12px",marginBottom:6}},
+                  React.createElement("div",{style:{fontWeight:700,fontSize:12,marginBottom:4}},pt.name),
+                  pt.matches.map(function(m,mi){return React.createElement("div",{key:mi,style:{fontSize:11,color:T.textSub,marginBottom:2}},
+                    "Strong "+m.theyHave+" room"+(m.youOffer?" — they may need "+m.youOffer:""));})
+                );});
+              })()
+            ),
+            // League-wide position comparison table
+            React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:16}},
+              React.createElement("div",{style:{fontWeight:800,fontSize:15,marginBottom:12}},"League Position Rankings"),
+              React.createElement("div",{style:{overflowX:"auto"}},React.createElement("div",{style:{minWidth:340}},
+                React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr repeat(4, 60px)",gap:4,marginBottom:6}},
+                  React.createElement("div",{style:{fontSize:10,fontWeight:700,color:T.textDim}},"Team"),
+                  ["QB","RB","WR","TE"].map(function(pos){return React.createElement("div",{key:pos,style:{fontSize:10,fontWeight:800,color:POS_COLORS[pos],textAlign:"center"}},pos);})
+                ),
+                leagueIntel.teams.slice().sort(function(a,b){return a.overallRank-b.overallRank;}).map(function(td2){
+                  var isMe=myTeamIdx!=null&&td2.idx===myTeamIdx;
+                  return React.createElement("div",{key:td2.idx,style:{display:"grid",gridTemplateColumns:"1fr repeat(4, 60px)",gap:4,padding:"6px 0",borderTop:"1px solid "+T.border,background:isMe?T.purple+"12":"transparent"}},
+                    React.createElement("div",{style:{fontSize:11,fontWeight:isMe?800:600,color:isMe?T.purpleLight:T.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},td2.name),
+                    ["QB","RB","WR","TE"].map(function(pos){
+                      var rank=pr[td2.idx]?pr[td2.idx][pos]:n;
+                      var rc=rank<=Math.ceil(n*0.25)?T.green:rank<=Math.ceil(n*0.5)?T.text:rank<=Math.ceil(n*0.75)?T.gold:T.red;
+                      return React.createElement("div",{key:pos,style:{textAlign:"center",fontSize:11,fontWeight:700,color:rc}},ordSuf(rank));
+                    })
+                  );
+                })
+              ))
+            )
+          );
+        })()
       ),
 
       // POWER RANKINGS
@@ -5183,6 +5417,7 @@ export default function App(){
         (powerRankingTeams||LEAGUE_TEAMS).map(function(team,i){
           var ords=["1st","2nd","3rd","4th","5th","6th","7th","8th","9th","10th","11th","12th"];
           var ord=ords[i]||(i+1)+"th";
+          var isMyTeam=powerRankingTeams&&myTeamOwnerId&&team.ownerId===myTeamOwnerId;
           var badgeBg=i===0?"#f59e0b":i===1?"#9ca3af":i===2?"#b45309":T.bgInput;
           var badgeText=i<3?"#000":T.textSub;
           var record=powerRankingTeams?(team.wins||0)+"-"+(team.losses||0):(team.record||"0-0");
@@ -5253,7 +5488,8 @@ export default function App(){
             if(score<=12)return {label:"Contending",color:T.green,icon:"⚡",desc:"Competitive roster, championship window open"};
             return {label:"Win Now",color:"#f59e0b",icon:"🏆",desc:"All-in roster, maximize this window"};
           })();
-          return React.createElement("div",{key:team.name+i,style:{background:T.bgCard,border:"1px solid "+(i===0?T.borderPurple:T.border),borderRadius:14,padding:16,marginBottom:10}},
+          return React.createElement("div",{key:team.name+i,style:{background:isMyTeam?T.purple+"08":T.bgCard,border:"1px solid "+(isMyTeam?T.purple+"66":i===0?T.borderPurple:T.border),borderRadius:14,padding:16,marginBottom:10}},
+            isMyTeam&&React.createElement("div",{style:{fontSize:9,fontWeight:800,color:T.purple,letterSpacing:1,marginBottom:6}},"YOUR TEAM"),
             React.createElement("div",{style:{display:"flex",alignItems:"flex-start",gap:12,marginBottom:12}},
               React.createElement("div",{style:{background:badgeBg,borderRadius:20,padding:"5px 12px",display:"inline-flex",alignItems:"center",gap:4,flexShrink:0}},
                 React.createElement("span",{style:{fontSize:12}},"\uD83C\uDFC6"),
@@ -5350,6 +5586,7 @@ export default function App(){
           return ranked.map(function(team,i){
             var ords=["1st","2nd","3rd","4th","5th","6th","7th","8th","9th","10th","11th","12th"];
             var ord=ords[i]||(i+1)+"th";
+            var isMyTeamPP=powerRankingTeams&&myTeamOwnerId&&team.ownerId===myTeamOwnerId;
             var badgeBg=i===0?"#f59e0b":i===1?"#9ca3af":i===2?"#b45309":T.bgInput;
             var badgeText=i<3?"#000":T.textSub;
             var playerPct=Math.round((team.totalVal||0)/Math.max(1,maxCombined)*100);
@@ -5358,7 +5595,8 @@ export default function App(){
             var byRound={};
             (team.pickDetails||[]).forEach(function(pk){var k=pk.round+"rd";byRound[k]=(byRound[k]||0)+1;});
             var roundSummary=Object.keys(byRound).sort().map(function(k){return byRound[k]+"×"+k;}).join(" · ");
-            return React.createElement("div",{key:team.name+i,style:{background:T.bgCard,border:"1px solid "+(i===0?T.borderPurple:T.border),borderRadius:14,padding:16,marginBottom:10}},
+            return React.createElement("div",{key:team.name+i,style:{background:isMyTeamPP?T.purple+"08":T.bgCard,border:"1px solid "+(isMyTeamPP?T.purple+"66":i===0?T.borderPurple:T.border),borderRadius:14,padding:16,marginBottom:10}},
+              isMyTeamPP&&React.createElement("div",{style:{fontSize:9,fontWeight:800,color:T.purple,letterSpacing:1,marginBottom:6}},"YOUR TEAM"),
               React.createElement("div",{style:{display:"flex",alignItems:"flex-start",gap:12,marginBottom:10}},
                 React.createElement("div",{style:{background:badgeBg,borderRadius:20,padding:"5px 12px",display:"inline-flex",alignItems:"center",gap:4,flexShrink:0}},
                   React.createElement("span",{style:{fontSize:12}},"🏆"),
@@ -5582,9 +5820,12 @@ export default function App(){
           var distFromMedian=spread>0?Math.abs(team.totalVal-(sortedVals[Math.floor(sortedVals.length/2)]||{totalVal:team.totalVal}).totalVal)/spread:0;
           var confidence=Math.min(98,Math.round(60+distFromMedian*38));
           var leaguePercentile=Math.round((1-pct)*100);
-          var starterVal=Math.round(team.totalVal*0.65/1000)*1000;
+          var advicePlrs=(team.players&&team.players.length>0?team.players:[]).filter(function(p){return["QB","RB","WR","TE"].indexOf(p.pos)>=0;}).slice().sort(function(a,b){return(b.tradeVal||0)-(a.tradeVal||0);});
+          var hasAdviceSlots=leagueIntel&&leagueIntel.hasSlotData&&leagueIntel.totalStarters!=null;
+          var adviceStarters=hasAdviceSlots?advicePlrs.slice(0,Math.min(leagueIntel.totalStarters,advicePlrs.length)):null;
+          var starterVal=adviceStarters?adviceStarters.reduce(function(s,p){return s+(p.tradeVal||0);},0):null;
           var futureVal=team.pickValue||Math.round(team.picks*4200);
-          var agingRisk=Math.max(0,Math.round(adviceTeam*3.5));
+          var agingRisk=advicePlrs.length>0?advicePlrs.filter(function(p){return p.age&&p.age>0&&p.age>(PRIME[p.pos]?PRIME[p.pos][1]:30);}).length:0;
           return React.createElement("div",null,
             React.createElement("div",{style:{background:modeBg,border:"1px solid "+modeColor+"44",borderRadius:16,padding:20,marginBottom:14}},
               React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}},
@@ -5629,7 +5870,7 @@ export default function App(){
                 )
               );
             })(),
-            [["▦","League Rank",leaguePercentile+(leaguePercentile%100>=11&&leaguePercentile%100<=13?"th":leaguePercentile%10===1?"st":leaguePercentile%10===2?"nd":leaguePercentile%10===3?"rd":"th"),"percentile","#818cf8"],["◎","Starter Value",starterVal.toLocaleString(),"FDP value","#818cf8"],["↗","Future Value",futureVal.toLocaleString(),"youth (≤24)",T.green],["◷","Aging Risk",agingRisk,"veterans","#f97316"]].map(function(card){
+            [["▦","League Rank",leaguePercentile+(leaguePercentile%100>=11&&leaguePercentile%100<=13?"th":leaguePercentile%10===1?"st":leaguePercentile%10===2?"nd":leaguePercentile%10===3?"rd":"th"),"percentile","#818cf8"]].concat(starterVal!=null?[["◎","Optimal Lineup",starterVal.toLocaleString(),"slot-aware FDP value","#818cf8"]]:[]).concat([["↗","Future Value",futureVal.toLocaleString(),"youth (≤24)",T.green],["◷","Aging Risk",agingRisk,"post-prime players","#f97316"]]).map(function(card){
               return React.createElement("div",{key:card[1],style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:16,marginBottom:10}},
                 React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:6}},
                   React.createElement("span",{style:{fontSize:16,color:card[4]}},card[0]),
@@ -6891,7 +7132,7 @@ export default function App(){
         React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:16}},"Connect your fantasy league for live power rankings"),
         activeLeague&&React.createElement("div",{style:{background:T.green+"18",border:"1px solid "+T.green+"44",borderRadius:10,padding:"10px 14px",marginBottom:14,fontSize:12,color:T.green,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"space-between"}},
           React.createElement("span",null,"Connected: "+activeLeague.name),
-          React.createElement("button",{onClick:function(){saveAndSetActiveLeague(null);setLeagueRosters(null);setLeagueUsers(null);saveAndSetImportedTeams(null);setLeagueImportStatus(null);},style:{background:"none",border:"none",color:T.green,cursor:"pointer",fontSize:16,padding:0}},"×")
+          React.createElement("button",{onClick:function(){saveAndSetActiveLeague(null);setLeagueRosters(null);setLeagueUsers(null);saveAndSetImportedTeams(null);setLeagueImportStatus(null);saveMyTeamOwnerId(null);setLeagueRosterPositions(null);try{localStorage.removeItem('fdp_rpos_v2');}catch(e){}},style:{background:"none",border:"none",color:T.green,cursor:"pointer",fontSize:16,padding:0}},"×")
         ),
         // Platform selector
         React.createElement("div",{style:{display:"flex",gap:6,overflowX:"auto",marginBottom:16,paddingBottom:2,scrollbarWidth:"none"}},
