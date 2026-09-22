@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { sideA, sideB, tvA, tvB, scoring } = await req.json();
+    const { sideA, sideB, tvA, tvB, scoring, posImpact, ageContext, draftCapital, rosterFit, warnings, formatNotes } = await req.json();
 
     if (!sideA || !sideB) {
       return new Response(JSON.stringify({ error: "Missing trade sides" }), {
@@ -58,22 +58,44 @@ Deno.serve(async (req) => {
     });
 
     const diff = tvA - tvB;
-    const pct = tvB > 0 ? Math.abs(diff / tvB) * 100 : 0;
+    const maxVal = Math.max(tvA, tvB);
+    const pct = maxVal > 0 ? Math.abs(diff / maxVal) * 100 : 0;
     const winner = pct < 8 ? "fair trade" : diff > 0 ? "Team B wins" : "Team A wins";
 
-    const prompt = `You are an expert dynasty fantasy football analyst. Analyze this trade and give a concise 2-3 sentence verdict.
+    const posLine = posImpact && posImpact.length > 0
+      ? "\nPositional impact: " + posImpact.map((d: any) => `${d.pos}: ${d.net > 0 ? "+" : ""}${d.net}`).join(", ")
+      : "";
+    const ageLine = ageContext
+      ? "\nAge context: Team A avg " + (ageContext.avgA != null ? ageContext.avgA.toFixed(1) : "unknown") + ", Team B avg " + (ageContext.avgB != null ? ageContext.avgB.toFixed(1) : "unknown")
+      : "";
+    const pickLine = draftCapital
+      ? "\nDraft capital: Sent " + draftCapital.valSent + ", Received " + draftCapital.valReceived + ", Net " + (draftCapital.net > 0 ? "+" : "") + draftCapital.net
+      : "";
+    const rosterLine = rosterFit
+      ? "\nRoster fit (" + rosterFit.team + "): Roster value change " + (rosterFit.valDelta > 0 ? "+" : "") + rosterFit.valDelta + (rosterFit.lineupDelta != null ? ". Lineup value change: " + (rosterFit.lineupDelta > 0 ? "+" : "") + rosterFit.lineupDelta : "")
+      : "";
+    const warnLine = warnings && warnings.length > 0 ? "\nWarnings: " + warnings.join("; ") : "";
+    const fmtLine = formatNotes && formatNotes.length > 0 ? "\nFormat notes: " + formatNotes.join("; ") : "";
 
-Scoring format: ${scoring || "PPR Dynasty"}
+    const prompt = `You are an expert fantasy football trade analyst for Fantasy Draft Pros. Analyze this trade using ONLY the supplied facts.
 
-Team A gives: ${sideA.map((p: any) => `${p.name} (${p.pos}, Age ${p.age || "?"}, Value ${p.tradeVal || p.est || 0})`).join(", ")}
-Total value: ${tvA.toLocaleString()}
+Scoring: ${scoring || "PPR Dynasty"}
 
-Team B gives: ${sideB.map((p: any) => `${p.name} (${p.pos}, Age ${p.age || "?"}, Value ${p.tradeVal || p.est || 0})`).join(", ")}
-Total value: ${tvB.toLocaleString()}
+Team A gives: ${sideA.map((p: any) => `${p.name} (${p.pos}, Age ${p.age || "unknown"}, Value ${p.val || 0})`).join(", ")}
+Team A total: ${tvA}
 
-Value differential: ${pct.toFixed(1)}% (${winner})
+Team B gives: ${sideB.map((p: any) => `${p.name} (${p.pos}, Age ${p.age || "unknown"}, Value ${p.val || 0})`).join(", ")}
+Team B total: ${tvB}
 
-Give a sharp, specific analysis. Mention player names. Cover: who wins and why, age/dynasty implications, any risks. Be direct — no filler phrases.`;
+Value differential: ${pct.toFixed(1)}% (${winner})${posLine}${ageLine}${pickLine}${rosterLine}${warnLine}${fmtLine}
+
+Rules:
+- Use ONLY supplied values and facts
+- Do NOT invent stats, news, injuries, or depth chart information
+- Do NOT alter the trade totals or fairness percentage
+- Distinguish raw trade fairness from roster fit if roster context is provided
+- If age is unknown for a player, do not guess their age
+- Give a sharp 2-4 sentence analysis mentioning player names`;
 
     const message = await anthropic.messages.create({
       model: "claude-haiku-4-5-20251001",

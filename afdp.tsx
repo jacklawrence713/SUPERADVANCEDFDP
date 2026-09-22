@@ -3568,19 +3568,20 @@ export default function App(){
     if(aTotal>bTotal+1){lines.push("Consolidation edge: Team B gets "+aTotal+" assets for "+bTotal+" — in dynasty, the side getting fewer, better players usually wins long-term.");}
     else if(bTotal>aTotal+1){lines.push("Consolidation edge: Team A gets "+bTotal+" assets for "+aTotal+" — acquiring the best player in a trade is a dynasty principle.");}
     if(aPlrs.length>0&&bPlrs.length>0){
-      var aAge=+(aPlrs.reduce(function(s,p){return s+(p.age||25);},0)/aPlrs.length).toFixed(1);
-      var bAge=+(bPlrs.reduce(function(s,p){return s+(p.age||25);},0)/bPlrs.length).toFixed(1);
-      if(aAge>bAge+2){lines.push("You're moving older assets (avg age "+aAge+") for younger pieces (avg "+bAge+") — solid dynasty value exchange.");}
-      else if(bAge>aAge+2){lines.push("Incoming players average age "+bAge+" vs "+aAge+" outgoing. Win-now move — good if you're contending.");}
+      var aAgedF=aPlrs.filter(function(p){return p.age&&p.age>0;});var bAgedF=bPlrs.filter(function(p){return p.age&&p.age>0;});
+      var aAge=aAgedF.length>0?+(aAgedF.reduce(function(s,p){return s+p.age;},0)/aAgedF.length).toFixed(1):null;
+      var bAge=bAgedF.length>0?+(bAgedF.reduce(function(s,p){return s+p.age;},0)/bAgedF.length).toFixed(1):null;
+      if(aAge!=null&&bAge!=null&&aAge>bAge+2){lines.push("You're moving older assets (avg age "+aAge+") for younger pieces (avg "+bAge+") — solid dynasty value exchange.");}
+      else if(aAge!=null&&bAge!=null&&bAge>aAge+2){lines.push("Incoming players average age "+bAge+" vs "+aAge+" outgoing. Win-now move — good if you're contending.");}
       // Window analysis
-      var youngCount=bPlrs.filter(function(p){return (p.age||25)<=24;}).length;
-      var primeCount=bPlrs.filter(function(p){var lo=PRIME[p.pos]?PRIME[p.pos][0]:25;var hi=PRIME[p.pos]?PRIME[p.pos][1]:30;return (p.age||25)>=lo&&(p.age||25)<=hi;}).length;
+      var youngCount=bAgedF.filter(function(p){return p.age<=24;}).length;
+      var primeCount=bAgedF.filter(function(p){var lo=PRIME[p.pos]?PRIME[p.pos][0]:25;var hi=PRIME[p.pos]?PRIME[p.pos][1]:30;return p.age>=lo&&p.age<=hi;}).length;
       if(youngCount>=2){lines.push("Rebuilder move: you're acquiring "+youngCount+" players aged 24 or under. Great for long-term dynasty value.");}
       else if(primeCount>=2){lines.push("Win-now move: "+primeCount+" incoming players are in their prime window. Push for a championship.");}
     }
-    var oldRbs=aPlrs.filter(function(p){return p.pos==="RB"&&(p.age||25)>=29;});
+    var oldRbs=aPlrs.filter(function(p){return p.pos==="RB"&&p.age&&p.age>=29;});
     if(oldRbs.length>0){lines.push("Risk flag: "+oldRbs.map(function(p){return p.name;}).join(" & ")+" "+( oldRbs.length>1?"are":"is")+" 29+ at RB — steep production cliff ahead.");}
-    var oldRbsIn=bPlrs.filter(function(p){return p.pos==="RB"&&(p.age||25)>=29;});
+    var oldRbsIn=bPlrs.filter(function(p){return p.pos==="RB"&&p.age&&p.age>=29;});
     if(oldRbsIn.length>0){lines.push("Caution: acquiring "+oldRbsIn.map(function(p){return p.name+"("+p.age+")";}).join(", ")+" — RBs 29+ carry significant injury and decline risk.");}
     if(aPicks.length>bPicks.length){var ep=aPicks.length-bPicks.length;lines.push("You're adding "+ep+" extra pick"+(ep>1?"s":"")+" — speculative upside, best for rebuilders.");}
     else if(bPicks.length>aPicks.length){var ep2=bPicks.length-aPicks.length;lines.push("You're landing "+ep2+" extra pick"+(ep2>1?"s":"")+" — future capital secured.");}
@@ -3644,6 +3645,91 @@ export default function App(){
     }
     if(lines.length===0){lines.push("Both teams are exchanging similar-value assets. Look for youth (under 25) or picks to maximize long-term dynasty value.");}
     return lines.join(" • ");
+  }
+
+  function buildTradeContext(){
+    var positions=["QB","RB","WR","TE"];
+    var aPlrs=tradeA.filter(function(p){return p.pos!=="PICK";});
+    var bPlrs=tradeB.filter(function(p){return p.pos!=="PICK";});
+    // Age — only valid ages, no defaults
+    var aAged=aPlrs.filter(function(p){return p.age&&p.age>0;});
+    var bAged=bPlrs.filter(function(p){return p.age&&p.age>0;});
+    var avgAgeA=aAged.length>0?aAged.reduce(function(s,p){return s+p.age;},0)/aAged.length:null;
+    var avgAgeB=bAged.length>0?bAged.reduce(function(s,p){return s+p.age;},0)/bAged.length:null;
+    function primeClass(plrs2){var pre=0,pr2=0,po=0;plrs2.forEach(function(p){var lo=PRIME[p.pos]?PRIME[p.pos][0]:25;var hi=PRIME[p.pos]?PRIME[p.pos][1]:30;if(p.age<lo)pre++;else if(p.age>hi)po++;else pr2++;});return{pre:pre,prime:pr2,post:po};}
+    var aPrime=primeClass(aAged);var bPrime=primeClass(bAged);
+    // Position impact
+    var posImpact=positions.map(function(pos){var vS=tradeA.filter(function(p){return p.pos===pos;}).reduce(function(s,p){return s+(p.tradeVal||0);},0);var vR=tradeB.filter(function(p){return p.pos===pos;}).reduce(function(s,p){return s+(p.tradeVal||0);},0);return{pos:pos,valSent:vS,valReceived:vR,net:vR-vS};}).filter(function(d){return d.valSent>0||d.valReceived>0;});
+    // Draft capital
+    var picksSent=tradeA.filter(function(p){return p.pos==="PICK";});var picksRcvd=tradeB.filter(function(p){return p.pos==="PICK";});
+    var pickValS=picksSent.reduce(function(s,p){return s+(p.tradeVal||0);},0);var pickValR=picksRcvd.reduce(function(s,p){return s+(p.tradeVal||0);},0);
+    var draftCap={sent:picksSent,received:picksRcvd,valSent:pickValS,valReceived:pickValR,net:pickValR-pickValS};
+    // Roster impact (connected league only)
+    var userSide=null as string|null;var rosterImpact=null as any;
+    if(powerRankingTeams&&myTeamIdx!=null){
+      var ut=powerRankingTeams[myTeamIdx as number];
+      if(ut&&ut.players){
+        var uNames=ut.players.map(function(p){return p.name;});
+        var aOnU=tradeA.filter(function(p){return p.pos!=="PICK"&&uNames.indexOf(p.name)>=0;}).length;
+        var bOnU=tradeB.filter(function(p){return p.pos!=="PICK"&&uNames.indexOf(p.name)>=0;}).length;
+        if(aOnU>0||bOnU>0){
+          userSide=aOnU>0&&bOnU>0?null:aOnU>0?"A":"B";
+          if(userSide){
+          var uSent=userSide==="A"?tradeA:tradeB;var uRcvd=userSide==="A"?tradeB:tradeA;
+          var offP=ut.players.filter(function(p){return positions.indexOf(p.pos)>=0;});
+          var afterP=offP.filter(function(p){return !uSent.find(function(s){return s.name===p.name&&s.pos!=="PICK";});}).concat(uRcvd.filter(function(r){return r.pos!=="PICK";}));
+          var bVal2=offP.reduce(function(s,p){return s+(p.tradeVal||0);},0);
+          var aVal2=afterP.reduce(function(s,p){return s+(p.tradeVal||0);},0);
+          var lnBefore=null as any;var lnAfter=null as any;
+          if(leagueIntel&&leagueIntel.hasSlotData&&leagueIntel.starterSlots){
+            var ss2=leagueIntel.starterSlots;
+            function optLn(pl){var u2={} as any,st=[] as any[];function fl(ps,ct){var e=pl.filter(function(p){return p.pos===ps&&!u2[p.name];}).sort(function(a,b){return(b.tradeVal||0)-(a.tradeVal||0);});for(var jj=0;jj<ct&&jj<e.length;jj++){st.push(e[jj]);u2[e[jj].name]=true;}}fl("QB",ss2.QB);fl("RB",ss2.RB);fl("WR",ss2.WR);fl("TE",ss2.TE);var fx=pl.filter(function(p){return["RB","WR","TE"].indexOf(p.pos)>=0&&!u2[p.name];}).sort(function(a,b){return(b.tradeVal||0)-(a.tradeVal||0);});for(var jj=0;jj<ss2.FLEX&&jj<fx.length;jj++){st.push(fx[jj]);u2[fx[jj].name]=true;}var sx=pl.filter(function(p){return["QB","RB","WR","TE"].indexOf(p.pos)>=0&&!u2[p.name];}).sort(function(a,b){return(b.tradeVal||0)-(a.tradeVal||0);});for(var jj=0;jj<ss2.SUPER_FLEX&&jj<sx.length;jj++){st.push(sx[jj]);u2[sx[jj].name]=true;}var bn=pl.filter(function(p){return!u2[p.name];});return{sv:st.reduce(function(s,p){return s+(p.tradeVal||0);},0),bv:bn.reduce(function(s,p){return s+(p.tradeVal||0);},0)};}
+            lnBefore=optLn(offP);lnAfter=optLn(afterP);
+          }
+          var pgB={} as any,pgA={} as any;
+          positions.forEach(function(pos){pgB[pos]=offP.filter(function(p){return p.pos===pos;}).reduce(function(s,p){return s+(p.tradeVal||0);},0);pgA[pos]=afterP.filter(function(p){return p.pos===pos;}).reduce(function(s,p){return s+(p.tradeVal||0);},0);});
+          var prBefore=leagueIntel&&leagueIntel.posRanks&&leagueIntel.posRanks[myTeamIdx as number]?leagueIntel.posRanks[myTeamIdx as number]:null;
+          var prAfter=null as any;
+          if(leagueIntel&&leagueIntel.teams){prAfter={};positions.forEach(function(pos){var myV=pgA[pos];var rank=1;leagueIntel.teams.forEach(function(t,ti){if(ti===(myTeamIdx as number))return;if(t.posVal[pos]>myV)rank++;});prAfter[pos]=rank;});}
+          var ownr=[] as any[];
+          uSent.filter(function(p){return p.pos!=="PICK";}).forEach(function(p){var onMy=uNames.indexOf(p.name)>=0;var otherTeam=null as string|null;if(!onMy&&powerRankingTeams){for(var ti2=0;ti2<powerRankingTeams.length;ti2++){if(ti2===(myTeamIdx as number))continue;var t2=powerRankingTeams[ti2];if(t2.players.some(function(tp){return tp.name===p.name;})){otherTeam=t2.name;break;}}}ownr.push({name:p.name,onRoster:onMy,otherTeam:otherTeam});});
+          rosterImpact={side:userSide,team:ut.name,bVal:bVal2,aVal:aVal2,delta:aVal2-bVal2,lnB:lnBefore,lnA:lnAfter,pgB:pgB,pgA:pgA,prB:prBefore,prA:prAfter,ownr:ownr,bCt:offP.length,aCt:afterP.length};
+          }
+        }
+      }
+    }
+    // Warnings
+    var warnings=[] as string[];
+    if(powerRankingTeams&&myTeamIdx!=null&&!userSide){var ut3=powerRankingTeams[myTeamIdx as number];if(ut3&&ut3.players){var uN3=ut3.players.map(function(p){return p.name;});var a3=tradeA.filter(function(p){return p.pos!=="PICK"&&uN3.indexOf(p.name)>=0;}).length;var b3=tradeB.filter(function(p){return p.pos!=="PICK"&&uN3.indexOf(p.name)>=0;}).length;if(a3>0&&b3>0)warnings.push("Both sides contain your rostered players — roster impact cannot be determined. Use the standalone positional and value analysis above.");}}
+    if(isSF){
+      var qbSA=tradeA.filter(function(p){return p.pos==="QB";}).length;var qbSB=tradeB.filter(function(p){return p.pos==="QB";}).length;
+      if(rosterImpact&&userSide){
+        var uQbS=userSide==="A"?qbSA:qbSB;var uQbR=userSide==="A"?qbSB:qbSA;
+        if(uQbS>uQbR){var ut4=powerRankingTeams[myTeamIdx as number];var rQBs=ut4.players.filter(function(p){return p.pos==="QB";}).length;if(rQBs-uQbS+uQbR<=1)warnings.push("Trade leaves only "+(rQBs-uQbS+uQbR)+" QB on roster in Superflex.");}
+      }else if(qbSA!==qbSB){warnings.push("One side trades away a QB without receiving one back in Superflex.");}
+    }
+    if(rosterImpact){
+      var ut5=powerRankingTeams[myTeamIdx as number];
+      var uTeS=userSide==="A"?tradeA.filter(function(p){return p.pos==="TE";}).length:tradeB.filter(function(p){return p.pos==="TE";}).length;
+      var uTeR=userSide==="A"?tradeB.filter(function(p){return p.pos==="TE";}).length:tradeA.filter(function(p){return p.pos==="TE";}).length;
+      var rTEs=ut5.players.filter(function(p){return p.pos==="TE";}).length;
+      if(rTEs-uTeS+uTeR<=0)warnings.push("Trade removes all TEs from roster.");
+      var ownOnOther=rosterImpact.ownr.filter(function(o){return !o.onRoster&&o.otherTeam;});
+      var ownFa=rosterImpact.ownr.filter(function(o){return !o.onRoster&&!o.otherTeam;});
+      if(ownOnOther.length>0)warnings.push("On another roster: "+ownOnOther.map(function(o){return o.name+" ("+o.otherTeam+")";}).join(", ")+".");
+      if(ownFa.length>0)warnings.push("Not on any roster (free agent): "+ownFa.map(function(o){return o.name;}).join(", ")+".");
+    }
+    if(picksSent.length>=3)warnings.push("Sending "+picksSent.length+" draft picks — significant future capital.");
+    if(rosterImpact&&leagueIntel&&!leagueIntel.hasSlotData)warnings.push("Lineup settings unavailable — lineup impact cannot be calculated.");
+    if(rosterImpact&&rosterImpact.lnB&&rosterImpact.lnA){var svD=rosterImpact.lnA.sv-rosterImpact.lnB.sv;if(svD<-500)warnings.push("Trade significantly reduces optimal lineup value ("+svD.toLocaleString()+").");}
+    if(idpMode){var hasIdpTrade=tradeA.concat(tradeB).some(function(p){return["DL","LB","DB"].indexOf(p.pos)>=0;});if(hasIdpTrade)warnings.push("IDP player values included in totals but lineup impact reflects offensive positions only.");}
+    // Format context notes
+    var fmtNotes=[] as string[];
+    if(isSF&&posImpact.find(function(d){return d.pos==="QB";}))fmtNotes.push("QB assets carry premium value in Superflex.");
+    if(tePremium>0&&posImpact.find(function(d){return d.pos==="TE";}))fmtNotes.push("TE values already reflect TE Premium adjustment.");
+    if(isDynasty&&(aAged.length>0||bAged.length>0))fmtNotes.push("Age and draft picks are significant factors in dynasty.");
+    if(!isDynasty&&(picksSent.length>0||picksRcvd.length>0))fmtNotes.push("Draft pick values reflect redraft context.");
+    return{posImpact:posImpact,ageA:{avg:avgAgeA,count:aAged.length,prime:aPrime},ageB:{avg:avgAgeB,count:bAged.length,prime:bPrime},draftCap:draftCap,rosterImpact:rosterImpact,warnings:warnings,fmtNotes:fmtNotes,userSide:userSide};
   }
 
   function downloadGradeCard(team:any){
@@ -4659,7 +4745,8 @@ export default function App(){
           if(tradeA.length===0&&tradeB.length===0)return;
           if(!isPro&&tradeCount>=FREE_TRADE_LIMIT){setAuthMode("signup");setShowAuth(true);return;}
           setAnalyzed(true);setAiAnalysis("Analyzing...");setTradeSaved(false);setPollVote(null);setPollResults(null);if(!isPro)setTradeCount(function(c){var n=c+1;try{var today=new Date().toISOString().slice(0,10);localStorage.setItem('fdp_tc_v2',JSON.stringify({n,d:today}));}catch(e){}return n;});
-          try{var aiRes=await callEdgeFn("analyze-trade",{sideA:tradeA.map(function(p){return{name:p.name,pos:p.pos,age:p.age,val:p.ktcVal||0};}),sideB:tradeB.map(function(p){return{name:p.name,pos:p.pos,age:p.age,val:p.ktcVal||0};}),tvA,tvB,scoring},user?.token);setAiAnalysis(aiRes.analysis||genAiAnalysis(tradeA,tradeB,tvA,tvB));}catch(e){setAiAnalysis(genAiAnalysis(tradeA,tradeB,tvA,tvB));}
+          var tCtx=buildTradeContext();
+          try{var aiRes=await callEdgeFn("analyze-trade",{sideA:tradeA.map(function(p){return{name:p.name,pos:p.pos,age:p.age,val:p.tradeVal||0};}),sideB:tradeB.map(function(p){return{name:p.name,pos:p.pos,age:p.age,val:p.tradeVal||0};}),tvA,tvB,scoring,posImpact:tCtx.posImpact,ageContext:tCtx.ageA.avg!=null||tCtx.ageB.avg!=null?{avgA:tCtx.ageA.avg,avgB:tCtx.ageB.avg}:undefined,draftCapital:tCtx.draftCap.sent.length>0||tCtx.draftCap.received.length>0?{valSent:tCtx.draftCap.valSent,valReceived:tCtx.draftCap.valReceived,net:tCtx.draftCap.net}:undefined,rosterFit:tCtx.rosterImpact?{side:tCtx.rosterImpact.side,team:tCtx.rosterImpact.team,valDelta:tCtx.rosterImpact.delta,lineupDelta:tCtx.rosterImpact.lnA&&tCtx.rosterImpact.lnB?tCtx.rosterImpact.lnA.sv-tCtx.rosterImpact.lnB.sv:null}:undefined,warnings:tCtx.warnings.length>0?tCtx.warnings:undefined,formatNotes:tCtx.fmtNotes.length>0?tCtx.fmtNotes:undefined},user?.token);setAiAnalysis(aiRes.analysis||genAiAnalysis(tradeA,tradeB,tvA,tvB));}catch(e){setAiAnalysis(genAiAnalysis(tradeA,tradeB,tvA,tvB));}
           var device=window.innerWidth>=1024?"desktop":"mobile";
           var ua=navigator.userAgent.toLowerCase();
           var platform=ua.includes("iphone")||ua.includes("ipad")?"iOS":ua.includes("android")?"Android":"Web";
@@ -4749,7 +4836,7 @@ export default function App(){
           )
         ),
         analyzed&&(tradeA.length>0||tradeB.length>0)&&(function(){
-          var v=verdict();
+          var v=verdict();var ctx=buildTradeContext();
           return React.createElement("div",{style:{marginTop:14,background:T.bgInput,borderRadius:14,padding:16,border:"1px solid "+v.c+"33"}},
             React.createElement("div",{style:{fontWeight:900,fontSize:18,color:v.c,marginBottom:2}},v.txt),
             React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:12}},v.sub),
@@ -4795,33 +4882,67 @@ export default function App(){
                 );})
               )
             ),
-            (tradeA.length>0&&tradeB.length>0)&&(function(){
-              var avgAgeA=tradeA.reduce(function(s,p){return s+(p.age||25);},0)/tradeA.length;
-              var avgAgeB=tradeB.reduce(function(s,p){return s+(p.age||25);},0)/tradeB.length;
-              var youngA=tradeA.filter(function(p){return (p.age||25)<25;}).length;
-              var youngB=tradeB.filter(function(p){return (p.age||25)<25;}).length;
-              var ageDiff=avgAgeA-avgAgeB;
-              var youngerSide=Math.abs(ageDiff)<0.5?"Even":ageDiff>0?"Team B":"Team A";
-              var youngerColor=Math.abs(ageDiff)<0.5?T.textSub:T.green;
-              return React.createElement("div",{style:{marginTop:12,display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}},
-                React.createElement("div",{style:{background:T.bgCard,borderRadius:10,padding:"10px 12px",border:"1px solid "+T.border}},
-                  React.createElement("div",{style:{fontSize:9,color:T.textSub,letterSpacing:1,fontWeight:700,marginBottom:4}},"TEAM A AGE"),
-                  React.createElement("div",{style:{display:"flex",alignItems:"baseline",gap:6}},
-                    React.createElement("span",{style:{fontWeight:900,fontSize:18,color:ageDiff>0.5?T.red:ageDiff<-0.5?T.green:T.text}},avgAgeA.toFixed(1)),
-                    React.createElement("span",{style:{fontSize:10,color:T.textDim}},"avg"),
-                    youngA>0&&React.createElement("span",{style:{fontSize:9,color:T.green,fontWeight:700,background:T.green+"18",borderRadius:4,padding:"1px 5px"}},youngA+" U25")
-                  )
-                ),
-                React.createElement("div",{style:{background:T.bgCard,borderRadius:10,padding:"10px 12px",border:"1px solid "+T.border}},
-                  React.createElement("div",{style:{fontSize:9,color:T.textSub,letterSpacing:1,fontWeight:700,marginBottom:4}},"TEAM B AGE"),
-                  React.createElement("div",{style:{display:"flex",alignItems:"baseline",gap:6}},
-                    React.createElement("span",{style:{fontWeight:900,fontSize:18,color:ageDiff<-0.5?T.red:ageDiff>0.5?T.green:T.text}},avgAgeB.toFixed(1)),
-                    React.createElement("span",{style:{fontSize:10,color:T.textDim}},"avg"),
-                    youngB>0&&React.createElement("span",{style:{fontSize:9,color:T.green,fontWeight:700,background:T.green+"18",borderRadius:4,padding:"1px 5px"}},youngB+" U25")
+            // ROSTER IMPACT (connected league only)
+            ctx.rosterImpact&&(function(){var ri=ctx.rosterImpact;var svD=ri.lnB&&ri.lnA?ri.lnA.sv-ri.lnB.sv:null;var bvD=ri.lnB&&ri.lnA?ri.lnA.bv-ri.lnB.bv:null;return React.createElement("div",{style:{marginTop:12,background:T.bgCard,borderRadius:12,padding:"12px 14px",border:"1px solid "+T.purple+"33"}},
+              React.createElement("div",{style:{fontSize:10,fontWeight:800,color:T.purple,letterSpacing:1,marginBottom:8}},"ROSTER IMPACT — "+ri.team),
+              React.createElement("div",{style:{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:4,flexWrap:"wrap",gap:4}},React.createElement("span",{style:{color:T.textSub}},"Total Roster Value"),React.createElement("span",{style:{fontWeight:800,color:ri.delta>0?T.green:ri.delta<0?T.red:T.textSub}},ri.bVal.toLocaleString()+" → "+ri.aVal.toLocaleString()+" ("+(ri.delta>0?"+":"")+ri.delta.toLocaleString()+")")),
+              svD!=null&&React.createElement("div",{style:{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:4,flexWrap:"wrap",gap:4}},React.createElement("span",{style:{color:T.textSub}},"Optimal Lineup Value"),React.createElement("span",{style:{fontWeight:800,color:svD>0?T.green:svD<0?T.red:T.textSub}},ri.lnB.sv.toLocaleString()+" → "+ri.lnA.sv.toLocaleString()+" ("+(svD>0?"+":"")+svD.toLocaleString()+")")),
+              bvD!=null&&React.createElement("div",{style:{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:4,flexWrap:"wrap",gap:4}},React.createElement("span",{style:{color:T.textSub}},idpMode?"Remaining Offensive Value":"Bench Depth Value"),React.createElement("span",{style:{fontWeight:800,color:bvD>0?T.green:bvD<0?T.red:T.textSub}},ri.lnB.bv.toLocaleString()+" → "+ri.lnA.bv.toLocaleString()+" ("+(bvD>0?"+":"")+bvD.toLocaleString()+")")),
+              ["QB","RB","WR","TE"].filter(function(pos){return ri.pgB[pos]!==ri.pgA[pos];}).length>0&&React.createElement("div",{style:{marginTop:8,borderTop:"1px solid "+T.border+"44",paddingTop:8}},
+                React.createElement("div",{style:{fontSize:9,fontWeight:700,color:T.textDim,marginBottom:4}},"POSITION GROUPS"),
+                ["QB","RB","WR","TE"].filter(function(pos){return ri.pgB[pos]!==ri.pgA[pos];}).map(function(pos){var d2=ri.pgA[pos]-ri.pgB[pos];var rB=ri.prB?ri.prB[pos]:null;var rA=ri.prA?ri.prA[pos]:null;return React.createElement("div",{key:pos,style:{display:"flex",justifyContent:"space-between",fontSize:10,padding:"2px 0",flexWrap:"wrap"}},React.createElement("span",{style:{color:POS_COLORS[pos]||T.textSub,fontWeight:700}},pos+(rB!=null?" ("+rB+" of "+leagueIntel.n+")":"")),React.createElement("span",{style:{fontWeight:700,color:d2>0?T.green:d2<0?T.red:T.textSub}},(d2>0?"+":"")+d2.toLocaleString()+(rA!=null&&rB!=null&&rA!==rB?" → "+rA+" of "+leagueIntel.n:"")));})
+              ),
+              ri.ownr&&ri.ownr.some(function(o){return!o.onRoster;})&&React.createElement("div",{style:{marginTop:8,fontSize:10,color:T.gold,fontWeight:600}},(function(){var onOth=ri.ownr.filter(function(o){return!o.onRoster&&o.otherTeam;});var fa=ri.ownr.filter(function(o){return!o.onRoster&&!o.otherTeam;});var parts=[];if(onOth.length>0)parts.push("⚠ On another roster: "+onOth.map(function(o){return o.name+" ("+o.otherTeam+")";}).join(", "));if(fa.length>0)parts.push("⚠ Free agent: "+fa.map(function(o){return o.name;}).join(", "));return parts.join(" · ");})())
+            );})(),
+            // POSITION IMPACT
+            ctx.posImpact.length>0&&React.createElement("div",{style:{marginTop:12,background:T.bgCard,borderRadius:12,padding:"12px 14px",border:"1px solid "+T.border}},
+              React.createElement("div",{style:{fontSize:10,fontWeight:800,color:T.textDim,letterSpacing:1,marginBottom:8}},"POSITION IMPACT"),
+              ctx.posImpact.map(function(d3){return React.createElement("div",{key:d3.pos,style:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"4px 0",borderBottom:"1px solid "+T.border+"33"}},React.createElement("span",{style:{color:POS_COLORS[d3.pos]||T.textSub,fontWeight:700,fontSize:11}},d3.pos),React.createElement("div",{style:{display:"flex",gap:10,fontSize:10,flexWrap:"wrap"}},d3.valSent>0&&React.createElement("span",{style:{color:T.red}},"-"+d3.valSent.toLocaleString()),d3.valReceived>0&&React.createElement("span",{style:{color:T.green}},"+"+d3.valReceived.toLocaleString()),React.createElement("span",{style:{fontWeight:800,color:d3.net>0?T.green:d3.net<0?T.red:T.textSub,minWidth:50,textAlign:"right"}},(d3.net>0?"+":"")+d3.net.toLocaleString())));})
+            ),
+            // AGE / DYNASTY CONTEXT (uses only valid ages — no fabricated defaults)
+            (ctx.ageA.count>0||ctx.ageB.count>0)&&(function(){var avgAgeA2=ctx.ageA.avg;var avgAgeB2=ctx.ageB.avg;if(avgAgeA2==null&&avgAgeB2==null)return null;var ageDiff2=(avgAgeA2!=null&&avgAgeB2!=null)?avgAgeA2-avgAgeB2:0;var youngA2=tradeA.filter(function(p){return p.age&&p.age>0&&p.age<25;}).length;var youngB2=tradeB.filter(function(p){return p.age&&p.age>0&&p.age<25;}).length;
+              return React.createElement("div",{style:{marginTop:12}},
+                React.createElement("div",{style:{fontSize:10,fontWeight:800,color:T.textDim,letterSpacing:1,marginBottom:6}},"AGE / DYNASTY CONTEXT"),
+                React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}},
+                  React.createElement("div",{style:{background:T.bgCard,borderRadius:10,padding:"10px 12px",border:"1px solid "+T.border}},
+                    React.createElement("div",{style:{fontSize:9,color:T.textSub,letterSpacing:1,fontWeight:700,marginBottom:4}},"TEAM A AGE"),
+                    avgAgeA2!=null?React.createElement("div",{style:{display:"flex",alignItems:"baseline",gap:6,flexWrap:"wrap"}},
+                      React.createElement("span",{style:{fontWeight:900,fontSize:18,color:ageDiff2>0.5?T.red:ageDiff2<-0.5?T.green:T.text}},avgAgeA2.toFixed(1)),
+                      React.createElement("span",{style:{fontSize:10,color:T.textDim}},"avg"),
+                      youngA2>0&&React.createElement("span",{style:{fontSize:9,color:T.green,fontWeight:700,background:T.green+"18",borderRadius:4,padding:"1px 5px"}},youngA2+" U25"),
+                      ctx.ageA.prime.pre>0&&React.createElement("span",{style:{fontSize:8,color:T.green,fontWeight:600}},ctx.ageA.prime.pre+" pre-prime"),
+                      ctx.ageA.prime.post>0&&React.createElement("span",{style:{fontSize:8,color:T.red,fontWeight:600}},ctx.ageA.prime.post+" post-prime")
+                    ):React.createElement("div",{style:{fontSize:11,color:T.textDim}},"No age data")
+                  ),
+                  React.createElement("div",{style:{background:T.bgCard,borderRadius:10,padding:"10px 12px",border:"1px solid "+T.border}},
+                    React.createElement("div",{style:{fontSize:9,color:T.textSub,letterSpacing:1,fontWeight:700,marginBottom:4}},"TEAM B AGE"),
+                    avgAgeB2!=null?React.createElement("div",{style:{display:"flex",alignItems:"baseline",gap:6,flexWrap:"wrap"}},
+                      React.createElement("span",{style:{fontWeight:900,fontSize:18,color:ageDiff2<-0.5?T.red:ageDiff2>0.5?T.green:T.text}},avgAgeB2.toFixed(1)),
+                      React.createElement("span",{style:{fontSize:10,color:T.textDim}},"avg"),
+                      youngB2>0&&React.createElement("span",{style:{fontSize:9,color:T.green,fontWeight:700,background:T.green+"18",borderRadius:4,padding:"1px 5px"}},youngB2+" U25"),
+                      ctx.ageB.prime.pre>0&&React.createElement("span",{style:{fontSize:8,color:T.green,fontWeight:600}},ctx.ageB.prime.pre+" pre-prime"),
+                      ctx.ageB.prime.post>0&&React.createElement("span",{style:{fontSize:8,color:T.red,fontWeight:600}},ctx.ageB.prime.post+" post-prime")
+                    ):React.createElement("div",{style:{fontSize:11,color:T.textDim}},"No age data")
                   )
                 )
               );
             })(),
+            // DRAFT CAPITAL
+            (ctx.draftCap.sent.length>0||ctx.draftCap.received.length>0)&&React.createElement("div",{style:{marginTop:12,background:T.bgCard,borderRadius:12,padding:"12px 14px",border:"1px solid #818cf833"}},
+              React.createElement("div",{style:{fontSize:10,fontWeight:800,color:"#818cf8",letterSpacing:1,marginBottom:8}},"DRAFT CAPITAL"),
+              React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}},
+                React.createElement("div",null,React.createElement("div",{style:{fontSize:9,color:T.textDim,marginBottom:4}},"SENT"),ctx.draftCap.sent.length>0?ctx.draftCap.sent.map(function(p){return React.createElement("div",{key:p.name,style:{fontSize:10,color:T.red,fontWeight:600,marginBottom:2}},p.name+" ("+(p.tradeVal||0).toLocaleString()+")");}):React.createElement("div",{style:{fontSize:10,color:T.textDim}},"None")),
+                React.createElement("div",null,React.createElement("div",{style:{fontSize:9,color:T.textDim,marginBottom:4}},"RECEIVED"),ctx.draftCap.received.length>0?ctx.draftCap.received.map(function(p){return React.createElement("div",{key:p.name,style:{fontSize:10,color:T.green,fontWeight:600,marginBottom:2}},p.name+" ("+(p.tradeVal||0).toLocaleString()+")");}):React.createElement("div",{style:{fontSize:10,color:T.textDim}},"None"))
+              ),
+              React.createElement("div",{style:{marginTop:6,display:"flex",justifyContent:"space-between",borderTop:"1px solid "+T.border+"44",paddingTop:6,fontSize:11}},React.createElement("span",{style:{color:T.textSub}},"Net Draft Capital"),React.createElement("span",{style:{fontWeight:800,color:ctx.draftCap.net>0?T.green:ctx.draftCap.net<0?T.red:T.textSub}},(ctx.draftCap.net>0?"+":"")+ctx.draftCap.net.toLocaleString()))
+            ),
+            // TRADE WARNINGS
+            ctx.warnings.length>0&&React.createElement("div",{style:{marginTop:12,background:T.gold+"0a",border:"1px solid "+T.gold+"33",borderRadius:12,padding:"12px 14px"}},
+              React.createElement("div",{style:{fontSize:10,fontWeight:800,color:T.gold,letterSpacing:1,marginBottom:6}},"TRADE WARNINGS"),
+              ctx.warnings.map(function(w,i){return React.createElement("div",{key:i,style:{fontSize:11,color:T.gold,marginBottom:4,display:"flex",gap:6}},React.createElement("span",null,"⚠"),React.createElement("span",null,w));})
+            ),
+            // FORMAT CONTEXT
+            ctx.fmtNotes.length>0&&React.createElement("div",{style:{marginTop:8,fontSize:10,color:T.textDim,lineHeight:1.6}},ctx.fmtNotes.map(function(n,i){return React.createElement("div",{key:i},n);})),
             aiAnalysis&&React.createElement("div",{style:{marginTop:12,background:darkMode?"#1a1035":"#f5f3ff",border:"1px solid "+T.borderPurple,borderRadius:12,padding:"12px 14px"}},
               React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,marginBottom:6}},
                 React.createElement("span",{style:{fontSize:13,color:T.purple}},"✦"),
@@ -4876,7 +4997,7 @@ export default function App(){
             })(),
             React.createElement("div",{style:{display:"flex",gap:8,marginTop:8}},
               React.createElement("button",{onClick:saveTrade,disabled:tradeSaved,style:{flex:1,padding:"10px",borderRadius:10,border:"1px solid "+(tradeSaved?T.green:T.border),cursor:tradeSaved?"default":"pointer",fontWeight:700,fontSize:12,background:tradeSaved?T.green:T.bgInput,color:tradeSaved?"#fff":T.textSub}},tradeSaved?"Saved ✓":"Save Trade"),
-              React.createElement("button",{onClick:async function(){setAiAnalysis("Analyzing...");try{var rr=await callEdgeFn("analyze-trade",{sideA:tradeA.map(function(p){return{name:p.name,pos:p.pos,age:p.age,val:p.ktcVal||0};}),sideB:tradeB.map(function(p){return{name:p.name,pos:p.pos,age:p.age,val:p.ktcVal||0};}),tvA,tvB,scoring},user?.token);setAiAnalysis(rr.analysis||genAiAnalysis(tradeA,tradeB,tvA,tvB));}catch(e){setAiAnalysis(genAiAnalysis(tradeA,tradeB,tvA,tvB));}},style:{flex:1,padding:"10px",borderRadius:10,border:"1px solid "+T.borderPurple,cursor:"pointer",fontWeight:700,fontSize:12,background:T.bgInput,color:T.textSub}},"↻")
+              React.createElement("button",{onClick:async function(){setAiAnalysis("Analyzing...");var rCtx=buildTradeContext();try{var rr=await callEdgeFn("analyze-trade",{sideA:tradeA.map(function(p){return{name:p.name,pos:p.pos,age:p.age,val:p.tradeVal||0};}),sideB:tradeB.map(function(p){return{name:p.name,pos:p.pos,age:p.age,val:p.tradeVal||0};}),tvA,tvB,scoring,posImpact:rCtx.posImpact,ageContext:rCtx.ageA.avg!=null||rCtx.ageB.avg!=null?{avgA:rCtx.ageA.avg,avgB:rCtx.ageB.avg}:undefined,draftCapital:rCtx.draftCap.sent.length>0||rCtx.draftCap.received.length>0?{valSent:rCtx.draftCap.valSent,valReceived:rCtx.draftCap.valReceived,net:rCtx.draftCap.net}:undefined,rosterFit:rCtx.rosterImpact?{side:rCtx.rosterImpact.side,team:rCtx.rosterImpact.team,valDelta:rCtx.rosterImpact.delta,lineupDelta:rCtx.rosterImpact.lnA&&rCtx.rosterImpact.lnB?rCtx.rosterImpact.lnA.sv-rCtx.rosterImpact.lnB.sv:null}:undefined,warnings:rCtx.warnings.length>0?rCtx.warnings:undefined,formatNotes:rCtx.fmtNotes.length>0?rCtx.fmtNotes:undefined},user?.token);setAiAnalysis(rr.analysis||genAiAnalysis(tradeA,tradeB,tvA,tvB));}catch(e){setAiAnalysis(genAiAnalysis(tradeA,tradeB,tvA,tvB));}},style:{flex:1,padding:"10px",borderRadius:10,border:"1px solid "+T.borderPurple,cursor:"pointer",fontWeight:700,fontSize:12,background:T.bgInput,color:T.textSub}},"↻")
             ),
             (function(){var v=verdict();var pct=v.pct;var isUnfair=Math.abs(tvA-tvB)/Math.max(1,Math.max(tvA,tvB))*100>=8;
             return React.createElement(React.Fragment,null,

@@ -259,3 +259,123 @@ export function verdict(
   if (diff > 0) return { txt: "Team A Overpays", sub: "Team B wins by " + pct.toFixed(0) + "%", c: "#ef4444", pct: Math.max(15, 50 - pct / 2) };
   return { txt: "Team B Overpays", sub: "Team A wins by " + pct.toFixed(0) + "%", c: "#f59e0b", pct: Math.min(85, 50 + pct / 2) };
 }
+
+// ── Trade Context Analysis ──────────────────────────────────────
+
+export function computeTradeAgeImpact(
+  sent: Array<{ pos: string; age?: number }>,
+  received: Array<{ pos: string; age?: number }>,
+): {
+  avgAgeSent: number | null; avgAgeReceived: number | null;
+  sentWithAge: number; receivedWithAge: number;
+  preSent: number; primeSent: number; postSent: number;
+  preReceived: number; primeReceived: number; postReceived: number;
+} {
+  var sentP = sent.filter(function (p) { return p.pos !== "PICK" && p.age != null && p.age > 0; });
+  var rcvdP = received.filter(function (p) { return p.pos !== "PICK" && p.age != null && p.age > 0; });
+  function avg(arr: Array<{ age?: number }>) {
+    return arr.length > 0 ? arr.reduce(function (s, p) { return s + (p.age || 0); }, 0) / arr.length : null;
+  }
+  function classify(arr: Array<{ pos: string; age?: number }>) {
+    var pre = 0, prime = 0, post = 0;
+    arr.forEach(function (p) {
+      var lo = PRIME[p.pos] ? PRIME[p.pos][0] : 25;
+      var hi = PRIME[p.pos] ? PRIME[p.pos][1] : 30;
+      if (p.age! < lo) pre++; else if (p.age! > hi) post++; else prime++;
+    });
+    return { pre: pre, prime: prime, post: post };
+  }
+  var sc = classify(sentP); var rc = classify(rcvdP);
+  return {
+    avgAgeSent: avg(sentP), avgAgeReceived: avg(rcvdP),
+    sentWithAge: sentP.length, receivedWithAge: rcvdP.length,
+    preSent: sc.pre, primeSent: sc.prime, postSent: sc.post,
+    preReceived: rc.pre, primeReceived: rc.prime, postReceived: rc.post,
+  };
+}
+
+export function computeTradePositionalImpact(
+  sent: Array<{ pos: string; tradeVal?: number }>,
+  received: Array<{ pos: string; tradeVal?: number }>,
+): Array<{ pos: string; valSent: number; valReceived: number; countSent: number; countReceived: number; net: number }> {
+  return ["QB", "RB", "WR", "TE"].map(function (pos) {
+    var valS = sent.filter(function (p) { return p.pos === pos; }).reduce(function (s, p) { return s + (p.tradeVal || 0); }, 0);
+    var valR = received.filter(function (p) { return p.pos === pos; }).reduce(function (s, p) { return s + (p.tradeVal || 0); }, 0);
+    return {
+      pos: pos, valSent: valS, valReceived: valR,
+      countSent: sent.filter(function (p) { return p.pos === pos; }).length,
+      countReceived: received.filter(function (p) { return p.pos === pos; }).length,
+      net: valR - valS,
+    };
+  }).filter(function (d) { return d.valSent > 0 || d.valReceived > 0; });
+}
+
+export function computeTradeDraftCapitalImpact(
+  sent: Array<{ pos: string; tradeVal?: number; est?: number }>,
+  received: Array<{ pos: string; tradeVal?: number; est?: number }>,
+): { picksSentCount: number; picksReceivedCount: number; pickValSent: number; pickValReceived: number; netPickVal: number } {
+  var ps = sent.filter(function (p) { return p.pos === "PICK"; });
+  var pr = received.filter(function (p) { return p.pos === "PICK"; });
+  var valS = ps.reduce(function (s, p) { return s + (p.tradeVal || p.est || 0); }, 0);
+  var valR = pr.reduce(function (s, p) { return s + (p.tradeVal || p.est || 0); }, 0);
+  return {
+    picksSentCount: ps.length, picksReceivedCount: pr.length,
+    pickValSent: valS, pickValReceived: valR, netPickVal: valR - valS,
+  };
+}
+
+export function generateTradeWarnings(
+  sent: Array<{ pos: string; name?: string }>,
+  received: Array<{ pos: string; name?: string }>,
+  opts: {
+    isSF: boolean; picksSentCount: number;
+    userRoster?: Array<{ pos: string; name: string }> | null;
+    hasSlotData?: boolean;
+  },
+): string[] {
+  var w: string[] = [];
+  if (opts.isSF) {
+    var qbS = sent.filter(function (p) { return p.pos === "QB"; }).length;
+    var qbR = received.filter(function (p) { return p.pos === "QB"; }).length;
+    if (qbS > qbR) {
+      if (opts.userRoster) {
+        var rQBs = opts.userRoster.filter(function (p) { return p.pos === "QB"; }).length;
+        var postQBs = rQBs - qbS + qbR;
+        if (postQBs <= 1) w.push("Trade leaves only " + postQBs + " QB on roster in Superflex.");
+      } else {
+        w.push("Trading away a QB without receiving one back in Superflex.");
+      }
+    }
+  }
+  if (opts.userRoster) {
+    var teS = sent.filter(function (p) { return p.pos === "TE"; }).length;
+    var teR = received.filter(function (p) { return p.pos === "TE"; }).length;
+    var rTEs = opts.userRoster.filter(function (p) { return p.pos === "TE"; }).length;
+    if (rTEs - teS + teR <= 0) w.push("Trade removes all TEs from roster.");
+  }
+  if (opts.picksSentCount >= 3) w.push("Sending " + opts.picksSentCount + " draft picks — significant future capital.");
+  if (opts.userRoster && !opts.hasSlotData) w.push("Lineup settings unavailable — lineup impact cannot be calculated.");
+  return w;
+}
+
+export function computeOptimalLineupFromSlots(
+  plrs: Array<{ pos: string; name: string; tradeVal?: number }>,
+  ss: { QB: number; RB: number; WR: number; TE: number; FLEX: number; SUPER_FLEX: number },
+): { starterVal: number; benchVal: number } {
+  var used: Record<string, boolean> = {};
+  var starters: Array<{ pos: string; name: string; tradeVal?: number }> = [];
+  function fill(pos: string, ct: number) {
+    var e = plrs.filter(function (p) { return p.pos === pos && !used[p.name]; }).sort(function (a, b) { return (b.tradeVal || 0) - (a.tradeVal || 0); });
+    for (var j = 0; j < ct && j < e.length; j++) { starters.push(e[j]); used[e[j].name] = true; }
+  }
+  fill("QB", ss.QB); fill("RB", ss.RB); fill("WR", ss.WR); fill("TE", ss.TE);
+  var fl = plrs.filter(function (p) { return ["RB", "WR", "TE"].indexOf(p.pos) >= 0 && !used[p.name]; }).sort(function (a, b) { return (b.tradeVal || 0) - (a.tradeVal || 0); });
+  for (var j = 0; j < ss.FLEX && j < fl.length; j++) { starters.push(fl[j]); used[fl[j].name] = true; }
+  var sf = plrs.filter(function (p) { return ["QB", "RB", "WR", "TE"].indexOf(p.pos) >= 0 && !used[p.name]; }).sort(function (a, b) { return (b.tradeVal || 0) - (a.tradeVal || 0); });
+  for (var j = 0; j < ss.SUPER_FLEX && j < sf.length; j++) { starters.push(sf[j]); used[sf[j].name] = true; }
+  var bench = plrs.filter(function (p) { return !used[p.name]; });
+  return {
+    starterVal: starters.reduce(function (s, p) { return s + (p.tradeVal || 0); }, 0),
+    benchVal: bench.reduce(function (s, p) { return s + (p.tradeVal || 0); }, 0),
+  };
+}
