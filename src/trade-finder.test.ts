@@ -1022,8 +1022,8 @@ describe('active context — no double adjustments', () => {
   it('rankedPlayers tradeVal has separate dynasty and redraft paths', () => {
     expect(afdpSrc).toContain('if(isDynasty){')
     expect(afdpSrc).toContain('computeDynastyTradeVal(p.pos,p.age,p.ktcVal')
-    // Redraft path
-    expect(afdpSrc).toContain('// Redraft (PPR/Half/Standard/Superflex)')
+    // Redraft path uses canonical helper
+    expect(afdpSrc).toContain('p.tradeVal=computeRedraftTradeVal(')
   })
 })
 

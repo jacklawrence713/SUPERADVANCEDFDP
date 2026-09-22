@@ -9,6 +9,7 @@ export const PRIME: Record<string, [number, number]> = {
 export const FREE_RANK_LIMIT = 20;
 export const FREE_TRADE_LIMIT = 3;
 export const VALUES_UPDATED_AT = "2026-09-19";
+export const VALUES_VERSION = "2026-09-19.1"; // date.revision — incremented on each canonical value release
 
 export const ADMIN_EMAILS = [
   "jacklawrence713@gmail.com", "modgy28@hotmail.com",
@@ -90,6 +91,30 @@ export function makePick(pk: { round: number; est: number; [key: string]: any })
     scarcity: { l: "—", c: "#5c5880" },
     auction: tv, ffabVal: tv, rank: 999, team: "—",
   });
+}
+
+// Canonical redraft VBD multiplier — default for adminTvMult.
+export var REDRAFT_TV_MULT = 80;
+
+// Canonical redraft trade value computation.
+// Used by: afdp.tsx rankedPlayers (redraft path), snapshot producer.
+export function computeRedraftTradeVal(
+  pos: string,
+  posRank: number,
+  baseTV: number,
+  opts: { isSF: boolean },
+): number {
+  var rdPk = pos === "QB" ? (opts.isSF ? 7000 : 3500)
+    : pos === "RB" ? 8000
+    : pos === "TE" ? 5000
+    : pos === "K" || pos === "DST" ? 2500
+    : pos === "DL" ? 4000
+    : pos === "LB" ? 3000
+    : pos === "DB" ? 2800
+    : 7500; // WR
+  var rdDc = pos === "TE" ? 0.850 : 0.900;
+  var rdFloor = Math.round(Math.max(100, rdPk * Math.pow(rdDc, posRank - 1)));
+  return Math.max(rdFloor, Math.min(9500, Math.max(100, baseTV)));
 }
 
 // Dynasty trade value computation — the ONE canonical implementation.
@@ -638,4 +663,179 @@ export function computeOptimalLineupFromSlots(
     starterVal: starters.reduce(function (s, p) { return s + (p.tradeVal || 0); }, 0),
     benchVal: bench.reduce(function (s, p) { return s + (p.tradeVal || 0); }, 0),
   };
+}
+
+// ── FDP Value History Constants ──────────────────────────────
+
+/** Page size for paginated ALL history fetch. */
+export var HISTORY_PAGE_SIZE = 500;
+
+// ── FDP Value History Logic ──────────────────────────────────
+
+export interface FdpSnapshot {
+  id?: number;  // bigint identity — stable cursor key for keyset pagination
+  player_slug: string;
+  player_name: string;
+  value: number;
+  values_version: string;
+  effective_at: string;
+  recorded_at: string;
+}
+
+export interface FdpValueChange {
+  current: number;
+  prior: number | null;
+  delta: number | null;
+  pctChange: number | null;
+  priorDate: string | null;
+}
+
+/**
+ * Compute value change between latest snapshot and the most recent snapshot
+ * at or before `daysAgo` days from the latest.
+ * Returns null fields if no qualifying prior snapshot exists.
+ */
+export function computeValueChange(
+  snapshots: FdpSnapshot[],
+  daysAgo: number,
+): FdpValueChange {
+  if (snapshots.length === 0) return { current: 0, prior: null, delta: null, pctChange: null, priorDate: null };
+  // snapshots should be sorted newest-first by effective_at
+  var latest = snapshots[0];
+  if (snapshots.length < 2) return { current: latest.value, prior: null, delta: null, pctChange: null, priorDate: null };
+  var latestDate = latest.effective_at || latest.recorded_at;
+  var cutoff = new Date(latestDate);
+  cutoff.setDate(cutoff.getDate() - daysAgo);
+  var cutoffMs = cutoff.getTime();
+  // Find most recent snapshot at or before cutoff
+  var prior: FdpSnapshot | null = null;
+  for (var i = 1; i < snapshots.length; i++) {
+    var snapDate = snapshots[i].effective_at || snapshots[i].recorded_at;
+    if (new Date(snapDate).getTime() <= cutoffMs) {
+      prior = snapshots[i];
+      break;
+    }
+  }
+  if (!prior) return { current: latest.value, prior: null, delta: null, pctChange: null, priorDate: null };
+  var d = latest.value - prior.value;
+  // pctChange is null when prior is 0 (undefined denominator), except 0→0 which is 0%
+  var pct: number | null = prior.value === 0 ? (d === 0 ? 0 : null) : Math.round((d / prior.value) * 1000) / 10;
+  return { current: latest.value, prior: prior.value, delta: d, pctChange: pct, priorDate: prior.effective_at || prior.recorded_at };
+}
+
+/**
+ * Build context key for snapshot queries.
+ */
+export function snapshotContextKey(opts: {
+  leagueType: string; scoring: string; superflex: boolean; tePremium: number; idp: boolean;
+}): string {
+  return opts.leagueType + ":" + opts.scoring + ":" + (opts.superflex ? "SF" : "1QB") + ":TEP" + opts.tePremium + ":" + (opts.idp ? "IDP" : "STD");
+}
+
+/** Canonical TEP levels selectable in the app. */
+export var TEP_LEVELS = [0, 0.25, 0.5, 1.0] as const;
+
+/**
+ * Supported FDP snapshot contexts.
+ *
+ * Dynasty: scoring is ALWAYS "PPR" (sKey hardcoded in app — line 3146).
+ *   Format controls do not change dynasty trade values.
+ *   TEP is binary for dynasty: computeDynastyTradeVal uses threshold (tePremium > 0 → 1.15×).
+ *   Stored as numeric 0 or 1.0 for consistency.
+ *   1QB/SF × TEP{0,1.0} = 4 dynasty contexts.
+ *
+ * Redraft: PPR/Half/Standard × 1QB/SF × TEP{0,0.25,0.5,1.0} = 24 contexts.
+ *   Each TEP level produces different canonical Redraft values through VBD projection boosts.
+ *   No approximate history — each level gets its own historical series.
+ *
+ * IDP: not separately snapshotted (niche feature, low user volume).
+ *   Player page shows explicit "not tracked" message when IDP mode enabled.
+ *
+ * Total: 4 dynasty + 24 redraft = 28 contexts.
+ */
+export var FDP_SNAPSHOT_CONTEXTS: Array<{
+  leagueType: string; scoring: string; superflex: boolean; tePremium: number; idp: boolean;
+}> = [
+  // Dynasty (sKey always "PPR" — format control is irrelevant for dynasty values)
+  // TEP is binary: 0 or 1.0 (any tePremium > 0 → 1.15× TE boost in computeDynastyTradeVal)
+  { leagueType: "dynasty", scoring: "PPR", superflex: false, tePremium: 0, idp: false },
+  { leagueType: "dynasty", scoring: "PPR", superflex: true, tePremium: 0, idp: false },
+  { leagueType: "dynasty", scoring: "PPR", superflex: false, tePremium: 1.0, idp: false },
+  { leagueType: "dynasty", scoring: "PPR", superflex: true, tePremium: 1.0, idp: false },
+  // Redraft: PPR × 1QB/SF × TEP{0,0.25,0.5,1.0}
+  { leagueType: "redraft", scoring: "PPR", superflex: false, tePremium: 0, idp: false },
+  { leagueType: "redraft", scoring: "PPR", superflex: true, tePremium: 0, idp: false },
+  { leagueType: "redraft", scoring: "PPR", superflex: false, tePremium: 0.25, idp: false },
+  { leagueType: "redraft", scoring: "PPR", superflex: true, tePremium: 0.25, idp: false },
+  { leagueType: "redraft", scoring: "PPR", superflex: false, tePremium: 0.5, idp: false },
+  { leagueType: "redraft", scoring: "PPR", superflex: true, tePremium: 0.5, idp: false },
+  { leagueType: "redraft", scoring: "PPR", superflex: false, tePremium: 1.0, idp: false },
+  { leagueType: "redraft", scoring: "PPR", superflex: true, tePremium: 1.0, idp: false },
+  // Redraft: Half × 1QB/SF × TEP{0,0.25,0.5,1.0}
+  { leagueType: "redraft", scoring: "Half", superflex: false, tePremium: 0, idp: false },
+  { leagueType: "redraft", scoring: "Half", superflex: true, tePremium: 0, idp: false },
+  { leagueType: "redraft", scoring: "Half", superflex: false, tePremium: 0.25, idp: false },
+  { leagueType: "redraft", scoring: "Half", superflex: true, tePremium: 0.25, idp: false },
+  { leagueType: "redraft", scoring: "Half", superflex: false, tePremium: 0.5, idp: false },
+  { leagueType: "redraft", scoring: "Half", superflex: true, tePremium: 0.5, idp: false },
+  { leagueType: "redraft", scoring: "Half", superflex: false, tePremium: 1.0, idp: false },
+  { leagueType: "redraft", scoring: "Half", superflex: true, tePremium: 1.0, idp: false },
+  // Redraft: Standard × 1QB/SF × TEP{0,0.25,0.5,1.0}
+  { leagueType: "redraft", scoring: "Standard", superflex: false, tePremium: 0, idp: false },
+  { leagueType: "redraft", scoring: "Standard", superflex: true, tePremium: 0, idp: false },
+  { leagueType: "redraft", scoring: "Standard", superflex: false, tePremium: 0.25, idp: false },
+  { leagueType: "redraft", scoring: "Standard", superflex: true, tePremium: 0.25, idp: false },
+  { leagueType: "redraft", scoring: "Standard", superflex: false, tePremium: 0.5, idp: false },
+  { leagueType: "redraft", scoring: "Standard", superflex: true, tePremium: 0.5, idp: false },
+  { leagueType: "redraft", scoring: "Standard", superflex: false, tePremium: 1.0, idp: false },
+  { leagueType: "redraft", scoring: "Standard", superflex: true, tePremium: 1.0, idp: false },
+];
+
+/** Parse VALUES_VERSION "YYYY-MM-DD.N" into date and revision. Returns null if malformed or invalid calendar date. */
+export function parseValuesVersion(v: string): { date: string; revision: number } | null {
+  var m = v.match(/^(\d{4}-\d{2}-\d{2})\.(\d+)$/);
+  if (!m) return null;
+  // Validate calendar date: reject impossible dates like 2026-13-40 or 2026-02-30
+  var parts = m[1].split("-");
+  var y = parseInt(parts[0], 10), mo = parseInt(parts[1], 10), d = parseInt(parts[2], 10);
+  var dt = new Date(y, mo - 1, d);
+  if (dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d) return null;
+  return { date: m[1], revision: parseInt(m[2], 10) };
+}
+
+/**
+ * Normalize a user's live format context into the canonical snapshot context.
+ *
+ * Dynasty: scoring always "PPR"; TEP normalized to 0 or 1.0 (binary threshold).
+ * Redraft: exact TEP level preserved (0, 0.25, 0.5, 1.0).
+ * IDP: passed through (will be rejected by isSnapshotContextSupported).
+ */
+export function normalizeSnapshotContext(opts: {
+  isDynasty: boolean; scoring: string; superflex: boolean; tePremium: number; idp: boolean;
+}): { leagueType: string; scoring: string; superflex: boolean; tePremium: number; idp: boolean } {
+  if (opts.isDynasty) {
+    // Dynasty: sKey hardcoded to PPR, TEP is binary (any > 0 → 1.0)
+    return {
+      leagueType: "dynasty", scoring: "PPR", superflex: opts.superflex,
+      tePremium: opts.tePremium > 0 ? 1.0 : 0, idp: opts.idp,
+    };
+  }
+  // Redraft: exact TEP level preserved
+  return {
+    leagueType: "redraft", scoring: opts.scoring, superflex: opts.superflex,
+    tePremium: opts.tePremium, idp: opts.idp,
+  };
+}
+
+/** Check if a snapshot context is in the supported matrix. */
+export function isSnapshotContextSupported(ctx: {
+  leagueType: string; scoring: string; superflex: boolean; tePremium: number; idp: boolean;
+}): boolean {
+  for (var i = 0; i < FDP_SNAPSHOT_CONTEXTS.length; i++) {
+    var c = FDP_SNAPSHOT_CONTEXTS[i];
+    if (c.leagueType === ctx.leagueType && c.scoring === ctx.scoring
+      && c.superflex === ctx.superflex && c.tePremium === ctx.tePremium
+      && c.idp === ctx.idp) return true;
+  }
+  return false;
 }

@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { computeDynastyTradeVal, VALUES_UPDATED_AT, PRODUCT_STATS, formatContextLabel, explainFdpValue, generateTradeCandidates, computeTeamPosValues, computeTeamNeeds, computePosRanksForTeams } from "./src/logic";
+import { computeDynastyTradeVal, computeRedraftTradeVal, REDRAFT_TV_MULT, VALUES_UPDATED_AT, PRODUCT_STATS, formatContextLabel, explainFdpValue, generateTradeCandidates, computeTeamPosValues, computeTeamNeeds, computePosRanksForTeams, computeValueChange, isSnapshotContextSupported, normalizeSnapshotContext, HISTORY_PAGE_SIZE } from "./src/logic";
+import type { FdpSnapshot } from "./src/logic";
 import type { ValueFactor } from "./src/logic";
 
 // ── Supabase ─────────────────────────────────────────────────────────────────
@@ -2747,6 +2748,11 @@ export default function App(){
     return null;
   });
   var [fdpValuePage,setFdpValuePage]=useState(function(){return window.location.pathname.replace(/\/$/,"").toLowerCase()==="/fdp-value";});
+  // FDP Value History state
+  var [ppHistory,setPpHistory]=useState<FdpSnapshot[]>([]);
+  var [ppHistoryLoading,setPpHistoryLoading]=useState(false);
+  var [ppHistoryError,setPpHistoryError]=useState(false);
+  var [ppHistoryRange,setPpHistoryRange]=useState("ALL");
   var [isDesktop,setIsDesktop]=useState(function(){return window.innerWidth>=1024;});
   useEffect(function(){
     function onResize(){setIsDesktop(window.innerWidth>=1024);}
@@ -2757,6 +2763,34 @@ export default function App(){
   useEffect(function(){
     if(authClient)authClient.auth.getSession().catch(function(){});
   },[]);
+  // Fetch FDP Value history for player page
+  var ppSnapshotCtx=normalizeSnapshotContext({isDynasty:isDynasty,scoring:sKey,superflex:isSF,tePremium:tePremium,idp:idpMode});
+  var ppCtxSupported=isSnapshotContextSupported(ppSnapshotCtx);
+  var ppCanonicalMult=!isDynasty&&adminTvMult!==REDRAFT_TV_MULT;
+  useEffect(function(){
+    if(!playerPage)return;
+    if(!ppCtxSupported||ppCanonicalMult){setPpHistory([]);setPpHistoryLoading(false);setPpHistoryError(false);return;}
+    var slug=playerSlug(playerPage.name);
+    var ctx=ppSnapshotCtx;
+    var cancelled=false;
+    setPpHistory([]);setPpHistoryLoading(true);setPpHistoryError(false);setPpHistoryRange("ALL");
+    // Keyset-paginated ALL fetch — stable cursor using (effective_at, id) DESC
+    (async function(){
+      var all:FdpSnapshot[]=[];var hasMore=true;var cursorDate:string|null=null;var cursorId:number|null=null;var seen=new Set<number>();
+      while(hasMore&&!cancelled){
+        var q=authClient.from("fdp_value_snapshots").select("id,player_slug,player_name,value,values_version,effective_at,recorded_at").eq("player_slug",slug).eq("league_type",ctx.leagueType).eq("scoring",ctx.scoring).eq("superflex",ctx.superflex).eq("te_premium",ctx.tePremium).eq("idp",ctx.idp).order("effective_at",{ascending:false}).order("id",{ascending:false}).limit(HISTORY_PAGE_SIZE);
+        if(cursorDate!==null&&cursorId!==null){q=q.or("effective_at.lt."+cursorDate+",and(effective_at.eq."+cursorDate+",id.lt."+cursorId+")");}
+        var res=await q;
+        if(res.error){if(!cancelled){setPpHistoryLoading(false);setPpHistoryError(true);}return;}
+        var rows=(res.data||[]) as FdpSnapshot[];
+        for(var ri=0;ri<rows.length;ri++){if(!seen.has(rows[ri].id!)){seen.add(rows[ri].id!);all.push(rows[ri]);}}
+        hasMore=rows.length===HISTORY_PAGE_SIZE;
+        if(rows.length>0){var last=rows[rows.length-1];cursorDate=last.effective_at;cursorId=last.id!;}
+      }
+      if(!cancelled){setPpHistoryLoading(false);setPpHistory(all);}
+    })().catch(function(){if(!cancelled){setPpHistoryLoading(false);setPpHistoryError(true);}});
+    return function(){cancelled=true;};
+  },[playerPage&&playerPage.name,isDynasty,sKey,isSF,tePremium,idpMode,ppCtxSupported,ppCanonicalMult]);
   // Load shared trade from URL param
   useEffect(function(){
     try{
@@ -3183,18 +3217,7 @@ export default function App(){
         p.tradeVal=computeDynastyTradeVal(p.pos,p.age,p.ktcVal,p.posRank,p.proj[sKey]||0,{isSF:isSF,sKey:sKey,tePremium:tePremium,idpMode:idpMode});
         p._rawTV=computeDynastyTradeVal(p.pos,p.age,p.ktcVal,p.posRank,p.proj[sKey]||0,{isSF:isSF,sKey:sKey,tePremium:tePremium,idpMode:idpMode},true);
       } else {
-        // Redraft (PPR/Half/Standard/Superflex): VBD-based with position-rank floor
-        var rdPk=p.pos==="QB"?(isSF?7000:3500)
-          :p.pos==="RB"?8000
-          :p.pos==="TE"?5000
-          :p.pos==="K"||p.pos==="DST"?2500
-          :p.pos==="DL"?4000
-          :p.pos==="LB"?3000
-          :p.pos==="DB"?2800
-          :7500; // WR
-        var rdDc=p.pos==="TE"?0.850:0.900;
-        var rdFloor=Math.round(Math.max(100,rdPk*Math.pow(rdDc,p.posRank-1)));
-        p.tradeVal=Math.max(rdFloor,Math.min(9500,Math.max(100,baseTV)));
+        p.tradeVal=computeRedraftTradeVal(p.pos,p.posRank,baseTV,{isSF:isSF});
       }
     });
     // Pass 2 (Dynasty): Re-sort by canonical FDP Value for final ranks/tier/scarcity
@@ -4198,6 +4221,94 @@ export default function App(){
           pp.note&&React.createElement("div",{style:{background:T.bgInput,borderRadius:12,padding:"12px 14px",fontSize:13,color:T.textSub,lineHeight:1.7,marginTop:8}},
             React.createElement("span",{style:{fontWeight:700,color:T.text}},"Scouting Report: "),pp.note
           )
+        ),
+        // FDP Value History
+        React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,padding:"16px 18px",marginBottom:20}},
+          React.createElement("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}},
+            React.createElement("h2",{style:{fontSize:12,fontWeight:800,color:T.textDim,letterSpacing:1,margin:0}},"FDP VALUE HISTORY"),
+            React.createElement("div",{style:{fontSize:10,color:T.textDim}},formatContextLabel(isDynasty,isSF,sKey,tePremium))
+          ),
+          ppCanonicalMult?React.createElement("div",{style:{textAlign:"center",padding:"20px 0",fontSize:12,color:T.textSub}},"Value history reflects the canonical FDP multiplier and is unavailable while custom value tuning is active."):
+          !ppCtxSupported?React.createElement("div",{style:{textAlign:"center",padding:"20px 0",fontSize:12,color:T.textSub}},"Value history is not currently tracked for this format."):
+          ppHistoryLoading?React.createElement("div",{style:{textAlign:"center",padding:"20px 0",fontSize:12,color:T.textSub}},"Loading history\u2026"):
+          ppHistoryError?React.createElement("div",{style:{textAlign:"center",padding:"20px 0",fontSize:12,color:T.textSub}},"Value history unavailable. Player value is current."):
+          ppHistory.length===0?React.createElement("div",{style:{textAlign:"center",padding:"20px 0"}},
+            React.createElement("div",{style:{fontSize:13,fontWeight:700,color:T.text,marginBottom:4}},ppVal.toLocaleString()),
+            React.createElement("div",{style:{fontSize:11,color:T.textSub}},"No FDP Value snapshot has been recorded for this context yet."),
+            React.createElement("div",{style:{fontSize:10,color:T.textDim,marginTop:6}},"Current value as of "+VALUES_UPDATED_AT)
+          ):
+          ppHistory.length===1?React.createElement("div",{style:{textAlign:"center",padding:"20px 0"}},
+            React.createElement("div",{style:{fontSize:13,fontWeight:700,color:T.text,marginBottom:4}},ppHistory[0].value.toLocaleString()),
+            React.createElement("div",{style:{fontSize:11,color:T.textSub}},"Value history tracking started "+new Date(ppHistory[0].effective_at||ppHistory[0].recorded_at).toLocaleDateString()+". More data is needed to show a trend.")
+          ):
+          (function(){
+            // Filter by range — never fallback to ALL when a specific range is selected
+            var rangeMs=ppHistoryRange==="7D"?7*86400000:ppHistoryRange==="30D"?30*86400000:ppHistoryRange==="90D"?90*86400000:ppHistoryRange==="1Y"?365*86400000:0;
+            var pts=ppHistory.slice().reverse();
+            if(rangeMs>0){var cutoff2=Date.now()-rangeMs;pts=pts.filter(function(s){return new Date(s.effective_at||s.recorded_at).getTime()>=cutoff2;});}
+            var rangeDays=ppHistoryRange==="7D"?7:ppHistoryRange==="30D"?30:ppHistoryRange==="90D"?90:ppHistoryRange==="1Y"?365:9999;
+            var ch=computeValueChange(ppHistory,rangeDays);
+            return React.createElement("div",null,
+              // Range selector
+              React.createElement("div",{style:{display:"flex",gap:4,marginBottom:10,flexWrap:"wrap"}},
+                ["7D","30D","90D","1Y","ALL"].map(function(r){
+                  var active=ppHistoryRange===r;
+                  return React.createElement("button",{key:r,"aria-pressed":active?"true":"false",onClick:function(){setPpHistoryRange(r);},style:{padding:"3px 10px",borderRadius:12,border:"1px solid "+(active?T.purple:T.border),background:active?T.purple+"18":"transparent",color:active?T.purple:T.textSub,fontWeight:700,fontSize:10,cursor:"pointer"}},r);
+                })
+              ),
+              // Range-specific states
+              pts.length===0?React.createElement("div",{style:{textAlign:"center",padding:"16px 0",fontSize:12,color:T.textSub}},"No data points in the "+ppHistoryRange+" range."):
+              pts.length===1?React.createElement("div",{style:{textAlign:"center",padding:"16px 0"}},
+                React.createElement("div",{style:{fontSize:14,fontWeight:800,color:T.purple,marginBottom:4}},pts[0].value.toLocaleString()),
+                React.createElement("div",{style:{fontSize:11,color:T.textSub}},"Only one data point in this range ("+new Date(pts[0].effective_at||pts[0].recorded_at).toLocaleDateString()+"). Insufficient history for a trend.")
+              ):
+              (function(){
+                var vals=pts.map(function(s){return s.value;});
+                var minV=Math.min.apply(null,vals);var maxV=Math.max.apply(null,vals);
+                var range2=maxV-minV||1;
+                var w=280,h=80,pad=4;
+                var points=pts.map(function(s,i){var x=pad+(i/(pts.length-1||1))*(w-2*pad);var y=pad+(1-(s.value-minV)/range2)*(h-2*pad);return x+","+y;}).join(" ");
+                var lastPt=pts[pts.length-1];var firstPt=pts[0];
+                var fDate=function(s:FdpSnapshot){return new Date(s.effective_at||s.recorded_at).toLocaleDateString();};
+                return React.createElement("div",null,
+                  // SVG chart
+                  React.createElement("div",{style:{overflowX:"auto"}},
+                    React.createElement("svg",{viewBox:"0 0 "+w+" "+h,style:{width:"100%",maxWidth:w,height:h},role:"img","aria-label":"FDP Value history chart showing "+pts.length+" data points from "+fDate(firstPt)+" to "+fDate(lastPt)},
+                      React.createElement("polyline",{points:points,fill:"none",stroke:T.purple,strokeWidth:2,strokeLinecap:"round",strokeLinejoin:"round"}),
+                      pts.map(function(s,i){var x=pad+(i/(pts.length-1||1))*(w-2*pad);var y=pad+(1-(s.value-minV)/range2)*(h-2*pad);return React.createElement("circle",{key:i,cx:x,cy:y,r:3,fill:T.purple});})
+                    )
+                  ),
+                  // Date labels
+                  React.createElement("div",{style:{display:"flex",justifyContent:"space-between",fontSize:9,color:T.textDim,marginTop:4}},
+                    React.createElement("span",null,fDate(firstPt)),
+                    React.createElement("span",null,fDate(lastPt))
+                  )
+                );
+              })(),
+              // Change summary (shown for all range states with 2+ history points)
+              ch.delta!=null?React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginTop:8}},
+                React.createElement("span",{style:{fontSize:14,fontWeight:800,color:T.purple}},ch.current.toLocaleString()),
+                React.createElement("span",{style:{fontSize:12,fontWeight:700,color:ch.delta>0?T.green:ch.delta<0?T.red:T.textDim}},(ch.delta>0?"+":"")+(ch.delta as number).toLocaleString()),
+                ch.pctChange!=null&&React.createElement("span",{style:{fontSize:10,color:ch.delta>0?T.green:ch.delta<0?T.red:T.textDim}},"("+(ch.pctChange>0?"+":"")+ch.pctChange.toFixed(1)+"%)")
+              ):React.createElement("div",{style:{fontSize:12,fontWeight:700,color:T.purple,marginTop:8}},ppVal.toLocaleString()),
+              // Accessible table fallback
+              pts.length>=2&&React.createElement("details",{style:{marginTop:8}},
+                React.createElement("summary",{style:{fontSize:10,color:T.textDim,cursor:"pointer"}},"View data table"),
+                React.createElement("table",{style:{width:"100%",fontSize:10,color:T.textSub,borderCollapse:"collapse",marginTop:4}},
+                  React.createElement("thead",null,React.createElement("tr",null,
+                    React.createElement("th",{style:{textAlign:"left",padding:"2px 6px",borderBottom:"1px solid "+T.border}},"Date"),
+                    React.createElement("th",{style:{textAlign:"right",padding:"2px 6px",borderBottom:"1px solid "+T.border}},"Value")
+                  )),
+                  React.createElement("tbody",null,pts.map(function(s,i){
+                    return React.createElement("tr",{key:i},
+                      React.createElement("td",{style:{padding:"2px 6px"}},new Date(s.effective_at||s.recorded_at).toLocaleDateString()),
+                      React.createElement("td",{style:{textAlign:"right",padding:"2px 6px"}},s.value.toLocaleString())
+                    );
+                  }))
+                )
+              )
+            );
+          })()
         ),
         // Game Script (if available)
         ppScript&&React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,padding:"16px 18px",marginBottom:20}},
