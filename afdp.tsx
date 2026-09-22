@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { computeDynastyTradeVal, VALUES_UPDATED_AT, PRODUCT_STATS, formatContextLabel, explainFdpValue } from "./src/logic";
+import { computeDynastyTradeVal, VALUES_UPDATED_AT, PRODUCT_STATS, formatContextLabel, explainFdpValue, generateTradeCandidates, computeTeamPosValues, computeTeamNeeds, computePosRanksForTeams } from "./src/logic";
 import type { ValueFactor } from "./src/logic";
 
 // ── Supabase ─────────────────────────────────────────────────────────────────
@@ -3116,6 +3116,8 @@ export default function App(){
   var [h2hSearchB,setH2hSearchB]=useState("");
   var [h2hResult,setH2hResult]=useState(null as any);
   var [tfPosNeed,setTfPosNeed]=useState("ALL");
+  var [tfPartnerFilter,setTfPartnerFilter]=useState(null as number|null);
+  var [tfTargetSearch,setTfTargetSearch]=useState("");
 
   useEffect(function(){if(onboardStep===0){var t=setTimeout(function(){setOnboardStep(1);},1500);return function(){clearTimeout(t);};}},[]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -3523,6 +3525,19 @@ export default function App(){
     if(hasSlotData){td.slice().sort(function(a,b){return(b.starterVal||0)-(a.starterVal||0);}).forEach(function(t,r){t.starterRank=r+1;});}
     return{teams:td,avg:avg,posRanks:posRanks,n:n,starterSlots:ss,totalStarters:totalStarters,hasSlotData:hasSlotData};
   },[powerRankingTeams,leagueRosterPositions]);
+
+  // ── TRADE FINDER ENGINE ──
+  var tfCandidates=useMemo(function(){
+    if(!powerRankingTeams||powerRankingTeams.length<2||myTeamIdx==null)return[];
+    var teams=powerRankingTeams.map(function(t,i){return{idx:i,name:t.name,players:(t.players||[]).filter(function(p){return["QB","RB","WR","TE","PICK","DL","LB","DB"].indexOf(p.pos)>=0;})};});
+    var targetName=tfTargetSearch.trim().length>=3?tfTargetSearch.trim():null;
+    // If searching for a target player, find which team owns them
+    var targetPartner=null as number|null;
+    if(targetName){for(var ti3=0;ti3<teams.length;ti3++){if(ti3===myTeamIdx)continue;if(teams[ti3].players.some(function(p){return p.name.toLowerCase().includes(targetName.toLowerCase());})){targetPartner=ti3;break;}}}
+    var matchedTarget=null as string|null;
+    if(targetName&&targetPartner!=null){var mp=teams[targetPartner].players.find(function(p){return p.name.toLowerCase().includes(targetName.toLowerCase());});if(mp)matchedTarget=mp.name;}
+    return generateTradeCandidates({userIdx:myTeamIdx as number,teams:teams,posFilter:matchedTarget?null:tfPosNeed!=="ALL"?tfPosNeed:null,partnerIdx:matchedTarget?targetPartner:tfPartnerFilter,targetPlayerName:matchedTarget});
+  },[powerRankingTeams,myTeamIdx,tfPosNeed,tfPartnerFilter,tfTargetSearch]);
 
   function tVal(side,fa){return side.reduce(function(s,x){return s+(x.pos==="PICK"?x.est:Math.max(0,x.tradeVal));},0)+((fa||0)*(2000/Math.max(50,budget)));}
   var tvA=tVal(tradeA,faabA),tvB=tVal(tradeB,faabB);
@@ -6038,102 +6053,45 @@ export default function App(){
                 tips.length===0&&React.createElement("div",{style:{fontSize:12,color:T.textSub,textAlign:"center",padding:16}},"Import your league roster for personalized advice")
               );
             })(),
-            // League Trade Finder
-            powerRankingTeams&&powerRankingTeams.length>1&&(function(){
-              var myTeam=powerRankingTeams[adviceTeam]||powerRankingTeams[0];
-              if(!myTeam.players||myTeam.players.length===0)return null;
-              var myPlrs=myTeam.players.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;});
-              // Identify my needs (positions with low depth or value)
-              var myPosCts={QB:0,RB:0,WR:0,TE:0};var myPosVal={QB:0,RB:0,WR:0,TE:0};
-              myPlrs.forEach(function(p){myPosCts[p.pos]++;myPosVal[p.pos]+=(p.tradeVal||0);});
-              var myNeeds=[];
-              if(myPosCts.QB<2||myPosVal.QB<4000)myNeeds.push("QB");
-              if(myPosCts.RB<4||myPosVal.RB<8000)myNeeds.push("RB");
-              if(myPosCts.WR<4||myPosVal.WR<8000)myNeeds.push("WR");
-              if(myPosCts.TE<2||myPosVal.TE<3000)myNeeds.push("TE");
-              // Identify my sell candidates (aging, post-prime, surplus positions)
-              var mySells=myPlrs.filter(function(p){
-                var hi=PRIME[p.pos]?PRIME[p.pos][1]:30;
-                return (p.age||25)>=hi&&(p.tradeVal||0)>=1000;
-              }).concat(myPlrs.filter(function(p){
-                return myPosCts[p.pos]>=4&&(p.tradeVal||0)>=1000&&(p.tradeVal||0)<myPosVal[p.pos]*0.3;
-              })).sort(function(a,b){return (b.tradeVal||0)-(a.tradeVal||0);});
-              // Dedupe sells
-              var sellSeen={};mySells=mySells.filter(function(p){if(sellSeen[p.name])return false;sellSeen[p.name]=true;return true;});
-              // Find trades with other teams
-              var trades=[];
-              powerRankingTeams.forEach(function(otherTeam,oi){
-                if(oi===adviceTeam||!otherTeam.players||otherTeam.players.length===0)return;
-                var theirPlrs=otherTeam.players.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;});
-                var theirPosCts={QB:0,RB:0,WR:0,TE:0};
-                theirPlrs.forEach(function(p){theirPosCts[p.pos]++;});
-                var theirNeeds=[];
-                if(theirPosCts.QB<2)theirNeeds.push("QB");
-                if(theirPosCts.RB<4)theirNeeds.push("RB");
-                if(theirPosCts.WR<4)theirNeeds.push("WR");
-                if(theirPosCts.TE<2)theirNeeds.push("TE");
-                // Find players I want from them (fill my needs)
-                myNeeds.forEach(function(needPos){
-                  var targets=theirPlrs.filter(function(p){return p.pos===needPos&&(p.tradeVal||0)>=1500;}).sort(function(a,b){return (b.tradeVal||0)-(a.tradeVal||0);});
-                  if(targets.length===0)return;
-                  var target=targets[0];
-                  // Find what I can offer that fills their need
-                  var offer=null;
-                  theirNeeds.forEach(function(tn){
-                    if(offer)return;
-                    offer=mySells.find(function(p){return p.pos===tn&&Math.abs((p.tradeVal||0)-(target.tradeVal||0))<(target.tradeVal||1)*0.35;});
-                  });
-                  if(!offer)offer=mySells.find(function(p){return Math.abs((p.tradeVal||0)-(target.tradeVal||0))<(target.tradeVal||1)*0.3;});
-                  if(!offer||offer.name===target.name)return;
-                  var diff=Math.abs((offer.tradeVal||0)-(target.tradeVal||0));
-                  var fairness=Math.max(offer.tradeVal||0,target.tradeVal||0)>0?diff/Math.max(offer.tradeVal||0,target.tradeVal||0):1;
-                  if(fairness>0.35)return;
-                  trades.push({team:otherTeam.name,give:offer,get:target,diff:diff,fairness:fairness,fillsNeed:needPos});
-                });
-              });
-              trades.sort(function(a,b){return a.fairness-b.fairness;});
-              trades=trades.slice(0,5);
-              if(trades.length===0)return null;
-              return React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:14,padding:16,marginTop:14}},
-                React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:12}},
+            // League Trade Finder (compact preview using connected-league engine)
+            tfCandidates.length>0&&myTeamIdx!=null&&React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:14,padding:16,marginTop:14}},
+              React.createElement("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}},
+                React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8}},
                   React.createElement("span",{style:{fontSize:18}},"🔍"),
                   React.createElement("div",null,
                     React.createElement("div",{style:{fontWeight:800,fontSize:15}},"Trade Finder"),
-                    React.createElement("div",{style:{fontSize:10,color:T.textSub}},"Fair trades with league mates based on team needs")
+                    React.createElement("div",{style:{fontSize:10,color:T.textSub}},"Top trades based on league-wide team needs")
                   )
                 ),
-                trades.map(function(tr,ti){
-                  var pctFair=Math.round((1-tr.fairness)*100);
-                  return React.createElement("div",{key:ti,style:{background:T.bgInput,borderRadius:12,padding:"12px",marginBottom:8,border:"1px solid "+T.border}},
-                    React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}},
-                      React.createElement("span",{style:{fontSize:11,fontWeight:700,color:T.textSub}},tr.team),
-                      React.createElement("span",{style:{fontSize:9,fontWeight:800,color:pctFair>=85?T.green:pctFair>=70?T.gold:T.textSub,background:(pctFair>=85?T.green:pctFair>=70?T.gold:T.textSub)+"18",borderRadius:6,padding:"2px 6px"}},pctFair+"% fair")
+                React.createElement("button",{onClick:function(){setTab("rankings");setRankSubTab("tradefinder");},style:{fontSize:9,fontWeight:700,color:T.purpleLight,background:T.purple+"18",border:"1px solid "+T.purple+"33",borderRadius:6,padding:"4px 10px",cursor:"pointer"}},"View All →")
+              ),
+              tfCandidates.slice(0,3).map(function(c,ci){
+                var fitColor=c.fitLabel==="Strong Fit"?T.green:c.fitLabel==="Good Fit"?"#818cf8":T.textSub;
+                return React.createElement("div",{key:c.key,style:{background:T.bgInput,borderRadius:12,padding:"12px",marginBottom:8,border:"1px solid "+T.border}},
+                  React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}},
+                    React.createElement("span",{style:{fontSize:11,fontWeight:700,color:T.textSub}},c.partnerName),
+                    React.createElement("span",{style:{fontSize:9,fontWeight:800,color:fitColor,background:fitColor+"18",borderRadius:6,padding:"2px 6px"}},c.fitLabel)
+                  ),
+                  React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 30px 1fr",gap:6,alignItems:"center"}},
+                    React.createElement("div",null,
+                      c.userSends.map(function(p){return React.createElement("div",{key:p.name,style:{fontSize:11,fontWeight:700}},p.name,React.createElement("span",{style:{fontSize:9,color:T.textSub,marginLeft:4}},p.pos));})
                     ),
-                    React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 30px 1fr",gap:6,alignItems:"center"}},
-                      React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6}},
-                        React.createElement(Avatar,{name:tr.give.name,pos:tr.give.pos,size:24}),
-                        React.createElement("div",null,
-                          React.createElement("div",{style:{fontSize:11,fontWeight:700}},tr.give.name),
-                          React.createElement("div",{style:{fontSize:9,color:T.textSub}},tr.give.pos+" · "+(tr.give.tradeVal||0).toLocaleString())
-                        )
-                      ),
-                      React.createElement("div",{style:{textAlign:"center",fontSize:12,color:T.textDim}},"⇄"),
-                      React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6}},
-                        React.createElement(Avatar,{name:tr.get.name,pos:tr.get.pos,size:24}),
-                        React.createElement("div",null,
-                          React.createElement("div",{style:{fontSize:11,fontWeight:700}},tr.get.name),
-                          React.createElement("div",{style:{fontSize:9,color:T.textSub}},tr.get.pos+" · "+(tr.get.tradeVal||0).toLocaleString())
-                        )
-                      )
-                    ),
-                    React.createElement("div",{style:{display:"flex",gap:6,marginTop:8}},
-                      React.createElement("span",{style:{fontSize:9,color:T.green,background:T.green+"18",borderRadius:4,padding:"2px 6px",fontWeight:700}},"Fills "+tr.fillsNeed+" need"),
-                      React.createElement("button",{onClick:function(){var giveP=rankedPlayers.find(function(p){return p.name===tr.give.name;})||tr.give;var getP=rankedPlayers.find(function(p){return p.name===tr.get.name;})||tr.get;setTradeA([giveP]);setTradeB([getP]);setAnalyzed(false);setTab("trade");},style:{fontSize:9,fontWeight:700,color:T.purpleLight,background:T.purple+"18",border:"1px solid "+T.purple+"33",borderRadius:4,padding:"2px 8px",cursor:"pointer",marginLeft:"auto"}},"Analyze →")
+                    React.createElement("div",{style:{textAlign:"center",fontSize:12,color:T.textDim}},"⇄"),
+                    React.createElement("div",null,
+                      c.userReceives.map(function(p){return React.createElement("div",{key:p.name,style:{fontSize:11,fontWeight:700}},p.name,React.createElement("span",{style:{fontSize:9,color:T.textSub,marginLeft:4}},p.pos));})
                     )
-                  );
-                })
-              );
-            })()
+                  ),
+                  React.createElement("div",{style:{display:"flex",gap:6,marginTop:8}},
+                    React.createElement("span",{style:{fontSize:9,color:c.fairnessLabel==="Fair"?T.green:c.fairnessLabel==="Value favors you"?"#818cf8":T.gold,background:(c.fairnessLabel==="Fair"?T.green:c.fairnessLabel==="Value favors you"?"#818cf8":T.gold)+"18",borderRadius:4,padding:"2px 6px",fontWeight:700}},c.fairnessLabel),
+                    React.createElement("button",{onClick:function(){
+                      var sA=c.userSends.map(function(p){return rankedPlayers.find(function(rp){return rp.name===p.name;})||p;});
+                      var sB=c.userReceives.map(function(p){return rankedPlayers.find(function(rp){return rp.name===p.name;})||p;});
+                      setTradeA(sA as any[]);setTradeB(sB as any[]);setAnalyzed(false);setTab("trade");window.scrollTo(0,0);
+                    },style:{fontSize:9,fontWeight:700,color:T.purpleLight,background:T.purple+"18",border:"1px solid "+T.purple+"33",borderRadius:4,padding:"2px 8px",cursor:"pointer",marginLeft:"auto"}},"Analyze →")
+                  )
+                );
+              })
+            )
           );
         })()
       ),
@@ -8253,95 +8211,121 @@ export default function App(){
         )
       ),
 
-      // TRADE FINDER
+      // TRADE FINDER (Connected League)
       rankSubTab==="tradefinder"&&React.createElement("div",{style:{padding:"16px"}},
         React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10,marginBottom:16}},
           React.createElement("span",{style:{fontSize:28}},"🔍"),
           React.createElement("div",null,
             React.createElement("div",{style:{fontWeight:900,fontSize:22}},"Trade Finder"),
-            React.createElement("div",{style:{fontSize:12,color:T.textSub}},impRoster.length>0?"Analyzing your roster for optimal trades":"Import your Sleeper roster to get personalized trade suggestions")
+            React.createElement("div",{style:{fontSize:12,color:T.textSub}},powerRankingTeams&&myTeamIdx!=null?"Finding optimal trades for your team":"Connect your Sleeper league to unlock Trade Finder")
           )
         ),
-        impRoster.length===0&&React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:16,padding:24,textAlign:"center"}},
-          React.createElement("div",{style:{fontSize:48,marginBottom:12}},"📋"),
-          React.createElement("div",{style:{fontWeight:800,fontSize:16,marginBottom:8}},"Import Your Roster First"),
-          React.createElement("div",{style:{fontSize:13,color:T.textSub,marginBottom:16}},"Go to the Trade tab and import your Sleeper league to unlock personalized trade suggestions."),
-          React.createElement("button",{onClick:function(){setTab("trade");},style:{padding:"12px 28px",borderRadius:12,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer"}},"Go to Trade Tab")
-        ),
-        impRoster.length>0&&(function(){
-          var roster=impRoster;
-          var posCounts={QB:0,RB:0,WR:0,TE:0};
-          var posValues={QB:0,RB:0,WR:0,TE:0};
-          roster.forEach(function(p){if(posCounts[p.pos]!==undefined){posCounts[p.pos]++;posValues[p.pos]+=(p.tradeVal||0);}});
-          var idealRatios={QB:3,RB:6,WR:7,TE:2};
-          var needs=[];var strengths=[];
-          ["QB","RB","WR","TE"].forEach(function(pos){
-            var ratio=posCounts[pos]/idealRatios[pos];
-            if(ratio<0.6)needs.push({pos:pos,severity:"critical",count:posCounts[pos],ideal:idealRatios[pos],avgVal:posCounts[pos]>0?Math.round(posValues[pos]/posCounts[pos]):0});
-            else if(ratio<0.85)needs.push({pos:pos,severity:"moderate",count:posCounts[pos],ideal:idealRatios[pos],avgVal:posCounts[pos]>0?Math.round(posValues[pos]/posCounts[pos]):0});
-            if(ratio>1.2)strengths.push({pos:pos,count:posCounts[pos],ideal:idealRatios[pos],avgVal:Math.round(posValues[pos]/posCounts[pos])});
-          });
-          var sellCandidates=roster.filter(function(p){
-            return strengths.some(function(s){return s.pos===p.pos;})&&(p.tradeVal||0)>=2000;
-          }).sort(function(a,b){return (b.tradeVal||0)-(a.tradeVal||0);});
-          var buyCandidates=rankedPlayers.filter(function(p){
-            return needs.some(function(n){return n.pos===p.pos;})&&(p.tradeVal||0)>=2000&&!roster.some(function(r){return r.name===p.name;});
-          }).sort(function(a,b){return (b.tradeVal||0)-(a.tradeVal||0);}).slice(0,20);
-          var trades=[];
-          sellCandidates.forEach(function(sell){
-            buyCandidates.forEach(function(buy){
-              var diff=Math.abs((sell.tradeVal||0)-(buy.tradeVal||0));
-              var pct=diff/Math.max(sell.tradeVal||1,buy.tradeVal||1);
-              if(pct<0.2&&trades.length<12){trades.push({sell:sell,buy:buy,diff:diff,pct:pct});}
-            });
-          });
-          trades.sort(function(a,b){return a.pct-b.pct;});
-          var filteredTrades=tfPosNeed==="ALL"?trades:trades.filter(function(t){return t.buy.pos===tfPosNeed;});
-          return React.createElement(React.Fragment,null,
-            React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(70px, 1fr))",gap:8,marginBottom:16}},
-              ["QB","RB","WR","TE"].map(function(pos){
-                var need=needs.find(function(n){return n.pos===pos;});
-                var str=strengths.find(function(s){return s.pos===pos;});
-                var pc=POS_COLORS[pos]||T.purple;
-                return React.createElement("div",{key:pos,style:{background:T.bgCard,border:"1px solid "+(need?need.severity==="critical"?T.red:T.yellow:str?T.green:T.border),borderRadius:12,padding:"10px 8px",textAlign:"center"}},
-                  React.createElement("div",{style:{fontSize:10,fontWeight:800,color:pc,letterSpacing:1}},pos),
-                  React.createElement("div",{style:{fontWeight:900,fontSize:20,color:T.text}},posCounts[pos]),
-                  React.createElement("div",{style:{fontSize:9,color:need?need.severity==="critical"?T.red:T.yellow:str?T.green:T.textDim,fontWeight:700}},need?(need.severity==="critical"?"NEED":"Low"):str?"Surplus":"OK")
-                );
-              })
-            ),
-            React.createElement("div",{style:{fontWeight:800,fontSize:14,marginBottom:10}},"Suggested Trades"),
-            React.createElement("div",{style:{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}},
-              ["ALL","QB","RB","WR","TE"].map(function(pos){
-                var active=tfPosNeed===pos;var pc=POS_COLORS[pos]||T.purple;
-                return React.createElement("button",{key:pos,onClick:function(){setTfPosNeed(pos);},style:{padding:"5px 12px",borderRadius:20,border:"1px solid "+(active?pc:T.border),background:active?pc+"22":"transparent",color:active?pc:T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},pos);
-              })
-            ),
-            filteredTrades.length===0&&React.createElement("div",{style:{background:T.bgCard,borderRadius:12,padding:20,textAlign:"center",color:T.textSub,fontSize:13}},"No matching trades found. Your roster may be well-balanced!"),
-            filteredTrades.map(function(t,i){
-              return React.createElement("div",{key:i,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:14,marginBottom:10}},
-                React.createElement("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}},
-                  React.createElement("span",{style:{fontSize:10,fontWeight:800,color:T.red,background:T.red+"15",padding:"3px 8px",borderRadius:6}},"SELL"),
-                  React.createElement("span",{style:{fontSize:18}},"➡️"),
-                  React.createElement("span",{style:{fontSize:10,fontWeight:800,color:T.green,background:T.green+"15",padding:"3px 8px",borderRadius:6}},"BUY")
-                ),
-                React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr auto 1fr",gap:8,alignItems:"center"}},
-                  React.createElement("div",null,
-                    React.createElement("div",{style:{fontWeight:800,fontSize:13,color:T.text}},t.sell.name),
-                    React.createElement("div",{style:{fontSize:10,color:POS_COLORS[t.sell.pos]||T.purple,fontWeight:700}},t.sell.pos+" · "+t.sell.team),
-                    React.createElement("div",{style:{fontSize:12,fontWeight:800,color:T.purpleLight,marginTop:2}},(t.sell.tradeVal||0).toLocaleString())
-                  ),
-                  React.createElement("div",{style:{fontSize:10,color:T.textDim,fontWeight:700,textAlign:"center"}},Math.round(t.pct*100)+"%\nmatch"),
-                  React.createElement("div",{style:{textAlign:"right"}},
-                    React.createElement("div",{style:{fontWeight:800,fontSize:13,color:T.text}},t.buy.name),
-                    React.createElement("div",{style:{fontSize:10,color:POS_COLORS[t.buy.pos]||T.purple,fontWeight:700}},t.buy.pos+" · "+t.buy.team),
-                    React.createElement("div",{style:{fontSize:12,fontWeight:800,color:T.purpleLight,marginTop:2}},(t.buy.tradeVal||0).toLocaleString())
-                  )
-                )
+        // No league connected
+        !powerRankingTeams||powerRankingTeams.length<2?React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:16,padding:24,textAlign:"center"}},
+          React.createElement("div",{style:{fontSize:48,marginBottom:12}},"🏈"),
+          React.createElement("div",{style:{fontWeight:800,fontSize:16,marginBottom:8}},"Connect Your League"),
+          React.createElement("div",{style:{fontSize:13,color:T.textSub,marginBottom:16}},"Import your Sleeper league to get trade suggestions based on real team needs."),
+          React.createElement("button",{onClick:function(){if(isPro){setTab("league");setLeagueSubTab("leagimport");}else{setAuthMode("signup");setShowAuth(true);}},style:{padding:"12px 28px",borderRadius:12,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer"}},isPro?"Go to League Hub":"Sign Up to Connect")
+        ):
+        // League connected but no user team identified
+        myTeamIdx==null?React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:16,padding:24,textAlign:"center"}},
+          React.createElement("div",{style:{fontSize:48,marginBottom:12}},"👤"),
+          React.createElement("div",{style:{fontWeight:800,fontSize:16,marginBottom:8}},"Identify Your Team"),
+          React.createElement("div",{style:{fontSize:13,color:T.textSub,marginBottom:16}},"We couldn't detect which team is yours. Make sure your Sleeper username is linked.")
+        ):
+        // Ready — show filters + candidates
+        React.createElement(React.Fragment,null,
+          // Position needs overview
+          leagueIntel&&leagueIntel.posRanks&&leagueIntel.posRanks[myTeamIdx]&&React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(4, 1fr)",gap:8,marginBottom:16}},
+            ["QB","RB","WR","TE"].map(function(pos){
+              var rank=leagueIntel.posRanks[myTeamIdx][pos]||1;
+              var n2=leagueIntel.n||12;
+              var isNeed=rank>Math.ceil(n2*0.5);
+              var isSurplus=rank<=Math.max(1,Math.ceil(n2*0.33));
+              var pc=POS_COLORS[pos]||T.purple;
+              return React.createElement("div",{key:pos,style:{background:T.bgCard,border:"1px solid "+(isNeed?T.red:isSurplus?T.green:T.border),borderRadius:12,padding:"10px 8px",textAlign:"center"}},
+                React.createElement("div",{style:{fontSize:10,fontWeight:800,color:pc,letterSpacing:1}},pos),
+                React.createElement("div",{style:{fontWeight:900,fontSize:18,color:T.text}},"#"+rank),
+                React.createElement("div",{style:{fontSize:9,color:isNeed?T.red:isSurplus?T.green:T.textDim,fontWeight:700}},isNeed?"NEED":isSurplus?"Surplus":"OK")
               );
             })
-          );
-        })()
+          ),
+          // Filters row
+          React.createElement("div",{style:{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap",alignItems:"center"}},
+            ["ALL","QB","RB","WR","TE"].map(function(pos){
+              var active=tfPosNeed===pos;var pc=POS_COLORS[pos]||T.purple;
+              return React.createElement("button",{key:pos,onClick:function(){setTfPosNeed(pos);setTfTargetSearch("");},style:{padding:"5px 12px",borderRadius:20,border:"1px solid "+(active?pc:T.border),background:active?pc+"22":"transparent",color:active?pc:T.textSub,fontWeight:700,fontSize:11,cursor:"pointer"}},pos);
+            }),
+            // Partner filter
+            powerRankingTeams.length>2&&React.createElement("select",{value:tfPartnerFilter==null?"":tfPartnerFilter,onChange:function(e){setTfPartnerFilter(e.target.value===""?null:Number(e.target.value));},style:{padding:"5px 8px",borderRadius:10,border:"1px solid "+T.border,background:T.bgInput,color:T.text,fontSize:11,fontWeight:600}},
+              React.createElement("option",{value:""},"All Teams"),
+              powerRankingTeams.map(function(t,i){return i===myTeamIdx?null:React.createElement("option",{key:i,value:i},t.name);})
+            ),
+            // Target player search
+            React.createElement("input",{type:"text",placeholder:"Search player...",value:tfTargetSearch,onChange:function(e){setTfTargetSearch(e.target.value);},style:{padding:"5px 10px",borderRadius:10,border:"1px solid "+T.border,background:T.bgInput,color:T.text,fontSize:11,fontWeight:600,width:130}})
+          ),
+          // Candidate cards
+          tfCandidates.length===0&&React.createElement("div",{style:{background:T.bgCard,borderRadius:12,padding:24,textAlign:"center",color:T.textSub,fontSize:13}},
+            tfTargetSearch.trim().length>=3?"No trades found for \""+tfTargetSearch.trim()+"\". Try a different player.":"No matching trades found. Try adjusting filters or your roster may be well-balanced."
+          ),
+          tfCandidates.map(function(c,ci){
+            var fitColor=c.fitLabel==="Strong Fit"?T.green:c.fitLabel==="Good Fit"?"#818cf8":T.textSub;
+            var fairColor=c.fairnessLabel==="Fair"?T.green:c.fairnessLabel==="Value favors you"?"#818cf8":T.gold;
+            return React.createElement("div",{key:c.key,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:14,marginBottom:10}},
+              // Header: partner name + fit label + fairness
+              React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}},
+                React.createElement("span",{style:{fontSize:12,fontWeight:700,color:T.text}},c.partnerName),
+                React.createElement("div",{style:{display:"flex",gap:6,alignItems:"center"}},
+                  React.createElement("span",{style:{fontSize:9,fontWeight:800,color:fitColor,background:fitColor+"18",borderRadius:6,padding:"2px 7px"}},c.fitLabel),
+                  React.createElement("span",{style:{fontSize:9,fontWeight:800,color:fairColor,background:fairColor+"18",borderRadius:6,padding:"2px 7px"}},c.fairnessLabel)
+                )
+              ),
+              // Trade content: sends ⇄ receives
+              React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 30px 1fr",gap:6,alignItems:"start"}},
+                // User sends
+                React.createElement("div",null,
+                  React.createElement("div",{style:{fontSize:9,fontWeight:800,color:T.red,marginBottom:4,letterSpacing:1}},"YOU SEND"),
+                  c.userSends.map(function(p){
+                    var pc=POS_COLORS[p.pos]||T.purple;
+                    return React.createElement("div",{key:p.name,style:{display:"flex",alignItems:"center",gap:6,marginBottom:4}},
+                      React.createElement("div",{style:{width:6,height:6,borderRadius:3,background:pc,flexShrink:0}}),
+                      React.createElement("div",null,
+                        React.createElement("div",{style:{fontSize:11,fontWeight:700,color:T.text}},p.name),
+                        React.createElement("div",{style:{fontSize:9,color:T.textSub}},p.pos+" · "+(p.tradeVal||p.est||0).toLocaleString())
+                      )
+                    );
+                  }),
+                  React.createElement("div",{style:{fontSize:10,fontWeight:800,color:T.purpleLight,marginTop:4}},c.userVal.toLocaleString())
+                ),
+                // Arrow
+                React.createElement("div",{style:{textAlign:"center",fontSize:14,color:T.textDim,paddingTop:14}},"⇄"),
+                // User receives
+                React.createElement("div",null,
+                  React.createElement("div",{style:{fontSize:9,fontWeight:800,color:T.green,marginBottom:4,letterSpacing:1}},"YOU GET"),
+                  c.userReceives.map(function(p){
+                    var pc=POS_COLORS[p.pos]||T.purple;
+                    return React.createElement("div",{key:p.name,style:{display:"flex",alignItems:"center",gap:6,marginBottom:4}},
+                      React.createElement("div",{style:{width:6,height:6,borderRadius:3,background:pc,flexShrink:0}}),
+                      React.createElement("div",null,
+                        React.createElement("div",{style:{fontSize:11,fontWeight:700,color:T.text}},p.name),
+                        React.createElement("div",{style:{fontSize:9,color:T.textSub}},p.pos+" · "+(p.tradeVal||p.est||0).toLocaleString())
+                      )
+                    );
+                  }),
+                  React.createElement("div",{style:{fontSize:10,fontWeight:800,color:T.purpleLight,marginTop:4}},c.partnerVal.toLocaleString())
+                )
+              ),
+              // Analyze button
+              React.createElement("div",{style:{marginTop:10,textAlign:"right"}},
+                React.createElement("button",{onClick:function(){
+                  var sA=c.userSends.map(function(p){return rankedPlayers.find(function(rp){return rp.name===p.name;})||p;});
+                  var sB=c.userReceives.map(function(p){return rankedPlayers.find(function(rp){return rp.name===p.name;})||p;});
+                  setTradeA(sA as any[]);setTradeB(sB as any[]);setAnalyzed(false);setTab("trade");window.scrollTo(0,0);
+                },style:{fontSize:10,fontWeight:700,color:T.purpleLight,background:T.purple+"18",border:"1px solid "+T.purple+"33",borderRadius:8,padding:"5px 12px",cursor:"pointer"}},"Analyze This Trade →")
+              )
+            );
+          })
+        )
       ),
 
       // VEGAS LINES

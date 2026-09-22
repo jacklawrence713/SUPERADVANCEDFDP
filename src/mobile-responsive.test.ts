@@ -86,8 +86,8 @@ describe('mobile: responsive grids', () => {
     expect(afdpSrc).toContain('gridTemplateColumns:"repeat(auto-fit, minmax(70px, 1fr))",gap:4')
   })
 
-  it('trade finder position needs uses auto-fit', () => {
-    expect(afdpSrc).toContain('gridTemplateColumns:"repeat(auto-fit, minmax(70px, 1fr))",gap:8,marginBottom:16')
+  it('trade finder position needs uses responsive grid', () => {
+    expect(afdpSrc).toContain('gridTemplateColumns:"repeat(4, 1fr)",gap:8,marginBottom:16')
   })
 
   it('value tuner layer selector uses auto-fit', () => {

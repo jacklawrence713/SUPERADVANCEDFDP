@@ -358,6 +358,266 @@ export function generateTradeWarnings(
   return w;
 }
 
+// ── Trade Finder Logic ──────────────────────────────────────
+
+export var TF_MAX_CANDIDATES = 8;
+export var TF_MAX_TARGETS = 5;
+export var TF_MAX_ASSETS = 5;
+export var TF_FAIRNESS_THRESHOLD = 25;
+
+export function computeTeamPosValues(
+  players: Array<{ pos: string; tradeVal?: number }>,
+): Record<string, number> {
+  var r: Record<string, number> = { QB: 0, RB: 0, WR: 0, TE: 0 };
+  players.forEach(function (p) { if (r[p.pos] !== undefined) r[p.pos] += (p.tradeVal || 0); });
+  return r;
+}
+
+export function computePosRanksForTeams(
+  teamPosVals: Array<Record<string, number>>,
+): Array<Record<string, number>> {
+  return teamPosVals.map(function (v, i) {
+    var ranks: Record<string, number> = {};
+    ["QB", "RB", "WR", "TE"].forEach(function (pos) {
+      var rank = 1;
+      teamPosVals.forEach(function (o, j) { if (j !== i && (o[pos] || 0) > (v[pos] || 0)) rank++; });
+      ranks[pos] = rank;
+    });
+    return ranks;
+  });
+}
+
+export function computeTeamNeeds(
+  posRanks: Record<string, number>,
+  posVals: Record<string, number>,
+  n: number,
+): Array<{ pos: string; rank: number; n: number; val: number; isNeed: boolean; isSurplus: boolean }> {
+  return ["QB", "RB", "WR", "TE"].map(function (pos) {
+    var rank = posRanks[pos] || 1;
+    return {
+      pos: pos, rank: rank, n: n, val: posVals[pos] || 0,
+      isNeed: rank > Math.ceil(n * 0.5),
+      isSurplus: rank <= Math.max(1, Math.ceil(n * 0.33)),
+    };
+  });
+}
+
+export function computePartnerScore(
+  userNeeds: Array<{ pos: string; isNeed: boolean; isSurplus: boolean }>,
+  partnerNeeds: Array<{ pos: string; isNeed: boolean; isSurplus: boolean }>,
+): number {
+  var score = 0;
+  ["QB", "RB", "WR", "TE"].forEach(function (pos) {
+    var un = userNeeds.find(function (n) { return n.pos === pos; });
+    var pn = partnerNeeds.find(function (n) { return n.pos === pos; });
+    if (!un || !pn) return;
+    if (un.isNeed && pn.isSurplus) score += 3;
+    if (pn.isNeed && un.isSurplus) score += 3;
+    if (un.isNeed && !pn.isNeed && !pn.isSurplus) score += 1;
+    if (pn.isNeed && !un.isNeed && !un.isSurplus) score += 1;
+  });
+  return score;
+}
+
+interface TFPlayerInput { name: string; pos: string; tradeVal?: number; est?: number; age?: number }
+interface TFTeamInput { idx: number; name: string; players: TFPlayerInput[] }
+export interface TFCandidate {
+  partnerIdx: number; partnerName: string;
+  userSends: TFPlayerInput[]; userReceives: TFPlayerInput[];
+  userVal: number; partnerVal: number; fairnessPct: number;
+  score: number; fitLabel: string; fairnessLabel: string; key: string;
+}
+
+export function generateTradeCandidates(config: {
+  userIdx: number; teams: TFTeamInput[];
+  posFilter?: string | null; partnerIdx?: number | null; targetPlayerName?: string | null;
+}): TFCandidate[] {
+  var userTeam = config.teams.find(function (t) { return t.idx === config.userIdx; });
+  if (!userTeam || config.teams.length < 2) return [];
+  var n = config.teams.length;
+
+  var allPosVals = config.teams.map(function (t) { return computeTeamPosValues(t.players); });
+  var allPosRanks = computePosRanksForTeams(allPosVals);
+  var allNeeds = config.teams.map(function (_t, i) { return computeTeamNeeds(allPosRanks[i], allPosVals[i], n); });
+  var userNeeds = allNeeds[config.userIdx] || [];
+
+  var userOffPlayers = userTeam.players.filter(function (p) {
+    return ["QB", "RB", "WR", "TE"].indexOf(p.pos) >= 0 && (p.tradeVal || 0) >= 500;
+  });
+  // IDP players as secondary balancing assets (not modeled in needs)
+  var userIdpPlayers = userTeam.players.filter(function (p) {
+    return ["DL", "LB", "DB"].indexOf(p.pos) >= 0 && (p.tradeVal || 0) >= 500;
+  }).sort(function (a, b) { return (b.tradeVal || 0) - (a.tradeVal || 0); }).slice(0, 3);
+  var userPicks = userTeam.players.filter(function (p) {
+    return p.pos === "PICK" && (p.est || p.tradeVal || 0) >= 300;
+  }).sort(function (a, b) { return (b.est || b.tradeVal || 0) - (a.est || a.tradeVal || 0); }).slice(0, 3);
+
+  var all: TFCandidate[] = [];
+  var seen: Record<string, boolean> = {};
+  function gv(p: TFPlayerInput) { return p.pos === "PICK" ? (p.est || p.tradeVal || 0) : (p.tradeVal || 0); }
+
+  config.teams.forEach(function (partner) {
+    if (partner.idx === config.userIdx) return;
+    if (config.partnerIdx != null && partner.idx !== config.partnerIdx) return;
+    var pOffP = partner.players.filter(function (p) { return ["QB", "RB", "WR", "TE"].indexOf(p.pos) >= 0; });
+    if (pOffP.length === 0) return;
+    var pNeeds = allNeeds[partner.idx] || [];
+    var compScore = computePartnerScore(userNeeds, pNeeds);
+    // Partner picks available for user to receive
+    var pPicks = partner.players.filter(function (p) {
+      return p.pos === "PICK" && (p.est || p.tradeVal || 0) >= 300;
+    }).sort(function (a, b) { return (b.est || b.tradeVal || 0) - (a.est || a.tradeVal || 0); }).slice(0, 3);
+    // Partner IDP as receivable secondary balancing assets (symmetric with user IDP sends)
+    var pIdpPlayers = partner.players.filter(function (p) {
+      return ["DL", "LB", "DB"].indexOf(p.pos) >= 0 && (p.tradeVal || 0) >= 500;
+    }).sort(function (a, b) { return (b.tradeVal || 0) - (a.tradeVal || 0); }).slice(0, 3);
+
+    // Identify targets
+    var tgts: TFPlayerInput[];
+    if (config.targetPlayerName) {
+      var tp = partner.players.find(function (p) { return p.name === config.targetPlayerName; });
+      tgts = tp ? [tp] : [];
+    } else {
+      tgts = pOffP.filter(function (p) {
+        if ((p.tradeVal || 0) < 500) return false;
+        if (config.posFilter && config.posFilter !== "ALL" && p.pos !== config.posFilter) return false;
+        var un = userNeeds.find(function (nd) { return nd.pos === p.pos; });
+        return un && un.isNeed;
+      }).sort(function (a, b) { return (b.tradeVal || 0) - (a.tradeVal || 0); }).slice(0, TF_MAX_TARGETS);
+      if (tgts.length < TF_MAX_TARGETS) {
+        var ex = pOffP.filter(function (p) {
+          if ((p.tradeVal || 0) < 2000) return false;
+          if (tgts.some(function (t) { return t.name === p.name; })) return false;
+          if (config.posFilter && config.posFilter !== "ALL" && p.pos !== config.posFilter) return false;
+          var pn2 = pNeeds.find(function (nd) { return nd.pos === p.pos; });
+          return pn2 && pn2.isSurplus;
+        }).sort(function (a, b) { return (b.tradeVal || 0) - (a.tradeVal || 0); }).slice(0, TF_MAX_TARGETS - tgts.length);
+        tgts = tgts.concat(ex);
+      }
+    }
+    if (tgts.length === 0) return;
+
+    // Sort user assets by trade desirability for this partner
+    var uAsts = userOffPlayers.slice().sort(function (a, b) {
+      var aS = 0, bS = 0;
+      var aN = userNeeds.find(function (nd) { return nd.pos === a.pos; });
+      var bN = userNeeds.find(function (nd) { return nd.pos === b.pos; });
+      var aPN = pNeeds.find(function (nd) { return nd.pos === a.pos; });
+      var bPN = pNeeds.find(function (nd) { return nd.pos === b.pos; });
+      if (aN && aN.isSurplus) aS += 3; if (bN && bN.isSurplus) bS += 3;
+      if (aPN && aPN.isNeed) aS += 3; if (bPN && bPN.isNeed) bS += 3;
+      if (aN && aN.isNeed) aS -= 2; if (bN && bN.isNeed) bS -= 2;
+      if (aS !== bS) return bS - aS;
+      return (b.tradeVal || 0) - (a.tradeVal || 0);
+    }).slice(0, TF_MAX_ASSETS);
+
+    function tryPkg(sends: TFPlayerInput[], receives: TFPlayerInput[]) {
+      var ns: Record<string, boolean> = {}; var dup = false;
+      sends.concat(receives).forEach(function (p) { if (ns[p.name]) dup = true; ns[p.name] = true; });
+      if (dup) return;
+      var uV = sends.reduce(function (s, p) { return s + gv(p); }, 0);
+      var pV = receives.reduce(function (s, p) { return s + gv(p); }, 0);
+      if (uV === 0 || pV === 0) return;
+      var mx = Math.max(uV, pV); var pct = Math.abs(uV - pV) / mx * 100;
+      if (pct > TF_FAIRNESS_THRESHOLD) return;
+      var sN = sends.map(function (p) { return p.name; }).sort().join("+");
+      var rN = receives.map(function (p) { return p.name; }).sort().join("+");
+      var key = sN + "\u2194" + rN;
+      if (seen[key]) return; seen[key] = true;
+      // Bidirectional fit
+      var uFit = 0, pFit = 0;
+      ["QB", "RB", "WR", "TE"].forEach(function (pos) {
+        var sV = sends.filter(function (p) { return p.pos === pos; }).reduce(function (s, p) { return s + gv(p); }, 0);
+        var rV = receives.filter(function (p) { return p.pos === pos; }).reduce(function (s, p) { return s + gv(p); }, 0);
+        if (sV === 0 && rV === 0) return;
+        var un = userNeeds.find(function (nd) { return nd.pos === pos; });
+        var pn2 = pNeeds.find(function (nd) { return nd.pos === pos; });
+        if (un && un.isNeed && rV > sV) uFit += 3;
+        else if (un && un.isSurplus && sV > rV) uFit += 1;
+        else if (un && un.isNeed && sV > rV) uFit -= 2;
+        if (pn2 && pn2.isNeed && sV > rV) pFit += 3;
+        else if (pn2 && pn2.isSurplus && rV > sV) pFit += 1;
+        else if (pn2 && pn2.isNeed && rV > sV) pFit -= 2;
+      });
+      var simp = Math.max(0, 4 - (sends.length + receives.length - 2));
+      var fBonus = Math.max(0, (TF_FAIRNESS_THRESHOLD - pct) / TF_FAIRNESS_THRESHOLD * 3);
+      var sc2 = uFit + pFit * 0.6 + compScore * 0.5 + simp * 0.4 + fBonus;
+      // Cap fit label at "Possible Fit" if partner roster worsens
+      var fl = pFit < 0 ? "Possible Fit" : sc2 >= 5 ? "Strong Fit" : sc2 >= 2 ? "Good Fit" : "Possible Fit";
+      // Canonical fairness label aligned with Trade Analyzer (8% threshold)
+      var fLabel = pct < 8 ? "Fair" : uV > pV ? "Value favors you" : "Value favors partner";
+      all.push({ partnerIdx: partner.idx, partnerName: partner.name, userSends: sends, userReceives: receives, userVal: uV, partnerVal: pV, fairnessPct: pct, score: sc2, fitLabel: fl, fairnessLabel: fLabel, key: key });
+    }
+
+    // 1-for-1
+    tgts.forEach(function (tg) {
+      uAsts.forEach(function (a) { tryPkg([a], [tg]); });
+      userPicks.forEach(function (pk) { tryPkg([pk], [tg]); });
+    });
+    // 2-for-1
+    tgts.forEach(function (tg) {
+      for (var i = 0; i < Math.min(uAsts.length, 4); i++) {
+        for (var j = i + 1; j < Math.min(uAsts.length, 5); j++) { tryPkg([uAsts[i], uAsts[j]], [tg]); }
+        userPicks.forEach(function (pk) { tryPkg([uAsts[i], pk], [tg]); });
+        // IDP + offensive player for target
+        userIdpPlayers.forEach(function (idp) { tryPkg([uAsts[i], idp], [tg]); });
+      }
+    });
+    // Player for player + partner pick
+    tgts.forEach(function (tg) {
+      pPicks.forEach(function (ppk) {
+        uAsts.forEach(function (a) { tryPkg([a], [tg, ppk]); });
+      });
+    });
+    // 1-for-2
+    for (var ti = 0; ti < Math.min(tgts.length, 3); ti++) {
+      for (var tj = ti + 1; tj < Math.min(tgts.length, 4); tj++) {
+        var t1 = tgts[ti], t2 = tgts[tj];
+        uAsts.forEach(function (a) { tryPkg([a], [t1, t2]); });
+      }
+    }
+    // 2-for-2 (limited)
+    for (var ti2 = 0; ti2 < Math.min(tgts.length, 3); ti2++) {
+      for (var tj2 = ti2 + 1; tj2 < Math.min(tgts.length, 3); tj2++) {
+        for (var ai = 0; ai < Math.min(uAsts.length, 3); ai++) {
+          for (var aj = ai + 1; aj < Math.min(uAsts.length, 3); aj++) {
+            tryPkg([uAsts[ai], uAsts[aj]], [tgts[ti2], tgts[tj2]]);
+          }
+        }
+      }
+    }
+    // Player + player for player + partner pick
+    tgts.forEach(function (tg) {
+      pPicks.forEach(function (ppk) {
+        for (var pi = 0; pi < Math.min(uAsts.length, 3); pi++) {
+          for (var pj = pi + 1; pj < Math.min(uAsts.length, 3); pj++) {
+            tryPkg([uAsts[pi], uAsts[pj]], [tg, ppk]);
+          }
+        }
+      });
+    });
+    // Player for player + partner IDP (symmetric with user IDP sends)
+    tgts.forEach(function (tg) {
+      pIdpPlayers.forEach(function (pidp) {
+        uAsts.forEach(function (a) { tryPkg([a], [tg, pidp]); });
+      });
+    });
+    // Player + player for player + partner IDP
+    tgts.forEach(function (tg) {
+      pIdpPlayers.forEach(function (pidp) {
+        for (var pi2 = 0; pi2 < Math.min(uAsts.length, 3); pi2++) {
+          for (var pj2 = pi2 + 1; pj2 < Math.min(uAsts.length, 3); pj2++) {
+            tryPkg([uAsts[pi2], uAsts[pj2]], [tg, pidp]);
+          }
+        }
+      });
+    });
+  });
+
+  all.sort(function (a, b) { return b.score - a.score || a.fairnessPct - b.fairnessPct || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0); });
+  return all.slice(0, TF_MAX_CANDIDATES);
+}
+
 export function computeOptimalLineupFromSlots(
   plrs: Array<{ pos: string; name: string; tradeVal?: number }>,
   ss: { QB: number; RB: number; WR: number; TE: number; FLEX: number; SUPER_FLEX: number },
