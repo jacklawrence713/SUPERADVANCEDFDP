@@ -1039,3 +1039,89 @@ export function explainValueMovement(
 
   return { direction, delta, percentChange: pct, signals, factorAvailability: 'detailed' };
 }
+
+// ── Data Freshness Helpers ──────────────────────────────────
+
+/**
+ * Format a YYYY-MM-DD calendar date for display without timezone rollover.
+ * Parses as local-date parts, not as UTC ISO string.
+ * Example: "2026-09-19" → "Sep 19, 2026"
+ */
+export function formatCalendarDate(dateStr: string): string {
+  var parts = dateStr.split("-");
+  if (parts.length !== 3) return dateStr;
+  var y = parseInt(parts[0], 10);
+  var m = parseInt(parts[1], 10) - 1;
+  var d = parseInt(parts[2], 10);
+  var dt = new Date(y, m, d);
+  if (dt.getFullYear() !== y || dt.getMonth() !== m || dt.getDate() !== d) return dateStr;
+  var months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  return months[m] + " " + d + ", " + y;
+}
+
+/**
+ * Format an ISO timestamp for user display.
+ * Example: "2026-09-22T20:32:00Z" → "Sep 22 at 8:32 PM" (browser locale)
+ */
+export function formatFetchTimestamp(isoStr: string): string {
+  if (!isoStr) return "";
+  var dt = new Date(isoStr);
+  if (isNaN(dt.getTime())) return "";
+  var months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  var h = dt.getHours();
+  var ampm = h >= 12 ? "PM" : "AM";
+  var h12 = h % 12 || 12;
+  var min = dt.getMinutes().toString().padStart(2, "0");
+  return months[dt.getMonth()] + " " + dt.getDate() + " at " + h12 + ":" + min + " " + ampm;
+}
+
+/**
+ * Compute relative time string from an ISO timestamp.
+ * Returns null if timestamp is invalid or missing.
+ * Example: "3 min ago", "2 hr ago", "1 day ago"
+ */
+export function formatRelativeTime(isoStr: string, nowMs?: number): string | null {
+  if (!isoStr) return null;
+  var dt = new Date(isoStr);
+  if (isNaN(dt.getTime())) return null;
+  var now = nowMs ?? Date.now();
+  var diffSec = Math.floor((now - dt.getTime()) / 1000);
+  if (diffSec < 0) return "just now";
+  if (diffSec < 60) return "just now";
+  if (diffSec < 3600) return Math.floor(diffSec / 60) + " min ago";
+  if (diffSec < 86400) return Math.floor(diffSec / 3600) + " hr ago";
+  return Math.floor(diffSec / 86400) + " day ago";
+}
+
+/**
+ * Normalized provider identifiers for freshness storage.
+ * Use these stable lowercase keys — never raw display labels.
+ */
+export type FreshnessProvider = 'sleeper' | 'espn' | 'manual';
+
+/**
+ * Derive normalized provider from a league_id string.
+ * ESPN league IDs are prefixed "espn_", manual is "manual", everything else is Sleeper.
+ */
+export function deriveProvider(leagueId: string): FreshnessProvider {
+  if (leagueId === "manual") return "manual";
+  if (leagueId.startsWith("espn_")) return "espn";
+  return "sleeper";
+}
+
+/**
+ * LocalStorage key for league fetch timestamp, scoped to account+provider+leagueId.
+ * accountId should be the stable Supabase user UUID, or "anon" for logged-out users.
+ * Always includes normalized provider prefix to prevent cross-provider collision.
+ */
+export function leagueFetchedAtKey(accountId: string, provider: FreshnessProvider, leagueId: string): string {
+  return "fdp_lfetch_" + (accountId || "anon") + "*" + provider + "*" + leagueId;
+}
+
+/**
+ * User-facing label for how roster data was obtained.
+ * Sleeper/ESPN: "fetched" (external API). Manual: "imported" (user-entered).
+ */
+export function freshnessFetchVerb(provider: FreshnessProvider): string {
+  return provider === "manual" ? "imported" : "fetched";
+}

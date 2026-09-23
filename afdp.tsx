@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { computeDynastyTradeVal, computeRedraftTradeVal, REDRAFT_TV_MULT, VALUES_UPDATED_AT, PRODUCT_STATS, formatContextLabel, explainFdpValue, generateTradeCandidates, computeTeamPosValues, computeTeamNeeds, computePosRanksForTeams, computeValueChange, isSnapshotContextSupported, normalizeSnapshotContext, HISTORY_PAGE_SIZE, findComparisonSnapshots, explainValueMovement } from "./src/logic";
+import { computeDynastyTradeVal, computeRedraftTradeVal, REDRAFT_TV_MULT, VALUES_UPDATED_AT, PRODUCT_STATS, formatContextLabel, explainFdpValue, generateTradeCandidates, computeTeamPosValues, computeTeamNeeds, computePosRanksForTeams, computeValueChange, isSnapshotContextSupported, normalizeSnapshotContext, HISTORY_PAGE_SIZE, findComparisonSnapshots, explainValueMovement, formatCalendarDate, formatRelativeTime, leagueFetchedAtKey, deriveProvider, freshnessFetchVerb } from "./src/logic";
 import type { FdpSnapshot } from "./src/logic";
 import type { ValueFactor } from "./src/logic";
 
@@ -392,11 +392,11 @@ async function fetchOdds():Promise<{odds:{[t:string]:{spread:number,total:number
     var r=await fetch(EDGE_URL+"/fetch-odds",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPA_KEY},body:"{}"});
     var data=await r.json();
     if(data&&data.odds&&Object.keys(data.odds).length>0){
-      return {odds:data.odds,source:data.source||"api",fetchedAt:data.fetchedAt||new Date().toISOString(),stale:data.stale||false};
+      return {odds:data.odds,source:data.source||"api",fetchedAt:data.fetchedAt||"",stale:data.stale||false};
     }
-    return {odds:{},source:data?.source||"unavailable",fetchedAt:data?.fetchedAt||new Date().toISOString(),stale:false};
+    return {odds:{},source:data?.source||"unavailable",fetchedAt:data?.fetchedAt||"",stale:false};
   }catch{
-    return {odds:{},source:"unavailable",fetchedAt:new Date().toISOString(),stale:false};
+    return {odds:{},source:"unavailable",fetchedAt:"",stale:false};
   }
 }
 function getGameScript(team:string,odds:{[t:string]:{spread:number,total:number,opp:string}}|null):{spread:number,total:number,script:string,label:string,color:string,opp:string}|null{
@@ -2262,14 +2262,14 @@ function WhyThisValue(props:{factors:ValueFactor[],T:any,formatLabel:string}){
           )
         );
       }),
-      React.createElement("div",{style:{marginTop:8,fontSize:10,color:T.textDim}},"Values as of "+VALUES_UPDATED_AT)
+      React.createElement("div",{style:{marginTop:8,fontSize:10,color:T.textDim}},"Values as of "+formatCalendarDate(VALUES_UPDATED_AT))
     )
   );
 }
 
 var PLANS=[{id:"free",label:"Free",priceStr:"$0",sub:"forever"},{id:"pro",label:"Pro",priceStr:"$2.99",sub:"/mo"},{id:"elite",label:"Elite",priceStr:"$9.99",sub:"/mo"}];
 var COMPARE_ROWS=[["Trade Analyzer",true,true,true],["FAAB + Draft Picks",true,true,true],["IDP Rankings",true,true,true],["Top 20 Rankings",true,true,true],["Full 600+ Rankings",false,true,true],["League Import",false,true,true],["AI Trade Suggestions",false,true,true],["Market Alerts",false,true,true],["Roster Grades",false,true,true],["Power Rankings",false,true,true],["Priority Support",false,false,true],["CSV Export",false,false,true]];
-var FAQS=[{q:"What makes Fantasy Draft Pros the best dynasty trade analyzer?",a:"We combine 1,000+ player values updated throughout the season across all positions including IDP, with FAAB budget tracking, draft pick values, and support for every major scoring format."},{q:"Is the dynasty trade calculator free?",a:"Yes! The core trade analyzer with 2026 player values is completely free — no account required. Pro features (unlimited trades, league import, full rankings) include a 7-day free trial."},{q:"Does it support IDP dynasty leagues?",a:"Absolutely. We rank DL, LB, and DB with full VBD scoring, age grades, and trade values."},{q:"Does Fantasy Draft Pros have superflex rankings?",a:"Yes — Superflex mode boosts QB values appropriately for SF leagues."},{q:"How often are player values updated?",a:"Player values are regularly updated based on the latest news, injury reports, and 2026 projection data."},{q:"What league platforms are supported?",a:"Sleeper (live API) and ESPN — plus manual roster entry for Yahoo and other platforms."}];
+var FAQS=[{q:"What makes Fantasy Draft Pros the best dynasty trade analyzer?",a:"We combine 1,000+ player values updated throughout the season across all positions including IDP, with FAAB budget tracking, draft pick values, and support for every major scoring format."},{q:"Is the dynasty trade calculator free?",a:"Yes! The core trade analyzer with 2026 player values is completely free — no account required. Pro features (unlimited trades, league import, full rankings) include a 7-day free trial."},{q:"Does it support IDP dynasty leagues?",a:"Absolutely. We rank DL, LB, and DB with full VBD scoring, age grades, and trade values."},{q:"Does Fantasy Draft Pros have superflex rankings?",a:"Yes — Superflex mode boosts QB values appropriately for SF leagues."},{q:"How often are player values updated?",a:"Player values are updated throughout the season as player situations change. The current values date is shown wherever values appear. There is no fixed daily or weekly schedule \u2014 updates are published as needed."},{q:"What league platforms are supported?",a:"Sleeper and ESPN — plus manual roster entry for Yahoo and other platforms."}];
 
 function AuthModal(props){
   var T=props.T||DARK,onClose=props.onClose,onAuth=props.onAuth,initMode=props.mode||"signup";
@@ -2820,7 +2820,7 @@ export default function App(){
   useEffect(function(){
     if(!authClient)return;
     var {data:{subscription}}=authClient.auth.onAuthStateChange(function(event,session){
-      if(event==="SIGNED_OUT"||!session){saveAndSetUser(null);return;}
+      if(event==="SIGNED_OUT"||!session){saveAndSetUser(null);setLeagueFetchedAt("");return;}
       if(event==="PASSWORD_RECOVERY"){setShowResetPw(true);return;}
       if(event==="SIGNED_IN"||event==="TOKEN_REFRESHED"||event==="INITIAL_SESSION"){
         var usr=session.user;
@@ -3006,6 +3006,7 @@ export default function App(){
   var [leagueImportStatus,setLeagueImportStatus]=useState(null);
   var [leagueImportData,setLeagueImportData]=useState(null);
   var [leagueImportErr,setLeagueImportErr]=useState("");
+  var [leagueFetchedAt,setLeagueFetchedAt]=useState<string>(function(){try{var al=localStorage.getItem('fdp_league_v1');if(!al)return "";var lid=JSON.parse(al).league_id;var cu=localStorage.getItem('fdp_user_v1');var aid=cu?JSON.parse(cu)?.id||"anon":"anon";return localStorage.getItem(leagueFetchedAtKey(aid,deriveProvider(lid),lid))||"";}catch(e){return "";}}() as string);
   var [importPlatform,setImportPlatform]=useState("sleeper");
   var [espnLeagueId,setEspnLeagueId]=useState("");
   var [espnYear,setEspnYear]=useState("2026");
@@ -3024,7 +3025,7 @@ export default function App(){
   var [rosterViewTeam,setRosterViewTeam]=useState(null);
   var [strengthTeam,setStrengthTeam]=useState(null);
   var [activeLeague,setActiveLeague]=useState(function(){try{var s=localStorage.getItem('fdp_league_v1');return s?JSON.parse(s):null;}catch(e){return null;}});
-  function saveAndSetActiveLeague(lg){try{if(lg)localStorage.setItem('fdp_league_v1',JSON.stringify(lg));else localStorage.removeItem('fdp_league_v1');}catch(e){}setActiveLeague(lg);}
+  function saveAndSetActiveLeague(lg){try{if(lg)localStorage.setItem('fdp_league_v1',JSON.stringify(lg));else localStorage.removeItem('fdp_league_v1');}catch(e){}setActiveLeague(lg);try{var aid=user?.id||"anon";setLeagueFetchedAt(lg?localStorage.getItem(leagueFetchedAtKey(aid,deriveProvider(lg.league_id),lg.league_id))||"":"");}catch(e){setLeagueFetchedAt("");}}
   var [leagueRosters,setLeagueRosters]=useState(null);
   var [leagueUsers,setLeagueUsers]=useState(null);
   var [sleeperUserId,setSleeperUserId]=useState(function(){try{return localStorage.getItem('fdp_sluid_v1')||null;}catch(e){return null;}});
@@ -3341,7 +3342,8 @@ export default function App(){
       saveAndSetImportedTeams(teams);setLeagueRosters(null);setLeagueUsers(null);
       // Clear Sleeper-specific identity and roster positions — ESPN does not supply these
       saveMyTeamOwnerId(null);setLeagueRosterPositions(null);try{localStorage.removeItem('fdp_rpos_v2');}catch(e){}
-      saveAndSetActiveLeague({league_id:"espn_"+espnLeagueId,name:(data.settings&&data.settings.name)||"ESPN League"});
+      var espnLid="espn_"+espnLeagueId;saveAndSetActiveLeague({league_id:espnLid,name:(data.settings&&data.settings.name)||"ESPN League"});
+      var fetchTs2=new Date().toISOString();setLeagueFetchedAt(fetchTs2);try{localStorage.setItem(leagueFetchedAtKey(user?.id||"anon","espn",espnLid),fetchTs2);}catch(e){}
       setLeagueImportStatus("connected");setLeagueSubTab("power");
     }
     tryNext(proxies,0);
@@ -3370,6 +3372,7 @@ export default function App(){
     // Clear Sleeper-specific identity and roster positions — manual import does not supply these
     saveMyTeamOwnerId(null);setLeagueRosterPositions(null);try{localStorage.removeItem('fdp_rpos_v2');}catch(e){}
     saveAndSetActiveLeague({league_id:"manual",name:leagueName||"My League"});
+    var fetchTs3=new Date().toISOString();setLeagueFetchedAt(fetchTs3);try{localStorage.setItem(leagueFetchedAtKey(user?.id||"anon","manual","manual"),fetchTs3);}catch(e){}
     setLeagueImportStatus("connected");setLeagueSubTab("power");
   }
 
@@ -3479,6 +3482,7 @@ export default function App(){
       if(lg.roster_positions&&lg.roster_positions.indexOf("SUPER_FLEX")!==-1)setSfMode(true);
       if(lg.roster_positions&&(lg.roster_positions.indexOf("IDP_FLEX")!==-1||lg.roster_positions.indexOf("DL")!==-1||lg.roster_positions.indexOf("LB")!==-1||lg.roster_positions.indexOf("DB")!==-1)){setIdpMode(true);try{localStorage.setItem('fdp_idp_v1','true');}catch(e){}}
       if(lg.settings&&(lg.settings.type===2||lg.settings.type==="2"))setLeagueType("Dynasty");
+      var fetchTs=new Date().toISOString();setLeagueFetchedAt(fetchTs);try{localStorage.setItem(leagueFetchedAtKey(user?.id||"anon","sleeper",lg.league_id),fetchTs);}catch(e){}
       setLeagueImportStatus("connected");if(leagueSubTab==="leagimport")setLeagueSubTab("overview");
     }).catch(function(e){setLeagueImportErr(e.message||"Failed to load league");setLeagueImportStatus("error");});
   }
@@ -4070,7 +4074,7 @@ export default function App(){
       ),
       React.createElement("div",{style:{maxWidth:680,margin:"0 auto",padding:"24px 16px"}},
         React.createElement("h1",{style:{fontSize:28,fontWeight:900,margin:"0 0 8px",color:T.text}},"What is FDP Value?"),
-        React.createElement("div",{style:{fontSize:13,color:T.textSub,marginBottom:24}},"Values as of "+VALUES_UPDATED_AT),
+        React.createElement("div",{style:{fontSize:13,color:T.textSub,marginBottom:24}},"Values as of "+formatCalendarDate(VALUES_UPDATED_AT)),
 
         // Scale explanation
         React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:16,padding:"20px",marginBottom:20}},
@@ -4124,7 +4128,7 @@ export default function App(){
         // Data freshness
         React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,padding:"20px",marginBottom:20}},
           React.createElement("h2",{style:{fontSize:18,fontWeight:800,margin:"0 0 10px",color:T.text}},"Data Freshness"),
-          React.createElement("p",{style:{fontSize:14,color:T.textSub,lineHeight:1.7,margin:0}},"FDP Values are updated throughout the season as player situations change. The current values date is shown as \u201CValues as of "+VALUES_UPDATED_AT+"\u201D wherever values appear. There is no automated daily or weekly update schedule \u2014 updates are published as needed to reflect meaningful changes.")
+          React.createElement("p",{style:{fontSize:14,color:T.textSub,lineHeight:1.7,margin:0}},"FDP Values are updated throughout the season as player situations change. The current values date is shown as \u201CValues as of "+formatCalendarDate(VALUES_UPDATED_AT)+"\u201D wherever values appear. There is no automated daily or weekly update schedule \u2014 updates are published as needed to reflect meaningful changes.")
         ),
 
         // CTA
@@ -4197,7 +4201,7 @@ export default function App(){
             ),
             React.createElement("div",{style:{textAlign:"right"}},
               React.createElement("div",{style:{fontSize:32,fontWeight:900,color:T.purple}},ppVal.toLocaleString()),
-              React.createElement("div",{style:{fontSize:11,color:T.textSub,fontWeight:600}},"FDP Value · "+VALUES_UPDATED_AT)
+              React.createElement("div",{style:{fontSize:11,color:T.textSub,fontWeight:600}},"FDP Value \u00B7 "+formatCalendarDate(VALUES_UPDATED_AT))
             )
           ),
           // Value bar
@@ -4235,7 +4239,7 @@ export default function App(){
           ppHistory.length===0?React.createElement("div",{style:{textAlign:"center",padding:"20px 0"}},
             React.createElement("div",{style:{fontSize:13,fontWeight:700,color:T.text,marginBottom:4}},ppVal.toLocaleString()),
             React.createElement("div",{style:{fontSize:11,color:T.textSub}},"No FDP Value snapshot has been recorded for this context yet."),
-            React.createElement("div",{style:{fontSize:10,color:T.textDim,marginTop:6}},"Current value as of "+VALUES_UPDATED_AT)
+            React.createElement("div",{style:{fontSize:10,color:T.textDim,marginTop:6}},"Current value as of "+formatCalendarDate(VALUES_UPDATED_AT))
           ):
           ppHistory.length===1?React.createElement("div",{style:{textAlign:"center",padding:"20px 0"}},
             React.createElement("div",{style:{fontSize:13,fontWeight:700,color:T.text,marginBottom:4}},ppHistory[0].value.toLocaleString()),
@@ -4845,9 +4849,10 @@ export default function App(){
       React.createElement("div",{"data-trade-form":true,style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:20,padding:18,marginBottom:20}},
         React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:2}},
           React.createElement("div",{style:{fontWeight:800,fontSize:16}},"Free Dynasty Trade Analyzer - 2026"),
-          React.createElement("button",{onClick:loadLiveProj,style:{padding:"5px 10px",borderRadius:8,border:"1px solid "+(liveProj?T.green:T.border),background:liveProj?T.green+"18":"transparent",color:liveProj?T.green:T.textSub,fontWeight:700,fontSize:10,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}},liveProjLoading?"Loading...":(liveProj?"Live Wk"+liveProj.week+" ✓":"Load Live Proj"))
+          React.createElement("button",{onClick:loadLiveProj,style:{padding:"5px 10px",borderRadius:8,border:"1px solid "+(liveProj?T.green:T.border),background:liveProj?T.green+"18":"transparent",color:liveProj?T.green:T.textSub,fontWeight:700,fontSize:10,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}},liveProjLoading?"Loading...":(liveProj?"Wk "+liveProj.week+" Proj \u2713":"Load Wk Proj"))
         ),
-        React.createElement("div",{style:{fontSize:11,color:T.textSub,marginBottom:14}},liveProj?"Live Week "+liveProj.week+" projections active — values reflect real-time data":"No account required - Offensive + IDP + FAAB + Draft Picks"),
+        React.createElement("div",{style:{fontSize:11,color:T.textSub,marginBottom:4}},liveProj?"Week "+liveProj.week+" projections loaded — values reflect weekly Sleeper data":"No account required - Offensive + IDP + FAAB + Draft Picks"),
+        React.createElement("div",{style:{fontSize:10,color:T.textDim,marginBottom:10}},"FDP Values as of "+formatCalendarDate(VALUES_UPDATED_AT)),
         React.createElement("div",{style:{background:T.bgInput,borderRadius:12,padding:12,marginBottom:14}},
           React.createElement("div",{style:{display:"flex",gap:6,marginBottom:8}},
             LEAGUE_TYPES.map(function(lt){
@@ -5450,7 +5455,7 @@ export default function App(){
             React.createElement("div",{style:{fontSize:10,color:T.textSub,marginTop:2}},f[1])
           );})
         ),
-        React.createElement("div",{style:{fontSize:12,color:T.textSub,lineHeight:1.6}},"Every player receives an FDP Value from 0 to 9,999 \u2014 higher means greater fantasy trade value. Values are format-aware and updated regularly. Last updated: "+VALUES_UPDATED_AT+".")
+        React.createElement("div",{style:{fontSize:12,color:T.textSub,lineHeight:1.6}},"Every player receives an FDP Value from 0 to 9,999 \u2014 higher means greater fantasy trade value. Values are format-aware and updated throughout the season. Last updated: "+formatCalendarDate(VALUES_UPDATED_AT)+".")
       ),
       // ── HOMEPAGE: Rankings & Player Research ──
       React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:20,padding:20,marginBottom:20}},
@@ -5488,7 +5493,7 @@ export default function App(){
         React.createElement("div",{style:{background:"linear-gradient(135deg,#1e1040,#1a1035)",border:"2px solid "+T.purple,borderRadius:20,padding:20,marginBottom:12,position:"relative",overflow:"hidden"}},
           React.createElement("div",{style:{position:"absolute",top:0,right:0,background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",borderBottomLeftRadius:12,padding:"4px 14px",fontSize:10,fontWeight:800,color:"#fff"}},"MOST POPULAR"),
           React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16,marginTop:6}},React.createElement("div",null,React.createElement("div",{style:{fontWeight:900,fontSize:18,color:T.purple,marginBottom:2}},"Pro"),React.createElement("div",{style:{fontSize:12,color:T.textSub}},"7-day free trial")),React.createElement("div",{style:{textAlign:"right"}},React.createElement("div",{style:{fontWeight:900,fontSize:28}},"$2.99",React.createElement("span",{style:{fontSize:14,fontWeight:400,color:T.textSub}},"/mo")),React.createElement("div",{style:{fontSize:10,color:T.textDim}},"cancel anytime"))),
-          ["Everything in Free","Full rankings - 600+ players","Live Sleeper league import","ESPN import + manual roster entry","AI trade suggestions + analysis","Roster grades + team strategy","Power rankings + playoff odds","Market alerts - buy low sell high"].map(function(f){return React.createElement("div",{key:f,style:{display:"flex",alignItems:"flex-start",gap:10,marginBottom:7}},React.createElement("span",{style:{color:T.purple,fontSize:14,flexShrink:0,marginTop:1}},"v"),React.createElement("span",{style:{fontSize:13,color:"#fff",lineHeight:1.4}},f));}),
+          ["Everything in Free","Full rankings - 600+ players","Sleeper league import","ESPN import + manual roster entry","AI trade suggestions + analysis","Roster grades + team strategy","Power rankings + playoff odds","Market alerts - buy low sell high"].map(function(f){return React.createElement("div",{key:f,style:{display:"flex",alignItems:"flex-start",gap:10,marginBottom:7}},React.createElement("span",{style:{color:T.purple,fontSize:14,flexShrink:0,marginTop:1}},"v"),React.createElement("span",{style:{fontSize:13,color:"#fff",lineHeight:1.4}},f));}),
           React.createElement("button",{disabled:checkoutLoading,onClick:function(){user?handleCheckout("pro","monthly"):(setAuthMode("signup"),setShowAuth(true));},style:{width:"100%",marginTop:16,padding:"14px",borderRadius:12,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",cursor:checkoutLoading?"wait":"pointer",fontWeight:800,fontSize:14,opacity:checkoutLoading?0.7:1}},checkoutLoading?"Processing...":user?"Upgrade to Pro →":"Start 7-Day Free Trial"),
           checkoutErr&&React.createElement("div",{style:{marginTop:8,padding:"8px 12px",background:"#ff000020",border:"1px solid #ff000044",borderRadius:8,fontSize:12,color:"#ff6b6b",textAlign:"center"}},checkoutErr),
           React.createElement("div",{style:{textAlign:"center",marginTop:8,fontSize:11,color:T.textDim}},"No credit card required - Cancel anytime")
@@ -5570,7 +5575,8 @@ export default function App(){
                 React.createElement("div",null,
                   React.createElement("div",{style:{fontWeight:900,fontSize:22,marginBottom:4}},"League Intelligence"),
                   React.createElement("div",{style:{fontSize:12,color:T.textSub}},(activeLeague?activeLeague.name:"League")+" · "+provLabel+" · "+n+" teams"),
-                  React.createElement("div",{style:{fontSize:11,color:T.textDim,marginTop:2}},fmtLabel2)
+                  React.createElement("div",{style:{fontSize:11,color:T.textDim,marginTop:2}},fmtLabel2),
+                  leagueFetchedAt&&React.createElement("div",{style:{fontSize:10,color:T.textDim,marginTop:2}},provLabel+" roster "+freshnessFetchVerb(deriveProvider(activeLeague.league_id))+" "+(formatRelativeTime(leagueFetchedAt)||""))
                 ),
                 React.createElement("button",{onClick:function(){if(activeLeague){if(activeLeague.league_id.startsWith("espn_"))doEspnImport();else connectLeague(activeLeague);}},disabled:leagueImportStatus==="connecting",style:{padding:"8px 14px",borderRadius:10,border:"1px solid "+T.borderPurple,background:T.purpleDim,color:T.purple,fontWeight:700,fontSize:11,cursor:"pointer",flexShrink:0,opacity:leagueImportStatus==="connecting"?0.6:1}},leagueImportStatus==="connecting"?"Syncing...":"↻ Refresh")
               )
@@ -6895,7 +6901,7 @@ export default function App(){
         React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"40px 20px",textAlign:"center"}},
           React.createElement("div",{style:{fontSize:40,marginBottom:12}},"📋"),
           React.createElement("div",{style:{fontWeight:800,fontSize:18,color:T.text,marginBottom:8}},"Coming Soon"),
-          React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.6,maxWidth:300,margin:"0 auto"}},"Weekly recap summaries require live matchup scores. This feature will be available during the 2026 regular season.")
+          React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.6,maxWidth:300,margin:"0 auto"}},"Weekly recap summaries require matchup scores. This feature will be available during the 2026 regular season.")
         )
       ),
 
@@ -7071,7 +7077,7 @@ export default function App(){
           React.createElement("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}},
             React.createElement("div",null,
               React.createElement("div",{style:{fontWeight:900,fontSize:22}},"Draft Room"),
-              React.createElement("div",{style:{fontSize:12,color:T.textSub}},"Live budget tracker, draft advisor & value guide")
+              React.createElement("div",{style:{fontSize:12,color:T.textSub}},"Budget tracker, draft advisor & value guide")
             ),
             React.createElement("div",{style:{display:"flex",gap:6}},
               React.createElement("button",{onClick:function(){
@@ -7383,7 +7389,7 @@ export default function App(){
 
       leagueSubTab==="leagimport"&&React.createElement("div",{style:{padding:"16px"}},
         React.createElement("div",{style:{fontWeight:900,fontSize:22,marginBottom:4}},"Import League"),
-        React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:16}},"Connect your fantasy league for live power rankings"),
+        React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:16}},"Connect your fantasy league for power rankings"),
         activeLeague&&React.createElement("div",{style:{background:T.green+"18",border:"1px solid "+T.green+"44",borderRadius:10,padding:"10px 14px",marginBottom:14,fontSize:12,color:T.green,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"space-between"}},
           React.createElement("span",null,"Connected: "+activeLeague.name),
           React.createElement("button",{onClick:function(){saveAndSetActiveLeague(null);setLeagueRosters(null);setLeagueUsers(null);saveAndSetImportedTeams(null);setLeagueImportStatus(null);saveMyTeamOwnerId(null);setLeagueRosterPositions(null);try{localStorage.removeItem('fdp_rpos_v2');}catch(e){}},style:{background:"none",border:"none",color:T.green,cursor:"pointer",fontSize:16,padding:0}},"×")
@@ -7509,7 +7515,7 @@ export default function App(){
           React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:4}},"Fantasy Draft Pros dynasty values"),
           React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:12,flexWrap:"wrap"}},
             React.createElement("span",{style:{fontSize:10,fontWeight:700,color:T.purple,background:T.purple+"15",border:"1px solid "+T.purple+"33",borderRadius:6,padding:"2px 8px"}},formatContextLabel(isDynasty,isSF,sKey,tePremium)),
-            React.createElement("span",{style:{fontSize:10,color:T.textDim}},"Values as of "+VALUES_UPDATED_AT),
+            React.createElement("span",{style:{fontSize:10,color:T.textDim}},"Values as of "+formatCalendarDate(VALUES_UPDATED_AT)),
             React.createElement("a",{href:"/fdp-value/",onClick:function(e:any){e.preventDefault();setFdpValuePage(true);window.history.pushState({},"","/fdp-value/");},style:{fontSize:10,color:T.purple,textDecoration:"none",fontWeight:600}},"\u24D8 What is FDP Value?")
           ),
           React.createElement("div",{style:{display:"flex",gap:6,flexWrap:"wrap"}},
@@ -8548,7 +8554,7 @@ export default function App(){
                 React.createElement("div",{style:{fontSize:10,fontWeight:800,color:"#059669",letterSpacing:1}},oddsSource==="api"||oddsSource==="cache"?"THIS WEEK'S GAMES":"ARCHIVED LINES"),
                 React.createElement("div",{style:{background:"#059669",color:"#fff",borderRadius:10,padding:"2px 8px",fontSize:10,fontWeight:800}},games.length),
                 oddsStale&&(oddsSource==="api"||oddsSource==="cache")&&React.createElement("div",{style:{fontSize:9,color:"#f59e0b",fontWeight:600}},"Updating lines\u2026"),
-                !oddsStale&&oddsFetchedAt&&(oddsSource==="api"||oddsSource==="cache")&&React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:500}},"Updated "+new Date(oddsFetchedAt).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})),
+                !oddsStale&&oddsFetchedAt&&(oddsSource==="api"||oddsSource==="cache")&&React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:500}},"Fetched "+new Date(oddsFetchedAt).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})),
                 oddsSource!=="api"&&oddsSource!=="cache"&&React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:600}},"Showing manual lines \u2014 may not reflect current week")
               ),
               games.map(function(g){
@@ -9057,7 +9063,7 @@ export default function App(){
             })
           ),
           React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,marginBottom:16,fontSize:12,color:T.textSub}},
-            React.createElement("span",null,"o")," Values as of "+VALUES_UPDATED_AT
+            React.createElement("span",null,"o")," Values as of "+formatCalendarDate(VALUES_UPDATED_AT)
           ),
           React.createElement("div",{style:{background:darkMode?"#0f2a4a":"#dbeafe",border:"1px solid "+(darkMode?"#3b82f644":"#93c5fd"),borderRadius:10,padding:"12px 14px",marginBottom:24,display:"flex",alignItems:"flex-start",gap:10}},
             React.createElement("span",{style:{color:"#60a5fa",fontSize:14,flexShrink:0,marginTop:1}},"i"),
@@ -9114,7 +9120,7 @@ export default function App(){
             React.createElement("div",{style:{flex:1,marginRight:16}},
               React.createElement("div",{style:{fontWeight:900,fontSize:26,lineHeight:1.15,marginBottom:8,color:T.text}},"Dynasty Market",React.createElement("br",null),"Trends"),
               React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.5,marginBottom:10}},"Buy-low and sell-high opportunities based on value movement"),
-              React.createElement("div",{style:{fontSize:11,color:T.textDim}},"Values as of "+VALUES_UPDATED_AT)
+              React.createElement("div",{style:{fontSize:11,color:T.textDim}},"Values as of "+formatCalendarDate(VALUES_UPDATED_AT))
             ),
             React.createElement("button",{onClick:function(){var cur=marketFilter;setMarketFilter("");setTimeout(function(){setMarketFilter(cur);},50);},style:{padding:"10px 14px",borderRadius:10,border:"none",background:"#2563eb",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",gap:6,flexShrink:0,whiteSpace:"nowrap"}},"↻ Refresh")
           )
@@ -9215,7 +9221,7 @@ export default function App(){
           React.createElement("span",{style:{fontSize:28,color:"#3b82f6",fontWeight:900,lineHeight:1}},"^"),
           React.createElement("div",{style:{fontWeight:900,fontSize:26,color:T.text}},"Player Value Browser")
         ),
-        React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:16}},"Current FDP Values \u00B7 Values as of "+VALUES_UPDATED_AT),
+        React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:16}},"Current FDP Values \u00B7 Values as of "+formatCalendarDate(VALUES_UPDATED_AT)),
         React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:16,marginBottom:12}},
           React.createElement("div",{style:{position:"relative",marginBottom:10}},
             React.createElement("span",{style:{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",color:T.textDim,fontSize:13}},"Q"),
@@ -9897,7 +9903,7 @@ export default function App(){
         !sleeperTrending&&React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"48px 20px",textAlign:"center"}},
           React.createElement("div",{style:{fontSize:36,marginBottom:10}},"📊"),
           React.createElement("div",{style:{fontWeight:700,fontSize:15,marginBottom:6}},"Load Trending Players"),
-          React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:16}},"Pulls live 24-hour add/drop data from Sleeper"),
+          React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:16}},"24-hour add/drop data from Sleeper"),
           React.createElement("button",{onClick:loadSleeperTrending,style:{padding:"11px 24px",borderRadius:10,border:"none",background:T.purple,color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}},"Load Now")
         ),
         sleeperTrending&&React.createElement("div",null,
@@ -9966,7 +9972,7 @@ export default function App(){
           React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:16}},"Pulls actual scoring stats from Sleeper's free API"),
           React.createElement("button",{onClick:loadSleeperStats,style:{padding:"11px 24px",borderRadius:10,border:"none",background:T.purple,color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}},"Load Now")
         ),
-        sleeperStats&&sleeperStats.data&&(function(){var allEntries=Object.entries(sleeperStats.data);var hasData=allEntries.some(function(e){var s=e[1]||{};return (s.pts_ppr||s.pts_half_ppr||s.pts_std||0)>0;});if(!hasData)return React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"48px 20px",textAlign:"center"}},React.createElement("div",{style:{fontSize:36,marginBottom:10}},"📭"),React.createElement("div",{style:{fontWeight:700,fontSize:15,marginBottom:6,color:T.text}},"No Stats Available"),React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.6,maxWidth:280,margin:"0 auto"}},"The NFL is in the offseason. Live stats will be available once the 2026 regular season begins in September."));return null;})(),
+        sleeperStats&&sleeperStats.data&&(function(){var allEntries=Object.entries(sleeperStats.data);var hasData=allEntries.some(function(e){var s=e[1]||{};return (s.pts_ppr||s.pts_half_ppr||s.pts_std||0)>0;});if(!hasData)return React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"48px 20px",textAlign:"center"}},React.createElement("div",{style:{fontSize:36,marginBottom:10}},"📭"),React.createElement("div",{style:{fontWeight:700,fontSize:15,marginBottom:6,color:T.text}},"No Stats Available"),React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.6,maxWidth:280,margin:"0 auto"}},"The NFL is in the offseason. Weekly stats will be available once the 2026 regular season begins in September."));return null;})(),
         sleeperStats&&sleeperStats.data&&React.createElement("div",null,
           React.createElement("div",{style:{fontSize:11,color:T.textSub,fontWeight:600,marginBottom:10}},"TOP SCORERS — WEEK "+sleeperStats.week),
           (function(){
@@ -10356,7 +10362,7 @@ export default function App(){
             React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"18px",marginBottom:12}},
               React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:12}},
                 React.createElement("span",{style:{fontSize:20,color:"#22c55e"}},"\u2197"),
-                React.createElement("span",{style:{fontWeight:800,fontSize:16,color:T.text}},"Live Projections")
+                React.createElement("span",{style:{fontWeight:800,fontSize:16,color:T.text}},"Weekly Projections")
               ),
               React.createElement("div",{style:{fontSize:13,color:T.textSub,marginBottom:4}},"Sleeper Sync"),
               React.createElement("div",{style:{fontWeight:900,fontSize:28,color:T.text,marginBottom:8}},liveProj?liveProj.season+" W"+liveProj.week:"—"),
@@ -10381,7 +10387,7 @@ export default function App(){
         React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"18px",marginBottom:12}},
           React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4}},"Sync Actions"),
           adminSyncStatus.lastSync&&React.createElement("div",{style:{fontSize:11,color:T.green,marginBottom:12}},"✓ "+adminSyncStatus.type+" synced · "+new Date(adminSyncStatus.lastSync).toLocaleTimeString()),
-          [["Sync Players","Update rosters, teams, and status","\uD83D\uDDC4","#3b82f6"],["Sync Values","Pull live Sleeper weekly projections","\u2197","#22c55e"],["Rebuild Player Values","Recalculate all trade values now","\u26E8","#7c3aed"],["Full Pipeline","Sync values + rebuild all","\u26A1","#7c3aed"]].map(function(a){
+          [["Sync Players","Update rosters, teams, and status","\uD83D\uDDC4","#3b82f6"],["Sync Values","Pull Sleeper weekly projections","\u2197","#22c55e"],["Rebuild Player Values","Recalculate all trade values now","\u26E8","#7c3aed"],["Full Pipeline","Sync values + rebuild all","\u26A1","#7c3aed"]].map(function(a){
             var sel=adminSyncSel===a[0];
             var isSyncing=adminSyncStatus.syncing&&adminSyncStatus.type===a[0];
             return React.createElement("div",{key:a[0],onClick:function(){

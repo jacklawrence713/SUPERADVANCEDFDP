@@ -69,7 +69,7 @@ describe('homepage: FDP Value', () => {
   })
 
   it('shows VALUES_UPDATED_AT in FDP Value section', () => {
-    expect(afdpSrc).toContain('Last updated: "+VALUES_UPDATED_AT')
+    expect(afdpSrc).toContain('Last updated: "+formatCalendarDate(VALUES_UPDATED_AT)')
   })
 
   it('FDP Value section mentions format-aware', () => {

@@ -545,7 +545,7 @@ describe('product statistics: centralized and truthful', () => {
   })
 
   it('VALUES_UPDATED_AT is used for market trends timestamp', () => {
-    expect(afdpSrc).toContain('"Values as of "+VALUES_UPDATED_AT')
+    expect(afdpSrc).toContain('"Values as of "+formatCalendarDate(VALUES_UPDATED_AT)')
   })
 
   it('SCORING_FORMATS count matches actual base scoring options', () => {
@@ -703,7 +703,7 @@ describe('FDP Value presentation: no fake history or raw values', () => {
   })
 
   it('VALUES_UPDATED_AT used for trending tab timestamp', () => {
-    expect(afdpSrc).toContain('" Values as of "+VALUES_UPDATED_AT')
+    expect(afdpSrc).toContain('" Values as of "+formatCalendarDate(VALUES_UPDATED_AT)')
   })
 
   it('/fdp-value/ page exists in vite.config.ts', () => {
