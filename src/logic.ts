@@ -672,6 +672,38 @@ export var HISTORY_PAGE_SIZE = 500;
 
 // ── FDP Value History Logic ──────────────────────────────────
 
+export interface ValuationFactors {
+  /** Schema version for forward compatibility */
+  v: number;
+  /**
+   * Which canonical calculation path determined the final FDP Value.
+   *
+   * Dynasty paths:
+   *   'ktc'          — ktcVal present; result = round(ktcVal * ageBonus * modifiers)
+   *   'rank_decay'   — no ktcVal; result = round(pkCurve(posRank) * ageBonus * modifiers)
+   *   'proj_floor'   — no ktcVal, non-QB; projection floor exceeded rank curve
+   *
+   * Redraft paths:
+   *   'vbd'          — baseTV (from VBD) dominated rank-decay floor
+   *   'rank_floor'   — rank-decay floor dominated baseTV
+   */
+  path: string;
+  /** Raw fantasy points projection used (sKey-based, before dynasty/TEP boosts) */
+  projection: number;
+  /** Positional baseline subtracted for VBD */
+  positional_baseline: number;
+  /** Value before 9,999 display cap */
+  raw_value: number;
+  /** Player age at snapshot time */
+  age: number;
+  /** Positional rank from VBD sort */
+  pos_rank: number;
+  /** Market value input — dynasty only, when present */
+  ktc_value?: number;
+  /** Dynasty age bonus multiplier — dynasty only */
+  dynasty_bonus?: number;
+}
+
 export interface FdpSnapshot {
   id?: number;  // bigint identity — stable cursor key for keyset pagination
   player_slug: string;
@@ -680,6 +712,7 @@ export interface FdpSnapshot {
   values_version: string;
   effective_at: string;
   recorded_at: string;
+  valuation_factors?: ValuationFactors | null;
 }
 
 export interface FdpValueChange {
@@ -838,4 +871,171 @@ export function isSnapshotContextSupported(ctx: {
       && c.idp === ctx.idp) return true;
   }
   return false;
+}
+
+// ── Value Movement Explanation ──────────────────────────────
+
+// Materiality thresholds — minimum meaningful change to surface as a signal.
+// Suppresses noise from tiny floating-point differences or insignificant shifts.
+export var SIGNAL_MATERIALITY = {
+  projection: 2.0,        // fantasy points
+  ktc_value: 50,           // market-value integer units
+  dynasty_bonus: 0.005,    // multiplier delta
+  positional_baseline: 2.0, // fantasy points
+};
+
+export interface ValueChangeSignal {
+  type: string;  // projection_change | market_input_change | age_curve_change | baseline_change | rank_change | cap_effect
+  label: string;
+  previousValue: number | null;
+  currentValue: number | null;
+  delta: number | null;
+  /** 'contributing' = proven to participate in calculation path; 'recorded_context' = recorded change not proven to drive value; 'display' = display-layer effect */
+  classification: 'contributing' | 'recorded_context' | 'display';
+}
+
+export interface ValueChangeExplanation {
+  direction: 'increased' | 'decreased' | 'unchanged';
+  delta: number;
+  percentChange: number | null;
+  signals: ValueChangeSignal[];
+  /** 'detailed' = both snapshots have factors; 'partial' = only one does; 'value_only' = neither; 'first_snapshot' = no prior */
+  factorAvailability: 'detailed' | 'partial' | 'value_only' | 'first_snapshot';
+}
+
+/**
+ * Find the two snapshots used for a range comparison.
+ * Returns the latest snapshot and the most recent snapshot at or before daysAgo from the latest.
+ * Snapshots must be sorted newest-first by effective_at.
+ */
+export function findComparisonSnapshots(
+  snapshots: FdpSnapshot[],
+  daysAgo: number,
+): { current: FdpSnapshot; prior: FdpSnapshot | null } | null {
+  if (snapshots.length === 0) return null;
+  var latest = snapshots[0];
+  if (snapshots.length < 2) return { current: latest, prior: null };
+  var cutoff = new Date(latest.effective_at || latest.recorded_at);
+  cutoff.setDate(cutoff.getDate() - daysAgo);
+  var cutoffMs = cutoff.getTime();
+  for (var i = 1; i < snapshots.length; i++) {
+    var snapDate = snapshots[i].effective_at || snapshots[i].recorded_at;
+    if (new Date(snapDate).getTime() <= cutoffMs) {
+      return { current: latest, prior: snapshots[i] };
+    }
+  }
+  return { current: latest, prior: null };
+}
+
+/**
+ * Determine whether a factor is a contributing model change for a given valuation path.
+ *
+ * Dynasty paths:
+ *   'ktc'        — ktcVal * ageBonus * modifiers → ktc_value and dynasty_bonus are contributing
+ *   'rank_decay' — pkCurve(posRank) * ageBonus * modifiers → pos_rank and dynasty_bonus are contributing
+ *   'proj_floor' — projSKey floor exceeded rank curve → projection, pos_rank, dynasty_bonus are contributing
+ *
+ * Redraft paths:
+ *   'vbd'        — baseTV dominates → projection and positional_baseline are contributing (they produce baseTV)
+ *   'rank_floor' — rank floor dominates → pos_rank is contributing
+ */
+var PATH_CONTRIBUTING_FACTORS: Record<string, string[]> = {
+  ktc: ['ktc_value', 'dynasty_bonus'],
+  rank_decay: ['pos_rank', 'dynasty_bonus'],
+  proj_floor: ['projection', 'pos_rank', 'dynasty_bonus'],
+  vbd: ['projection', 'positional_baseline'],
+  rank_floor: ['pos_rank'],
+};
+
+/**
+ * Deterministic explanation of why FDP Value changed between two snapshots.
+ *
+ * Returns ONLY factual, computable signals derived from recorded valuation factors.
+ * Never fabricates causality — only reports structured model inputs.
+ *
+ * Signal classification is PATH-AWARE:
+ *   'contributing'      — factor proven to participate in the current snapshot's calculation path
+ *   'recorded_context'  — factor changed but did not participate in the active calculation path
+ *   'display'           — display-layer effect (e.g. 9,999 cap)
+ */
+export function explainValueMovement(
+  previous: FdpSnapshot | null,
+  current: FdpSnapshot,
+): ValueChangeExplanation {
+  var noDelta = current.value - current.value; // structural zero, not a hardcoded historical value
+  if (!previous) {
+    return { direction: 'unchanged', delta: noDelta, percentChange: null, signals: [], factorAvailability: 'first_snapshot' };
+  }
+
+  var delta = current.value - previous.value;
+  var direction: 'increased' | 'decreased' | 'unchanged' = delta > 0 ? 'increased' : delta < 0 ? 'decreased' : 'unchanged';
+  var pct: number | null = previous.value === 0 ? (delta === 0 ? 0 : null) : Math.round((delta / previous.value) * 1000) / 10;
+
+  var pf = previous.valuation_factors;
+  var cf = current.valuation_factors;
+
+  // Neither snapshot has factor data
+  if (!pf && !cf) {
+    return { direction, delta, percentChange: pct, signals: [], factorAvailability: 'value_only' };
+  }
+  // Only one snapshot has factor data
+  if (!pf || !cf) {
+    return { direction, delta, percentChange: pct, signals: [], factorAvailability: 'partial' };
+  }
+
+  // Both have factor data — path-aware deterministic comparison
+  var signals: ValueChangeSignal[] = [];
+  var currContributing = PATH_CONTRIBUTING_FACTORS[cf.path] || [];
+  var prevContributing = PATH_CONTRIBUTING_FACTORS[pf.path] || [];
+
+  function isContributing(factor: string): boolean {
+    return currContributing.indexOf(factor) >= 0 || prevContributing.indexOf(factor) >= 0;
+  }
+
+  // 1. Market-value input change
+  var prevKtc = pf.ktc_value ?? null;
+  var currKtc = cf.ktc_value ?? null;
+  if (prevKtc !== null && currKtc !== null) {
+    var ktcDelta = currKtc - prevKtc;
+    if (Math.abs(ktcDelta) >= SIGNAL_MATERIALITY.ktc_value) {
+      signals.push({ type: 'market_input_change', label: 'Market-value input', previousValue: prevKtc, currentValue: currKtc, delta: ktcDelta, classification: isContributing('ktc_value') ? 'contributing' : 'recorded_context' });
+    }
+  } else if (prevKtc !== currKtc) {
+    signals.push({ type: 'market_input_change', label: 'Market-value input', previousValue: prevKtc, currentValue: currKtc, delta: null, classification: isContributing('ktc_value') ? 'contributing' : 'recorded_context' });
+  }
+
+  // 2. Projection change
+  var projDelta = cf.projection - pf.projection;
+  if (Math.abs(projDelta) >= SIGNAL_MATERIALITY.projection) {
+    signals.push({ type: 'projection_change', label: 'Projection', previousValue: +pf.projection.toFixed(1), currentValue: +cf.projection.toFixed(1), delta: +projDelta.toFixed(1), classification: isContributing('projection') ? 'contributing' : 'recorded_context' });
+  }
+
+  // 3. Age curve change (dynasty — dynastyBonus multiplier)
+  if (cf.dynasty_bonus !== undefined && pf.dynasty_bonus !== undefined) {
+    var abDelta = cf.dynasty_bonus - pf.dynasty_bonus;
+    if (Math.abs(abDelta) >= SIGNAL_MATERIALITY.dynasty_bonus) {
+      signals.push({ type: 'age_curve_change', label: 'Age adjustment', previousValue: +pf.dynasty_bonus.toFixed(3), currentValue: +cf.dynasty_bonus.toFixed(3), delta: +abDelta.toFixed(3), classification: isContributing('dynasty_bonus') ? 'contributing' : 'recorded_context' });
+    }
+  }
+
+  // 4. Positional baseline change
+  var blDelta = cf.positional_baseline - pf.positional_baseline;
+  if (Math.abs(blDelta) >= SIGNAL_MATERIALITY.positional_baseline) {
+    signals.push({ type: 'baseline_change', label: 'Positional baseline', previousValue: +pf.positional_baseline.toFixed(1), currentValue: +cf.positional_baseline.toFixed(1), delta: +blDelta.toFixed(1), classification: isContributing('positional_baseline') ? 'contributing' : 'recorded_context' });
+  }
+
+  // 5. Positional rank change — classification depends on valuation path
+  var rankDelta = cf.pos_rank - pf.pos_rank;
+  if (rankDelta !== 0) {
+    signals.push({ type: 'rank_change', label: 'Positional rank', previousValue: pf.pos_rank, currentValue: cf.pos_rank, delta: rankDelta, classification: isContributing('pos_rank') ? 'contributing' : 'recorded_context' });
+  }
+
+  // 6. Display cap effect
+  var currCapped = current.value === 9999 && cf.raw_value > 9999;
+  var prevCapped = previous.value === 9999 && pf.raw_value > 9999;
+  if (currCapped || prevCapped) {
+    signals.push({ type: 'cap_effect', label: 'Display cap (9,999)', previousValue: prevCapped ? pf.raw_value : previous.value, currentValue: currCapped ? cf.raw_value : current.value, delta: cf.raw_value - pf.raw_value, classification: 'display' });
+  }
+
+  return { direction, delta, percentChange: pct, signals, factorAvailability: 'detailed' };
 }

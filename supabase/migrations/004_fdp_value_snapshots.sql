@@ -47,6 +47,7 @@ create table public.fdp_value_snapshots (
   values_version text        not null,
   effective_at  date         not null,  -- canonical value date (for chart X-axis)
   recorded_at   timestamptz  not null default now(),  -- database ingestion time (audit)
+  valuation_factors jsonb    default null,  -- structured valuation inputs for "why value changed" (null for legacy snapshots)
   created_at    timestamptz  not null default now()
 );
 

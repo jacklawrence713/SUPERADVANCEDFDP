@@ -150,6 +150,41 @@ Deno.serve(async (req: Request) => {
       if (typeof s.value !== "number" || !Number.isInteger(s.value) || s.value < 0 || s.value > 9999) {
         return jsonErr(`Row ${i}: value must be integer 0-9999, got ${s.value}`, 400, cors);
       }
+      // Validate optional valuation_factors
+      if (s.valuation_factors != null) {
+        const vf = s.valuation_factors;
+        if (typeof vf !== "object" || Array.isArray(vf)) {
+          return jsonErr(`Row ${i}: valuation_factors must be an object`, 400, cors);
+        }
+        // Schema version
+        if (typeof vf.v !== "number" || !Number.isInteger(vf.v) || vf.v < 1) {
+          return jsonErr(`Row ${i}: valuation_factors.v must be a positive integer`, 400, cors);
+        }
+        // Valuation path
+        const VALID_PATHS = ["ktc", "rank_decay", "proj_floor", "vbd", "rank_floor"];
+        if (typeof vf.path !== "string" || !VALID_PATHS.includes(vf.path)) {
+          return jsonErr(`Row ${i}: valuation_factors.path must be one of: ${VALID_PATHS.join(", ")}`, 400, cors);
+        }
+        // Required numeric factor fields
+        for (const field of ["projection", "positional_baseline", "raw_value", "age", "pos_rank"] as const) {
+          if (typeof vf[field] !== "number" || !Number.isFinite(vf[field])) {
+            return jsonErr(`Row ${i}: valuation_factors.${field} must be a finite number`, 400, cors);
+          }
+        }
+        if (vf.pos_rank < 1 || !Number.isInteger(vf.pos_rank)) {
+          return jsonErr(`Row ${i}: valuation_factors.pos_rank must be a positive integer`, 400, cors);
+        }
+        if (vf.raw_value < 0) {
+          return jsonErr(`Row ${i}: valuation_factors.raw_value must be >= 0`, 400, cors);
+        }
+        // Optional factor fields
+        if (vf.ktc_value !== undefined && (typeof vf.ktc_value !== "number" || !Number.isFinite(vf.ktc_value) || vf.ktc_value < 0)) {
+          return jsonErr(`Row ${i}: valuation_factors.ktc_value must be a non-negative number`, 400, cors);
+        }
+        if (vf.dynasty_bonus !== undefined && (typeof vf.dynasty_bonus !== "number" || !Number.isFinite(vf.dynasty_bonus) || vf.dynasty_bonus < 0)) {
+          return jsonErr(`Row ${i}: valuation_factors.dynasty_bonus must be a non-negative number`, 400, cors);
+        }
+      }
     }
 
     const db = createClient(supabaseUrl, serviceRoleKey);
@@ -215,6 +250,7 @@ Deno.serve(async (req: Request) => {
     // Step 2: Insert all snapshot rows
     const rows = snapshots.map((s: {
       player_slug: string; player_name: string; pos: string; value: number;
+      valuation_factors?: Record<string, number> | null;
     }) => ({
       batch_id: batchId,
       player_slug: s.player_slug,
@@ -228,6 +264,7 @@ Deno.serve(async (req: Request) => {
       idp: ctxIDP,
       values_version,
       effective_at: effectiveDate,
+      valuation_factors: s.valuation_factors ?? null,
     }));
 
     const { error: insertErr } = await db.from("fdp_value_snapshots").insert(rows);

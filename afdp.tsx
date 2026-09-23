@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { computeDynastyTradeVal, computeRedraftTradeVal, REDRAFT_TV_MULT, VALUES_UPDATED_AT, PRODUCT_STATS, formatContextLabel, explainFdpValue, generateTradeCandidates, computeTeamPosValues, computeTeamNeeds, computePosRanksForTeams, computeValueChange, isSnapshotContextSupported, normalizeSnapshotContext, HISTORY_PAGE_SIZE } from "./src/logic";
+import { computeDynastyTradeVal, computeRedraftTradeVal, REDRAFT_TV_MULT, VALUES_UPDATED_AT, PRODUCT_STATS, formatContextLabel, explainFdpValue, generateTradeCandidates, computeTeamPosValues, computeTeamNeeds, computePosRanksForTeams, computeValueChange, isSnapshotContextSupported, normalizeSnapshotContext, HISTORY_PAGE_SIZE, findComparisonSnapshots, explainValueMovement } from "./src/logic";
 import type { FdpSnapshot } from "./src/logic";
 import type { ValueFactor } from "./src/logic";
 
@@ -2778,7 +2778,7 @@ export default function App(){
     (async function(){
       var all:FdpSnapshot[]=[];var hasMore=true;var cursorDate:string|null=null;var cursorId:number|null=null;var seen=new Set<number>();
       while(hasMore&&!cancelled){
-        var q=authClient.from("fdp_value_snapshots").select("id,player_slug,player_name,value,values_version,effective_at,recorded_at").eq("player_slug",slug).eq("league_type",ctx.leagueType).eq("scoring",ctx.scoring).eq("superflex",ctx.superflex).eq("te_premium",ctx.tePremium).eq("idp",ctx.idp).order("effective_at",{ascending:false}).order("id",{ascending:false}).limit(HISTORY_PAGE_SIZE);
+        var q=authClient.from("fdp_value_snapshots").select("id,player_slug,player_name,value,values_version,effective_at,recorded_at,valuation_factors").eq("player_slug",slug).eq("league_type",ctx.leagueType).eq("scoring",ctx.scoring).eq("superflex",ctx.superflex).eq("te_premium",ctx.tePremium).eq("idp",ctx.idp).order("effective_at",{ascending:false}).order("id",{ascending:false}).limit(HISTORY_PAGE_SIZE);
         if(cursorDate!==null&&cursorId!==null){q=q.or("effective_at.lt."+cursorDate+",and(effective_at.eq."+cursorDate+",id.lt."+cursorId+")");}
         var res=await q;
         if(res.error){if(!cancelled){setPpHistoryLoading(false);setPpHistoryError(true);}return;}
@@ -4291,6 +4291,70 @@ export default function App(){
                 React.createElement("span",{style:{fontSize:12,fontWeight:700,color:ch.delta>0?T.green:ch.delta<0?T.red:T.textDim}},(ch.delta>0?"+":"")+(ch.delta as number).toLocaleString()),
                 ch.pctChange!=null&&React.createElement("span",{style:{fontSize:10,color:ch.delta>0?T.green:ch.delta<0?T.red:T.textDim}},"("+(ch.pctChange>0?"+":"")+ch.pctChange.toFixed(1)+"%)")
               ):React.createElement("div",{style:{fontSize:12,fontWeight:700,color:T.purple,marginTop:8}},ppVal.toLocaleString()),
+              // Why value changed — deterministic model explanation
+              ch.delta!=null&&(function(){
+                var pair=findComparisonSnapshots(ppHistory,rangeDays);
+                if(!pair||!pair.prior)return null;
+                var expl=explainValueMovement(pair.prior,pair.current);
+                var contributing=expl.signals.filter(function(s){return s.classification==="contributing";});
+                var context=expl.signals.filter(function(s){return s.classification==="recorded_context";});
+                var display=expl.signals.filter(function(s){return s.classification==="display";});
+                return React.createElement("div",{style:{marginTop:12,borderTop:"1px solid "+T.border,paddingTop:10}},
+                  React.createElement("div",{style:{fontSize:10,fontWeight:800,color:T.textDim,letterSpacing:0.5,marginBottom:6}},"WHAT CHANGED IN THE FDP MODEL"),
+                  expl.factorAvailability==="value_only"?React.createElement("div",{style:{fontSize:11,color:T.textSub,lineHeight:1.6}},
+                    "FDP Value changed by "+(expl.delta>0?"+":"")+expl.delta.toLocaleString()+", but detailed factor history was not recorded for this update."
+                  ):
+                  expl.factorAvailability==="partial"?React.createElement("div",{style:{fontSize:11,color:T.textSub,lineHeight:1.6}},
+                    "FDP Value changed by "+(expl.delta>0?"+":"")+expl.delta.toLocaleString()+". Factor history is only available for one of the two comparison snapshots."
+                  ):
+                  expl.direction==="unchanged"?React.createElement("div",{style:{fontSize:11,color:T.textSub}},"No change in displayed FDP Value."+
+                    (expl.signals.length>0?" Some recorded model inputs changed, but the displayed FDP Value remained unchanged.":"")
+                  ):
+                  React.createElement("div",null,
+                    // Contributing model changes — factors proven to participate in calculation
+                    contributing.length>0&&React.createElement("div",null,
+                      contributing.map(function(sig,si){
+                        var isUp=sig.delta!==null&&sig.delta>0;var isDown=sig.delta!==null&&sig.delta<0;
+                        return React.createElement("div",{key:si,style:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"4px 0",borderBottom:si<contributing.length-1?"1px solid "+T.border+"33":"none"}},
+                          React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6}},
+                            React.createElement("span",{style:{fontSize:10,color:isUp?T.green:isDown?T.red:T.textDim,fontWeight:800}},isUp?"+":isDown?"-":"="),
+                            React.createElement("span",{style:{fontSize:11,fontWeight:600,color:T.text}},sig.label)
+                          ),
+                          React.createElement("div",{style:{display:"flex",alignItems:"center",gap:4,fontSize:11,color:T.textSub}},
+                            sig.previousValue!=null&&React.createElement("span",null,typeof sig.previousValue==="number"?sig.previousValue.toLocaleString():sig.previousValue),
+                            sig.previousValue!=null&&sig.currentValue!=null&&React.createElement("span",{style:{color:T.textDim}},"\u2192"),
+                            sig.currentValue!=null&&React.createElement("span",{style:{fontWeight:700,color:isUp?T.green:isDown?T.red:T.text}},typeof sig.currentValue==="number"?sig.currentValue.toLocaleString():sig.currentValue)
+                          )
+                        );
+                      })
+                    ),
+                    // Below-threshold state — value moved but no contributing signal exceeded materiality
+                    contributing.length===0&&React.createElement("div",{style:{fontSize:11,color:T.textSub,lineHeight:1.6}},
+                      "FDP Value "+(expl.direction==="increased"?"increased":"decreased")+" by "+(expl.delta>0?"+":"")+expl.delta.toLocaleString()+". Recorded changes were below display thresholds."
+                    ),
+                    // Recorded context changes (not independently causal)
+                    context.length>0&&React.createElement("div",{style:{marginTop:contributing.length>0?6:0}},
+                      React.createElement("div",{style:{fontSize:9,fontWeight:700,color:T.textDim,letterSpacing:0.3,marginBottom:3}},"OTHER RECORDED CHANGES"),
+                      context.map(function(sig,si){
+                        return React.createElement("div",{key:"ctx-"+si,style:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"3px 0",fontSize:10,color:T.textDim}},
+                          React.createElement("span",null,sig.label),
+                          React.createElement("span",null,
+                            sig.previousValue!=null?sig.previousValue:"",
+                            sig.previousValue!=null&&sig.currentValue!=null?" \u2192 ":"",
+                            sig.currentValue!=null?sig.currentValue:""
+                          )
+                        );
+                      })
+                    ),
+                    // Display effects (cap)
+                    display.map(function(sig,si){
+                      return React.createElement("div",{key:"disp-"+si,style:{fontSize:10,color:T.textDim,marginTop:4}},
+                        sig.label+": model value "+(sig.previousValue!=null?sig.previousValue:"")+(sig.previousValue!=null&&sig.currentValue!=null?" \u2192 ":"")+(sig.currentValue!=null?sig.currentValue:"")
+                      );
+                    })
+                  )
+                );
+              })(),
               // Accessible table fallback
               pts.length>=2&&React.createElement("details",{style:{marginTop:8}},
                 React.createElement("summary",{style:{fontSize:10,color:T.textDim,cursor:"pointer"}},"View data table"),

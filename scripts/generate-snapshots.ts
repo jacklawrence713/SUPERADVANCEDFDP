@@ -121,15 +121,55 @@ function generateDynastyValues(players: any[], ctx: SnapshotContext) {
   });
 
   // Compute dynasty trade values using canonical helper
-  return withVbd.map((p) => ({
-    player_slug: playerSlug(p.name),
-    player_name: p.name,
-    pos: p.pos,
-    value: Math.min(9999, Math.max(0, computeDynastyTradeVal(
-      p.pos, p.age, p.ktcVal, p._posRank, p.proj?.[sKey] || 0,
+  return withVbd.map((p) => {
+    var projSKey = p.proj?.[sKey] || 0;
+    var cappedVal = Math.min(9999, Math.max(0, computeDynastyTradeVal(
+      p.pos, p.age, p.ktcVal, p._posRank, projSKey,
       { isSF, sKey, tePremium, idpMode: ctx.idp },
-    ))),
-  }));
+    )));
+    var rawVal = Math.max(0, computeDynastyTradeVal(
+      p.pos, p.age, p.ktcVal, p._posRank, projSKey,
+      { isSF, sKey, tePremium, idpMode: ctx.idp },
+      true,
+    ));
+    // Determine valuation path — mirrors computeDynastyTradeVal branching
+    var dynPath: string;
+    if (p.ktcVal) {
+      dynPath = 'ktc';
+    } else {
+      var isIDP = p.pos === "DL" || p.pos === "LB" || p.pos === "DB";
+      var cfg2 = p.pos === "QB" ? (isSF ? { pk: 7660, dc: 0.927 } : { pk: 5800, dc: 0.912 })
+        : p.pos === "RB" ? { pk: 9987, dc: 0.921 }
+        : p.pos === "TE" ? { pk: 8756, dc: 0.833 }
+        : p.pos === "DL" ? { pk: 5500, dc: 0.940 }
+        : p.pos === "LB" ? { pk: 4500, dc: 0.935 }
+        : p.pos === "DB" ? { pk: 4200, dc: 0.930 }
+        : { pk: 9950, dc: 0.927 };
+      var ab2 = dynastyBonus(p.pos, p.age);
+      var rv2 = cfg2.pk * Math.pow(cfg2.dc, p._posRank - 1);
+      var rankVal2 = Math.round(Math.max(100, Math.min(9500, rv2 * ab2)));
+      var rawFloor2 = p.pos !== "QB" ? Math.round((projSKey || 0) * (isIDP ? 5 : 15) * ab2) : 0;
+      dynPath = (p.pos !== "QB" && Math.min(3500, rawFloor2) > rankVal2) ? 'proj_floor' : 'rank_decay';
+    }
+    var factors: Record<string, any> = {
+      v: 1,
+      path: dynPath,
+      projection: projSKey,
+      positional_baseline: baseVal[p.pos] || 0,
+      raw_value: rawVal,
+      age: p.age,
+      pos_rank: p._posRank,
+      dynasty_bonus: dynastyBonus(p.pos, p.age),
+    };
+    if (p.ktcVal) factors.ktc_value = p.ktcVal;
+    return {
+      player_slug: playerSlug(p.name),
+      player_name: p.name,
+      pos: p.pos,
+      value: cappedVal,
+      valuation_factors: factors,
+    };
+  });
 }
 
 /**
@@ -185,13 +225,27 @@ function generateRedraftValues(players: any[], ctx: SnapshotContext) {
   // Compute redraft trade values using canonical helper
   return withVbd.map((p) => {
     const baseTV = Math.round(p._vbd * REDRAFT_TV_MULT);
+    var val = Math.min(9999, Math.max(0, computeRedraftTradeVal(
+      p.pos, p._posRank, baseTV, { isSF },
+    )));
+    // Determine valuation path — mirrors computeRedraftTradeVal branching
+    // Uses computeRedraftTradeVal indirectly: if final value != clamped baseTV, floor was used
+    var clampedBaseTV = Math.min(9500, Math.max(100, baseTV));
+    var rdPath = val !== clampedBaseTV ? 'rank_floor' : 'vbd';
     return {
       player_slug: playerSlug(p.name),
       player_name: p.name,
       pos: p.pos,
-      value: Math.min(9999, Math.max(0, computeRedraftTradeVal(
-        p.pos, p._posRank, baseTV, { isSF },
-      ))),
+      value: val,
+      valuation_factors: {
+        v: 1,
+        path: rdPath,
+        projection: p.proj?.[sKey] || p.proj?.PPR || 0,
+        positional_baseline: baseVal[p.pos] || 0,
+        raw_value: val,
+        age: p.age,
+        pos_rank: p._posRank,
+      },
     };
   });
 }
