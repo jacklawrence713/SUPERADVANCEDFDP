@@ -72,16 +72,25 @@ describe('odds security: Edge Function normalizes spreads/totals', () => {
   })
 
   it('extracts spreads market from bookmaker response', () => {
-    expect(fetchOddsSrc).toContain('m.key === "spreads"')
+    expect(fetchOddsSrc).toContain('mkt.key === "spreads"')
   })
 
   it('extracts totals market from bookmaker response', () => {
-    expect(fetchOddsSrc).toContain('m.key === "totals"')
+    expect(fetchOddsSrc).toContain('mkt.key === "totals"')
   })
 
-  it('prefers DraftKings bookmaker', () => {
-    expect(fetchOddsSrc).toContain('b.key === "draftkings"')
+  it('uses multi-bookmaker consensus via median', () => {
+    expect(fetchOddsSrc).toContain('function median')
+    expect(fetchOddsSrc).toContain('validSpreads')
+    expect(fetchOddsSrc).toContain('validTotals')
+    expect(fetchOddsSrc).toContain('median(validSpreads')
+    expect(fetchOddsSrc).toContain('median(validTotals)')
   })
+
+
+
+
+
 })
 
 // ── Provider error handling ─────────────────────────────────────
@@ -156,9 +165,9 @@ describe('odds security: stale hardcoded data is not labeled as current', () => 
 // ── No new markets added ────────────────────────────────────────
 
 describe('odds security: no scope expansion', () => {
-  it('Edge Function only requests spreads and totals', () => {
+  it('Edge Function requests spreads and totals (game lines only)', () => {
     expect(fetchOddsSrc).toContain('markets=spreads,totals')
-    expect(fetchOddsSrc).not.toContain('markets=spreads,totals,h2h')
+    expect(fetchOddsSrc).not.toContain('h2h')
     expect(fetchOddsSrc).not.toContain('player_pass_yds')
     expect(fetchOddsSrc).not.toContain('player_anytime_td')
   })
@@ -391,9 +400,10 @@ describe('odds security: Edge Function lease parameter is fixed', () => {
   })
 
   it('request body cannot alter lease duration', () => {
-    // The Edge Function does not parse or use request body for the RPC call
-    expect(fetchOddsSrc).not.toContain('req.json()')
+    // The Edge Function parses body only for mode validation (server-side allowlist),
+    // never for lease parameters. req.clone().json() is used, not req.json().
     expect(fetchOddsSrc).not.toContain('req.text()')
+    expect(fetchOddsSrc).toContain('ALLOWED_MODES')
   })
 })
 

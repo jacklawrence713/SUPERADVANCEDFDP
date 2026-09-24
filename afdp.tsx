@@ -3079,7 +3079,7 @@ export default function App(){
   var [sitS1,setSitS1]=useState("");
   var [sitS2,setSitS2]=useState("");
   var [sitFormat,setSitFormat]=useState("PPR");
-  var [oddsData,setOddsData]=useState<{[t:string]:{spread:number,total:number,opp:string}}|null>(null);
+  var [oddsData,setOddsData]=useState<{[t:string]:{spread:number,total:number,opp:string,eventId?:string,homeTeam?:string,awayTeam?:string,commenceTime?:string,spreadBookmakers?:number,totalBookmakers?:number}}|null>(null);
   var [oddsSource,setOddsSource]=useState<string>("none");
   var [oddsFetchedAt,setOddsFetchedAt]=useState<string>("");
   var [oddsStale,setOddsStale]=useState(false);
@@ -8511,7 +8511,7 @@ export default function App(){
 
       // VEGAS LINES
       rankSubTab==="vegas"&&(function(){
-        var games=oddsData?Object.keys(oddsData).filter(function(team){var g=oddsData[team];return g&&g.spread<=0;}).map(function(homeTeam){var g=oddsData[homeTeam];return{home:homeTeam,away:g.opp,spread:g.spread,total:g.total};}).sort(function(a,b){return a.spread-b.spread;}):[];
+        var games=oddsData?(function(){var eventMap:any={};Object.keys(oddsData).forEach(function(team){var g=oddsData[team];if(!g)return;if(!g.eventId)return;if(!eventMap[g.eventId]){eventMap[g.eventId]=g;}});return Object.values(eventMap).filter(function(g:any){return g.spread!==null||g.total!==null;}).sort(function(a:any,b:any){if(a.total===null&&b.total===null)return 0;if(a.total===null)return 1;if(b.total===null)return-1;return b.total-a.total;}).map(function(g:any){return{home:g.homeTeam,away:g.awayTeam,spread:g.spread,total:g.total,eventId:g.eventId};});})():[];
         var hasData=games.length>0;
         var TEAM_FULL:{[k:string]:string}={"ARI":"Cardinals","ATL":"Falcons","BAL":"Ravens","BUF":"Bills","CAR":"Panthers","CHI":"Bears","CIN":"Bengals","CLE":"Browns","DAL":"Cowboys","DEN":"Broncos","DET":"Lions","GB":"Packers","HOU":"Texans","IND":"Colts","JAX":"Jaguars","KC":"Chiefs","LAC":"Chargers","LAR":"Rams","LV":"Raiders","MIA":"Dolphins","MIN":"Vikings","NE":"Patriots","NO":"Saints","NYG":"Giants","NYJ":"Jets","PHI":"Eagles","PIT":"Steelers","SF":"49ers","SEA":"Seahawks","TB":"Buccaneers","TEN":"Titans","WAS":"Commanders"};
         var sbTier=function(i:number){return i<4?"#22c55e":i<10?"#4ade80":i<17?"#94a3b8":i<24?"#fb923c":"#f87171";};

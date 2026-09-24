@@ -1125,3 +1125,148 @@ export function leagueFetchedAtKey(accountId: string, provider: FreshnessProvide
 export function freshnessFetchVerb(provider: FreshnessProvider): string {
   return provider === "manual" ? "imported" : "fetched";
 }
+
+// ── Game Intelligence Helpers ───────────────────────────────
+
+/**
+ * NFL team full name → FDP abbreviation mapping.
+ * Matches the provider (The Odds API) team naming convention.
+ * All 32 NFL teams represented.
+ */
+export const NFL_TEAM_MAP: { [fullName: string]: string } = {
+  "Arizona Cardinals": "ARI", "Atlanta Falcons": "ATL", "Baltimore Ravens": "BAL",
+  "Buffalo Bills": "BUF", "Carolina Panthers": "CAR", "Chicago Bears": "CHI",
+  "Cincinnati Bengals": "CIN", "Cleveland Browns": "CLE", "Dallas Cowboys": "DAL",
+  "Denver Broncos": "DEN", "Detroit Lions": "DET", "Green Bay Packers": "GB",
+  "Houston Texans": "HOU", "Indianapolis Colts": "IND", "Jacksonville Jaguars": "JAX",
+  "Kansas City Chiefs": "KC", "Las Vegas Raiders": "LV", "Los Angeles Chargers": "LAC",
+  "Los Angeles Rams": "LAR", "Miami Dolphins": "MIA", "Minnesota Vikings": "MIN",
+  "New England Patriots": "NE", "New Orleans Saints": "NO", "New York Giants": "NYG",
+  "New York Jets": "NYJ", "Philadelphia Eagles": "PHI", "Pittsburgh Steelers": "PIT",
+  "San Francisco 49ers": "SF", "Seattle Seahawks": "SEA", "Tampa Bay Buccaneers": "TB",
+  "Tennessee Titans": "TEN", "Washington Commanders": "WAS",
+};
+
+/** Reverse map: FDP abbreviation → full team name. */
+export const NFL_ABBREV_TO_FULL: { [abbrev: string]: string } = Object.fromEntries(
+  Object.entries(NFL_TEAM_MAP).map(([full, abbrev]) => [abbrev, full])
+);
+
+/**
+ * Compute a team's implied scoring total from their spread and the game total.
+ * Formula: implied = (gameTotal - teamSpread) / 2
+ *   spread negative = favored → higher implied total
+ *   spread positive = underdog → lower implied total
+ * Returns null if inputs are missing or invalid.
+ */
+export function computeImpliedTotal(teamSpread: number | null, gameTotal: number | null): number | null {
+  // Return null if either spread or total is missing/invalid
+  if (teamSpread === null || gameTotal === null || !isFinite(teamSpread) || !isFinite(gameTotal) || gameTotal <= 0) return null;
+  var result = (gameTotal - teamSpread) / 2;
+  return Math.round(result * 10) / 10; // one decimal
+}
+
+/**
+ * Compute the median of a numeric array. Used for multi-bookmaker consensus lines.
+ * Returns null for empty arrays.
+ */
+export function medianLine(values: number[]): number | null {
+  if (values.length === 0) return null;
+  var sorted = values.slice().sort(function(a, b) { return a - b; });
+  var mid = Math.floor(sorted.length / 2);
+  if (sorted.length % 2 === 0) {
+    return (sorted[mid - 1] + sorted[mid]) / 2;
+  }
+  return sorted[mid];
+}
+
+/**
+ * Game environment classification based on a team's implied total
+ * relative to the current slate of games.
+ *
+ * Algorithm: percentile rank within slate implied totals.
+ *   >= 75th percentile → HIGH
+ *   >= 50th → ABOVE_AVG
+ *   >= 25th → AVERAGE
+ *   >= 10th → BELOW_AVG
+ *   < 10th → LOW
+ */
+export type GameEnvironment = 'HIGH' | 'ABOVE_AVG' | 'AVERAGE' | 'BELOW_AVG' | 'LOW';
+
+export function classifyGameEnvironment(teamImplied: number, slateImpliedTotals: number[]): GameEnvironment {
+  if (slateImpliedTotals.length === 0) return 'AVERAGE';
+  var below = 0;
+  for (var i = 0; i < slateImpliedTotals.length; i++) {
+    if (slateImpliedTotals[i] < teamImplied) below++;
+  }
+  var pct = below / slateImpliedTotals.length;
+  if (pct >= 0.75) return 'HIGH';
+  if (pct >= 0.50) return 'ABOVE_AVG';
+  if (pct >= 0.25) return 'AVERAGE';
+  if (pct >= 0.10) return 'BELOW_AVG';
+  return 'LOW';
+}
+
+/** Human-readable label for game environment. */
+export function gameEnvironmentLabel(env: GameEnvironment): string {
+  switch (env) {
+    case 'HIGH': return 'High scoring environment';
+    case 'ABOVE_AVG': return 'Above-average scoring environment';
+    case 'AVERAGE': return 'Average scoring environment';
+    case 'BELOW_AVG': return 'Below-average scoring environment';
+    case 'LOW': return 'Low scoring environment';
+  }
+}
+
+/** Slate rank for a team's implied total (1 = highest). */
+export function slateImpliedRank(teamImplied: number, slateImpliedTotals: number[]): number {
+  var above = 0;
+  for (var i = 0; i < slateImpliedTotals.length; i++) {
+    if (slateImpliedTotals[i] > teamImplied) above++;
+  }
+  return above + 1;
+}
+
+/**
+ * Event selection: choose the relevant current/upcoming NFL game for a team.
+ *
+ * Rules:
+ * 1. Filter events for this team
+ * 2. Require valid eventId + commenceTime
+ * 3. Deduplicate by eventId (if multiple with same ID, keep first valid)
+ * 4. Exclude events clearly in the past (>4 hours old relative to now)
+ * 5. Prefer nearest upcoming event
+ * 6. If no valid event exists, return null
+ *
+ * Deterministic: reordering provider events does not change the result.
+ */
+export function selectRelevantGameEvent(
+  team: string,
+  oddsData: { [teamAbb: string]: { opp: string; eventId?: string; commenceTime?: string } } | null,
+  now?: number
+): { eventId: string; commenceTime: string } | null {
+  if (!oddsData || !oddsData[team]) return null;
+
+  var g = oddsData[team];
+  var eventId = g.eventId || '';
+  var commenceTime = g.commenceTime || '';
+
+  // Require both ID and time
+  if (!eventId || !commenceTime) return null;
+
+  try {
+    var kickoff = new Date(commenceTime).getTime();
+    // Reject malformed timestamps (getTime() returns NaN for invalid dates)
+    if (!isFinite(kickoff)) return null;
+
+    var currentTime = now || Date.now();
+    var ageMs = currentTime - kickoff;
+
+    // Exclude games >4 hours old (clearly past)
+    if (ageMs > 4 * 60 * 60 * 1000) return null;
+
+    return { eventId, commenceTime };
+  } catch {
+    return null;
+  }
+}

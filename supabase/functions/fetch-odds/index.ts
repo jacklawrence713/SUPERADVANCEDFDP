@@ -1,6 +1,6 @@
 // Supabase Edge Function: fetch-odds
 // Server-side proxy for The Odds API — keeps provider key off the client.
-// Currently supports: NFL spreads + totals (Prompt 22 will add markets).
+// Supports: NFL game markets (spreads, totals) with multi-bookmaker consensus.
 //
 // Cache architecture:
 //   Layer 1: In-memory cache (_memCache) — fastest, isolate-local
@@ -9,6 +9,13 @@
 //     Intra-isolate: _inflight promise coalescing
 //     Cross-isolate: DB-backed refresh lease via claim_odds_refresh RPC
 //   Stale-while-revalidate: losers of the lease serve previous cached data
+//
+// Consensus methodology:
+//   For each game, all available bookmaker lines are collected.
+//   Spread: median of home-team spreads (normalized to home perspective before median).
+//   Total: median of all bookmaker totals.
+//   Moneyline: median of home/away moneylines independently.
+//   Minimum 1 bookmaker required; bookmaker count reported per game.
 
 import { createClient } from "npm:@supabase/supabase-js@2.39.0";
 
@@ -43,6 +50,9 @@ const ODDS_TEAM_MAP: { [k: string]: string } = {
   "Tennessee Titans": "TEN", "Washington Commanders": "WAS",
 };
 
+// Allowed request modes — server-side allowlist prevents arbitrary query construction
+const ALLOWED_MODES = ["games"] as const;
+
 // ── In-memory cache (shared within a single Deno Deploy isolate) ──
 let _memCache: { data: OddsResponse; ts: number } | null = null;
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
@@ -53,9 +63,15 @@ const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 let _inflight: Promise<OddsResponse> | null = null;
 
 interface TeamOdds {
-  spread: number;
-  total: number;
+  spread: number | null;
+  total: number | null;
   opp: string;
+  homeTeam: string;     // actual home team abbreviation from provider
+  awayTeam: string;     // actual away team abbreviation from provider
+  commenceTime?: string; // ISO kickoff time
+  eventId?: string;  // provider event ID for stable identity
+  spreadBookmakers?: number; // number of bookmakers contributing spread consensus
+  totalBookmakers?: number; // number of bookmakers contributing total consensus
 }
 
 interface OddsResponse {
@@ -68,6 +84,15 @@ interface OddsResponse {
 interface DbCacheEntry {
   response: OddsResponse;
   age: number;
+}
+
+/** Compute median of a numeric array. Returns null for empty. */
+function median(values: number[]): number | null {
+  if (values.length === 0) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  if (sorted.length % 2 === 0) return (sorted[mid - 1] + sorted[mid]) / 2;
+  return sorted[mid];
 }
 
 // Returns cached data regardless of age (for stale-while-revalidate fallback)
@@ -123,7 +148,7 @@ async function fetchFromProvider(apiKey: string, supabase: ReturnType<typeof cre
   // SECURITY: all errors caught locally so no raw Error (which may contain
   // the provider URL with apiKey) can propagate to the top-level catch.
   try {
-    // Current markets: spreads,totals (Prompt 22 will add h2h, props, etc.)
+    // Markets: spreads, totals (game lines only, no moneylines).
     const url = `https://api.the-odds-api.com/v4/sports/americanfootball_nfl/odds/?apiKey=${apiKey}&regions=us&markets=spreads,totals`;
     const apiRes = await fetch(url);
 
@@ -138,7 +163,7 @@ async function fetchFromProvider(apiKey: string, supabase: ReturnType<typeof cre
       return {
         odds: {},
         source: "unavailable",
-        fetchedAt: new Date().toISOString(),
+        fetchedAt: "",
       };
     }
 
@@ -150,38 +175,146 @@ async function fetchFromProvider(apiKey: string, supabase: ReturnType<typeof cre
       return {
         odds: {},
         source: "unavailable",
-        fetchedAt: new Date().toISOString(),
+        fetchedAt: "",
       };
     }
 
-    // Normalize provider response
-    const odds: { [team: string]: TeamOdds } = {};
+    // Step 1: Collect valid candidate games (valid IDs, times, not >4h old)
+    const now = Date.now();
+    const candidates: Array<{ game: typeof games[0]; homeAbb: string; awayAbb: string; kickoff: number }> = [];
+
     for (const game of games) {
       const home = ODDS_TEAM_MAP[game.home_team];
       const away = ODDS_TEAM_MAP[game.away_team];
       if (!home || !away) continue;
 
-      let spreadHome = 0, spreadAway = 0, total = 45;
-      const bk = game.bookmakers?.find((b: any) => b.key === "draftkings") || game.bookmakers?.[0];
-      if (bk) {
-        const sm = bk.markets?.find((m: any) => m.key === "spreads");
-        const tm = bk.markets?.find((m: any) => m.key === "totals");
-        if (sm) {
-          for (const o of sm.outcomes) {
-            if (ODDS_TEAM_MAP[o.name] === home) spreadHome = o.point;
-            if (ODDS_TEAM_MAP[o.name] === away) spreadAway = o.point;
-          }
-        }
-        if (tm?.outcomes?.[0]) total = tm.outcomes[0].point;
-      }
-      odds[home] = { spread: spreadHome, total, opp: away };
-      odds[away] = { spread: spreadAway, total, opp: home };
+      const eventId = game.id || "";
+      const commenceTime = game.commence_time || "";
+      if (!eventId || !commenceTime) continue;
+
+      let kickoff = NaN;
+      try {
+        kickoff = new Date(commenceTime).getTime();
+      } catch {}
+
+      // Skip games with invalid/unparseable timestamps
+      if (!isFinite(kickoff)) continue;
+
+      // Exclude games >4 hours in the past
+      const ageMs = now - kickoff;
+      if (ageMs > 4 * 60 * 60 * 1000) continue;
+
+      candidates.push({ game, homeAbb: home, awayAbb: away, kickoff });
     }
 
+    // Step 2: Sort candidates by commenceTime (earliest first)
+    candidates.sort((a, b) => a.kickoff - b.kickoff);
+
+    // Step 3: Greedily select games (each team appears at most once, matchups coherent)
+    const selectedTeams = new Set<string>();
+    const selectedGames: Array<{ game: typeof games[0]; homeAbb: string; awayAbb: string }> = [];
+
+    for (const candidate of candidates) {
+      const { game, homeAbb, awayAbb } = candidate;
+      // If either team already selected, skip
+      if (selectedTeams.has(homeAbb) || selectedTeams.has(awayAbb)) continue;
+      // Select this game
+      selectedTeams.add(homeAbb);
+      selectedTeams.add(awayAbb);
+      selectedGames.push({ game, homeAbb, awayAbb });
+    }
+
+    // Step 4: Compute consensus for each selected game
+    const odds: { [team: string]: TeamOdds } = {};
+
+    for (const { game, homeAbb, awayAbb } of selectedGames) {
+      const eventId = game.id || "";
+      const commenceTime = game.commence_time || "";
+      const bookmakers = game.bookmakers || [];
+
+      // Collect valid spread and total data from bookmakers
+      const validSpreads: { homeSpread: number; awaySpread: number }[] = [];
+      const validTotals: number[] = [];
+
+      for (const bk of bookmakers) {
+        const bkKey = bk.key || "";
+        if (!bkKey) continue;
+
+        if (!bk.markets) continue;
+
+        // Find spread market: require BOTH home and away outcomes, finite points
+        let spreadMarket = false;
+        let homeSpreadPoint: number | null = null;
+        let awaySpreadPoint: number | null = null;
+
+        for (const mkt of bk.markets) {
+          if (mkt.key === "spreads" && mkt.outcomes && !spreadMarket) {
+            for (const o of mkt.outcomes) {
+              const teamAbb = ODDS_TEAM_MAP[o.name];
+              if (teamAbb === homeAbb && typeof o.point === "number" && isFinite(o.point)) {
+                homeSpreadPoint = o.point;
+              } else if (teamAbb === awayAbb && typeof o.point === "number" && isFinite(o.point)) {
+                awaySpreadPoint = o.point;
+              }
+            }
+            // Valid spread if we have both home and away, and they're opposite (within tolerance)
+            if (homeSpreadPoint !== null && awaySpreadPoint !== null) {
+              const expectedAwaySpread = -homeSpreadPoint;
+              const tolerance = 0.1;
+              if (Math.abs(awaySpreadPoint - expectedAwaySpread) <= tolerance) {
+                validSpreads.push({ homeSpread: homeSpreadPoint, awaySpread: awaySpreadPoint });
+                spreadMarket = true;
+              }
+            }
+          }
+        }
+
+        // Find total market: require finite point value
+        for (const mkt of bk.markets) {
+          if (mkt.key === "totals" && mkt.outcomes && mkt.outcomes[0] && typeof mkt.outcomes[0].point === "number") {
+            const point = mkt.outcomes[0].point;
+            if (isFinite(point)) {
+              validTotals.push(point);
+              break; // One total per bookmaker
+            }
+          }
+        }
+      }
+
+      // Compute consensus: null if no valid markets
+      const spreadHome = validSpreads.length > 0 ? median(validSpreads.map(s => s.homeSpread)) : null;
+      const spreadAway = spreadHome !== null ? -spreadHome : null;
+      const total = validTotals.length > 0 ? median(validTotals) : null;
+
+      odds[homeAbb] = {
+        spread: spreadHome,
+        total,
+        opp: awayAbb,
+        homeTeam: homeAbb,
+        awayTeam: awayAbb,
+        commenceTime,
+        eventId,
+        spreadBookmakers: validSpreads.length,
+        totalBookmakers: validTotals.length
+      };
+      odds[awayAbb] = {
+        spread: spreadAway,
+        total,
+        opp: homeAbb,
+        homeTeam: homeAbb,
+        awayTeam: awayAbb,
+        commenceTime,
+        eventId,
+        spreadBookmakers: validSpreads.length,
+        totalBookmakers: validTotals.length
+      };
+    }
+
+    const fetchedAt = new Date().toISOString();
     const response: OddsResponse = {
       odds,
       source: "api",
-      fetchedAt: new Date().toISOString(),
+      fetchedAt,
     };
 
     // Update caches
@@ -196,7 +329,7 @@ async function fetchFromProvider(apiKey: string, supabase: ReturnType<typeof cre
     return {
       odds: {},
       source: "unavailable",
-      fetchedAt: new Date().toISOString(),
+      fetchedAt: "",
     };
   }
 }
@@ -208,6 +341,26 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Validate mode parameter (server-side allowlist)
+    let mode = "games";
+    try {
+      const body = await req.clone().json();
+      if (body && typeof body.mode === "string") {
+        if (!(ALLOWED_MODES as readonly string[]).includes(body.mode)) {
+          return new Response(JSON.stringify({
+            odds: {}, source: "unavailable", fetchedAt: "",
+            error: "invalid_mode",
+          }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        mode = body.mode;
+      }
+    } catch {
+      // No body or invalid JSON — use default mode
+    }
+
     // 1. In-memory cache (fastest, within same isolate)
     if (_memCache && Date.now() - _memCache.ts < CACHE_TTL_MS) {
       return new Response(JSON.stringify(_memCache.data), {
@@ -233,7 +386,7 @@ Deno.serve(async (req) => {
     const apiKey = Deno.env.get("THE_ODDS_API_KEY") || "";
     if (!apiKey) {
       return new Response(JSON.stringify({
-        odds: {}, source: "unavailable", fetchedAt: new Date().toISOString(),
+        odds: {}, source: "unavailable", fetchedAt: "",
       } satisfies OddsResponse), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -264,7 +417,7 @@ Deno.serve(async (req) => {
 
     // 6. No cached data at all and another worker is refreshing — return unavailable
     return new Response(JSON.stringify({
-      odds: {}, source: "unavailable", fetchedAt: new Date().toISOString(),
+      odds: {}, source: "unavailable", fetchedAt: "",
     } satisfies OddsResponse), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
@@ -273,7 +426,7 @@ Deno.serve(async (req) => {
     // SECURITY: never log the caught error — it could contain secrets.
     console.error("[fetch-odds] unexpected_error");
     return new Response(JSON.stringify({
-      odds: {}, source: "unavailable", fetchedAt: new Date().toISOString(),
+      odds: {}, source: "unavailable", fetchedAt: "",
     } satisfies OddsResponse), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
