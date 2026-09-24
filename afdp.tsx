@@ -2185,6 +2185,8 @@ const BYE_WEEKS:{[k:string]:number}={"DET":5,"LAC":5,"PHI":5,"SF":5,"ARI":6,"CAR
 
 const UNQ=PLAYERS.filter(function(p,i,a){return a.findIndex(function(x){return x.name===p.name;})===i;});
 
+const POS_COUNTS=(function(){var qb=0,rb=0,wr=0,te=0,idp=0;for(var i=0;i<PLAYERS.length;i++){var p=PLAYERS[i];if(p.pos==="QB")qb++;else if(p.pos==="RB")rb++;else if(p.pos==="WR")wr++;else if(p.pos==="TE")te++;else if(p.pos==="DL"||p.pos==="LB"||p.pos==="DB")idp++;}return {QB:qb,RB:rb,WR:wr,TE:te,IDP:idp};})();
+
 function dynastyBonus(pos,age){
   if(pos==="DST"||pos==="K"||pos==="PICK") return 1;
   var lo=PRIME[pos]?PRIME[pos][0]:25;
@@ -10340,11 +10342,11 @@ export default function App(){
         ),
         // Registry cards — real data
         (function(){
-          var qbC=PLAYERS.filter(function(p){return p.pos==="QB";}).length;
-          var rbC=PLAYERS.filter(function(p){return p.pos==="RB";}).length;
-          var wrC=PLAYERS.filter(function(p){return p.pos==="WR";}).length;
-          var teC=PLAYERS.filter(function(p){return p.pos==="TE";}).length;
-          var idpC=PLAYERS.filter(function(p){return p.pos==="DL"||p.pos==="LB"||p.pos==="DB";}).length;
+          var qbC=POS_COUNTS.QB;
+          var rbC=POS_COUNTS.RB;
+          var wrC=POS_COUNTS.WR;
+          var teC=POS_COUNTS.TE;
+          var idpC=POS_COUNTS.IDP;
           var total=PLAYERS.length;
           var syncLabel=liveProj?"Week "+liveProj.week+" loaded":"Never synced";
           var syncColor=liveProj?"#22c55e":"#ef4444";
@@ -10604,7 +10606,7 @@ export default function App(){
         ),
         React.createElement("div",{style:{background:T.green+"18",border:"1px solid "+T.green,borderRadius:12,padding:"12px 16px",marginBottom:16,display:"flex",alignItems:"center",gap:8}},
           React.createElement("span",{style:{color:T.green,fontSize:18}},"\u2713"),
-          React.createElement("span",{style:{color:T.green,fontWeight:600,fontSize:14}},PLAYERS.filter(function(p){return p.pos==="RB";}).length+" RBs loaded from player database")
+          React.createElement("span",{style:{color:T.green,fontWeight:600,fontSize:14}},POS_COUNTS.RB+" RBs loaded from player database")
         ),
         React.createElement("div",{style:{overflowX:"auto",marginBottom:16}},React.createElement("div",{style:{background:T.bgCard,borderRadius:10,padding:"10px 12px",display:"grid",gridTemplateColumns:"2fr 1.5fr 1fr 1.5fr 1.5fr",gap:4,minWidth:420}},
           ["PLAYER","SOURCE","AGE","DEPTH ROLE","WORKLOAD"].map(function(h){
