@@ -1,6 +1,12 @@
-// Supabase Edge Function: fetch-odds
+// Supabase Edge Function: fetch-odds (UPDATED for Prompt 27)
 // Server-side proxy for The Odds API — keeps provider key off the client.
 // Supports: NFL game markets (spreads, totals) with multi-bookmaker consensus.
+//
+// ENTITLEMENT SECURITY (Prompt 27):
+// - Requires Bearer token (Supabase Auth JWT)
+// - User must have plan='pro' or plan='elite'
+// - Free users → 403
+// - Anonymous/invalid token → 401
 //
 // Cache architecture:
 //   Layer 1: In-memory cache (_memCache) — fastest, isolate-local
@@ -9,13 +15,6 @@
 //     Intra-isolate: _inflight promise coalescing
 //     Cross-isolate: DB-backed refresh lease via claim_odds_refresh RPC
 //   Stale-while-revalidate: losers of the lease serve previous cached data
-//
-// Consensus methodology:
-//   For each game, all available bookmaker lines are collected.
-//   Spread: median of home-team spreads (normalized to home perspective before median).
-//   Total: median of all bookmaker totals.
-//   Moneyline: median of home/away moneylines independently.
-//   Minimum 1 bookmaker required; bookmaker count reported per game.
 
 import { createClient } from "npm:@supabase/supabase-js@2.39.0";
 
@@ -35,7 +34,6 @@ function getCorsHeaders(req: Request) {
   };
 }
 
-// NFL team name mapping (provider full names -> FDP abbreviations)
 const ODDS_TEAM_MAP: { [k: string]: string } = {
   "Arizona Cardinals": "ARI", "Atlanta Falcons": "ATL", "Baltimore Ravens": "BAL",
   "Buffalo Bills": "BUF", "Carolina Panthers": "CAR", "Chicago Bears": "CHI",
@@ -50,28 +48,23 @@ const ODDS_TEAM_MAP: { [k: string]: string } = {
   "Tennessee Titans": "TEN", "Washington Commanders": "WAS",
 };
 
-// Allowed request modes — server-side allowlist prevents arbitrary query construction
 const ALLOWED_MODES = ["games"] as const;
 
-// ── In-memory cache (shared within a single Deno Deploy isolate) ──
 let _memCache: { data: OddsResponse; ts: number } | null = null;
-const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+const CACHE_TTL_MS = 10 * 60 * 1000;
 
-// ── Intra-isolate stampede protection ────────────────────────────
-// If a provider fetch is in-flight within this isolate, subsequent
-// requests wait for it instead of making duplicate API calls.
 let _inflight: Promise<OddsResponse> | null = null;
 
 interface TeamOdds {
   spread: number | null;
   total: number | null;
   opp: string;
-  homeTeam: string;     // actual home team abbreviation from provider
-  awayTeam: string;     // actual away team abbreviation from provider
-  commenceTime?: string; // ISO kickoff time
-  eventId?: string;  // provider event ID for stable identity
-  spreadBookmakers?: number; // number of bookmakers contributing spread consensus
-  totalBookmakers?: number; // number of bookmakers contributing total consensus
+  homeTeam: string;
+  awayTeam: string;
+  commenceTime?: string;
+  eventId?: string;
+  spreadBookmakers?: number;
+  totalBookmakers?: number;
 }
 
 interface OddsResponse {
@@ -79,6 +72,7 @@ interface OddsResponse {
   source: "api" | "cache" | "unavailable";
   fetchedAt: string;
   stale?: boolean; // true only when serving expired cache during stale-while-revalidate
+  error?: string;
 }
 
 interface DbCacheEntry {
@@ -86,7 +80,6 @@ interface DbCacheEntry {
   age: number;
 }
 
-/** Compute median of a numeric array. Returns null for empty. */
 function median(values: number[]): number | null {
   if (values.length === 0) return null;
   const sorted = [...values].sort((a, b) => a - b);
@@ -119,18 +112,13 @@ async function setDbCache(supabase: ReturnType<typeof createClient>, response: O
         id: "nfl_current",
         response,
         fetched_at: new Date().toISOString(),
-        refreshing_until: null, // Clear the lease after successful refresh
+        refreshing_until: null,
       }, { onConflict: "id" });
   } catch {
-    // Cache write failure is non-fatal
+    // Non-fatal
   }
 }
 
-// Atomically claim the refresh lease. Returns true if this caller won.
-// Uses DB-backed coordination so only one isolate refreshes at a time.
-// Lease: 60s — safely above Deno Deploy's ~30s fetch timeout + processing.
-// The Odds API typically responds in 1–5s; 60s covers worst-case network.
-// On crash, other workers serve stale data until the 60s lease expires.
 async function claimRefreshLease(supabase: ReturnType<typeof createClient>): Promise<boolean> {
   try {
     const { data, error } = await supabase.rpc("claim_odds_refresh", { p_lease_seconds: 60 });
@@ -145,14 +133,10 @@ async function claimRefreshLease(supabase: ReturnType<typeof createClient>): Pro
 }
 
 async function fetchFromProvider(apiKey: string, supabase: ReturnType<typeof createClient>): Promise<OddsResponse> {
-  // SECURITY: all errors caught locally so no raw Error (which may contain
-  // the provider URL with apiKey) can propagate to the top-level catch.
   try {
-    // Markets: spreads, totals (game lines only, no moneylines).
     const url = `https://api.the-odds-api.com/v4/sports/americanfootball_nfl/odds/?apiKey=${apiKey}&regions=us&markets=spreads,totals`;
     const apiRes = await fetch(url);
 
-    // Read quota headers (server-side only — not included in client response)
     const remaining = apiRes.headers.has("x-requests-remaining") ? Number(apiRes.headers.get("x-requests-remaining")) : null;
     const used = apiRes.headers.has("x-requests-used") ? Number(apiRes.headers.get("x-requests-used")) : null;
     const last = apiRes.headers.has("x-requests-last") ? Number(apiRes.headers.get("x-requests-last")) : null;
@@ -160,26 +144,15 @@ async function fetchFromProvider(apiKey: string, supabase: ReturnType<typeof cre
 
     if (!apiRes.ok) {
       console.error(`[fetch-odds] provider_http_error ${apiRes.status}`);
-      return {
-        odds: {},
-        source: "unavailable",
-        fetchedAt: "",
-      };
+      return { odds: {}, source: "unavailable", fetchedAt: "" };
     }
 
     const games = await apiRes.json();
     if (!Array.isArray(games) || games.length === 0) {
-      // Empty provider response (e.g. offseason): do NOT cache empty odds
-      // over valid previous data. Return unavailable; lease expires naturally.
       console.log("[fetch-odds] provider returned empty game list");
-      return {
-        odds: {},
-        source: "unavailable",
-        fetchedAt: "",
-      };
+      return { odds: {}, source: "unavailable", fetchedAt: "" };
     }
 
-    // Step 1: Collect valid candidate games (valid IDs, times, not >4h old)
     const now = Date.now();
     const candidates: Array<{ game: typeof games[0]; homeAbb: string; awayAbb: string; kickoff: number }> = [];
 
@@ -197,34 +170,27 @@ async function fetchFromProvider(apiKey: string, supabase: ReturnType<typeof cre
         kickoff = new Date(commenceTime).getTime();
       } catch {}
 
-      // Skip games with invalid/unparseable timestamps
       if (!isFinite(kickoff)) continue;
 
-      // Exclude games >4 hours in the past
       const ageMs = now - kickoff;
       if (ageMs > 4 * 60 * 60 * 1000) continue;
 
       candidates.push({ game, homeAbb: home, awayAbb: away, kickoff });
     }
 
-    // Step 2: Sort candidates by commenceTime (earliest first)
     candidates.sort((a, b) => a.kickoff - b.kickoff);
 
-    // Step 3: Greedily select games (each team appears at most once, matchups coherent)
     const selectedTeams = new Set<string>();
     const selectedGames: Array<{ game: typeof games[0]; homeAbb: string; awayAbb: string }> = [];
 
     for (const candidate of candidates) {
       const { game, homeAbb, awayAbb } = candidate;
-      // If either team already selected, skip
       if (selectedTeams.has(homeAbb) || selectedTeams.has(awayAbb)) continue;
-      // Select this game
       selectedTeams.add(homeAbb);
       selectedTeams.add(awayAbb);
       selectedGames.push({ game, homeAbb, awayAbb });
     }
 
-    // Step 4: Compute consensus for each selected game
     const odds: { [team: string]: TeamOdds } = {};
 
     for (const { game, homeAbb, awayAbb } of selectedGames) {
@@ -232,17 +198,13 @@ async function fetchFromProvider(apiKey: string, supabase: ReturnType<typeof cre
       const commenceTime = game.commence_time || "";
       const bookmakers = game.bookmakers || [];
 
-      // Collect valid spread and total data from bookmakers
       const validSpreads: { homeSpread: number; awaySpread: number }[] = [];
       const validTotals: number[] = [];
 
       for (const bk of bookmakers) {
         const bkKey = bk.key || "";
-        if (!bkKey) continue;
+        if (!bkKey || !bk.markets) continue;
 
-        if (!bk.markets) continue;
-
-        // Find spread market: require BOTH home and away outcomes, finite points
         let spreadMarket = false;
         let homeSpreadPoint: number | null = null;
         let awaySpreadPoint: number | null = null;
@@ -257,7 +219,6 @@ async function fetchFromProvider(apiKey: string, supabase: ReturnType<typeof cre
                 awaySpreadPoint = o.point;
               }
             }
-            // Valid spread if we have both home and away, and they're opposite (within tolerance)
             if (homeSpreadPoint !== null && awaySpreadPoint !== null) {
               const expectedAwaySpread = -homeSpreadPoint;
               const tolerance = 0.1;
@@ -269,19 +230,17 @@ async function fetchFromProvider(apiKey: string, supabase: ReturnType<typeof cre
           }
         }
 
-        // Find total market: require finite point value
         for (const mkt of bk.markets) {
           if (mkt.key === "totals" && mkt.outcomes && mkt.outcomes[0] && typeof mkt.outcomes[0].point === "number") {
             const point = mkt.outcomes[0].point;
             if (isFinite(point)) {
               validTotals.push(point);
-              break; // One total per bookmaker
+              break;
             }
           }
         }
       }
 
-      // Compute consensus: null if no valid markets
       const spreadHome = validSpreads.length > 0 ? median(validSpreads.map(s => s.homeSpread)) : null;
       const spreadAway = spreadHome !== null ? -spreadHome : null;
       const total = validTotals.length > 0 ? median(validTotals) : null;
@@ -317,20 +276,13 @@ async function fetchFromProvider(apiKey: string, supabase: ReturnType<typeof cre
       fetchedAt,
     };
 
-    // Update caches
     _memCache = { data: response, ts: Date.now() };
     await setDbCache(supabase, response);
     return response;
 
   } catch {
-    // SECURITY: never log the caught error — it may contain the provider URL
-    // which includes apiKey. Log only a safe fixed string.
     console.error("[fetch-odds] provider_fetch_failed");
-    return {
-      odds: {},
-      source: "unavailable",
-      fetchedAt: "",
-    };
+    return { odds: {}, source: "unavailable", fetchedAt: "" };
   }
 }
 
@@ -341,7 +293,78 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Validate mode parameter (server-side allowlist)
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+
+    // ========================================================================
+    // ENTITLEMENT SECURITY CHECK (Prompt 27)
+    // ========================================================================
+
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({
+        error: "unauthorized",
+        odds: {},
+        source: "unavailable",
+        fetchedAt: "",
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const token = authHeader.substring("Bearer ".length);
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
+      return new Response(JSON.stringify({
+        error: "invalid_token",
+        odds: {},
+        source: "unavailable",
+        fetchedAt: "",
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from("users")
+      .select("plan")
+      .eq("id", user.id)
+      .single();
+
+    if (profileError || !profile) {
+      return new Response(JSON.stringify({
+        error: "profile_not_found",
+        odds: {},
+        source: "unavailable",
+        fetchedAt: "",
+      }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const userPlan = profile.plan;
+    if (userPlan !== "pro" && userPlan !== "elite") {
+      return new Response(JSON.stringify({
+        error: "insufficient_entitlement",
+        odds: {},
+        source: "unavailable",
+        fetchedAt: "",
+      }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ========================================================================
+    // User is Pro/Elite — proceed with odds fetch
+    // ========================================================================
+
     let mode = "games";
     try {
       const body = await req.clone().json();
@@ -358,22 +381,15 @@ Deno.serve(async (req) => {
         mode = body.mode;
       }
     } catch {
-      // No body or invalid JSON — use default mode
+      // No body
     }
 
-    // 1. In-memory cache (fastest, within same isolate)
     if (_memCache && Date.now() - _memCache.ts < CACHE_TTL_MS) {
       return new Response(JSON.stringify(_memCache.data), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
-
-    // 2. DB cache (shared across isolates/regions)
     const dbEntry = await getDbCache(supabase);
     if (dbEntry && dbEntry.age < CACHE_TTL_MS) {
       _memCache = { data: dbEntry.response, ts: Date.now() };
@@ -382,7 +398,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // 3. Cache expired or missing — need provider key to refresh
     const apiKey = Deno.env.get("THE_ODDS_API_KEY") || "";
     if (!apiKey) {
       return new Response(JSON.stringify({
@@ -392,11 +407,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    // 4. Cross-isolate coordination: claim the refresh lease
     const claimed = await claimRefreshLease(supabase);
 
     if (claimed) {
-      // Won the lease — fetch from provider (with intra-isolate coalescing)
       if (!_inflight) {
         _inflight = fetchFromProvider(apiKey, supabase).finally(() => { _inflight = null; });
       }
@@ -407,7 +420,6 @@ Deno.serve(async (req) => {
     }
 
     // 5. Another isolate is refreshing — stale-while-revalidate
-    // Serve previous cached data marked stale (preserves original fetchedAt)
     if (dbEntry && Object.keys(dbEntry.response.odds).length > 0) {
       const staleResponse: OddsResponse = { ...dbEntry.response, stale: true };
       return new Response(JSON.stringify(staleResponse), {
@@ -415,7 +427,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // 6. No cached data at all and another worker is refreshing — return unavailable
     return new Response(JSON.stringify({
       odds: {}, source: "unavailable", fetchedAt: "",
     } satisfies OddsResponse), {
@@ -423,7 +434,6 @@ Deno.serve(async (req) => {
     });
 
   } catch {
-    // SECURITY: never log the caught error — it could contain secrets.
     console.error("[fetch-odds] unexpected_error");
     return new Response(JSON.stringify({
       odds: {}, source: "unavailable", fetchedAt: "",

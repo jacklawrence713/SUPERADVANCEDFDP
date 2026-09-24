@@ -5,6 +5,8 @@
 --
 -- This migration is designed to run ONCE. It will fail if tables already exist,
 -- which prevents silently running against an incompatible pre-existing schema.
+--
+-- VALUE HISTORY ENTITLEMENT: Only Pro/Elite users can SELECT snapshots.
 
 -- ── Batch tracking table ──
 -- Each batch = one complete context ingestion for a values_version.
@@ -64,20 +66,36 @@ create index idx_fdp_snapshot_player_context_time
 alter table public.fdp_snapshot_batches enable row level security;
 alter table public.fdp_value_snapshots enable row level security;
 
--- Batches: only complete batches visible to public
+-- Batches: only complete batches visible to Pro/Elite users
 create policy "fdp_batches_select_complete"
   on public.fdp_snapshot_batches
   for select
-  using (status = 'complete');
+  using (
+    status = 'complete'
+    AND (
+      auth.uid() IS NOT NULL
+      AND EXISTS (
+        SELECT 1 FROM public.users
+        WHERE id = auth.uid() AND plan IN ('pro', 'elite')
+      )
+    )
+  );
 
--- Snapshots: only those belonging to complete batches
+-- Snapshots: only those belonging to complete batches AND user is Pro/Elite
 create policy "fdp_snapshots_select_complete"
   on public.fdp_value_snapshots
   for select
   using (
-    exists (
-      select 1 from public.fdp_snapshot_batches b
-      where b.id = batch_id and b.status = 'complete'
+    EXISTS (
+      SELECT 1 FROM public.fdp_snapshot_batches b
+      WHERE b.id = batch_id AND b.status = 'complete'
+    )
+    AND (
+      auth.uid() IS NOT NULL
+      AND EXISTS (
+        SELECT 1 FROM public.users
+        WHERE id = auth.uid() AND plan IN ('pro', 'elite')
+      )
     )
   );
 
@@ -90,7 +108,7 @@ revoke insert, update, delete on public.fdp_value_snapshots from public;
 revoke insert, update, delete on public.fdp_value_snapshots from anon;
 revoke insert, update, delete on public.fdp_value_snapshots from authenticated;
 
--- ── Read grants ──
+-- ── Read grants (RLS policies control actual access) ──
 grant select on public.fdp_snapshot_batches to anon;
 grant select on public.fdp_snapshot_batches to authenticated;
 grant select on public.fdp_value_snapshots to anon;

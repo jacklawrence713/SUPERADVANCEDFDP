@@ -3,6 +3,8 @@ import { createClient } from "@supabase/supabase-js";
 import { computeDynastyTradeVal, computeRedraftTradeVal, REDRAFT_TV_MULT, VALUES_UPDATED_AT, PRODUCT_STATS, formatContextLabel, explainFdpValue, generateTradeCandidates, computeTeamPosValues, computeTeamNeeds, computePosRanksForTeams, computeValueChange, isSnapshotContextSupported, normalizeSnapshotContext, HISTORY_PAGE_SIZE, findComparisonSnapshots, explainValueMovement, formatCalendarDate, formatRelativeTime, leagueFetchedAtKey, deriveProvider, freshnessFetchVerb } from "./src/logic";
 import type { FdpSnapshot } from "./src/logic";
 import type { ValueFactor } from "./src/logic";
+import { canAccessLeagueFeatures, canAccessVegas, canAccessValueHistory, canAccessWhyValueChanged, isPaidTier } from "./src/entitlements";
+import type { UserProfile } from "./src/entitlements";
 
 // ── Supabase ─────────────────────────────────────────────────────────────────
 const SUPA_URL = "https://wizdxspglxpvvogiivsv.supabase.co";
@@ -2835,7 +2837,7 @@ export default function App(){
           var prof=profResult.data;
           if(!prof)return;
           var isAdm=isAdmin2||prof.is_admin||false;
-          saveAndSetUser({id:usr.id,name:prof.name||usr.user_metadata?.name||usr.email||"",email:usr.email||"",plan:(isAdm||fa4)?"elite":(prof.plan||"free"),isPro:prof.is_pro||isAdm||fa4,isAdmin:isAdm,token:session.access_token});
+          saveAndSetUser({id:usr.id,name:prof.name||usr.user_metadata?.name||usr.email||"",email:usr.email||"",plan:(isAdm||fa4)?"elite":(prof.plan||"free"),isPro: (prof.plan === "pro" || prof.plan === "elite") || isAdm || fa4,isAdmin:isAdm,token:session.access_token});
         }).catch(function(){});
       }
     });
@@ -3159,7 +3161,7 @@ export default function App(){
   useEffect(function(){if(onboardStep===0){var t=setTimeout(function(){setOnboardStep(1);},1500);return function(){clearTimeout(t);};}},[]); // eslint-disable-line react-hooks/exhaustive-deps
 
   var T=darkMode?DARK:LIGHT;
-  var isPro=user&&user.isPro;
+  var isPro = user && (user.plan === "pro" || user.plan === "elite");
   var isDynasty=leagueType==="Dynasty";
   var isSF=sfMode;
   var sKey=isDynasty?"PPR":(format==="Half"?"Half":(format==="Standard"?"Standard":"PPR"));
@@ -4771,7 +4773,7 @@ export default function App(){
       [["trade","Trade Analyzer","⚖️"],["league","My League","🏈"],["rankings","Rankings","📊"],["reports","Reports","📈"]].concat(user&&user.isAdmin?[["admin","Admin","🔐"]]:[]).map(function(item){
         var active=tab===item[0];
         return React.createElement("button",{key:item[0],onClick:function(){
-          if((item[0]==="league"||item[0]==="reports")&&!isPro){setAuthMode("signup");setShowAuth(true);return;}
+          if ((item[0]==="league"||item[0]==="reports")&&!canAccessLeagueFeatures(user)){setAuthMode("signup");setShowAuth(true);return;}
           if(item[0]==="admin"){if(!user||!user.isAdmin){return;}setTab("admin");trackEvent("tab_change",{tab:"admin"});return;}
           setTab(item[0]);trackEvent("tab_change",{tab:item[0]});
         },style:{display:"flex",alignItems:"center",gap:12,padding:"11px 16px",margin:"2px 8px",borderRadius:10,border:"none",background:active?T.purple:"transparent",color:active?"#fff":T.textSub,fontWeight:700,fontSize:13,cursor:"pointer",textAlign:"left",width:"calc(100% - 16px)"}},
@@ -4797,7 +4799,7 @@ export default function App(){
       [["trade","Trade","⚖️"],["league","League","🏈"],["rankings","Ranks","📊"],["reports","Reports","📈"]].concat(user&&user.isAdmin?[["admin","Admin","🔐"]]:[]).map(function(item){
         var active=tab===item[0];
         return React.createElement("button",{key:item[0],onClick:function(){
-          if((item[0]==="league"||item[0]==="reports")&&!isPro){setAuthMode("signup");setShowAuth(true);return;}
+          if ((item[0]==="league"||item[0]==="reports")&&!canAccessLeagueFeatures(user)){setAuthMode("signup");setShowAuth(true);return;}
           if(item[0]==="admin"){if(!user||!user.isAdmin){return;}setTab("admin");trackEvent("tab_change",{tab:"admin"});return;}
           setTab(item[0]);trackEvent("tab_change",{tab:item[0]});
         },style:{flex:1,padding:"8px 4px 8px",minHeight:56,background:active?T.purple+"12":"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2,WebkitTapHighlightColor:"transparent"}},
@@ -8512,7 +8514,8 @@ export default function App(){
       ),
 
       // VEGAS LINES
-      rankSubTab==="vegas"&&(function(){
+      rankSubTab==="vegas"&&!canAccessVegas(user)&&React.createElement("div",{style:{background:T.purpleDim,border:"1px solid "+T.purple+"44",borderRadius:14,padding:"16px",textAlign:"center",margin:"16px"}},React.createElement("div",{style:{fontWeight:700,fontSize:14,color:T.purpleLight,marginBottom:6}},"Vegas Lines - Elite Feature"),React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:12}},"Access NFL odds, Vegas spreads, and game intelligence with Elite"),React.createElement("button",{onClick:function(){user?handleCheckout("elite","monthly"):(setAuthMode("signup"),setShowAuth(true));},style:{padding:"10px 24px",borderRadius:12,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}},user?"Upgrade to Elite Arrow":"Start Free Trial")),
+      rankSubTab==="vegas"&&canAccessVegas(user)&&(function(){
         var games=oddsData?(function(){var eventMap:any={};Object.keys(oddsData).forEach(function(team){var g=oddsData[team];if(!g)return;if(!g.eventId)return;if(!eventMap[g.eventId]){eventMap[g.eventId]=g;}});return Object.values(eventMap).filter(function(g:any){return g.spread!==null||g.total!==null;}).sort(function(a:any,b:any){if(a.total===null&&b.total===null)return 0;if(a.total===null)return 1;if(b.total===null)return-1;return b.total-a.total;}).map(function(g:any){return{home:g.homeTeam,away:g.awayTeam,spread:g.spread,total:g.total,eventId:g.eventId};});})():[];
         var hasData=games.length>0;
         var TEAM_FULL:{[k:string]:string}={"ARI":"Cardinals","ATL":"Falcons","BAL":"Ravens","BUF":"Bills","CAR":"Panthers","CHI":"Bears","CIN":"Bengals","CLE":"Browns","DAL":"Cowboys","DEN":"Broncos","DET":"Lions","GB":"Packers","HOU":"Texans","IND":"Colts","JAX":"Jaguars","KC":"Chiefs","LAC":"Chargers","LAR":"Rams","LV":"Raiders","MIA":"Dolphins","MIN":"Vikings","NE":"Patriots","NO":"Saints","NYG":"Giants","NYJ":"Jets","PHI":"Eagles","PIT":"Steelers","SF":"49ers","SEA":"Seahawks","TB":"Buccaneers","TEN":"Titans","WAS":"Commanders"};
