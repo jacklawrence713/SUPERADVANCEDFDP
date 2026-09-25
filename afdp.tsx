@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { computeDynastyTradeVal, computeRedraftTradeVal, REDRAFT_TV_MULT, VALUES_UPDATED_AT, PRODUCT_STATS, formatContextLabel, explainFdpValue, generateTradeCandidates, computeTeamPosValues, computeTeamNeeds, computePosRanksForTeams, computeValueChange, isSnapshotContextSupported, normalizeSnapshotContext, HISTORY_PAGE_SIZE, findComparisonSnapshots, explainValueMovement, formatCalendarDate, formatRelativeTime, leagueFetchedAtKey, deriveProvider, freshnessFetchVerb } from "./src/logic";
 import type { FdpSnapshot } from "./src/logic";
@@ -47,10 +47,11 @@ function getVisitorId(): string {
   } catch { return "anonymous"; }
 
 // Prompt 28: Fetch authoritative server quota status
-async function fetchTradeQuotaStatus(userToken){
+async function fetchTradeQuotaStatus(userToken,requestingUserId){
   if(!userToken){setTradeQuota({limit_per_day:2,used_count:0,reserved_count:0,remaining_count:0,quota_date:"",is_unlimited:false,loading:false,error:"Not authenticated"});return;}
   try{
     const res=await callEdgeFn("trade-quota-status",{},userToken);
+    if(user?.id!==requestingUserId){return;}
     if(res.quota){
       setTradeQuota({...res.quota,loading:false,error:null});
     }else{
@@ -2896,7 +2897,7 @@ export default function App(){
   var [faabB,setFaabB]=useState(0);
   var [analyzed,setAnalyzed]=useState(false);
   var [tradeQuota,setTradeQuota]=useState({limit_per_day:2,used_count:0,reserved_count:0,remaining_count:0,quota_date:"",is_unlimited:false,loading:true,error:null});
-  var [pendingRequestRef]=useState({requestId:null,payloadKey:null});
+  var pendingRequestRef=useRef({requestId:null,payloadKey:null,userId:null});
   var [impTab,setImpTab]=useState("sleeper");
   var [slUser,setSlUser]=useState("");
   var [impStatus,setImpStatus]=useState(null);
@@ -2935,7 +2936,7 @@ export default function App(){
   var [contactMsg,setContactMsg]=useState("");
   var [contactSent,setContactSent]=useState(false);
   var [user,setUser]=useState(function(){try{var s=localStorage.getItem('fdp_user_v1');if(s){var u=JSON.parse(s);setTrackedUser(u?.email||"");return u;}return null;}catch(e){return null;}});
-  function saveAndSetUser(u){try{if(u)localStorage.setItem("fdp_user_v1",JSON.stringify(u));else localStorage.removeItem("fdp_user_v1");}catch(e){}setUser(u);setTrackedUser(u?.email||"");if(u?.token)fetchTradeQuotaStatus(u.token);else setTradeQuota({limit_per_day:2,used_count:0,reserved_count:0,remaining_count:0,quota_date:"",is_unlimited:false,loading:false,error:null});}
+  function saveAndSetUser(u){try{if(u)localStorage.setItem("fdp_user_v1",JSON.stringify(u));else localStorage.removeItem("fdp_user_v1");}catch(e){}setUser(u);setTrackedUser(u?.email||"");pendingRequestRef.current={requestId:null,payloadKey:null,userId:null};setAnalyzed(false);setAiAnalysis("");setCounterOffer(null);setAiSuggestions("");if(u?.token)fetchTradeQuotaStatus(u.token,u?.id);else setTradeQuota({limit_per_day:2,used_count:0,reserved_count:0,remaining_count:0,quota_date:"",is_unlimited:false,loading:false,error:null});}
   var [showPostPayment,setShowPostPayment]=useState(false);
   var [postPaymentLoading,setPostPaymentLoading]=useState(false);
   var [postPaymentStatus,setPostPaymentStatus]=useState("");
@@ -4971,14 +4972,16 @@ export default function App(){
           var tCtx=buildTradeContext();
           var currentPayloadKey=getPayloadKey(tradeA,tradeB,tvA,tvB,scoring,tCtx.posImpact,tCtx.ageA.avg!=null||tCtx.ageB.avg!=null?{avgA:tCtx.ageA.avg,avgB:tCtx.ageB.avg}:undefined,tCtx.draftCap.sent.length>0||tCtx.draftCap.received.length>0?{valSent:tCtx.draftCap.valSent,valReceived:tCtx.draftCap.valReceived,net:tCtx.draftCap.net}:undefined,tCtx.rosterImpact?{side:tCtx.rosterImpact.side,team:tCtx.rosterImpact.team,valDelta:tCtx.rosterImpact.delta,lineupDelta:tCtx.rosterImpact.lnA&&tCtx.rosterImpact.lnB?tCtx.rosterImpact.lnA.sv-tCtx.rosterImpact.lnB.sv:null}:undefined,tCtx.warnings.length>0?tCtx.warnings:undefined,tCtx.fmtNotes.length>0?tCtx.fmtNotes:undefined);
           var shouldGenerateNewId=!pendingRequestRef.current.requestId||pendingRequestRef.current.payloadKey!==currentPayloadKey;
-          if(shouldGenerateNewId){pendingRequestRef.current.requestId=generateRequestId();pendingRequestRef.current.payloadKey=currentPayloadKey;}
-          var requestId=pendingRequestRef.current.requestId;
+          if(shouldGenerateNewId){pendingRequestRef.current.requestId=generateRequestId();pendingRequestRef.current.payloadKey=currentPayloadKey;pendingRequestRef.current.userId=user?.id;}
+          var requestId=pendingRequestRef.current.requestId;const initiatingUserId=pendingRequestRef.current.userId;
           setAnalyzed(true);setAiAnalysis("Analyzing...");setTradeSaved(false);setPollVote(null);setPollResults(null);
           try{
             var aiRes=await callEdgeFn("analyze-trade",{requestId:requestId,sideA:tradeA.map(function(p){return{name:p.name,pos:p.pos,age:p.age,val:p.tradeVal||0};}),sideB:tradeB.map(function(p){return{name:p.name,pos:p.pos,age:p.age,val:p.tradeVal||0};}),tvA,tvB,scoring,posImpact:tCtx.posImpact,ageContext:tCtx.ageA.avg!=null||tCtx.ageB.avg!=null?{avgA:tCtx.ageA.avg,avgB:tCtx.ageB.avg}:undefined,draftCapital:tCtx.draftCap.sent.length>0||tCtx.draftCap.received.length>0?{valSent:tCtx.draftCap.valSent,valReceived:tCtx.draftCap.valReceived,net:tCtx.draftCap.net}:undefined,rosterFit:tCtx.rosterImpact?{side:tCtx.rosterImpact.side,team:tCtx.rosterImpact.team,valDelta:tCtx.rosterImpact.delta,lineupDelta:tCtx.rosterImpact.lnA&&tCtx.rosterImpact.lnB?tCtx.rosterImpact.lnA.sv-tCtx.rosterImpact.lnB.sv:null}:undefined,warnings:tCtx.warnings.length>0?tCtx.warnings:undefined,formatNotes:tCtx.fmtNotes.length>0?tCtx.fmtNotes:undefined},user?.token);
+            if(user?.id!==initiatingUserId){return;}
             if(aiRes?.code){if(aiRes.code==="daily_limit_reached"){setTradeQuota({...tradeQuota,remaining_count:0});setAiAnalysis("Daily quota reached - upgrade to Pro for unlimited");pendingRequestRef.current.requestId=null;pendingRequestRef.current.payloadKey=null;}else if(aiRes.code==="request_in_progress"){setAiAnalysis("Analysis in progress - please wait...");}else if(aiRes.code==="request_id_conflict"){pendingRequestRef.current.requestId=null;pendingRequestRef.current.payloadKey=null;setAiAnalysis("Request conflict - please try again");}else{setAiAnalysis("Analysis failed - please try again");pendingRequestRef.current.requestId=null;pendingRequestRef.current.payloadKey=null;}}else if(aiRes?.quota){setTradeQuota({...aiRes.quota,loading:false,error:null});}
             if(aiRes?._replayed){setAiAnalysis(aiRes.analysis||"Analysis unavailable");pendingRequestRef.current.requestId=null;pendingRequestRef.current.payloadKey=null;}else if(aiRes?.analysis){setAiAnalysis(aiRes.analysis);pendingRequestRef.current.requestId=null;pendingRequestRef.current.payloadKey=null;}
           }catch(e){
+            if(user?.id!==initiatingUserId){return;}
             setAiAnalysis("Analysis failed - please try again");
             pendingRequestRef.current.requestId=null;
             pendingRequestRef.current.payloadKey=null;
