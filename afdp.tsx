@@ -25,6 +25,15 @@ async function callEdgeFn(fn: string, body: any, userToken?: string) {
   const res = await fetch(`${EDGE_URL}/${fn}`, { method: "POST", headers, body: JSON.stringify(body) });
   if (!res.ok) { const txt = await res.text().catch(() => ""); try { return JSON.parse(txt); } catch { return { error: `HTTP ${res.status}` }; } }
   return res.json();
+
+// Prompt 28: Request ID generation
+function generateRequestId(){return crypto.randomUUID();}
+
+// Prompt 28: Payload key for idempotency lifecycle (frontend only, not security)
+function getPayloadKey(sideA,sideB,tvA,tvB,scoring,posImpact,ageContext,draftCapital,rosterFit,warnings,formatNotes){
+  const key={sideA:sideA.map(p=>({n:p.name,p:p.pos,v:p.val})),sideB:sideB.map(p=>({n:p.name,p:p.pos,v:p.val})),tvA,tvB,scoring:scoring||"PPR Dynasty",posImpact:posImpact?posImpact.map(p=>({p:p.pos,n:p.net})):null,ageContext:ageContext?{a:ageContext.avgA,b:ageContext.avgB}:null,draftCapital:draftCapital?{s:draftCapital.valSent,r:draftCapital.valReceived}:null,rosterFit:rosterFit?{t:rosterFit.team,d:rosterFit.valDelta}:null,warnings:warnings?[...warnings].sort():null,formatNotes:formatNotes?[...formatNotes].sort():null};
+  return JSON.stringify(key);
+}
 }
 
 function getVisitorId(): string {
@@ -36,6 +45,22 @@ function getVisitorId(): string {
     }
     return id;
   } catch { return "anonymous"; }
+
+// Prompt 28: Fetch authoritative server quota status
+async function fetchTradeQuotaStatus(userToken){
+  if(!userToken){setTradeQuota({limit_per_day:2,used_count:0,reserved_count:0,remaining_count:0,quota_date:"",is_unlimited:false,loading:false,error:"Not authenticated"});return;}
+  try{
+    const res=await callEdgeFn("trade-quota-status",{},userToken);
+    if(res.quota){
+      setTradeQuota({...res.quota,loading:false,error:null});
+    }else{
+      setTradeQuota({limit_per_day:2,used_count:0,reserved_count:0,remaining_count:0,quota_date:"",is_unlimited:false,loading:false,error:"Failed to load quota"});
+    }
+  }catch(e){
+    console.error("[trade-quota] fetch failed:",e);
+    setTradeQuota({limit_per_day:2,used_count:0,reserved_count:0,remaining_count:0,quota_date:"",is_unlimited:false,loading:false,error:"Quota fetch error"});
+  }
+}
 }
 
 let _trackedEmail = "";
@@ -119,7 +144,7 @@ const FORMATS=["Superflex","PPR","Half","Standard"];
 const ALL_POSITIONS=["ALL","QB","RB","WR","TE","K","DST","DL","LB","DB"];
 const PRIME={QB:[26,35],RB:[22,27],WR:[23,29],TE:[25,30],K:[25,38],DST:[0,99],DL:[23,30],LB:[23,30],DB:[23,29]};
 const FREE_RANK_LIMIT=20;
-const FREE_TRADE_LIMIT=3;
+const FREE_TRADE_LIMIT=2; // Prompt 28: Updated from 3 to 2
 const DYNASTY_NEWS=[
   {id:83,ts:"Sep 15",tag:"INJURY",pos:"WR",title:"A.J. Brown placed on IR — high ankle sprain out until Week 6+",body:"Patriots WR A.J. Brown suffered a high ankle sprain in the Wednesday night season opener vs. Seattle and has been placed on injured reserve. He's expected to miss at least 4-5 weeks. At 29, this is a brutal blow to his dynasty value — NE's passing game takes a massive hit without him. Drake Maye loses his WR1. Dynasty managers should sell if someone will buy at a discount. D.J. Moore and Keon Coleman see target bumps in Buffalo-style offenses. Brown's value drops from 5,800 to 4,800."},
   {id:82,ts:"Sep 15",tag:"INJURY",pos:"QB",title:"Kyler Murray concussion — Carson Wentz leads Vikings comeback",body:"Minnesota QB Kyler Murray exited in the first quarter with a concussion after a hit from GB LB Quay Walker. Carson Wentz entered and was brilliant — 12/19, 133 yards, 3 TDs, 0 INT — leading a 29-0 run to beat the Packers 39-22. Murray is week-to-week. Dynasty impact: Murray's value dips on injury concern at 29. J.J. McCarthy could get an opportunity if Murray misses extended time. Wentz is a streaming QB2 in the interim."},
@@ -2870,7 +2895,8 @@ export default function App(){
   var [faabA,setFaabA]=useState(0);
   var [faabB,setFaabB]=useState(0);
   var [analyzed,setAnalyzed]=useState(false);
-  var [tradeCount,setTradeCount]=useState(function(){try{var s=localStorage.getItem('fdp_tc_v2');if(s){var o=JSON.parse(s);var today=new Date().toISOString().slice(0,10);if(o.d===today)return o.n||0;}return 0;}catch(e){return 0;}});
+  var [tradeQuota,setTradeQuota]=useState({limit_per_day:2,used_count:0,reserved_count:0,remaining_count:0,quota_date:"",is_unlimited:false,loading:true,error:null});
+  var [pendingRequestRef]=useState({requestId:null,payloadKey:null});
   var [impTab,setImpTab]=useState("sleeper");
   var [slUser,setSlUser]=useState("");
   var [impStatus,setImpStatus]=useState(null);
@@ -2909,7 +2935,7 @@ export default function App(){
   var [contactMsg,setContactMsg]=useState("");
   var [contactSent,setContactSent]=useState(false);
   var [user,setUser]=useState(function(){try{var s=localStorage.getItem('fdp_user_v1');if(s){var u=JSON.parse(s);setTrackedUser(u?.email||"");return u;}return null;}catch(e){return null;}});
-  function saveAndSetUser(u){try{if(u)localStorage.setItem('fdp_user_v1',JSON.stringify(u));else localStorage.removeItem('fdp_user_v1');if(u?.isPro){localStorage.removeItem('fdp_tc_v2');}}catch(e){}setUser(u);setTrackedUser(u?.email||"");if(u?.isPro)setTradeCount(0);}
+  function saveAndSetUser(u){try{if(u)localStorage.setItem("fdp_user_v1",JSON.stringify(u));else localStorage.removeItem("fdp_user_v1");}catch(e){}setUser(u);setTrackedUser(u?.email||"");if(u?.token)fetchTradeQuotaStatus(u.token);else setTradeQuota({limit_per_day:2,used_count:0,reserved_count:0,remaining_count:0,quota_date:"",is_unlimited:false,loading:false,error:null});}
   var [showPostPayment,setShowPostPayment]=useState(false);
   var [postPaymentLoading,setPostPaymentLoading]=useState(false);
   var [postPaymentStatus,setPostPaymentStatus]=useState("");
@@ -4936,16 +4962,27 @@ export default function App(){
           )
         ),
         React.createElement("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}},
-          !isPro&&React.createElement("div",{style:{fontSize:11,color:tradeCount>=FREE_TRADE_LIMIT?T.red:T.textSub}},tradeCount>=FREE_TRADE_LIMIT?"Trade limit reached - upgrade for unlimited":(FREE_TRADE_LIMIT-tradeCount)+" free analyses remaining"),
+          !isPro&&React.createElement("div",{style:{fontSize:11,color:tradeQuota.remaining_count<=0?T.red:T.textSub}},tradeQuota.remaining_count<=0?"Trade limit reached - upgrade for unlimited":tradeQuota.remaining_count+" analyses remaining"),
           isPro&&React.createElement("div",{style:{fontSize:11,color:T.green}},"Unlimited analyses"),
           (tradeA.length>0||tradeB.length>0)&&React.createElement("button",{onClick:function(){setTradeA([]);setTradeB([]);setFaabA(0);setFaabB(0);setAnalyzed(false);setAiAnalysis("");setCounterOffer(null);setAiSuggestions("");},style:{fontSize:11,color:T.red,background:"none",border:"none",cursor:"pointer",fontWeight:700}},"Clear All")
         ),
         React.createElement("button",{onClick:async function(){
           if(tradeA.length===0&&tradeB.length===0)return;
-          if(!isPro&&tradeCount>=FREE_TRADE_LIMIT){setAuthMode("signup");setShowAuth(true);return;}
-          setAnalyzed(true);setAiAnalysis("Analyzing...");setTradeSaved(false);setPollVote(null);setPollResults(null);if(!isPro)setTradeCount(function(c){var n=c+1;try{var today=new Date().toISOString().slice(0,10);localStorage.setItem('fdp_tc_v2',JSON.stringify({n,d:today}));}catch(e){}return n;});
           var tCtx=buildTradeContext();
-          try{var aiRes=await callEdgeFn("analyze-trade",{sideA:tradeA.map(function(p){return{name:p.name,pos:p.pos,age:p.age,val:p.tradeVal||0};}),sideB:tradeB.map(function(p){return{name:p.name,pos:p.pos,age:p.age,val:p.tradeVal||0};}),tvA,tvB,scoring,posImpact:tCtx.posImpact,ageContext:tCtx.ageA.avg!=null||tCtx.ageB.avg!=null?{avgA:tCtx.ageA.avg,avgB:tCtx.ageB.avg}:undefined,draftCapital:tCtx.draftCap.sent.length>0||tCtx.draftCap.received.length>0?{valSent:tCtx.draftCap.valSent,valReceived:tCtx.draftCap.valReceived,net:tCtx.draftCap.net}:undefined,rosterFit:tCtx.rosterImpact?{side:tCtx.rosterImpact.side,team:tCtx.rosterImpact.team,valDelta:tCtx.rosterImpact.delta,lineupDelta:tCtx.rosterImpact.lnA&&tCtx.rosterImpact.lnB?tCtx.rosterImpact.lnA.sv-tCtx.rosterImpact.lnB.sv:null}:undefined,warnings:tCtx.warnings.length>0?tCtx.warnings:undefined,formatNotes:tCtx.fmtNotes.length>0?tCtx.fmtNotes:undefined},user?.token);setAiAnalysis(aiRes.analysis||genAiAnalysis(tradeA,tradeB,tvA,tvB));}catch(e){setAiAnalysis(genAiAnalysis(tradeA,tradeB,tvA,tvB));}
+          var currentPayloadKey=getPayloadKey(tradeA,tradeB,tvA,tvB,scoring,tCtx.posImpact,tCtx.ageA.avg!=null||tCtx.ageB.avg!=null?{avgA:tCtx.ageA.avg,avgB:tCtx.ageB.avg}:undefined,tCtx.draftCap.sent.length>0||tCtx.draftCap.received.length>0?{valSent:tCtx.draftCap.valSent,valReceived:tCtx.draftCap.valReceived,net:tCtx.draftCap.net}:undefined,tCtx.rosterImpact?{side:tCtx.rosterImpact.side,team:tCtx.rosterImpact.team,valDelta:tCtx.rosterImpact.delta,lineupDelta:tCtx.rosterImpact.lnA&&tCtx.rosterImpact.lnB?tCtx.rosterImpact.lnA.sv-tCtx.rosterImpact.lnB.sv:null}:undefined,tCtx.warnings.length>0?tCtx.warnings:undefined,tCtx.fmtNotes.length>0?tCtx.fmtNotes:undefined);
+          var shouldGenerateNewId=!pendingRequestRef.current.requestId||pendingRequestRef.current.payloadKey!==currentPayloadKey;
+          if(shouldGenerateNewId){pendingRequestRef.current.requestId=generateRequestId();pendingRequestRef.current.payloadKey=currentPayloadKey;}
+          var requestId=pendingRequestRef.current.requestId;
+          setAnalyzed(true);setAiAnalysis("Analyzing...");setTradeSaved(false);setPollVote(null);setPollResults(null);
+          try{
+            var aiRes=await callEdgeFn("analyze-trade",{requestId:requestId,sideA:tradeA.map(function(p){return{name:p.name,pos:p.pos,age:p.age,val:p.tradeVal||0};}),sideB:tradeB.map(function(p){return{name:p.name,pos:p.pos,age:p.age,val:p.tradeVal||0};}),tvA,tvB,scoring,posImpact:tCtx.posImpact,ageContext:tCtx.ageA.avg!=null||tCtx.ageB.avg!=null?{avgA:tCtx.ageA.avg,avgB:tCtx.ageB.avg}:undefined,draftCapital:tCtx.draftCap.sent.length>0||tCtx.draftCap.received.length>0?{valSent:tCtx.draftCap.valSent,valReceived:tCtx.draftCap.valReceived,net:tCtx.draftCap.net}:undefined,rosterFit:tCtx.rosterImpact?{side:tCtx.rosterImpact.side,team:tCtx.rosterImpact.team,valDelta:tCtx.rosterImpact.delta,lineupDelta:tCtx.rosterImpact.lnA&&tCtx.rosterImpact.lnB?tCtx.rosterImpact.lnA.sv-tCtx.rosterImpact.lnB.sv:null}:undefined,warnings:tCtx.warnings.length>0?tCtx.warnings:undefined,formatNotes:tCtx.fmtNotes.length>0?tCtx.fmtNotes:undefined},user?.token);
+            if(aiRes?.code){if(aiRes.code==="daily_limit_reached"){setTradeQuota({...tradeQuota,remaining_count:0});setAiAnalysis("Daily quota reached - upgrade to Pro for unlimited");pendingRequestRef.current.requestId=null;pendingRequestRef.current.payloadKey=null;}else if(aiRes.code==="request_in_progress"){setAiAnalysis("Analysis in progress - please wait...");}else if(aiRes.code==="request_id_conflict"){pendingRequestRef.current.requestId=null;pendingRequestRef.current.payloadKey=null;setAiAnalysis("Request conflict - please try again");}else{setAiAnalysis("Analysis failed - please try again");pendingRequestRef.current.requestId=null;pendingRequestRef.current.payloadKey=null;}}else if(aiRes?.quota){setTradeQuota({...aiRes.quota,loading:false,error:null});}
+            if(aiRes?._replayed){setAiAnalysis(aiRes.analysis||"Analysis unavailable");pendingRequestRef.current.requestId=null;pendingRequestRef.current.payloadKey=null;}else if(aiRes?.analysis){setAiAnalysis(aiRes.analysis);pendingRequestRef.current.requestId=null;pendingRequestRef.current.payloadKey=null;}
+          }catch(e){
+            setAiAnalysis("Analysis failed - please try again");
+            pendingRequestRef.current.requestId=null;
+            pendingRequestRef.current.payloadKey=null;
+          }
           var device=window.innerWidth>=1024?"desktop":"mobile";
           var ua=navigator.userAgent.toLowerCase();
           var platform=ua.includes("iphone")||ua.includes("ipad")?"iOS":ua.includes("android")?"Android":"Web";
@@ -4954,9 +4991,9 @@ export default function App(){
           var cityState=city&&region?city+", "+region:city||region||"";
           trackEvent("trade_analyzed",{scoring,sideA:tradeA.map(function(x){return x.name;}),sideB:tradeB.map(function(x){return x.name;}),origin:window.location.hash||"#trade",device,platform,country,city:cityState,flag});
         },style:{width:"100%",padding:"15px",borderRadius:14,border:"none",cursor:"pointer",fontWeight:800,fontSize:15,
-          background:(tradeA.length>0||tradeB.length>0)?(!isPro&&tradeCount>=FREE_TRADE_LIMIT?"linear-gradient(135deg,"+T.gold+",#92400e)":"linear-gradient(135deg,"+T.purple+",#5b21b6)"):T.purpleDim,
+          background:(tradeA.length>0||tradeB.length>0)?(!isPro&&tradeQuota.remaining_count<=0?"linear-gradient(135deg,"+T.gold+",#92400e)":"linear-gradient(135deg,"+T.purple+",#5b21b6)"):T.purpleDim,
           color:(tradeA.length>0||tradeB.length>0)?"#fff":T.textDim}},
-          (!isPro&&tradeCount>=FREE_TRADE_LIMIT)?"Unlock Unlimited Trades":"Analyze Trade"
+          (!isPro&&tradeQuota.remaining_count<=0)?"Unlock Unlimited Trades":"Analyze Trade"
         ),
         tradeA.length===0&&tradeB.length===0&&!analyzed&&React.createElement("div",{style:{marginTop:16}},
           React.createElement("div",{style:{fontSize:11,fontWeight:800,color:T.textDim,letterSpacing:1,marginBottom:10}},"POPULAR TRADES — TAP TO LOAD"),

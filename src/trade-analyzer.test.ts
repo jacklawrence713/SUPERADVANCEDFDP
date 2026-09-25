@@ -810,9 +810,10 @@ describe('regression safety', () => {
     expect(afdpSrc).toContain('oddsSource')
   })
 
-  it('current entitlement behavior unchanged', () => {
+  it('Prompt 28: server-authoritative quota system', () => {
     expect(afdpSrc).toContain('FREE_TRADE_LIMIT')
-    expect(afdpSrc).toContain("tradeCount>=FREE_TRADE_LIMIT")
+    expect(afdpSrc).toContain("tradeQuota.remaining_count")
+    expect(afdpSrc).toContain("requestId")
   })
 
   it('share modal preserved', () => {
