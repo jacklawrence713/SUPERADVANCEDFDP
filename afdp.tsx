@@ -10224,7 +10224,7 @@ export default function App(){
           React.createElement("div",{style:{fontWeight:800,fontSize:20,color:T.text,marginBottom:4}},"Free"),
           React.createElement("div",{style:{fontWeight:900,fontSize:28,color:T.text,marginBottom:4}},"$0"),
           React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:16}},"Forever free · No credit card required"),
-          ["Basic trade analyzer","20 trade analyses/day","Dynasty rankings (top 20 per position)","IDP support (DL, LB, DB)"].map(function(f){
+          ["2 Trade Analyzer analyses per UTC day","Core dynasty rankings","Player value profiles","IDP support (DL, LB, DB)"].map(function(f){
             return React.createElement("div",{key:f,style:{display:"flex",alignItems:"center",gap:8,marginBottom:8,fontSize:13,color:T.textSub}},
               React.createElement("span",{style:{color:T.textDim,fontSize:14}},"\u2713"),f
             );
@@ -10244,7 +10244,7 @@ export default function App(){
             React.createElement("span",{style:{fontSize:13,color:"#22c55e",fontWeight:700}},"$35.88/year")
           ),
           React.createElement("div",{style:{display:"inline-block",background:"#ccfbf1",color:"#065f46",fontWeight:700,fontSize:12,padding:"4px 12px",borderRadius:20,marginBottom:16}},"7-Day Free Trial"),
-          ["Unlimited trade analyses","Full dynasty rankings (600+ players)","League import (Sleeper, ESPN)","AI trade analysis & suggestions","Dynasty market reports","Team strategy advice","Buy-low / sell-high alerts","Unlimited watchlist","Pick value calculator","Start/Sit tool","Priority support"].map(function(f){
+          ["Unlimited Trade Analyzer analyses","League import (Sleeper, ESPN)","Trade Finder for league trades","League Intelligence & roster analysis","Game Lines & Vegas context","Value History tracking","Why Value Changed insights","Dynasty rankings (600+ players)","Watchlist & alerts","Priority support"].map(function(f){
             return React.createElement("div",{key:f,style:{display:"flex",alignItems:"center",gap:10,marginBottom:10,fontSize:14,color:"#1a1a2e"}},
               React.createElement("span",{style:{color:"#22c55e",fontWeight:700,fontSize:16}},"\u2713"),f
             );
@@ -10263,7 +10263,7 @@ export default function App(){
           React.createElement("div",{style:{marginBottom:16}},
             React.createElement("span",{style:{fontSize:13,color:T.green,fontWeight:700}},"or $99.99/year — save 17%")
           ),
-          ["Everything in Pro","Vegas lines & game totals","Priority support — 24hr response","Early access to new features","Export rankings to CSV"].map(function(f){
+          ["Everything in Pro","CSV exports & advanced tools","Dedicated support — 24hr response","Early access to new features"].map(function(f){
             return React.createElement("div",{key:f,style:{display:"flex",alignItems:"center",gap:10,marginBottom:10,fontSize:14,color:T.text}},
               React.createElement("span",{style:{color:T.purpleLight,fontWeight:700,fontSize:16}},"✓"),f
             );
