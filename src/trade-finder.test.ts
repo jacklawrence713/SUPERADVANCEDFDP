@@ -936,8 +936,9 @@ describe('mobile responsiveness', () => {
   })
 
   it('filter buttons use flexWrap', () => {
-    const tfSection = afdpSrc.split('rankSubTab==="tradefinder"')[1]?.split('rankSubTab===')[0] || ''
-    expect(tfSection).toContain('flexWrap:"wrap"')
+    // Account for paywall branch that now precedes Trade Finder content
+    const tfSplit = afdpSrc.split('rankSubTab==="tradefinder"&&canAccessLeagueFeatures(user)&&React.createElement')[1] || ''
+    expect(tfSplit).toContain('flexWrap:"wrap"')
   })
 
   it('candidate cards use 1fr 30px 1fr grid', () => {
@@ -1128,17 +1129,19 @@ describe('no-league CTA', () => {
   it('routes to league import page, not trade tab', () => {
     // The "Connect Your League" / "Go to League Hub" button should navigate
     // to the league import workflow, not the standalone Trade Analyzer
-    const tfSection = afdpSrc.split('rankSubTab==="tradefinder"')[1]?.split('rankSubTab===')[0] || ''
-    expect(tfSection).toContain('setTab("league")')
-    expect(tfSection).toContain('setLeagueSubTab("leagimport")')
+    // Account for paywall branch that now precedes Trade Finder content
+    const tfSplit = afdpSrc.split('rankSubTab==="tradefinder"&&canAccessLeagueFeatures(user)&&React.createElement')[1] || ''
+    expect(tfSplit).toContain('setTab("league")')
+    expect(tfSplit).toContain('setLeagueSubTab("leagimport")')
     // Should NOT just go to trade tab
-    expect(tfSection).not.toContain('"Go to Trade Tab"')
+    expect(tfSplit).not.toContain('"Go to Trade Tab"')
   })
 
   it('non-pro users see auth prompt', () => {
-    const tfSection = afdpSrc.split('rankSubTab==="tradefinder"')[1]?.split('rankSubTab===')[0] || ''
-    expect(tfSection).toContain('setAuthMode("signup")')
-    expect(tfSection).toContain('setShowAuth(true)')
+    // Account for paywall branch that now precedes Trade Finder content
+    const tfSplit = afdpSrc.split('rankSubTab==="tradefinder"&&canAccessLeagueFeatures(user)&&React.createElement')[1] || ''
+    expect(tfSplit).toContain('setAuthMode("signup")')
+    expect(tfSplit).toContain('setShowAuth(true)')
   })
 })
 

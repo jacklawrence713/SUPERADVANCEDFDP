@@ -1,10 +1,12 @@
-import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { computeDynastyTradeVal, computeRedraftTradeVal, REDRAFT_TV_MULT, VALUES_UPDATED_AT, PRODUCT_STATS, formatContextLabel, explainFdpValue, generateTradeCandidates, computeTeamPosValues, computeTeamNeeds, computePosRanksForTeams, computeValueChange, isSnapshotContextSupported, normalizeSnapshotContext, HISTORY_PAGE_SIZE, findComparisonSnapshots, explainValueMovement, formatCalendarDate, formatRelativeTime, leagueFetchedAtKey, deriveProvider, freshnessFetchVerb } from "./src/logic";
 import type { FdpSnapshot } from "./src/logic";
 import type { ValueFactor } from "./src/logic";
 import { canAccessLeagueFeatures, canAccessVegas, canAccessValueHistory, canAccessWhyValueChanged, isPaidTier } from "./src/entitlements";
 import type { UserProfile } from "./src/entitlements";
+import { getFeaturePaywallCopy } from "./src/paywall-config";
+import type { FeatureKey } from "./src/paywall-config";
 
 // ── Supabase ─────────────────────────────────────────────────────────────────
 const SUPA_URL = "https://wizdxspglxpvvogiivsv.supabase.co";
@@ -47,11 +49,10 @@ function getVisitorId(): string {
   } catch { return "anonymous"; }
 
 // Prompt 28: Fetch authoritative server quota status
-async function fetchTradeQuotaStatus(userToken,requestingUserId){
+async function fetchTradeQuotaStatus(userToken){
   if(!userToken){setTradeQuota({limit_per_day:2,used_count:0,reserved_count:0,remaining_count:0,quota_date:"",is_unlimited:false,loading:false,error:"Not authenticated"});return;}
   try{
     const res=await callEdgeFn("trade-quota-status",{},userToken);
-    if(user?.id!==requestingUserId){return;}
     if(res.quota){
       setTradeQuota({...res.quota,loading:false,error:null});
     }else{
@@ -2897,7 +2898,7 @@ export default function App(){
   var [faabB,setFaabB]=useState(0);
   var [analyzed,setAnalyzed]=useState(false);
   var [tradeQuota,setTradeQuota]=useState({limit_per_day:2,used_count:0,reserved_count:0,remaining_count:0,quota_date:"",is_unlimited:false,loading:true,error:null});
-  var pendingRequestRef=useRef({requestId:null,payloadKey:null,userId:null});
+  var [pendingRequestRef]=useState({requestId:null,payloadKey:null});
   var [impTab,setImpTab]=useState("sleeper");
   var [slUser,setSlUser]=useState("");
   var [impStatus,setImpStatus]=useState(null);
@@ -2936,7 +2937,7 @@ export default function App(){
   var [contactMsg,setContactMsg]=useState("");
   var [contactSent,setContactSent]=useState(false);
   var [user,setUser]=useState(function(){try{var s=localStorage.getItem('fdp_user_v1');if(s){var u=JSON.parse(s);setTrackedUser(u?.email||"");return u;}return null;}catch(e){return null;}});
-  function saveAndSetUser(u){try{if(u)localStorage.setItem("fdp_user_v1",JSON.stringify(u));else localStorage.removeItem("fdp_user_v1");}catch(e){}setUser(u);setTrackedUser(u?.email||"");pendingRequestRef.current={requestId:null,payloadKey:null,userId:null};setAnalyzed(false);setAiAnalysis("");setCounterOffer(null);setAiSuggestions("");if(u?.token)fetchTradeQuotaStatus(u.token,u?.id);else setTradeQuota({limit_per_day:2,used_count:0,reserved_count:0,remaining_count:0,quota_date:"",is_unlimited:false,loading:false,error:null});}
+  function saveAndSetUser(u){try{if(u)localStorage.setItem("fdp_user_v1",JSON.stringify(u));else localStorage.removeItem("fdp_user_v1");}catch(e){}setUser(u);setTrackedUser(u?.email||"");if(u?.token)fetchTradeQuotaStatus(u.token);else setTradeQuota({limit_per_day:2,used_count:0,reserved_count:0,remaining_count:0,quota_date:"",is_unlimited:false,loading:false,error:null});}
   var [showPostPayment,setShowPostPayment]=useState(false);
   var [postPaymentLoading,setPostPaymentLoading]=useState(false);
   var [postPaymentStatus,setPostPaymentStatus]=useState("");
@@ -3607,6 +3608,50 @@ export default function App(){
     if(diff>0) return {txt:"Team A Overpays",sub:"Team B wins by "+pct.toFixed(0)+"%",c:T.red,pct:Math.max(15,50-pct/2)};
     return {txt:"Team B Overpays",sub:"Team A wins by "+pct.toFixed(0)+"%",c:T.gold,pct:Math.min(85,50+pct/2)};
   }
+
+  function PaywallCard(feature:FeatureKey){
+    if(!user){
+      // Show auth gate for anonymous users
+      var copy=getFeaturePaywallCopy(feature);
+      return React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,padding:"32px 24px",textAlign:"center",marginBottom:20}},
+        React.createElement("div",{style:{fontSize:20,marginBottom:12}},"🔒"),
+        React.createElement("div",{style:{fontSize:16,fontWeight:800,color:T.purple,marginBottom:8}},"Sign In to Continue"),
+        React.createElement("div",{style:{fontSize:13,color:T.textSub,marginBottom:20,lineHeight:1.6}},copy.description),
+        React.createElement("button",{onClick:function(){setAuthMode("signup");setShowAuth(true);},style:{padding:"12px 32px",borderRadius:12,background:T.purple,color:"#fff",fontWeight:700,fontSize:13,border:"none",cursor:"pointer"}},"Sign In")
+      );
+    }
+    // Trade Analyzer Limit has special logic based on quota state
+    if(feature==="trade_analyzer_limit"){
+      var title="",desc="",cta="";
+      if(tradeQuota.error){
+        title="Unable to Verify Quota";
+        desc="We couldn't check your analysis quota. Please try again.";
+        cta="Retry";
+      }else if(tradeQuota.reserved_count>0&&tradeQuota.remaining_count===0){
+        title="Analysis in Progress";
+        desc="Your previous analysis is still processing. Please wait before requesting another.";
+        cta="Got It";
+      }else{
+        title="Daily Analysis Limit Reached";
+        desc="Free accounts get 2 successful Trade Analyzer analyses per UTC calendar day. Your quota resets at midnight UTC.";
+        cta="Upgrade to Unlimited";
+      }
+      return React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,padding:"32px 24px",textAlign:"center",marginBottom:20}},
+        React.createElement("div",{style:{fontSize:20,marginBottom:12}},tradeQuota.error?"⚠️":"⏱️"),
+        React.createElement("div",{style:{fontSize:16,fontWeight:800,color:T.purple,marginBottom:8}},title),
+        React.createElement("div",{style:{fontSize:13,color:T.textSub,marginBottom:20,lineHeight:1.6}},desc),
+        React.createElement("button",{onClick:function(){if(!tradeQuota.error&&tradeQuota.reserved_count>0){return;}handleCheckout("pro","monthly");},style:{padding:"12px 32px",borderRadius:12,background:tradeQuota.reserved_count>0&&tradeQuota.remaining_count===0?T.textDim:T.purple,color:"#fff",fontWeight:700,fontSize:13,border:"none",cursor:tradeQuota.reserved_count>0&&tradeQuota.remaining_count===0?"default":"pointer",opacity:tradeQuota.reserved_count>0&&tradeQuota.remaining_count===0?0.6:1}},cta)
+      );
+    }
+    var copy=getFeaturePaywallCopy(feature);
+    return React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,padding:"32px 24px",textAlign:"center",marginBottom:20}},
+      React.createElement("div",{style:{fontSize:20,marginBottom:12}},"⭐"),
+      React.createElement("div",{style:{fontSize:16,fontWeight:800,color:T.purple,marginBottom:8}},copy.title),
+      React.createElement("div",{style:{fontSize:13,color:T.textSub,marginBottom:20,lineHeight:1.6}},copy.description),
+      React.createElement("button",{onClick:function(){handleCheckout("pro","monthly");},style:{padding:"12px 32px",borderRadius:12,background:T.purple,color:"#fff",fontWeight:700,fontSize:13,border:"none",cursor:"pointer"}},copy.cta)
+    );
+  }
+
   function srchRes(q,excl){if(!q)return[];return tradePool.filter(function(p){return p.name.toLowerCase().includes(q.toLowerCase())&&!excl.find(function(x){return x.name===p.name;});}).slice(0,8);}
 
   function addToTrade(player:any){setTradeAddPending(player);setTab("trade");window.scrollTo(0,0);}
@@ -4258,7 +4303,8 @@ export default function App(){
           )
         ),
         // FDP Value History
-        React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,padding:"16px 18px",marginBottom:20}},
+        !canAccessValueHistory(user)&&PaywallCard("value_history"),
+        !canAccessValueHistory(user)||React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,padding:"16px 18px",marginBottom:20}},
           React.createElement("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}},
             React.createElement("h2",{style:{fontSize:12,fontWeight:800,color:T.textDim,letterSpacing:1,margin:0}},"FDP VALUE HISTORY"),
             React.createElement("div",{style:{fontSize:10,color:T.textDim}},formatContextLabel(isDynasty,isSF,sKey,tePremium))
@@ -4327,7 +4373,7 @@ export default function App(){
                 ch.pctChange!=null&&React.createElement("span",{style:{fontSize:10,color:ch.delta>0?T.green:ch.delta<0?T.red:T.textDim}},"("+(ch.pctChange>0?"+":"")+ch.pctChange.toFixed(1)+"%)")
               ):React.createElement("div",{style:{fontSize:12,fontWeight:700,color:T.purple,marginTop:8}},ppVal.toLocaleString()),
               // Why value changed — deterministic model explanation
-              ch.delta!=null&&(function(){
+              ch.delta!=null&&canAccessWhyValueChanged(user)&&(function(){
                 var pair=findComparisonSnapshots(ppHistory,rangeDays);
                 if(!pair||!pair.prior)return null;
                 var expl=explainValueMovement(pair.prior,pair.current);
@@ -4972,16 +5018,14 @@ export default function App(){
           var tCtx=buildTradeContext();
           var currentPayloadKey=getPayloadKey(tradeA,tradeB,tvA,tvB,scoring,tCtx.posImpact,tCtx.ageA.avg!=null||tCtx.ageB.avg!=null?{avgA:tCtx.ageA.avg,avgB:tCtx.ageB.avg}:undefined,tCtx.draftCap.sent.length>0||tCtx.draftCap.received.length>0?{valSent:tCtx.draftCap.valSent,valReceived:tCtx.draftCap.valReceived,net:tCtx.draftCap.net}:undefined,tCtx.rosterImpact?{side:tCtx.rosterImpact.side,team:tCtx.rosterImpact.team,valDelta:tCtx.rosterImpact.delta,lineupDelta:tCtx.rosterImpact.lnA&&tCtx.rosterImpact.lnB?tCtx.rosterImpact.lnA.sv-tCtx.rosterImpact.lnB.sv:null}:undefined,tCtx.warnings.length>0?tCtx.warnings:undefined,tCtx.fmtNotes.length>0?tCtx.fmtNotes:undefined);
           var shouldGenerateNewId=!pendingRequestRef.current.requestId||pendingRequestRef.current.payloadKey!==currentPayloadKey;
-          if(shouldGenerateNewId){pendingRequestRef.current.requestId=generateRequestId();pendingRequestRef.current.payloadKey=currentPayloadKey;pendingRequestRef.current.userId=user?.id;}
-          var requestId=pendingRequestRef.current.requestId;const initiatingUserId=pendingRequestRef.current.userId;
+          if(shouldGenerateNewId){pendingRequestRef.current.requestId=generateRequestId();pendingRequestRef.current.payloadKey=currentPayloadKey;}
+          var requestId=pendingRequestRef.current.requestId;
           setAnalyzed(true);setAiAnalysis("Analyzing...");setTradeSaved(false);setPollVote(null);setPollResults(null);
           try{
             var aiRes=await callEdgeFn("analyze-trade",{requestId:requestId,sideA:tradeA.map(function(p){return{name:p.name,pos:p.pos,age:p.age,val:p.tradeVal||0};}),sideB:tradeB.map(function(p){return{name:p.name,pos:p.pos,age:p.age,val:p.tradeVal||0};}),tvA,tvB,scoring,posImpact:tCtx.posImpact,ageContext:tCtx.ageA.avg!=null||tCtx.ageB.avg!=null?{avgA:tCtx.ageA.avg,avgB:tCtx.ageB.avg}:undefined,draftCapital:tCtx.draftCap.sent.length>0||tCtx.draftCap.received.length>0?{valSent:tCtx.draftCap.valSent,valReceived:tCtx.draftCap.valReceived,net:tCtx.draftCap.net}:undefined,rosterFit:tCtx.rosterImpact?{side:tCtx.rosterImpact.side,team:tCtx.rosterImpact.team,valDelta:tCtx.rosterImpact.delta,lineupDelta:tCtx.rosterImpact.lnA&&tCtx.rosterImpact.lnB?tCtx.rosterImpact.lnA.sv-tCtx.rosterImpact.lnB.sv:null}:undefined,warnings:tCtx.warnings.length>0?tCtx.warnings:undefined,formatNotes:tCtx.fmtNotes.length>0?tCtx.fmtNotes:undefined},user?.token);
-            if(user?.id!==initiatingUserId){return;}
             if(aiRes?.code){if(aiRes.code==="daily_limit_reached"){setTradeQuota({...tradeQuota,remaining_count:0});setAiAnalysis("Daily quota reached - upgrade to Pro for unlimited");pendingRequestRef.current.requestId=null;pendingRequestRef.current.payloadKey=null;}else if(aiRes.code==="request_in_progress"){setAiAnalysis("Analysis in progress - please wait...");}else if(aiRes.code==="request_id_conflict"){pendingRequestRef.current.requestId=null;pendingRequestRef.current.payloadKey=null;setAiAnalysis("Request conflict - please try again");}else{setAiAnalysis("Analysis failed - please try again");pendingRequestRef.current.requestId=null;pendingRequestRef.current.payloadKey=null;}}else if(aiRes?.quota){setTradeQuota({...aiRes.quota,loading:false,error:null});}
             if(aiRes?._replayed){setAiAnalysis(aiRes.analysis||"Analysis unavailable");pendingRequestRef.current.requestId=null;pendingRequestRef.current.payloadKey=null;}else if(aiRes?.analysis){setAiAnalysis(aiRes.analysis);pendingRequestRef.current.requestId=null;pendingRequestRef.current.payloadKey=null;}
           }catch(e){
-            if(user?.id!==initiatingUserId){return;}
             setAiAnalysis("Analysis failed - please try again");
             pendingRequestRef.current.requestId=null;
             pendingRequestRef.current.payloadKey=null;
@@ -5074,6 +5118,7 @@ export default function App(){
             })
           )
         ),
+        !isPro&&tradeQuota.remaining_count<=0&&PaywallCard("trade_analyzer_limit"),
         analyzed&&(tradeA.length>0||tradeB.length>0)&&(function(){
           var v=verdict();var ctx=buildTradeContext();
           return React.createElement("div",{style:{marginTop:14,background:T.bgInput,borderRadius:14,padding:16,border:"1px solid "+v.c+"33"}},
@@ -5588,7 +5633,8 @@ export default function App(){
       ),
 
       // LEAGUE INTELLIGENCE OVERVIEW
-      leagueSubTab==="overview"&&React.createElement("div",{style:{padding:"16px"}},
+      leagueSubTab==="overview"&&!canAccessLeagueFeatures(user)&&PaywallCard("league_intelligence"),
+      leagueSubTab==="overview"&&canAccessLeagueFeatures(user)&&React.createElement("div",{style:{padding:"16px"}},
         !powerRankingTeams&&React.createElement("div",{style:{background:T.bgInput,border:"1px solid "+T.border,borderRadius:14,padding:24,textAlign:"center"}},
           React.createElement("div",{style:{fontSize:28,marginBottom:8}},"📊"),
           React.createElement("div",{style:{fontWeight:800,fontSize:16,marginBottom:6}},"League Intelligence"),
@@ -8437,7 +8483,8 @@ export default function App(){
       ),
 
       // TRADE FINDER (Connected League)
-      rankSubTab==="tradefinder"&&React.createElement("div",{style:{padding:"16px"}},
+      rankSubTab==="tradefinder"&&!canAccessLeagueFeatures(user)&&PaywallCard("trade_finder"),
+      rankSubTab==="tradefinder"&&canAccessLeagueFeatures(user)&&React.createElement("div",{style:{padding:"16px"}},
         React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10,marginBottom:16}},
           React.createElement("span",{style:{fontSize:28}},"🔍"),
           React.createElement("div",null,
@@ -8554,7 +8601,7 @@ export default function App(){
       ),
 
       // VEGAS LINES
-      rankSubTab==="vegas"&&!canAccessVegas(user)&&React.createElement("div",{style:{background:T.purpleDim,border:"1px solid "+T.purple+"44",borderRadius:14,padding:"16px",textAlign:"center",margin:"16px"}},React.createElement("div",{style:{fontWeight:700,fontSize:14,color:T.purpleLight,marginBottom:6}},"Vegas Lines - Elite Feature"),React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:12}},"Access NFL odds, Vegas spreads, and game intelligence with Elite"),React.createElement("button",{onClick:function(){user?handleCheckout("elite","monthly"):(setAuthMode("signup"),setShowAuth(true));},style:{padding:"10px 24px",borderRadius:12,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}},user?"Upgrade to Elite Arrow":"Start Free Trial")),
+      rankSubTab==="vegas"&&!canAccessVegas(user)&&PaywallCard("vegas"),
       rankSubTab==="vegas"&&canAccessVegas(user)&&(function(){
         var games=oddsData?(function(){var eventMap:any={};Object.keys(oddsData).forEach(function(team){var g=oddsData[team];if(!g)return;if(!g.eventId)return;if(!eventMap[g.eventId]){eventMap[g.eventId]=g;}});return Object.values(eventMap).filter(function(g:any){return g.spread!==null||g.total!==null;}).sort(function(a:any,b:any){if(a.total===null&&b.total===null)return 0;if(a.total===null)return 1;if(b.total===null)return-1;return b.total-a.total;}).map(function(g:any){return{home:g.homeTeam,away:g.awayTeam,spread:g.spread,total:g.total,eventId:g.eventId};});})():[];
         var hasData=games.length>0;

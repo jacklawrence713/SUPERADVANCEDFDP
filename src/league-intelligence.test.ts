@@ -142,7 +142,7 @@ describe('league intel: overview tab', () => {
   })
 
   it('overview tab renders when leagueSubTab==="overview"', () => {
-    expect(afdpSrc).toContain('leagueSubTab==="overview"&&React.createElement')
+    expect(afdpSrc).toContain('leagueSubTab==="overview"&&canAccessLeagueFeatures(user)&&React.createElement')
   })
 
   it('shows import prompt when no league connected', () => {
