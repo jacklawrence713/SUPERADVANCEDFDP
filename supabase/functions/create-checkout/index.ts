@@ -1,6 +1,6 @@
 // Supabase Edge Function: create-checkout
 // Creates a Stripe Checkout session for Pro/Elite upgrade
-// Includes duplicate account detection to prevent trial abuse
+// Trial eligibility determined server-side; trial claim deferred to webhook
 import Stripe from "npm:stripe@14.21.0";
 import { createClient } from "npm:@supabase/supabase-js@2.39.0";
 
@@ -111,40 +111,12 @@ Deno.serve(async (req) => {
       await supabase.from("users").update(updates).eq("id", user.id);
     }
 
-    // Determine if trial should be granted
-    let trialUsed = profile?.trial_used || false;
-
-    // Check for duplicate accounts by IP or visitor_id (skip if already trial_used)
-    if (!trialUsed) {
-      const ip = serverIp || profile?.signup_ip;
-      const vid = visitor_id || profile?.signup_visitor_id;
-
-      if (ip || vid) {
-        // Build OR conditions for duplicate check
-        let query = supabase
-          .from("users")
-          .select("id")
-          .eq("trial_used", true)
-          .neq("id", user.id)
-          .limit(1);
-
-        if (ip && vid) {
-          query = query.or(`signup_ip.eq.${ip},signup_visitor_id.eq.${vid}`);
-        } else if (ip) {
-          query = query.eq("signup_ip", ip);
-        } else {
-          query = query.eq("signup_visitor_id", vid);
-        }
-
-        const { data: dupes } = await query;
-        if (dupes && dupes.length > 0) {
-          trialUsed = true;
-          // Mark this user as trial_used so future checks are fast
-          await supabase.from("users").update({ trial_used: true }).eq("id", user.id);
-          console.log(`Duplicate trial blocked for user ${user.id}`);
-        }
-      }
-    }
+    // Determine if trial should be offered
+    // Trial claim is deferred to webhook (checkout.session.completed)
+    // This prevents burning trial if Stripe Checkout creation fails.
+    // Only offer trial if NOT already used.
+    const trialUsed = profile?.trial_used || false;
+    const trialEligible = !trialUsed;
 
     let customerId = profile?.stripe_customer_id;
     if (!customerId) {
@@ -166,7 +138,7 @@ Deno.serve(async (req) => {
       payment_method_types: ["card"],
       line_items: [{ price: priceId, quantity: 1 }],
       subscription_data: {
-        ...(trialUsed ? {} : { trial_period_days: 7 }),
+        ...(trialEligible ? { trial_period_days: 7 } : {}),
         metadata: { supabase_user_id: user.id, plan },
       },
       success_url: `${Deno.env.get("SITE_URL") || "https://fantasydraftpros.com"}/?checkout=success`,
@@ -174,7 +146,7 @@ Deno.serve(async (req) => {
       metadata: { supabase_user_id: user.id, plan },
     });
 
-    return new Response(JSON.stringify({ url: session.url, trial_blocked: trialUsed }), {
+    return new Response(JSON.stringify({ url: session.url, trial_eligible: trialEligible }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
