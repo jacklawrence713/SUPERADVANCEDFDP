@@ -37,13 +37,19 @@ enable_signup = false
 #
 # verify_jwt = Supabase gateway-level JWT check (before function runs).
 #
-# analyze-trade:   verify_jwt=false — manual Bearer → getUser for JSON 401.
+# analyze-trade:   verify_jwt=true — Gateway validates user JWT before handler.
+#                  Handler retains auth.getUser() + quota checks (defense-in-depth).
+#                  Browser always supplies authenticated user JWT.
 #                  CORS: origin-checked (fantasydraftpros.com + localhost dev).
 #
-# cancel-subscription: verify_jwt=false — manual Bearer → getUser.
+# cancel-subscription: verify_jwt=true — Gateway validates user JWT.
+#                  Handler retains ownership checks + Stripe validation.
+#                  Browser always supplies authenticated user JWT.
 #                  CORS: origin-checked.
 #
-# create-checkout: verify_jwt=false — manual Bearer → getUser.
+# create-checkout: verify_jwt=true — Gateway validates user JWT.
+#                  Handler retains user/customer/plan validation.
+#                  Browser always supplies authenticated user JWT.
 #                  CORS: origin-checked.
 #
 # stripe-webhook:  verify_jwt=false — MUST be false. Stripe sends raw
@@ -51,29 +57,46 @@ enable_signup = false
 #                  Auth via Stripe webhook signature verification.
 #                  CORS: none (server-to-server, no browser requests).
 #
-# send-email:      verify_jwt=false — welcome emails sent before session
-#                  exists. Other types do manual auth. welcome_pro
-#                  validates userId ownership server-side.
+# send-email:      verify_jwt=true — ALL email types now require authentication
+#                  (Prompt 35 hardening). Removed unauthenticated "welcome" path
+#                  that allowed open email relay. Handler retains ownership/
+#                  authorization checks. Browser always supplies authenticated JWT.
 #                  CORS: origin-checked.
 #
 [functions.analyze-trade]
-verify_jwt = false
+verify_jwt = true
 
 [functions.cancel-subscription]
-verify_jwt = false
+verify_jwt = true
 
 [functions.create-checkout]
-verify_jwt = false
+verify_jwt = true
 
 [functions.stripe-webhook]
 verify_jwt = false
 
 [functions.send-email]
-verify_jwt = false
+verify_jwt = true
 
-# fetch-odds:     verify_jwt=false — public endpoint for odds data.
-#                 No user auth required (odds are shown to all users).
-#                 Provider API key stored server-side only (THE_ODDS_API_KEY).
+# fetch-odds:     verify_jwt=true — Gateway validates user JWT before handler.
+#                 Handler retains manual plan check (Pro/Elite only).
+#                 THE_ODDS_API_KEY stored server-side only.
+#                 Browser always supplies authenticated user JWT.
 #                 CORS: origin-checked.
 [functions.fetch-odds]
+verify_jwt = true
+
+# record-value-snapshots: verify_jwt=false — service-to-service snapshot ingestion.
+#                 Uses FDP_SNAPSHOT_WRITE_SECRET (custom secret, not JWT).
+#                 Called by scripts/generate-snapshots.ts for value updates.
+#                 CORS: none (server-to-server).
+[functions.record-value-snapshots]
 verify_jwt = false
+
+# trade-quota-status: verify_jwt=true — Gateway validates user JWT.
+#                 Handler retains manual JWT validation + per-user quota lookup.
+#                 Returns authenticated user's trade quota status.
+#                 Browser always supplies authenticated user JWT.
+#                 CORS: origin-checked.
+[functions.trade-quota-status]
+verify_jwt = true

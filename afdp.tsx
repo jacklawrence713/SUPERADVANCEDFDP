@@ -5483,18 +5483,7 @@ export default function App(){
         React.createElement("div",{style:{fontWeight:800,fontSize:14,color:T.text,marginBottom:4}},"\uD83D\uDCEC Weekly Dynasty Movers Newsletter"),
         React.createElement("div",{style:{fontSize:11,color:T.textSub,marginBottom:10}},"Get value changes, trade targets & news every Tuesday. Free."),
         newsletterStatus==="done"?React.createElement("div",{style:{color:T.green,fontWeight:700,fontSize:13}},"\u2713 Subscribed! Check your inbox."):
-        React.createElement("div",{style:{display:"flex",gap:8,maxWidth:380,margin:"0 auto",flexWrap:"wrap"}},
-          React.createElement("input",{type:"email",value:newsletterEmail,onChange:function(e:any){setNewsletterEmail(e.target.value);},placeholder:"your@email.com",style:{flex:1,padding:"10px 14px",borderRadius:10,border:"1px solid "+T.border,background:T.bgInput,color:T.text,fontSize:13,outline:"none"}}),
-          React.createElement("button",{onClick:async function(){
-            if(!newsletterEmail||!newsletterEmail.includes("@"))return;
-            setNewsletterStatus("sending");
-            try{
-              await callEdgeFn("send-email",{type:"welcome",email:newsletterEmail,name:newsletterEmail.split("@")[0]});
-              if(analyticsClient)await analyticsClient.from("analytics_events").insert({visitor_id:getVisitorId(),event_type:"newsletter_signup",event_data:{email:newsletterEmail}});
-              setNewsletterStatus("done");
-            }catch(e){setNewsletterStatus("done");}
-          },disabled:newsletterStatus==="sending",style:{padding:"10px 18px",borderRadius:10,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",whiteSpace:"nowrap"}},newsletterStatus==="sending"?"...":"Subscribe")
-        )
+        React.createElement("button",{onClick:function(){setAuthModal(true);},style:{padding:"10px 18px",borderRadius:10,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}},newsletterStatus==="sending"?"...":"Sign In to Subscribe")
       ),
       // ── HOMEPAGE: Trade Analyzer Features ──
       React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:20,padding:20,marginBottom:20}},

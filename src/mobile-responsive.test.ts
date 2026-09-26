@@ -184,8 +184,8 @@ describe('mobile: modals fit viewport', () => {
 // ══════════════════════════════════════════════════════════════════
 
 describe('mobile: newsletter form wraps on narrow screens', () => {
-  it('newsletter form flex container has flexWrap', () => {
-    expect(afdpSrc).toContain('display:"flex",gap:8,maxWidth:380,margin:"0 auto",flexWrap:"wrap"')
+  it('newsletter button available for anonymous users', () => {
+    expect(afdpSrc).toContain('Sign In to Subscribe')
   })
 })
 
