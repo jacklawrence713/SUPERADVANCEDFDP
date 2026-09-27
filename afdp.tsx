@@ -11,14 +11,12 @@ import type { FeatureKey } from "./src/paywall-config";
 // ── Supabase ─────────────────────────────────────────────────────────────────
 const SUPA_URL = "https://wizdxspglxpvvogiivsv.supabase.co";
 const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndpemR4c3BnbHhwdnZvZ2lpdnN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0NTUzNDcsImV4cCI6MjA4ODAzMTM0N30.jaMMEymsU7Xx3H32V2xuCfC3O9_-y0t2-IuXqhNfW5A";
-const SUPA_SVC = (import.meta as any).env?.VITE_SUPABASE_SERVICE_KEY || "";
 const EDGE_URL = (import.meta as any).env?.VITE_EDGE_FUNCTIONS_URL || "https://wizdxspglxpvvogiivsv.supabase.co/functions/v1";
 // Auth + data client
 const authClient = SUPA_URL && SUPA_KEY ? createClient(SUPA_URL, SUPA_KEY) : null;
 // Analytics write client — separate instance so it always uses anon key, never inherits user session
 const analyticsClient = SUPA_URL && SUPA_KEY ? createClient(SUPA_URL, SUPA_KEY, {auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}}) : null;
 // Analytics read client — service role, for admin reads only
-const analyticsReadClient = SUPA_URL && SUPA_SVC ? createClient(SUPA_URL, SUPA_SVC, {auth:{persistSession:false,autoRefreshToken:false}}) : null;
 
 // ── Edge Function helpers ─────────────────────────────────────────────────────
 async function callEdgeFn(fn: string, body: any, userToken?: string) {
@@ -98,44 +96,6 @@ async function trackEvent(type: string, data: Record<string, any> = {}) {
     });
     if (result.error) { /* silent */ }
   } catch(e) { /* silent */ }
-}
-
-async function loadPublicStats() {
-  const rc = analyticsReadClient;
-  if (!rc) return null;
-  try {
-    const [v, t] = await Promise.all([
-      rc.from("analytics_events").select("visitor_id",{count:"exact",head:true}).eq("event_type","page_view"),
-      rc.from("analytics_events").select("id",{count:"exact",head:true}).eq("event_type","trade_analyzed"),
-    ]);
-    return {visitors: v.count||0, trades: t.count||0};
-  } catch { return null; }
-}
-
-async function loadAnalyticsData() {
-  const rc = analyticsReadClient;
-  if (!rc) return null;
-  try {
-    const now = new Date();
-    const day14ago = new Date(now.getTime() - 14 * 86400000).toISOString();
-    const [r1, r2, r3, r4, r5, r6, r7, r8] = await Promise.all([
-      rc.from("analytics_events").select("visitor_id, created_at").eq("event_type","page_view").gte("created_at",day14ago),
-      rc.from("analytics_events").select("event_data").eq("event_type","tab_change").gte("created_at",day14ago),
-      rc.from("analytics_events").select("id",{count:"exact",head:true}).eq("event_type","trade_analyzed"),
-      rc.from("analytics_events").select("visitor_id, event_type, event_data, created_at").order("created_at",{ascending:false}).limit(100),
-      rc.from("analytics_events").select("id",{count:"exact",head:true}).eq("event_type","page_view"),
-      rc.from("analytics_events").select("id",{count:"exact",head:true}),
-      // All events where user_email is present — dedicated signed-in user feed
-      rc.from("analytics_events").select("visitor_id, event_type, event_data, created_at").not("event_data->>user_email","is","null").order("created_at",{ascending:false}).limit(200),
-      // All trade_analyzed events with full data for admin trade feed
-      rc.from("analytics_events").select("visitor_id, event_data, created_at").eq("event_type","trade_analyzed").order("created_at",{ascending:false}).limit(200),
-    ]);
-    const firstError = r1.error||r2.error||r3.error||r4.error;
-    if (firstError) return { daily:[], features:[], trades:0, recent:[], userEvents:[], platformTrades:[], totalVisitors:0, totalEvents:0, error: firstError.message };
-    return { daily: r1.data||[], features: r2.data||[], trades: r3.count||0, recent: r4.data||[], userEvents: r7.data||[], platformTrades: r8.data||[], totalVisitors: r5.count||0, totalEvents: r6.count||0, error: null };
-  } catch(e:any) {
-    return { daily:[], features:[], trades:0, recent:[], error: e?.message||"Unknown error" };
-  }
 }
 
 const DARK={bg:"#13111e",bgCard:"#1c1a2e",bgInput:"#0f0d1a",border:"#2e2a4a",borderPurple:"#5b3fd4",purple:"#7c4dff",purpleLight:"#9b72ff",purpleDim:"#3d2a7a",text:"#ffffff",textSub:"#9b96b8",textDim:"#5c5880",green:"#22c55e",red:"#ef4444",gold:"#f59e0b",cyan:"#06b6d4"};
@@ -2924,8 +2884,6 @@ export default function App(){
   var [billingPeriod,setBillingPeriod]=useState("yearly");
   var [adminSubTab,setAdminSubTab]=useState(function(){try{return localStorage.getItem('fdp_adminSubTab')||"system";}catch(e){return"system";}});
   var _setAdminSubTab=setAdminSubTab;setAdminSubTab=function(v){_setAdminSubTab(v);try{localStorage.setItem('fdp_adminSubTab',v);}catch(e){}};
-  var [analyticsData,setAnalyticsData]=useState<any>(null);
-  var [analyticsLoading,setAnalyticsLoading]=useState(false);
   var [adminSyncSel,setAdminSyncSel]=useState("");
   var [rebuildConfirmed,setRebuildConfirmed]=useState(false);
   var [rebuildDone,setRebuildDone]=useState(false);
@@ -2936,7 +2894,6 @@ export default function App(){
   var [adminHsQuery,setAdminHsQuery]=useState("");
   var [rbAiGenerating,setRbAiGenerating]=useState(false);
   var [rbAiSuggestions,setRbAiSuggestions]=useState<any[]>([]);
-  var [publicStats,setPublicStats]=useState<{visitors:number,trades:number}|null>(null);
   var [healthCheckedAt,setHealthCheckedAt]=useState(Date.now());
   var [contactName,setContactName]=useState("");
   var [contactEmail,setContactEmail]=useState("");
@@ -3316,7 +3273,6 @@ export default function App(){
   // Track page view on mount (once per session) + load public stats
   useEffect(function(){
     try{var key="fdp_tracked_"+new Date().toDateString();if(!sessionStorage.getItem(key)){sessionStorage.setItem(key,"1");trackEvent("page_view",{referrer:document.referrer||"direct",path:window.location.pathname});}}catch(e){trackEvent("page_view",{referrer:document.referrer||"direct",path:window.location.pathname});}
-    loadPublicStats().then(function(s){if(s)setPublicStats(s);});
     fetchOdds().then(function(d){if(Object.keys(d.odds).length>0){setOddsData(d.odds);setOddsSource(d.source);setOddsFetchedAt(d.fetchedAt);setOddsStale(d.stale);}else{var hc=buildHardcodedOdds();if(Object.keys(hc).length>0){setOddsData(hc);setOddsSource("manual");setOddsFetchedAt("");setOddsStale(false);}}});
   },[]);
 
@@ -4914,17 +4870,6 @@ export default function App(){
         React.createElement("div",{style:{display:"flex",flexWrap:"wrap",justifyContent:"center",gap:6,marginBottom:14}},["Dynasty","Redraft","1QB","Superflex","PPR","Half PPR","Standard","TE Premium","IDP"].map(function(f){return React.createElement("span",{key:f,style:{background:T.purpleDim,border:"1px solid "+T.purple+"33",borderRadius:20,padding:"4px 12px",fontSize:10,color:T.purpleLight,fontWeight:700,letterSpacing:0.3}},f);})),
         React.createElement("h1",{style:{fontWeight:900,fontSize:28,lineHeight:1.15,marginBottom:10,marginTop:0}},React.createElement("span",{style:{color:T.purple}},"Fantasy Football Decisions."),React.createElement("br",null),"Powered by Your League."),
         React.createElement("p",{style:{fontSize:14,color:T.textSub,lineHeight:1.7,marginBottom:16,maxWidth:520,marginLeft:"auto",marginRight:"auto",marginTop:0}},"Connect your league, analyze trades, compare player values, understand your roster, and make better fantasy football decisions with league-aware tools."),
-        publicStats&&publicStats.trades>0&&React.createElement("div",{style:{display:"flex",justifyContent:"center",gap:24,marginBottom:20}},
-          React.createElement("div",{style:{textAlign:"center"}},
-            React.createElement("div",{style:{fontWeight:900,fontSize:22,color:T.purple}},(publicStats.trades||0).toLocaleString()),
-            React.createElement("div",{style:{fontSize:10,color:T.textSub,fontWeight:600,letterSpacing:0.5,marginTop:2}},"TRADES ANALYZED")
-          ),
-          React.createElement("div",{style:{width:1,background:T.border}}),
-          React.createElement("div",{style:{textAlign:"center"}},
-            React.createElement("div",{style:{fontWeight:900,fontSize:22,color:T.purple}},"1,000+"),
-            React.createElement("div",{style:{fontSize:10,color:T.textSub,fontWeight:600,letterSpacing:0.5,marginTop:2}},"PLAYER VALUES")
-          )
-        ),
         React.createElement("div",{style:{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap",marginBottom:4}},
           React.createElement("button",{onClick:function(){if(isPro){setTab("league");setLeagueSubTab("leagimport");}else{setAuthMode("signup");setShowAuth(true);}},style:{padding:"13px 24px",borderRadius:30,border:"none",cursor:"pointer",fontWeight:800,fontSize:14,background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff"}},"Connect Your League"),
           React.createElement("button",{onClick:function(){var el=document.querySelector("[data-trade-form]");if(el)el.scrollIntoView({behavior:"smooth",block:"start"});},style:{padding:"13px 24px",borderRadius:30,border:"1px solid "+T.border,cursor:"pointer",fontWeight:700,fontSize:14,background:"transparent",color:T.text}},"Analyze a Trade")
@@ -10410,7 +10355,7 @@ export default function App(){
       React.createElement("div",{style:{position:"relative",borderBottom:"1px solid "+T.border}},
         isDesktop&&React.createElement("button",{onClick:function(){adminTabsRef.current&&adminTabsRef.current.scrollBy({left:-200,behavior:"smooth"});},style:{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",zIndex:2,background:T.bgCard,border:"1px solid "+T.border,borderRadius:"50%",width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:T.text,fontSize:14,padding:0}},"‹"),
         React.createElement("div",{ref:adminTabsRef,style:{display:"flex",gap:6,padding:isDesktop?"12px 36px":"12px 16px",overflowX:"auto",WebkitOverflowScrolling:"touch",msOverflowStyle:"none",scrollbarWidth:"none"}},
-          [["analytics","📊","Analytics"],["system","\u21BA","System"],["valuetuner","\u2AE5","Value Tuner"],["rbcontext","\u270E","RB Context"],["rbai","\u2728","RB AI"],["headshots","\uD83D\uDC64","Headshots"],["idpupload","\u2B06","IDP Upload"]].map(function(s){
+          [["system","\u21BA","System"],["valuetuner","\u2AE5","Value Tuner"],["rbcontext","\u270E","RB Context"],["rbai","\u2728","RB AI"],["headshots","\uD83D\uDC64","Headshots"],["idpupload","\u2B06","IDP Upload"]].map(function(s){
             var active=adminSubTab===s[0];
             return React.createElement("button",{key:s[0],onClick:function(){setAdminSubTab(s[0]);},style:{whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:5,padding:"8px 12px",borderRadius:10,border:"1px solid "+(active?T.purple:T.border),background:active?T.purple:"transparent",color:active?"#fff":T.textSub,fontWeight:700,fontSize:12,cursor:"pointer",flexShrink:0}},
               React.createElement("span",null,s[1]),s[2]
@@ -10893,11 +10838,6 @@ export default function App(){
       ),
 
       // ── ANALYTICS SUB-TAB ────────────────────────────────────────────────
-      adminSubTab==="analytics"&&React.createElement(AnalyticsDashboard,{T:T,data:analyticsData,loading:analyticsLoading,onLoad:function(){
-        if(analyticsLoading)return;
-        setAnalyticsLoading(true);
-        loadAnalyticsData().then(function(d){setAnalyticsData(d);setAnalyticsLoading(false);}).catch(function(e){setAnalyticsData({error:e?.message||"Unknown error",daily:[],features:[],trades:0,recent:[]});setAnalyticsLoading(false);});
-      }})
     ),
 
     // ════ IMPORT TAB ════

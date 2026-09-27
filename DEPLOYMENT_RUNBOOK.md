@@ -366,3 +366,250 @@ Deploy with confidence ✅
 
 **STATUS**: ✅ Ready for SENIOR-ENGINEER FINAL REVIEW
 **NEXT STEP**: Execute Prompt 35 final verification checklist before production deployment
+
+---
+
+## 🔐 GATE 1A SECURITY HARDENING — Credential Exposure Remediation
+
+**STATUS:** ✅ IMPLEMENTED (Service-role frontend exposure removed)
+**BLOCKERS:** 3/4 resolved (Blocker 1: Analytics Removal Justified)
+
+### Removed Features (Technical Cleanup)
+
+#### Analytics Dashboard (Removed)
+- **Reason:** Feature depended on `VITE_SUPABASE_SERVICE_KEY` (critical security vulnerability) and queried non-existent `analytics_events` table
+- **Production Impact:** None (feature was broken/non-functional in production)
+- **User Impact:** Removed admin analytics tab (was not displaying data anyway)
+- **Future Path:** Can be restored via RLS-protected stats table as separate feature project
+
+#### Homepage "Trades Analyzed" Metric (Removed)
+- **Reason:** Queried non-existent `analytics_events` table; feature was silently failing in production
+- **Production Impact:** None (metric was not displayed to users)
+- **User Impact:** None (feature never worked)
+- **Future Path:** Can be restored when analytics infrastructure is implemented
+
+**Conclusion:** Removing broken code is legitimate technical cleanup. No business justification required beyond fixing the security vulnerability.
+
+---
+
+## 🛑 MANDATORY SECURITY GATE: Credential Rotation/Retirement
+
+**CRITICAL:** This gate MUST execute before any other production deployment steps.
+
+### Gate Requirements
+
+#### Determination: Was Credential Exposed?
+
+If VITE_SUPABASE_SERVICE_KEY or SUPABASE_SERVICE_ROLE_KEY appears in:
+- Any production build artifacts (browser JavaScript)
+- Any production browser network traffic
+- Any logs from production deployments
+
+**Classification:** HIGHLY LIKELY EXPOSED (treat as compromised regardless of confirmation)
+
+#### Credential Rotation Procedure
+
+**Step 1: Create New Service-Role Key**
+```
+1. Log in to Supabase Dashboard
+2. Navigate to Project Settings → API
+3. Generate new SUPABASE_SERVICE_ROLE_KEY
+4. Store securely (not in code, not in GitHub)
+5. Do NOT delete old key yet
+```
+
+**Step 2: Update All Edge Functions**
+
+Update these 8 Edge Functions with new SUPABASE_SERVICE_ROLE_KEY (if they use it):
+- send-email
+- fetch-odds
+- analyze-trade
+- trade-quota-status
+- create-checkout
+- cancel-subscription
+- record-value-snapshots
+- stripe-webhook
+
+Process for each function:
+```
+1. Navigate to Supabase Function settings
+2. Update SUPABASE_SERVICE_ROLE_KEY secret with new key value
+3. Redeploy function
+4. Test function with sample request
+5. Verify in function logs: No auth errors
+6. Move to next function
+```
+
+**Step 3: Verification Testing**
+
+After updating all functions:
+```bash
+# Test each function is accessible and functional
+curl -X POST https://wizdxspglxpvvogiivsv.supabase.co/functions/v1/send-email \
+  -H "Authorization: Bearer [USER_JWT]" \
+  -H "Content-Type: application/json" \
+  -d '{"type":"test"}' 2>&1 | grep -q "error\|success"
+
+# Repeat for all 8 functions
+# Expected: All functions return 4xx-5xx responses or success (not 500 auth error)
+```
+
+**Step 4: Retire Old Credential**
+
+Once all functions confirmed working with new key:
+```
+1. Document old key version (for audit trail)
+2. Keep old key in vault for 30-60 days (fallback if needed)
+3. After stable period: proceed to Step 5
+4. Do NOT share old key with anyone
+```
+
+**Step 5: Clean Up GitHub Secrets**
+
+After old key fully retired:
+```
+1. Log in to GitHub repository
+2. Navigate to Settings → Secrets and variables → Actions
+3. Delete GitHub secret: VITE_SUPABASE_SERVICE_KEY
+   (This should already be absent after Gate 1A fix)
+4. Do NOT delete SUPABASE_SERVICE_ROLE_KEY yet
+   (Legacy backend systems may still need it)
+5. Document deletion for compliance
+```
+
+**Step 6: Plan Deactivation of Old Key**
+
+After 60+ days of stable operation:
+```
+1. Ensure no systems still reference old key
+2. Use Supabase dashboard to formally deactivate old key
+3. Log deactivation for audit trail
+4. Verify no function failures after deactivation
+5. Complete compliance documentation
+```
+
+### Rotation Gate Success Criteria
+
+- [ ] New SUPABASE_SERVICE_ROLE_KEY created in Supabase
+- [ ] All 8 Edge Functions updated with new key
+- [ ] All 8 Edge Functions tested and functional
+- [ ] Old key documented and retained (audit trail)
+- [ ] GitHub Actions cleaned up (VITE_SUPABASE_SERVICE_KEY removed)
+- [ ] Deactivation timeline documented
+- [ ] Compliance signed off
+
+**Status Before Proceeding:** STOP if any criteria not met. Do NOT deploy frontend.
+
+---
+
+## 🔄 Updated Deployment Sequence (With Gate 1A)
+
+### Phase 1: Credential Rotation (NEW — MANDATORY FIRST)
+**EXECUTE FIRST before any other deployment**
+
+- [ ] Create new SUPABASE_SERVICE_ROLE_KEY
+- [ ] Update all 8 Edge Functions
+- [ ] Test all 8 Edge Functions
+- [ ] Retire old credential
+- [ ] Clean up GitHub Actions
+- [ ] **STOP here if any failures**
+
+### Phase 2: Database Backup & Recovery
+- [ ] Verify backup capability in Supabase Dashboard
+- [ ] Capture schema snapshot (`pg_dump`)
+- [ ] Test point-in-time recovery
+
+### Phase 3: Database Migrations (003-007)
+Execute in order:
+1. Migration 003: policy_updates
+2. Migration 004: subscription_tables
+3. Migration 005: rbcontext_and_policies
+4. Migration 006: odds_cache_table
+5. Migration 007: event_ledger
+
+### Phase 4: Edge Function Deployment
+Deploy with updated credentials (from Phase 1):
+1. send-email
+2. fetch-odds
+3. analyze-trade
+4. trade-quota-status
+5. create-checkout
+6. cancel-subscription
+7. record-value-snapshots
+8. stripe-webhook
+
+### Phase 5: Frontend Build & Deploy
+- Deploy afdp.tsx with analytics removal
+- Deploy deploy.yml with service-key removal
+- Deploy test file (gate1a-service-role-regression.test.ts)
+- Verify bundle has 0 forbidden identifiers
+
+### Phase 6: Stripe Webhook Configuration (Manual)
+- [ ] Endpoint URL: https://wizdxspglxpvvogiivsv.supabase.co/functions/v1/stripe-webhook
+- [ ] Events: checkout.session.completed, customer.subscription.updated, customer.subscription.deleted
+- [ ] Signing secret configured in Supabase secrets
+
+---
+
+## 📋 Modern Supabase Key Migration (Future Planning)
+
+**Status:** Planning phase only. Do NOT implement now.
+
+### Current State (2026-09)
+- Legacy: SUPABASE_SERVICE_ROLE_KEY (all-access key)
+- Legacy: VITE_SUPABASE_ANON_KEY (browser client)
+- Service-role removed from frontend (Gate 1A)
+
+### Future Modernization Path
+
+When Supabase updates platform or project is migrated:
+
+```
+Phase A: Assess Current Model
+  - Check Supabase project key model
+  - Document legacy vs. modern key support
+  - Plan migration timeline
+
+Phase B: Implement Modern Key Model
+  - Create SUPABASE_SECRET_KEYS (JSON object for services)
+  - Create SUPABASE_PUBLISHABLE_KEY (for browser)
+  - Test granular scopes instead of all-access
+
+Phase C: Migrate Edge Functions
+  - Update each function to use new secret model
+  - Test with sample requests
+  - Verify all 8 functions functional
+
+Phase D: Migrate Frontend
+  - Update browser client to use SUPABASE_PUBLISHABLE_KEY
+  - Test authentication and RLS
+  - Verify no functionality loss
+
+Phase E: Deactivate Legacy Keys
+  - Remove SUPABASE_SERVICE_ROLE_KEY usage
+  - Remove VITE_SUPABASE_ANON_KEY references
+  - Formally deactivate in Supabase dashboard
+
+Phase F: Audit & Compliance
+  - Verify no stale references to legacy keys
+  - Document migration for compliance
+  - Archive old key versions for audit trail
+```
+
+**No action required now. Schedule for future sprint.**
+
+---
+
+## ✅ Gate 1A Blockers Status
+
+| Blocker | Issue | Status |
+|---------|-------|--------|
+| 1 | Analytics removal justification | ✅ RESOLVED |
+| 2 | Test file git status | ⏳ TODO |
+| 3 | Credential rotation documented | ✅ RESOLVED |
+| 4 | Analytics architecture decision | ✅ RESOLVED |
+
+**Remaining:** Blocker 2 (test file git status) — must add to git or exclude
+
+---
+
