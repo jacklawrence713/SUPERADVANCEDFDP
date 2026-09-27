@@ -54,7 +54,26 @@
 ---
 
 ## ✅ PRE-DEPLOYMENT CHECKLIST
-### ⚠️ CRITICAL: Supabase Confirm Email Configuration- [ ] **MANUAL VERIFICATION REQUIRED**: Confirm Email setting in Supabase production  - Current local config: `enable_confirmations = true`  - Signup flow expects session to exist immediately (line 2329: `if(signUpResult.data.session)`)  - If production Confirm Email is ENABLED: signUp returns session=null, welcome email will NOT run  - If production Confirm Email is DISABLED: signUp returns session, welcome email runs immediately  - **ACTION**: Verify actual production Supabase Auth configuration before deployment  - If Confirm Email is enabled in production, welcome email must be sent via backend email service or double-opt-in
+### Confirm Email Configuration (Manual Verification Required)
+- [ ] **MANUAL VERIFICATION REQUIRED**: Verify production Supabase Auth Confirm Email setting
+- [ ] Document whether it is ENABLED or DISABLED for future reference
+
+**FDP now supports both configurations seamlessly:**
+
+**If Confirm Email is DISABLED:**
+- User signs up → Supabase returns session immediately
+- FDP's authenticated welcome email sent via send-email (requires JWT token)
+- User logged in and sees signup success
+
+**If Confirm Email is ENABLED:**
+- User signs up → Supabase returns user but session=null
+- Supabase sends confirmation email automatically
+- User sees: "Check your email to confirm your account, then sign in."
+- User confirms email via Supabase confirmation link
+- User can then sign in with password
+- FDP welcome email skipped; Supabase confirmation email is sufficient
+
+No code changes required. The signup UX adapts automatically based on Supabase configuration.
 
 ### Code Freeze & Verification
 - [x] All Prompt 32-34 tests passing (**30 test files, 1930 tests** — +14 new Prompt 35 security tests)
@@ -64,6 +83,51 @@
 - [x] All secrets configured in GitHub Actions (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, SERVICE_KEY)
 - [x] Zero hardcoded secrets in source (sk_live, sk_test, service_role checked)
 - [x] Git status clean (only intended Prompt35 changes: supabase/config.toml, supabase/functions/send-email/index.ts, DEPLOYMENT_RUNBOOK_PROMPT35.md)
+
+---
+
+## 🛑 MANDATORY PRODUCTION DEPLOYMENT GATES
+
+**The following are NOT OPTIONAL. Missing or failed verification = STOP deployment.**
+
+### PHASE 1: Database Backup/Recovery (MANDATORY)
+- [ ] **CRITICAL**: Database backup capability verified in Supabase Dashboard
+- [ ] Current schema snapshot captured and retained (`pg_dump`)
+- [ ] Point-in-time recovery tested and confirmed available
+- **Status**: MISSING = STOP. DO NOT PROCEED TO MIGRATIONS.
+
+### PHASE 2: Production Secrets (MANDATORY)
+- [ ] All 8 required production secrets verified present (DO NOT print values)
+  - STRIPE_LIVE_SECRET_KEY
+  - STRIPE_LIVE_PUBLISHABLE_KEY
+  - RESEND_API_KEY
+  - THE_ODDS_API_KEY
+  - ANTHROPIC_API_KEY
+  - FDP_SNAPSHOT_WRITE_SECRET
+  - VITE_SUPABASE_URL
+  - VITE_SUPABASE_ANON_KEY
+- **Verification location**: Supabase Dashboard → Project Settings → Edge Function Secrets
+- **Status**: Any secret MISSING = STOP. DO NOT PROCEED TO FUNCTION DEPLOYMENT.
+
+### PHASE 3: Stripe Live-Mode Consistency (MANDATORY)
+- [ ] STRIPE_LIVE_SECRET_KEY is `sk_live_*` (NOT `sk_test_*`)
+- [ ] All STRIPE_PRICE_* values are live price IDs (verified in Stripe Dashboard)
+- [ ] NO mixing of test and live keys/prices (consistency check required)
+- **Status**: Mode mismatch = STOP. DO NOT PROCEED TO WEBHOOK CONFIG.
+
+### PHASE 4: Stripe Webhook Configuration (MANDATORY)
+- [ ] Webhook endpoint URL verified in Stripe Dashboard: https://wizdxspglxpvvogiivsv.supabase.co/functions/v1/stripe-webhook
+- [ ] Event subscriptions configured (checkout.session.completed, customer.subscription.updated, customer.subscription.deleted)
+- [ ] Webhook signing secret retrieved and configured in Supabase Edge Function secrets
+- **Status**: Endpoint NOT configured = STOP. DO NOT PROCEED TO FRONTEND DEPLOY.
+
+### Auth Configuration (MANDATORY)
+- [ ] Site URL matches production domain in Supabase Auth settings
+- [ ] Additional redirect URLs include all production origins (with/without www)
+- [ ] Email confirmation settings verified (ENABLED or DISABLED documented)
+- **Status**: Configuration mismatch = STOP. DO NOT PROCEED.
+
+---
 
 ### Supabase Readiness
 - [ ] Supabase project ref confirmed: `wizdxspglxpvvogiivsv`

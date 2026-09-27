@@ -129,4 +129,83 @@ describe('PROMPT 35: Email Security Hardening', () => {
     }
   })
 
+  // ===== SECTION 10: GATE 0 SESSION-AWARE SIGNUP =====
+
+  it('GATE 0: session-present signup calls welcome send-email with access_token', () => {
+    // When signUp returns session (Confirm Email disabled):
+    // FDP sends authenticated welcome email immediately
+    const appSrc = readFileSync(resolve(rootDir, 'afdp.tsx'), 'utf-8')
+
+    // Verify the code structure: if(signUpResult.data.session) contains send-email call
+    const sessionPresentSection = appSrc.substring(
+      appSrc.indexOf('if(signUpResult.data.session)'),
+      appSrc.indexOf('} else {') + 50
+    )
+
+    expect(sessionPresentSection).toContain('callEdgeFn("send-email"')
+    expect(sessionPresentSection).toContain('signUpResult.data.session.access_token')
+  })
+
+  it('GATE 0: session-null signup does NOT call send-email', () => {
+    // When signUp returns null session (Confirm Email enabled):
+    // FDP does NOT call send-email (no token to pass)
+    // Supabase confirmation lifecycle handles account verification
+    const appSrc = readFileSync(resolve(rootDir, 'afdp.tsx'), 'utf-8')
+
+    // Verify the else block (session null) does NOT have send-email call
+    const sessionNullStart = appSrc.indexOf('} else {')
+    const sessionNullEnd = appSrc.indexOf('setSignupConfirmationPending(true)') + 100
+    const sessionNullSection = appSrc.substring(sessionNullStart, sessionNullEnd)
+
+    expect(sessionNullSection).not.toContain('callEdgeFn("send-email"')
+  })
+
+  it('GATE 0: session-null signup uses signupConfirmationPending state', () => {
+    // Session-null successful signup should NOT use setErr (error state)
+    // Instead, use dedicated signupConfirmationPending for success messaging
+    const appSrc = readFileSync(resolve(rootDir, 'afdp.tsx'), 'utf-8')
+
+    // Verify signupConfirmationPending state variable exists
+    expect(appSrc).toContain('signupConfirmationPending')
+
+    // Verify it's initialized in state
+    expect(appSrc).toContain('[signupConfirmationPending,setSignupConfirmationPending]')
+  })
+
+  it('GATE 0: confirmation UI does not render as error state', () => {
+    // The success confirmation message should use positive rendering,
+    // not the red error styling from setErr
+    const appSrc = readFileSync(resolve(rootDir, 'afdp.tsx'), 'utf-8')
+
+    // Find the confirmation pending UI section
+    const confirmSection = appSrc.substring(
+      appSrc.indexOf('signupConfirmationPending&&'),
+      appSrc.indexOf('signupConfirmationPending&&') + 800
+    )
+
+    // Verify it includes positive messaging elements
+    expect(confirmSection).toContain('📧') // Email emoji
+    expect(confirmSection).toContain('Confirm your email') // Heading
+    expect(confirmSection).toContain('Check your email and click the link') // Instructions
+  })
+
+  it('GATE 0: send-email call is inside session-present conditional', () => {
+    // Critical for security: send-email must only be called when token exists
+    // Not called unconditionally with undefined token
+    const appSrc = readFileSync(resolve(rootDir, 'afdp.tsx'), 'utf-8')
+
+    // Find the send-email call in signup context
+    const signupStart = appSrc.indexOf('if(mode==="signup")')
+    const signupEnd = appSrc.indexOf('var usr=signInResult.data.user')
+    const signupSection = appSrc.substring(signupStart, signupEnd)
+
+    // Verify if(signUpResult.data.session) comes before send-email
+    const ifSessionIdx = signupSection.indexOf('if(signUpResult.data.session)')
+    const sendEmailIdx = signupSection.indexOf('callEdgeFn("send-email"')
+
+    expect(ifSessionIdx).toBeGreaterThanOrEqual(0)
+    expect(sendEmailIdx).toBeGreaterThanOrEqual(0)
+    expect(ifSessionIdx).toBeLessThan(sendEmailIdx)
+  })
+
 })

@@ -2304,7 +2304,7 @@ var FAQS=[{q:"What makes Fantasy Draft Pros the best dynasty trade analyzer?",a:
 
 function AuthModal(props){
   var T=props.T||DARK,onClose=props.onClose,onAuth=props.onAuth,initMode=props.mode||"signup";
-  var [mode,setMode]=useState(initMode),[email,setEmail]=useState(""),[password,setPassword]=useState(""),[name,setName]=useState(""),[plan,setPlan]=useState("pro"),[step,setStep]=useState(1),[err,setErr]=useState(""),[loading,setLoading]=useState(false),[resetSent,setResetSent]=useState(false),[showPw,setShowPw]=useState(false);
+  var [mode,setMode]=useState(initMode),[email,setEmail]=useState(""),[password,setPassword]=useState(""),[name,setName]=useState(""),[plan,setPlan]=useState("pro"),[step,setStep]=useState(1),[err,setErr]=useState(""),[loading,setLoading]=useState(false),[resetSent,setResetSent]=useState(false),[signupConfirmationPending,setSignupConfirmationPending]=useState(false),[showPw,setShowPw]=useState(false);
   var inp={background:T.bgInput,color:T.text,border:"1px solid "+T.border,borderRadius:10,padding:"13px 16px",fontSize:14,outline:"none",width:"100%",boxSizing:"border-box",marginBottom:12};
   async function sendReset(){
     if(!email.includes("@")){setErr("Enter a valid email address");return;}
@@ -2333,22 +2333,23 @@ function AuthModal(props){
         if(signUpResult.data.session){
           (async function(){try{var g=await getGeo().catch(function(){return null;});var upd:any={};if(g?.ip)upd.signup_ip=g.ip;var vid=getVisitorId();if(vid)upd.signup_visitor_id=vid;if(Object.keys(upd).length>0)await authClient!.from("users").update(upd).eq("id",signUpResult.data.session!.user.id);}catch(e){}})();
         }
-        // Send welcome email (non-blocking)
-        callEdgeFn("send-email",{type:"welcome",to:email,name},signUpResult.data.session?.access_token).catch(function(){});
-        // If email confirmation required, show message; otherwise auth state will fire
+        // GATE 0 CORRECTIVE: Support both Confirm Email configurations
+        // If session exists (Confirm Email disabled): Send authenticated welcome email immediately
+        // If session null (Confirm Email enabled): Supabase confirmation email handles account verification
         if(signUpResult.data.session){
+          // Session present: Send authenticated FDP welcome email (non-blocking)
+          callEdgeFn("send-email",{type:"welcome",to:email,name},signUpResult.data.session.access_token).catch(function(){});
           var u=signUpResult.data.session.user;
           var admin2=isAdminEmail(u.email||"");
           var fa2=isFullAccessEmail(u.email||"");
           onAuth({id:u.id,name:name||u.email||"",email:u.email||"",plan:(admin2||fa2)?"elite":plan,isPro:plan!=="free"||admin2||fa2,isAdmin:admin2,token:signUpResult.data.session.access_token});
         } else {
-          setErr("Check your email to confirm your account, then sign in.");
-          setMode("signin");setStep(1);
+          // Session null: Email confirmation required (Confirm Email enabled)
+          // Supabase sends confirmation email automatically
+          // Show confirmation pending state (not an error)
+          setSignupConfirmationPending(true);
+          setErr("");
         }
-      } else {
-        var signInResult=await authClient!.auth.signInWithPassword({email,password});
-        if(signInResult.error)throw signInResult.error;
-        var sess=signInResult.data.session;
         var usr=signInResult.data.user;
         var admin3=isAdminEmail(usr.email||"");
         var fa3=isFullAccessEmail(usr.email||"");
@@ -2380,7 +2381,13 @@ function AuthModal(props){
       ),
       step===1&&React.createElement("div",null,
         mode!=="forgot"&&React.createElement("div",{style:{textAlign:"center",marginBottom:18}},React.createElement("div",{style:{fontWeight:900,fontSize:22,marginBottom:4}},mode==="signup"?"Create Account":"Welcome Back"),React.createElement("div",{style:{fontSize:13,color:T.textSub}},mode==="signup"?"Start your 7-day free trial":"Sign in to your account")),
-        mode!=="forgot"&&React.createElement("div",{style:{display:"flex",background:T.bgInput,borderRadius:12,padding:4,marginBottom:18}},["signup","signin"].map(function(m){return React.createElement("button",{key:m,onClick:function(){setMode(m);setErr("");},style:{flex:1,padding:"9px",borderRadius:9,border:"none",cursor:"pointer",fontWeight:700,fontSize:13,background:mode===m?T.purple:"transparent",color:mode===m?"#fff":T.textSub}},m==="signup"?"Sign Up":"Sign In");})),
+        signupConfirmationPending&&React.createElement("div",{style:{textAlign:"center",padding:"20px 0"}},
+        React.createElement("div",{style:{fontSize:32,marginBottom:12}},"📧"),
+        React.createElement("div",{style:{fontWeight:800,fontSize:18,marginBottom:8}},"Confirm your email"),
+        React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.6,marginBottom:16}},"We sent a confirmation link to ",React.createElement("b",null,email),". Check your email and click the link to confirm your account."),
+        React.createElement("button",{onClick:function(){setMode("signin");setSignupConfirmationPending(false);setErr("");},style:{width:"100%",padding:"12px",borderRadius:12,border:"1px solid "+T.border,background:"transparent",color:T.text,fontWeight:700,fontSize:14,cursor:"pointer"}},"Back to Sign In")
+      ),
+      !signupConfirmationPending&&mode!=="forgot"&&React.createElement("div",{style:{display:"flex",background:T.bgInput,borderRadius:12,padding:4,marginBottom:18}},["signup","signin"].map(function(m){return React.createElement("button",{key:m,onClick:function(){setMode(m);setErr("");},style:{flex:1,padding:"9px",borderRadius:9,border:"none",cursor:"pointer",fontWeight:700,fontSize:13,background:mode===m?T.purple:"transparent",color:mode===m?"#fff":T.textSub}},m==="signup"?"Sign Up":"Sign In");})),
         mode!=="forgot"&&mode==="signup"&&React.createElement("input",{placeholder:"Full name",value:name,onChange:function(e){setName(e.target.value);},style:inp}),
         mode!=="forgot"&&React.createElement("input",{placeholder:"Email address",type:"email",value:email,onChange:function(e){setEmail(e.target.value);},style:inp}),
         mode!=="forgot"&&React.createElement("div",{style:{position:"relative",marginBottom:err?8:16}},
