@@ -374,21 +374,24 @@ Deploy with confidence ✅
 **STATUS:** ✅ IMPLEMENTED (Service-role frontend exposure removed)
 **BLOCKERS:** 3/4 resolved (Blocker 1: Analytics Removal Justified)
 
-### Removed Features (Technical Cleanup)
+### Removed Features (Security-Driven Cleanup)
 
-#### Analytics Dashboard (Removed)
-- **Reason:** Feature depended on `VITE_SUPABASE_SERVICE_KEY` (critical security vulnerability) and queried non-existent `analytics_events` table
-- **Production Impact:** None (feature was broken/non-functional in production)
-- **User Impact:** Removed admin analytics tab (was not displaying data anyway)
-- **Future Path:** Can be restored via RLS-protected stats table as separate feature project
+#### Analytics Implementation (Removed)
 
-#### Homepage "Trades Analyzed" Metric (Removed)
-- **Reason:** Queried non-existent `analytics_events` table; feature was silently failing in production
-- **Production Impact:** None (metric was not displayed to users)
-- **User Impact:** None (feature never worked)
-- **Future Path:** Can be restored when analytics infrastructure is implemented
+The homepage analytics metric implementation depended on a **browser-side Supabase service-role credential** (`VITE_SUPABASE_SERVICE_KEY`).
 
-**Conclusion:** Removing broken code is legitimate technical cleanup. No business justification required beyond fixing the security vulnerability.
+**Why Removed:** Service-role credentials must never be exposed to browser code because they bypass normal RLS protections. This is a critical architectural security violation.
+
+Gate 1A removes this insecure implementation as part of security remediation.
+
+**Restoration Path:**
+- Historical production visibility of this metric has not been independently established during Gate 1A, so no claims are made about prior user impact
+- No least-privileged replacement is included in the current release
+- Restoration is intentionally deferred to a separate feature project
+- Approved future architectures:
+  - **Option A (Recommended):** RLS-protected analytics schema queried through the normal least-privileged frontend client
+  - **Option B:** Narrowly scoped authenticated Edge Function that returns only required aggregates
+  - Both options must exclude service-role credentials from frontend code
 
 ---
 
