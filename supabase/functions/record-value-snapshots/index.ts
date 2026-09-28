@@ -31,6 +31,7 @@
 // Each context is independently complete.
 
 import { createClient } from "npm:@supabase/supabase-js@2.39.0";
+import { getSupabaseUrl, getSupabaseSecretKey } from "../_shared/supabase-keys.ts";
 
 const ALLOWED_ORIGINS = [
   "https://fantasydraftpros.com",
@@ -87,8 +88,8 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const supabaseUrl = getSupabaseUrl();
+    const serviceRoleKey = getSupabaseSecretKey();
     const writeSecret = Deno.env.get("FDP_SNAPSHOT_WRITE_SECRET");
     if (!supabaseUrl || !serviceRoleKey || !writeSecret) {
       return jsonErr("Server misconfigured", 500, cors);

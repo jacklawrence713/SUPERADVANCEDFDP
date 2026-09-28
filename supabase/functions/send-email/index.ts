@@ -2,6 +2,7 @@
 // Sends transactional emails via Resend
 import { Resend } from "npm:resend@3.2.0";
 import { createClient } from "npm:@supabase/supabase-js@2.39.0";
+import { getSupabaseUrl, getSupabaseSecretKey } from "../_shared/supabase-keys.ts";
 
 const ALLOWED_ORIGINS = [
   "https://fantasydraftpros.com",
@@ -59,7 +60,7 @@ Deno.serve(async (req) => {
     const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
     const { type, to, name, subject, message, userId, plan } = await req.json();
 
-    const supaAuth = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const supaAuth = createClient(getSupabaseUrl(), getSupabaseSecretKey());
 
     // SECURITY: Require authentication for ALL email types (Prompt 35 hardening)
     // Previously: type="welcome" was exempted, allowing unauthenticated email relay (CRITICAL vulnerability)

@@ -1,6 +1,7 @@
 // Supabase Edge Function: cancel-subscription
 import Stripe from "npm:stripe@14.21.0";
 import { createClient } from "npm:@supabase/supabase-js@2.39.0";
+import { getSupabaseUrl, getSupabaseSecretKey } from "../_shared/supabase-keys.ts";
 
 const ALLOWED_ORIGINS = [
   "https://fantasydraftpros.com",
@@ -34,8 +35,8 @@ Deno.serve(async (req) => {
     }
 
     const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      getSupabaseUrl(),
+      getSupabaseSecretKey()
     );
 
     const token = authHeader.replace("Bearer ", "");

@@ -44,7 +44,7 @@ describe('GATE 1A: Service-Role Credential Exposure Prevention', () => {
       const workflowPath = path.join(process.cwd(), '.github', 'workflows', 'deploy.yml');
       const workflowContent = fs.readFileSync(workflowPath, 'utf-8');
       expect(workflowContent).toContain('VITE_SUPABASE_URL');
-      expect(workflowContent).toContain('VITE_SUPABASE_ANON_KEY');
+      expect(workflowContent).toContain('VITE_SUPABASE_PUBLISHABLE_KEY');
     });
   });
 

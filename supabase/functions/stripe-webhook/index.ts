@@ -11,6 +11,7 @@
 // - Event idempotency via UNIQUE(stripe_event_id)
 
 import Stripe from "npm:stripe@14.21.0";
+import { getSupabaseUrl, getSupabaseSecretKey } from "../_shared/supabase-keys.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.39.0";
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
@@ -18,8 +19,8 @@ const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
 });
 
 const supabase = createClient(
-  Deno.env.get("SUPABASE_URL")!,
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+  getSupabaseUrl(),
+  getSupabaseSecretKey()
 );
 
 // Allowed event types for billing

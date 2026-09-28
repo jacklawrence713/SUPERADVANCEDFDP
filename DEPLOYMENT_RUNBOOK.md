@@ -616,3 +616,154 @@ Phase F: Audit & Compliance
 
 ---
 
+
+---
+
+## 🔄 GATE 1B: MODERN SUPABASE KEY MIGRATION (Local Implementation Complete)
+
+**STATUS:** ✅ LOCAL CODE IMPLEMENTATION COMPLETE (NOT YET DEPLOYED)
+
+### Implementation Summary
+
+Gate 1B migrates from legacy to modern Supabase credentials:
+
+#### Frontend Changes
+- **Old:** `VITE_SUPABASE_ANON_KEY` (legacy anon key)
+- **New:** `VITE_SUPABASE_PUBLISHABLE_KEY` (modern publishable key)
+- **Fallback:** If VITE_SUPABASE_PUBLISHABLE_KEY not provided, uses hardcoded anon key
+- **Type:** Public build-time configuration (no private secret exposed)
+
+#### Backend Changes (All 8 Edge Functions)
+- **Old:** Direct `Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")`
+- **New:** Shared helper `getSupabaseSecretKey()` from `supabase/functions/_shared/supabase-keys.ts`
+- **Runtime Env:** `SUPABASE_SECRET_KEYS` (JSON map with "default" key)
+- **Fail-Closed:** Missing/malformed secret raises explicit configuration error
+
+#### Shared Helper Module
+- **Location:** `supabase/functions/_shared/supabase-keys.ts` (NEW)
+- **Functions:** `getSupabaseSecretKey()`, `getSupabaseUrl()`
+- **Validation:** Checks for missing env, malformed JSON, missing "default" key, empty values
+- **Logging:** Never logs secret values
+
+#### GitHub Actions
+- **Old:** Injects `VITE_SUPABASE_ANON_KEY` for frontend build
+- **New:** Injects `VITE_SUPABASE_PUBLISHABLE_KEY` for frontend build
+- **No Backend Secrets in CI:** `SUPABASE_SECRET_KEYS` is Edge Function runtime-only configuration
+
+### Functions Migrated (All 8)
+1. ✅ send-email
+2. ✅ fetch-odds
+3. ✅ analyze-trade
+4. ✅ trade-quota-status
+5. ✅ create-checkout
+6. ✅ cancel-subscription
+7. ✅ record-value-snapshots
+8. ✅ stripe-webhook
+
+### Production Prerequisite (BLOCKING)
+
+**⚠️ CRITICAL:** Before ANY Gate 1B deployment:
+
+```
+Modern Supabase publishable and secret keys must be confirmed or created
+in the production project (wizdxspglxpvvogiivsv).
+
+VERIFICATION STEPS:
+1. Log in to Supabase Dashboard
+2. Navigate to: Project Settings → API
+3. Confirm modern "API Keys" section shows:
+   - Publishable Key (sb_publishable_... or similar)
+   - Secret Key (sb_secret_... or similar)
+4. If missing, create them before proceeding
+```
+
+**Status:** ❓ UNVERIFIED — Manual dashboard check required
+
+### Deployment Sequence (When Ready)
+
+**PHASE A: Key Verification (Manual)**
+- [ ] Confirm/create modern publishable key in Supabase
+- [ ] Confirm/create modern secret key in Supabase
+- [ ] Document modern key names/values (not in GitHub)
+
+**PHASE B: GitHub Actions Configuration**
+- [ ] Create GitHub secret: `VITE_SUPABASE_PUBLISHABLE_KEY` (if not exists)
+- [ ] Verify workflow uses: `VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}`
+
+**PHASE C: Edge Function Secrets**
+- [ ] Configure Edge Function runtime: `SUPABASE_SECRET_KEYS` (JSON map)
+- [ ] Expected format: `{"default":"sb_secret_..."}`
+- [ ] All 8 functions receive the same environment variable
+
+**PHASE D: Deployment Testing**
+- [ ] Deploy Edge Functions (code already supports modern keys)
+- [ ] Deploy frontend build with new publishable key
+- [ ] Run full smoke test suite (signup, trade, odds, checkout, webhook)
+- [ ] Verify no "legacy key not found" errors
+
+**PHASE E: Verification**
+- [ ] Check logs: All functions using modern secret key
+- [ ] Check network: Frontend using publishable key
+- [ ] Zero references to legacy keys in runtime logs
+
+**PHASE F: Legacy Key Retirement** (SEPARATE AUTHORIZATION)
+- Only after all smoke tests pass AND hidden consumers checked
+- Requires explicit senior-engineer approval
+- Supabase dashboard: Deactivate old service-role key
+- Document deactivation timestamp
+
+### No Permanent Fallback
+
+**IMPORTANT:** The implementation does NOT include permanent fallback logic:
+- Backend: `SUPABASE_SERVICE_ROLE_KEY` references fully removed from runtime
+- Frontend: `VITE_SUPABASE_ANON_KEY` no longer used in runtime (optional fallback for missing publishable key only)
+- This allows verification that all consumers have migrated before legacy retirement
+
+### Regression Tests (Gate1B Suite)
+
+Tests verify:
+- ✅ Frontend uses VITE_SUPABASE_PUBLISHABLE_KEY (if provided)
+- ✅ Frontend falls back to anon key (if publishable missing)
+- ✅ No service-role key in browser bundle
+- ✅ All 8 functions use modern secret-key helper
+- ✅ Helper handles missing/malformed JSON
+- ✅ Helper rejects missing "default" key
+- ✅ Secrets never logged
+- ✅ verify_jwt matrix unchanged
+- ✅ Handler-level auth preserved
+- ✅ Legacy SUPABASE_SERVICE_ROLE_KEY not referenced at runtime
+
+### Files Modified (Gate 1B Implementation)
+
+**New Files:**
+- `supabase/functions/_shared/supabase-keys.ts` (NEW helper module)
+
+**Modified Files:**
+- `afdp.tsx` (frontend: publishable key support)
+- `.github/workflows/deploy.yml` (CI: publishable key injection)
+- `DEPLOYMENT_RUNBOOK.md` (this section added)
+- `supabase/functions/send-email/index.ts`
+- `supabase/functions/fetch-odds/index.ts`
+- `supabase/functions/analyze-trade/index.ts`
+- `supabase/functions/trade-quota-status/index.ts`
+- `supabase/functions/create-checkout/index.ts`
+- `supabase/functions/cancel-subscription/index.ts`
+- `supabase/functions/record-value-snapshots/index.ts`
+- `supabase/functions/stripe-webhook/index.ts`
+
+### Testing
+
+**Before Deployment:**
+```bash
+npm test          # Run full test suite (should pass)
+npm run typecheck # Verify TypeScript (should pass)
+npm run build     # Build frontend (should pass)
+```
+
+**Expected Results:**
+- All tests passing (including new Gate1B regression tests)
+- Zero TypeScript errors
+- Build succeeds with no secrets in bundle
+
+---
+
