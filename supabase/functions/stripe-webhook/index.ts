@@ -126,7 +126,7 @@ Deno.serve(async (req) => {
   try {
     switch (event.type) {
       case "checkout.session.completed": {
-        const session = event.data.object as Stripe.CheckoutSession;
+        const session = event.data.object as Stripe.Checkout.Session;
         const plan = session.metadata?.plan || "pro";
         const userId = await resolveUserId(
           session.metadata?.supabase_user_id as string | undefined,
