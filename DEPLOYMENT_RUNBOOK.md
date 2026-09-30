@@ -636,13 +636,13 @@ Gate 1B migrates from legacy to modern Supabase credentials:
 #### Backend Changes (All 8 Edge Functions)
 - **Old:** Direct `Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")`
 - **New:** Shared helper `getSupabaseSecretKey()` from `supabase/functions/_shared/supabase-keys.ts`
-- **Runtime Env:** `SUPABASE_SECRET_KEYS` (JSON map with "default" key)
+- **Runtime Env:** `SUPABASE_SECRET_KEYS` (JSON map with "fdp_production" key)
 - **Fail-Closed:** Missing/malformed secret raises explicit configuration error
 
 #### Shared Helper Module
 - **Location:** `supabase/functions/_shared/supabase-keys.ts` (NEW)
 - **Functions:** `getSupabaseSecretKey()`, `getSupabaseUrl()`
-- **Validation:** Checks for missing env, malformed JSON, missing "default" key, empty values
+- **Validation:** Checks for missing env, malformed JSON, missing "fdp_production" key, empty values
 - **Logging:** Never logs secret values
 
 #### GitHub Actions
@@ -727,7 +727,7 @@ Tests verify:
 - ✅ No service-role key in browser bundle
 - ✅ All 8 functions use modern secret-key helper
 - ✅ Helper handles missing/malformed JSON
-- ✅ Helper rejects missing "default" key
+- ✅ Helper rejects missing "fdp_production" key
 - ✅ Secrets never logged
 - ✅ verify_jwt matrix unchanged
 - ✅ Handler-level auth preserved
