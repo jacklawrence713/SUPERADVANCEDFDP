@@ -6,7 +6,7 @@
  *
  * Architecture:
  * - Production: SUPABASE_SECRET_KEYS environment variable (JSON map)
- * - Expected key name: "default"
+ * - Expected key name: "fdp_production"
  * - Never logs key values
  * - Throws on missing/malformed configuration
  */
@@ -26,7 +26,7 @@ export function parseSupabaseSecretKeys(rawSecretKeysJson: string | undefined): 
   if (!rawSecretKeysJson) {
     throw new Error(
       "Server misconfiguration: SUPABASE_SECRET_KEYS environment variable is missing. " +
-      "Edge Function requires SUPABASE_SECRET_KEYS JSON map with 'default' key."
+      "Edge Function requires SUPABASE_SECRET_KEYS JSON map with 'fdp_production' key."
     );
   }
 
@@ -53,20 +53,20 @@ export function parseSupabaseSecretKeys(rawSecretKeysJson: string | undefined): 
     );
   }
 
-  // Validation 4: Must contain 'default' key (use 'in' operator to allow empty string value)
-  if (!("default" in secretKeys)) {
+  // Validation 4: Must contain 'fdp_production' key (use 'in' operator to allow empty string value)
+  if (!("fdp_production" in secretKeys)) {
     throw new Error(
-      "Server misconfiguration: SUPABASE_SECRET_KEYS does not contain 'default' key. " +
+      "Server misconfiguration: SUPABASE_SECRET_KEYS does not contain 'fdp_production' key. " +
       "Available keys: " + Object.keys(secretKeys).join(", ")
     );
   }
 
-  const defaultKey = secretKeys["default"];
+  const defaultKey = secretKeys["fdp_production"];
 
   // Validation 5: Default key must be a string
   if (typeof defaultKey !== "string") {
     throw new Error(
-      "Server misconfiguration: SUPABASE_SECRET_KEYS['default'] must be a string. " +
+      "Server misconfiguration: SUPABASE_SECRET_KEYS['fdp_production'] must be a string. " +
       `got ${typeof defaultKey}`
     );
   }
@@ -74,7 +74,7 @@ export function parseSupabaseSecretKeys(rawSecretKeysJson: string | undefined): 
   // Validation 6: Default key must not be empty/whitespace-only
   if (defaultKey.trim() === "") {
     throw new Error(
-      "Server misconfiguration: SUPABASE_SECRET_KEYS['default'] is empty or whitespace-only"
+      "Server misconfiguration: SUPABASE_SECRET_KEYS['fdp_production'] is empty or whitespace-only"
     );
   }
 

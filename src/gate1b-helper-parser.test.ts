@@ -69,47 +69,47 @@ describe("Gate 1B: Supabase Secret Keys Parser — Behavioral Tests", () => {
     });
   });
 
-  describe("Missing Default Key", () => {
-    it("should throw when 'default' key is missing", () => {
+  describe("Missing fdp_production Key", () => {
+    it("should throw when 'fdp_production' key is missing", () => {
       expect(() => parseSupabaseSecretKeys('{"other":"test-value"}')).toThrow(
-        "does not contain 'default' key"
+        "does not contain 'fdp_production' key"
       );
     });
 
     it("should throw when object is empty", () => {
       expect(() => parseSupabaseSecretKeys("{}")).toThrow(
-        "does not contain 'default' key"
+        "does not contain 'fdp_production' key"
       );
     });
 
-    it("should throw when default is null", () => {
-      expect(() => parseSupabaseSecretKeys('{"default":null}')).toThrow(
+    it("should throw when fdp_production is null", () => {
+      expect(() => parseSupabaseSecretKeys('{"fdp_production":null}')).toThrow(
         "must be a string"
       );
     });
   });
 
-  describe("Invalid Default Type", () => {
-    it("should throw when default is a number", () => {
-      expect(() => parseSupabaseSecretKeys('{"default":123}')).toThrow(
+  describe("Invalid fdp_production Type", () => {
+    it("should throw when fdp_production is a number", () => {
+      expect(() => parseSupabaseSecretKeys('{"fdp_production":123}')).toThrow(
         "must be a string"
       );
     });
 
-    it("should throw when default is a boolean", () => {
-      expect(() => parseSupabaseSecretKeys('{"default":true}')).toThrow(
+    it("should throw when fdp_production is a boolean", () => {
+      expect(() => parseSupabaseSecretKeys('{"fdp_production":true}')).toThrow(
         "must be a string"
       );
     });
 
-    it("should throw when default is an object", () => {
+    it("should throw when fdp_production is an object", () => {
       expect(() =>
-        parseSupabaseSecretKeys('{"default":{"nested":"value"}}')
+        parseSupabaseSecretKeys('{"fdp_production":{"nested":"value"}}')
       ).toThrow("must be a string");
     });
 
-    it("should throw when default is an array", () => {
-      expect(() => parseSupabaseSecretKeys('{"default":["value"]}')).toThrow(
+    it("should throw when fdp_production is an array", () => {
+      expect(() => parseSupabaseSecretKeys('{"fdp_production":["value"]}')).toThrow(
         "must be a string"
       );
     });
@@ -117,64 +117,64 @@ describe("Gate 1B: Supabase Secret Keys Parser — Behavioral Tests", () => {
 
   describe("Empty/Whitespace Default Value", () => {
     it("should throw when default is empty string", () => {
-      expect(() => parseSupabaseSecretKeys('{"default":""}')).toThrow(
+      expect(() => parseSupabaseSecretKeys('{"fdp_production":""}')).toThrow(
         "empty or whitespace-only"
       );
     });
 
     it("should throw when default is spaces only", () => {
-      expect(() => parseSupabaseSecretKeys('{"default":"   "}')).toThrow(
+      expect(() => parseSupabaseSecretKeys('{"fdp_production":"   "}')).toThrow(
         "empty or whitespace-only"
       );
     });
 
     it("should throw when default is mixed whitespace", () => {
-      expect(() => parseSupabaseSecretKeys('{"default":" a "}')).not.toThrow();
+      expect(() => parseSupabaseSecretKeys('{"fdp_production":" a "}')).not.toThrow();
     });
   });
 
   describe("Valid Secret Key", () => {
     it("should return synthetic valid key unchanged", () => {
       const result = parseSupabaseSecretKeys(
-        '{"default":"synthetic-test-secret"}'
+        '{"fdp_production":"synthetic-test-secret"}'
       );
       expect(result).toBe("synthetic-test-secret");
     });
 
     it("should return key with uppercase", () => {
-      const result = parseSupabaseSecretKeys('{"default":"SB_SECRET_TEST"}');
+      const result = parseSupabaseSecretKeys('{"fdp_production":"SB_SECRET_TEST"}');
       expect(result).toBe("SB_SECRET_TEST");
     });
 
     it("should return key with numbers", () => {
-      const result = parseSupabaseSecretKeys('{"default":"sb_secret_12345"}');
+      const result = parseSupabaseSecretKeys('{"fdp_production":"sb_secret_12345"}');
       expect(result).toBe("sb_secret_12345");
     });
 
     it("should return key with special characters", () => {
       const result = parseSupabaseSecretKeys(
-        '{"default":"sb_secret_abc-def_ghi"}'
+        '{"fdp_production":"sb_secret_abc-def_ghi"}'
       );
       expect(result).toBe("sb_secret_abc-def_ghi");
     });
 
     it("should return key with leading/trailing non-whitespace unchanged", () => {
       const result = parseSupabaseSecretKeys(
-        '{"default":"_synthetic_test_secret_"}'
+        '{"fdp_production":"_synthetic_test_secret_"}'
       );
       expect(result).toBe("_synthetic_test_secret_");
     });
 
     it("should ignore extra keys in object", () => {
       const result = parseSupabaseSecretKeys(
-        '{"default":"synthetic-test-secret","other":"ignored","third":"also-ignored"}'
+        '{"fdp_production":"synthetic-test-secret","other":"ignored","third":"also-ignored"}'
       );
       expect(result).toBe("synthetic-test-secret");
     });
 
     it("should handle default key with leading/trailing spaces in value", () => {
       const result = parseSupabaseSecretKeys(
-        '{"default":"  synthetic-test  "}'
+        '{"fdp_production":"  synthetic-test  "}'
       );
       // trim() used only to validate non-empty, not to mutate return
       expect(result).toBe("  synthetic-test  ");
@@ -208,7 +208,7 @@ describe("Gate 1B: Supabase Secret Keys Parser — Behavioral Tests", () => {
 
     it("should not expose secret value in type error", () => {
       try {
-        parseSupabaseSecretKeys('{"default":123}');
+        parseSupabaseSecretKeys('{"fdp_production":123}');
         expect.fail("Should have thrown");
       } catch (e) {
         const msg = String(e);
@@ -221,7 +221,7 @@ describe("Gate 1B: Supabase Secret Keys Parser — Behavioral Tests", () => {
     it("should validate object type explicitly at parsing boundary", () => {
       const testCases = [
         { input: "[]", description: "empty array" },
-        { input: '[{"default":"value"}]', description: "array with object" },
+        { input: '[{"fdp_production":"value"}]', description: "array with object" },
         { input: "null", description: "null" },
         { input: "true", description: "boolean" },
         { input: '"string"', description: "string" },
