@@ -11,10 +11,16 @@
 -- Prevents any direct UPDATE on public.users by authenticated users
 REVOKE UPDATE ON public.users FROM authenticated;
 
--- Note: No GRANT UPDATE needed.
--- App does not perform legitimate client-side profile edits.
--- signup_ip and signup_visitor_id are updated server-side only (during signup).
--- All other updates are via Stripe webhooks (service-role writes).
+-- GRANT column-level UPDATE for abuse-prevention data only
+-- Allows authenticated users to update signup_ip and signup_visitor_id during signup/login
+-- These columns are used for abuse-prevention signals during account signup.
+GRANT UPDATE (signup_ip, signup_visitor_id)
+  ON public.users
+  TO authenticated;
+
+-- Note: signup_ip and signup_visitor_id backfilled during signup/login by authenticated users.
+-- App does not perform client-side updates to other columns (plan, is_pro, subscription_status, etc.).
+-- Protected users-table updates are performed by privileged backend functions (service-role).
 
 -- ================================================================
 -- PHASE 2: Preserve Row-Level Security for Reads

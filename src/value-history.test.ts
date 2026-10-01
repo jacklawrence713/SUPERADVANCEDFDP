@@ -27,7 +27,7 @@ const thisDir = dirname(fileURLToPath(import.meta.url))
 const rootDir = resolve(thisDir, '..')
 const afdpSrc = readFileSync(resolve(rootDir, 'afdp.tsx'), 'utf-8').replace(/\r\n/g, '\n')
 const logicSrc = readFileSync(resolve(thisDir, 'logic.ts'), 'utf-8').replace(/\r\n/g, '\n')
-const migrationSrc = readFileSync(resolve(rootDir, 'supabase/migrations/004_fdp_value_snapshots.sql'), 'utf-8').replace(/\r\n/g, '\n')
+const migrationSrc = readFileSync(resolve(rootDir, 'supabase/migrations/20260922003719_fdp_value_snapshots.sql'), 'utf-8').replace(/\r\n/g, '\n')
 const edgeFnSrc = readFileSync(resolve(rootDir, 'supabase/functions/record-value-snapshots/index.ts'), 'utf-8').replace(/\r\n/g, '\n')
 const producerSrc = readFileSync(resolve(rootDir, 'scripts/generate-snapshots.ts'), 'utf-8').replace(/\r\n/g, '\n')
 

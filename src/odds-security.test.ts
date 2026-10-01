@@ -8,7 +8,7 @@ const rootDir = resolve(thisDir, '..')
 const afdpSrc = readFileSync(resolve(rootDir, 'afdp.tsx'), 'utf-8')
 const deploySrc = readFileSync(resolve(rootDir, '.github/workflows/deploy.yml'), 'utf-8')
 const fetchOddsSrc = readFileSync(resolve(rootDir, 'supabase/functions/fetch-odds/index.ts'), 'utf-8')
-const migrationSrc = readFileSync(resolve(rootDir, 'supabase/migrations/003_odds_cache.sql'), 'utf-8')
+const migrationSrc = readFileSync(resolve(rootDir, 'supabase/migrations/20260921144441_odds_cache.sql'), 'utf-8')
 
 // ── Frontend: no provider key or direct API call ────────────────
 

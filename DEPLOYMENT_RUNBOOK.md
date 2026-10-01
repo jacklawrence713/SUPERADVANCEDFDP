@@ -187,14 +187,21 @@ verify_jwt = true
 ## 🚀 DEPLOYMENT PHASES & GATES
 
 ### PHASE 1: Database Migrations (Low Risk)
-**Execution Order:** 003 → 004 → 005 → 006 → 007
+**Execution Order (Canonical Normalized):**
+1. 20260428000000_create_users_table.sql (baseline, already applied)
+2. 20260904133837_add_abuse_prevention.sql (already applied)
+3. 20260921144441_odds_cache.sql (PENDING)
+4. 20260922003719_fdp_value_snapshots.sql (PENDING)
+5. 20260924152532_entitlement_security.sql (PENDING - includes column-level GRANT)
+6. 20260924234147_trade_analysis_quota.sql (PENDING)
+7. 20260925213441_billing_event_ledger.sql (PENDING)
 
-All migrations idempotency verified:
-- Migration 003: FULLY IDEMPOTENT (IF NOT EXISTS pattern)
-- Migration 004: NON-IDEMPOTENT (one-time operation)
-- Migration 005: FULLY IDEMPOTENT (REVOKE idempotent)
-- Migration 006: PARTIALLY IDEMPOTENT (table IF NOT EXISTS, indexes need guards)
-- Migration 007: PARTIALLY IDEMPOTENT (tables IF NOT EXISTS, policies need guards)
+All pending migrations idempotency verified:
+- 20260921144441: FULLY IDEMPOTENT (IF NOT EXISTS pattern)
+- 20260922003719: NON-IDEMPOTENT (one-time operation, safe if history correct)
+- 20260924152532: FULLY IDEMPOTENT (REVOKE idempotent, column-level GRANT added in Phase 3F)
+- 20260924234147: PARTIALLY IDEMPOTENT (table IF NOT EXISTS, indexes need guards)
+- 20260925213441: PARTIALLY IDEMPOTENT (tables IF NOT EXISTS, policies need guards)
 
 **Note**: Supabase version tracking prevents accidental reruns. SQL-level idempotency documented above.
 
@@ -522,13 +529,13 @@ After 60+ days of stable operation:
 - [ ] Capture schema snapshot (`pg_dump`)
 - [ ] Test point-in-time recovery
 
-### Phase 3: Database Migrations (003-007)
-Execute in order:
-1. Migration 003: policy_updates
-2. Migration 004: subscription_tables
-3. Migration 005: rbcontext_and_policies
-4. Migration 006: odds_cache_table
-5. Migration 007: event_ledger
+### Phase 3: Database Migrations (Normalized Order)
+Execute in order (after baseline/002 are marked as applied):
+1. 20260921144441_odds_cache.sql
+2. 20260922003719_fdp_value_snapshots.sql
+3. 20260924152532_entitlement_security.sql
+4. 20260924234147_trade_analysis_quota.sql
+5. 20260925213441_billing_event_ledger.sql
 
 ### Phase 4: Edge Function Deployment
 Deploy with updated credentials (from Phase 1):

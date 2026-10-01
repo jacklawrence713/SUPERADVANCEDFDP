@@ -141,11 +141,11 @@ describe("PROMPT 29: Adversarial Security Testing — Real Tests Only", () => {
 
     beforeAll(() => {
       migration005 = readFileSync(
-        resolve("supabase/migrations/005_entitlement_security.sql"),
+        resolve("supabase/migrations/20260924152532_entitlement_security.sql"),
         "utf-8"
       );
       migration006 = readFileSync(
-        resolve("supabase/migrations/006_trade_analysis_quota.sql"),
+        resolve("supabase/migrations/20260924234147_trade_analysis_quota.sql"),
         "utf-8"
       );
     });
