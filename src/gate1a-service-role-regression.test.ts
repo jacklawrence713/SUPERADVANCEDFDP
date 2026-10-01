@@ -18,11 +18,13 @@ describe('GATE 1A: Service-Role Credential Exposure Prevention', () => {
       expect(afdpContent).not.toContain('VITE_SUPABASE_SERVICE_KEY');
     });
 
-    it('should reference safe VITE_ keys', () => {
+    it('should reference safe VITE_ keys from environment', () => {
       const afdpPath = path.join(process.cwd(), 'afdp.tsx');
       const afdpContent = fs.readFileSync(afdpPath, 'utf-8');
       expect(afdpContent).toContain('VITE_SUPABASE_URL');
-      expect(afdpContent).toContain('VITE_SUPABASE_ANON_KEY');
+      expect(afdpContent).toContain('VITE_SUPABASE_PUBLISHABLE_KEY');
+      expect(afdpContent).not.toContain('VITE_SUPABASE_ANON_KEY');
+      expect(afdpContent).not.toContain('wizdxspglxpvvogiivsv.supabase.co');
     });
 
     it('should not reference analyticsReadClient (removed in Gate 1A)', () => {
@@ -92,6 +94,24 @@ describe('GATE 1A: Service-Role Credential Exposure Prevention', () => {
       const afdpContent = fs.readFileSync(afdpPath, 'utf-8');
       expect(afdpContent).not.toContain('publicStats.trades');
       expect(afdpContent).not.toContain('publicStats&&publicStats.trades>0');
+    });
+
+    it('should not contain AnalyticsDashboard component (Phase 2 cleanup)', () => {
+      const afdpPath = path.join(process.cwd(), 'afdp.tsx');
+      const afdpContent = fs.readFileSync(afdpPath, 'utf-8');
+      expect(afdpContent).not.toContain('function AnalyticsDashboard');
+    });
+
+    it('should not reference Platform Analytics admin tab (Phase 2 cleanup)', () => {
+      const afdpPath = path.join(process.cwd(), 'afdp.tsx');
+      const afdpContent = fs.readFileSync(afdpPath, 'utf-8');
+      expect(afdpContent).not.toContain('Platform Analytics');
+    });
+
+    it('should not have stale VITE_SUPABASE_ANON_KEY instructions in runtime (Phase 2 cleanup)', () => {
+      const afdpPath = path.join(process.cwd(), 'afdp.tsx');
+      const afdpContent = fs.readFileSync(afdpPath, 'utf-8');
+      expect(afdpContent).not.toContain('VITE_SUPABASE_ANON_KEY');
     });
   });
 
