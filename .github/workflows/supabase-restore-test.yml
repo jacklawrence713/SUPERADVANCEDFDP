@@ -433,6 +433,8 @@ jobs:
             v_test_user_id UUID;
             v_count INT;
             v_jwt_sub TEXT;
+            v_auth_update_count INT;
+            v_verified_value TEXT;
           BEGIN
             -- Get an arbitrary test user from restored data
             SELECT id INTO v_test_user_id FROM public.users LIMIT 1;
@@ -460,25 +462,41 @@ jobs:
             END;
             RESET ROLE;
 
-            -- Test 2: Authenticated can UPDATE signup_ip
+            -- Test 2: Authenticated can UPDATE signup_ip and exactly one row persists
             SET ROLE authenticated;
             PERFORM set_config('request.jwt.claim.sub', v_test_user_id::text, false);
             BEGIN
               UPDATE public.users SET signup_ip = '192.0.2.1' WHERE id = v_test_user_id;
+              GET DIAGNOSTICS v_auth_update_count = ROW_COUNT;
+              IF v_auth_update_count != 1 THEN
+                RAISE EXCEPTION 'FAILED: authenticated signup_ip UPDATE affected % rows, expected 1', v_auth_update_count;
+              END IF;
+              SELECT signup_ip::text INTO v_verified_value FROM public.users WHERE id = v_test_user_id;
+              IF v_verified_value IS DISTINCT FROM '192.0.2.1' THEN
+                RAISE EXCEPTION 'FAILED: signup_ip did not persist expected value, got %', COALESCE(v_verified_value, 'NULL');
+              END IF;
             EXCEPTION
               WHEN OTHERS THEN
-                RAISE EXCEPTION 'FAILED: authenticated cannot UPDATE signup_ip: %', SQLERRM;
+                RAISE EXCEPTION 'FAILED: authenticated cannot UPDATE/verify signup_ip: %', SQLERRM;
             END;
             RESET ROLE;
 
-            -- Test 3: Authenticated can UPDATE signup_visitor_id
+            -- Test 3: Authenticated can UPDATE signup_visitor_id and exactly one row persists
             SET ROLE authenticated;
             PERFORM set_config('request.jwt.claim.sub', v_test_user_id::text, false);
             BEGIN
               UPDATE public.users SET signup_visitor_id = 'visitor-123' WHERE id = v_test_user_id;
+              GET DIAGNOSTICS v_auth_update_count = ROW_COUNT;
+              IF v_auth_update_count != 1 THEN
+                RAISE EXCEPTION 'FAILED: authenticated signup_visitor_id UPDATE affected % rows, expected 1', v_auth_update_count;
+              END IF;
+              SELECT signup_visitor_id::text INTO v_verified_value FROM public.users WHERE id = v_test_user_id;
+              IF v_verified_value IS DISTINCT FROM 'visitor-123' THEN
+                RAISE EXCEPTION 'FAILED: signup_visitor_id did not persist expected value, got %', COALESCE(v_verified_value, 'NULL');
+              END IF;
             EXCEPTION
               WHEN OTHERS THEN
-                RAISE EXCEPTION 'FAILED: authenticated cannot UPDATE signup_visitor_id: %', SQLERRM;
+                RAISE EXCEPTION 'FAILED: authenticated cannot UPDATE/verify signup_visitor_id: %', SQLERRM;
             END;
             RESET ROLE;
 
@@ -678,75 +696,256 @@ jobs:
           STRUCT006
           echo "✅ Migration 006 table and function structure verified"
 
-      - name: Verify Migration 006 - Behavioral tests A-F
+      - name: Verify Migration 006 - Behavioral tests A-H
         env:
           SUPABASE_TEST_DB_URL: ${{ secrets.SUPABASE_TEST_DB_URL }}
         run: |
-          echo "=== VERIFYING MIGRATION 006: BEHAVIORAL TESTS A-F ==="
+          echo "=== VERIFYING MIGRATION 006: BEHAVIORAL TESTS A-H ==="
           psql -X -v ON_ERROR_STOP=1 "$SUPABASE_TEST_DB_URL" << 'BEHAVIOR006'
           DO $$
-          DECLARE v_user_ids UUID[]; v_user_id UUID; v_result RECORD; v_request_id UUID; v_req_id_c3_stored UUID; v_succeeded_count INT; v_reserved_count INT; v_count INT; i INT;
+          DECLARE
+            v_user_ids UUID[];
+            v_user_id UUID;
+            v_result RECORD;
+            v_request_id UUID;
+            v_failed_request_id UUID;
+            v_req_id_c3_stored UUID;
+            v_succeeded_count INT;
+            v_reserved_count INT;
+            v_count INT;
+            i INT;
           BEGIN
             SELECT ARRAY(SELECT DISTINCT id FROM public.users ORDER BY id LIMIT 12) INTO v_user_ids;
-            IF array_length(v_user_ids, 1) < 8 THEN RAISE EXCEPTION 'FAILED: Need 8+ users'; END IF;
+            IF array_length(v_user_ids, 1) < 8 THEN
+              RAISE EXCEPTION 'FAILED: Need 8+ restored users for isolated quota tests';
+            END IF;
 
-            -- TEST A: Failed analysis does not consume quota
-            v_user_id := v_user_ids[1]; UPDATE public.users SET plan = 'free' WHERE id = v_user_id;
+            -- TEST A: Failed analysis releases quota completely
+            v_user_id := v_user_ids[1];
+            UPDATE public.users SET plan = 'free', is_pro = false WHERE id = v_user_id;
+
+            v_failed_request_id := gen_random_uuid();
+            SELECT * INTO v_result
+            FROM public.reserve_trade_quota(v_user_id, v_failed_request_id, 'test-a-fp-failed');
+            IF NOT v_result.success THEN
+              RAISE EXCEPTION 'FAILED A1: initial reserve failed: %', v_result.error_message;
+            END IF;
+
+            SELECT * INTO v_result
+            FROM public.finalize_trade_quota(v_user_id, v_failed_request_id, false, NULL);
+            IF NOT v_result.success THEN
+              RAISE EXCEPTION 'FAILED A2: failed-analysis finalization failed: %', v_result.error_message;
+            END IF;
+
+            SELECT COUNT(*) INTO v_count
+            FROM public.trade_analysis_usage
+            WHERE user_id = v_user_id
+              AND request_id = v_failed_request_id
+              AND status = 'succeeded';
+            IF v_count != 0 THEN
+              RAISE EXCEPTION 'FAILED A3: failed analysis was recorded as succeeded';
+            END IF;
+
+            SELECT COUNT(*) INTO v_count
+            FROM public.trade_analysis_usage
+            WHERE user_id = v_user_id
+              AND request_id = v_failed_request_id
+              AND status = 'reserved'
+              AND expires_at > now();
+            IF v_count != 0 THEN
+              RAISE EXCEPTION 'FAILED A4: failed analysis remains an active reservation';
+            END IF;
+
+            FOR i IN 2..4 LOOP
+              v_request_id := gen_random_uuid();
+              SELECT * INTO v_result
+              FROM public.reserve_trade_quota(v_user_id, v_request_id, 'test-a-fp-' || i::TEXT);
+              IF NOT v_result.success THEN
+                RAISE EXCEPTION 'FAILED A%: slot after failed analysis should succeed: %', i + 3, v_result.error_message;
+              END IF;
+            END LOOP;
+
+            SELECT COUNT(*) INTO v_reserved_count
+            FROM public.trade_analysis_usage
+            WHERE user_id = v_user_id
+              AND status = 'reserved'
+              AND expires_at > now();
+            IF v_reserved_count != 3 THEN
+              RAISE EXCEPTION 'FAILED A7: expected 3 active reservations after failed analysis, got %', v_reserved_count;
+            END IF;
+
             v_request_id := gen_random_uuid();
-            SELECT * INTO v_result FROM public.reserve_trade_quota(v_user_id, v_request_id, 'test-a-fp-1');
-            IF NOT v_result.success THEN RAISE EXCEPTION 'FAILED A1: %', v_result.error_message; END IF;
-            SELECT * INTO v_result FROM public.finalize_trade_quota(v_user_id, v_request_id, false, NULL);
-            v_request_id := gen_random_uuid();
-            SELECT * INTO v_result FROM public.reserve_trade_quota(v_user_id, v_request_id, 'test-a-fp-2');
-            IF NOT v_result.success THEN RAISE EXCEPTION 'FAILED A3: %', v_result.error_message; END IF;
-            SELECT COUNT(*) INTO v_succeeded_count FROM public.trade_analysis_usage WHERE user_id = v_user_id AND status = 'succeeded';
-            IF v_succeeded_count != 0 THEN RAISE EXCEPTION 'FAILED A4: %', v_succeeded_count; END IF;
+            SELECT * INTO v_result
+            FROM public.reserve_trade_quota(v_user_id, v_request_id, 'test-a-fp-5');
+            IF v_result.success OR v_result.error_message != 'lifetime_limit_reached' THEN
+              RAISE EXCEPTION 'FAILED A8: fourth active slot should be blocked after failed analysis; success=%, error=%',
+                v_result.success, v_result.error_message;
+            END IF;
 
             -- TEST B: Active reservations consume capacity
-            v_user_id := v_user_ids[2]; UPDATE public.users SET plan = 'free', is_pro = false WHERE id = v_user_id;
-            FOR i IN 1..3 LOOP v_request_id := gen_random_uuid(); SELECT * INTO v_result FROM public.reserve_trade_quota(v_user_id, v_request_id, 'test-b-fp-' || i::TEXT); IF NOT v_result.success THEN RAISE EXCEPTION 'FAILED B%: %', i, v_result.error_message; END IF; END LOOP;
-            SELECT COUNT(*) INTO v_reserved_count FROM public.trade_analysis_usage WHERE user_id = v_user_id AND status = 'reserved' AND expires_at > now();
-            IF v_reserved_count != 3 THEN RAISE EXCEPTION 'FAILED B4: %', v_reserved_count; END IF;
+            v_user_id := v_user_ids[2];
+            UPDATE public.users SET plan = 'free', is_pro = false WHERE id = v_user_id;
+            FOR i IN 1..3 LOOP
+              v_request_id := gen_random_uuid();
+              SELECT * INTO v_result
+              FROM public.reserve_trade_quota(v_user_id, v_request_id, 'test-b-fp-' || i::TEXT);
+              IF NOT v_result.success THEN
+                RAISE EXCEPTION 'FAILED B%: %', i, v_result.error_message;
+              END IF;
+            END LOOP;
+            SELECT COUNT(*) INTO v_reserved_count
+            FROM public.trade_analysis_usage
+            WHERE user_id = v_user_id AND status = 'reserved' AND expires_at > now();
+            IF v_reserved_count != 3 THEN
+              RAISE EXCEPTION 'FAILED B4: expected 3 active reservations, got %', v_reserved_count;
+            END IF;
             v_request_id := gen_random_uuid();
-            SELECT * INTO v_result FROM public.reserve_trade_quota(v_user_id, v_request_id, 'test-b-fp-4');
-            IF v_result.success OR v_result.error_message != 'lifetime_limit_reached' THEN RAISE EXCEPTION 'FAILED B5/B6'; END IF;
+            SELECT * INTO v_result
+            FROM public.reserve_trade_quota(v_user_id, v_request_id, 'test-b-fp-4');
+            IF v_result.success OR v_result.error_message != 'lifetime_limit_reached' THEN
+              RAISE EXCEPTION 'FAILED B5/B6: active reservations did not enforce capacity';
+            END IF;
 
-            -- TEST C: Expired reservations release capacity (at-capacity test)
-            v_user_id := v_user_ids[3]; UPDATE public.users SET plan = 'free', is_pro = false WHERE id = v_user_id;
-            FOR i IN 1..3 LOOP v_request_id := gen_random_uuid(); SELECT * INTO v_result FROM public.reserve_trade_quota(v_user_id, v_request_id, 'test-c-fp-res-' || i::TEXT); IF NOT v_result.success THEN RAISE EXCEPTION 'FAILED C%: %', i, v_result.error_message; END IF; IF i = 3 THEN v_req_id_c3_stored := v_request_id; END IF; END LOOP;
-            SELECT COUNT(*) INTO v_reserved_count FROM public.trade_analysis_usage WHERE user_id = v_user_id AND status = 'reserved' AND expires_at > now();
-            IF v_reserved_count != 3 THEN RAISE EXCEPTION 'FAILED C4: Expected 3 active, got %', v_reserved_count; END IF;
-            UPDATE public.trade_analysis_usage SET expires_at = now() - INTERVAL '1 second' WHERE user_id = v_user_id AND request_id = v_req_id_c3_stored;
+            -- TEST C: Expired reservations release capacity
+            v_user_id := v_user_ids[3];
+            UPDATE public.users SET plan = 'free', is_pro = false WHERE id = v_user_id;
+            FOR i IN 1..3 LOOP
+              v_request_id := gen_random_uuid();
+              SELECT * INTO v_result
+              FROM public.reserve_trade_quota(v_user_id, v_request_id, 'test-c-fp-res-' || i::TEXT);
+              IF NOT v_result.success THEN
+                RAISE EXCEPTION 'FAILED C%: %', i, v_result.error_message;
+              END IF;
+              IF i = 3 THEN
+                v_req_id_c3_stored := v_request_id;
+              END IF;
+            END LOOP;
+            SELECT COUNT(*) INTO v_reserved_count
+            FROM public.trade_analysis_usage
+            WHERE user_id = v_user_id AND status = 'reserved' AND expires_at > now();
+            IF v_reserved_count != 3 THEN
+              RAISE EXCEPTION 'FAILED C4: expected 3 active reservations, got %', v_reserved_count;
+            END IF;
+            UPDATE public.trade_analysis_usage
+            SET expires_at = now() - INTERVAL '1 second'
+            WHERE user_id = v_user_id AND request_id = v_req_id_c3_stored;
             v_request_id := gen_random_uuid();
-            SELECT * INTO v_result FROM public.reserve_trade_quota(v_user_id, v_request_id, 'test-c-fp-new');
-            IF NOT v_result.success THEN RAISE EXCEPTION 'FAILED C5: %', v_result.error_message; END IF;
+            SELECT * INTO v_result
+            FROM public.reserve_trade_quota(v_user_id, v_request_id, 'test-c-fp-new');
+            IF NOT v_result.success THEN
+              RAISE EXCEPTION 'FAILED C5: expired reservation did not release capacity: %', v_result.error_message;
+            END IF;
 
             -- TEST D: Historical quota_date still counts (no daily reset)
-            v_user_id := v_user_ids[4]; UPDATE public.users SET plan = 'free', is_pro = false WHERE id = v_user_id;
-            FOR i IN 1..3 LOOP v_request_id := gen_random_uuid(); SELECT * INTO v_result FROM public.reserve_trade_quota(v_user_id, v_request_id, 'test-d-fp-' || i::TEXT); IF NOT v_result.success THEN RAISE EXCEPTION 'FAILED D%: %', i, v_result.error_message; END IF; PERFORM public.finalize_trade_quota(v_user_id, v_request_id, true, NULL); IF i = 1 THEN v_req_id_c3_stored := v_request_id; END IF; END LOOP;
-            UPDATE public.trade_analysis_usage SET quota_date = (now() AT TIME ZONE 'UTC')::date - 30 WHERE user_id = v_user_id AND request_id = v_req_id_c3_stored;
+            v_user_id := v_user_ids[4];
+            UPDATE public.users SET plan = 'free', is_pro = false WHERE id = v_user_id;
+            FOR i IN 1..3 LOOP
+              v_request_id := gen_random_uuid();
+              SELECT * INTO v_result
+              FROM public.reserve_trade_quota(v_user_id, v_request_id, 'test-d-fp-' || i::TEXT);
+              IF NOT v_result.success THEN
+                RAISE EXCEPTION 'FAILED D%: %', i, v_result.error_message;
+              END IF;
+              SELECT * INTO v_result
+              FROM public.finalize_trade_quota(v_user_id, v_request_id, true, NULL);
+              IF NOT v_result.success THEN
+                RAISE EXCEPTION 'FAILED D% finalize: %', i, v_result.error_message;
+              END IF;
+              IF i = 1 THEN
+                v_req_id_c3_stored := v_request_id;
+              END IF;
+            END LOOP;
+            UPDATE public.trade_analysis_usage
+            SET quota_date = (now() AT TIME ZONE 'UTC')::date - 30
+            WHERE user_id = v_user_id AND request_id = v_req_id_c3_stored;
             v_request_id := gen_random_uuid();
-            SELECT * INTO v_result FROM public.reserve_trade_quota(v_user_id, v_request_id, 'test-d-fp-4');
-            IF v_result.success OR v_result.error_message != 'lifetime_limit_reached' THEN RAISE EXCEPTION 'FAILED D5/D6'; END IF;
+            SELECT * INTO v_result
+            FROM public.reserve_trade_quota(v_user_id, v_request_id, 'test-d-fp-4');
+            IF v_result.success OR v_result.error_message != 'lifetime_limit_reached' THEN
+              RAISE EXCEPTION 'FAILED D5/D6: historical usage did not enforce lifetime limit';
+            END IF;
             SELECT * INTO v_result FROM public.get_trade_quota_status(v_user_id);
-            IF v_result.used_count != 3 THEN RAISE EXCEPTION 'FAILED D7: used=%', v_result.used_count; END IF;
+            IF v_result.used_count != 3 OR v_result.remaining_count != 0 THEN
+              RAISE EXCEPTION 'FAILED D7: expected used=3 remaining=0, got used=% remaining=%',
+                v_result.used_count, v_result.remaining_count;
+            END IF;
 
             -- TEST E: Free quota capacity enforcement
-            v_user_id := v_user_ids[5]; UPDATE public.users SET plan = 'free', is_pro = false WHERE id = v_user_id;
-            FOR i IN 1..3 LOOP v_request_id := gen_random_uuid(); SELECT * INTO v_result FROM public.reserve_trade_quota(v_user_id, v_request_id, 'test-e-fp-' || i::TEXT); IF NOT v_result.success THEN RAISE EXCEPTION 'FAILED E%: %', i, v_result.error_message; END IF; END LOOP;
+            v_user_id := v_user_ids[5];
+            UPDATE public.users SET plan = 'free', is_pro = false WHERE id = v_user_id;
+            FOR i IN 1..3 LOOP
+              v_request_id := gen_random_uuid();
+              SELECT * INTO v_result
+              FROM public.reserve_trade_quota(v_user_id, v_request_id, 'test-e-fp-' || i::TEXT);
+              IF NOT v_result.success THEN
+                RAISE EXCEPTION 'FAILED E%: %', i, v_result.error_message;
+              END IF;
+            END LOOP;
             v_request_id := gen_random_uuid();
-            SELECT * INTO v_result FROM public.reserve_trade_quota(v_user_id, v_request_id, 'test-e-fp-4');
-            IF v_result.success OR v_result.error_message != 'lifetime_limit_reached' THEN RAISE EXCEPTION 'FAILED E4/E5'; END IF;
+            SELECT * INTO v_result
+            FROM public.reserve_trade_quota(v_user_id, v_request_id, 'test-e-fp-4');
+            IF v_result.success OR v_result.error_message != 'lifetime_limit_reached' THEN
+              RAISE EXCEPTION 'FAILED E4/E5: free capacity limit not enforced';
+            END IF;
 
             -- TEST F: Idempotency
-            v_user_id := v_user_ids[6]; UPDATE public.users SET plan = 'free', is_pro = false WHERE id = v_user_id;
+            v_user_id := v_user_ids[6];
+            UPDATE public.users SET plan = 'free', is_pro = false WHERE id = v_user_id;
             v_request_id := gen_random_uuid();
-            SELECT * INTO v_result FROM public.reserve_trade_quota(v_user_id, v_request_id, 'test-f-fp');
-            IF NOT v_result.success THEN RAISE EXCEPTION 'FAILED F1: %', v_result.error_message; END IF;
-            SELECT * INTO v_result FROM public.reserve_trade_quota(v_user_id, v_request_id, 'test-f-fp');
-            IF v_result.error_message != 'duplicate_request_id' THEN RAISE EXCEPTION 'FAILED F2: %', v_result.error_message; END IF;
-            SELECT COUNT(*) INTO v_count FROM public.trade_analysis_usage WHERE user_id = v_user_id AND request_id = v_request_id;
-            IF v_count != 1 THEN RAISE EXCEPTION 'FAILED F3: %', v_count; END IF;
+            SELECT * INTO v_result
+            FROM public.reserve_trade_quota(v_user_id, v_request_id, 'test-f-fp');
+            IF NOT v_result.success THEN
+              RAISE EXCEPTION 'FAILED F1: %', v_result.error_message;
+            END IF;
+            SELECT * INTO v_result
+            FROM public.reserve_trade_quota(v_user_id, v_request_id, 'test-f-fp');
+            IF v_result.error_message != 'duplicate_request_id' THEN
+              RAISE EXCEPTION 'FAILED F2: expected duplicate_request_id, got %', v_result.error_message;
+            END IF;
+            SELECT COUNT(*) INTO v_count
+            FROM public.trade_analysis_usage
+            WHERE user_id = v_user_id AND request_id = v_request_id;
+            IF v_count != 1 THEN
+              RAISE EXCEPTION 'FAILED F3: expected exactly 1 logical usage row, got %', v_count;
+            END IF;
+
+            -- TEST G: Pro plan bypasses the Free lifetime cap
+            v_user_id := v_user_ids[7];
+            DELETE FROM public.trade_analysis_usage WHERE user_id = v_user_id;
+            UPDATE public.users SET plan = 'free', is_pro = false WHERE id = v_user_id;
+            FOR i IN 1..3 LOOP
+              INSERT INTO public.trade_analysis_usage
+                (user_id, quota_date, request_id, request_fingerprint, status, created_at, expires_at, completed_at)
+              VALUES
+                (v_user_id, (now() AT TIME ZONE 'UTC')::date, gen_random_uuid(),
+                 'test-g-history-' || i::TEXT, 'succeeded', now(), now() + INTERVAL '1 hour', now());
+            END LOOP;
+            UPDATE public.users SET plan = 'pro', is_pro = true WHERE id = v_user_id;
+            v_request_id := gen_random_uuid();
+            SELECT * INTO v_result
+            FROM public.reserve_trade_quota(v_user_id, v_request_id, 'test-g-pro-bypass');
+            IF NOT v_result.success THEN
+              RAISE EXCEPTION 'FAILED G: Pro user did not bypass quota: %', v_result.error_message;
+            END IF;
+
+            -- TEST H: Elite plan bypasses the Free lifetime cap
+            v_user_id := v_user_ids[8];
+            DELETE FROM public.trade_analysis_usage WHERE user_id = v_user_id;
+            UPDATE public.users SET plan = 'free', is_pro = false WHERE id = v_user_id;
+            FOR i IN 1..3 LOOP
+              INSERT INTO public.trade_analysis_usage
+                (user_id, quota_date, request_id, request_fingerprint, status, created_at, expires_at, completed_at)
+              VALUES
+                (v_user_id, (now() AT TIME ZONE 'UTC')::date, gen_random_uuid(),
+                 'test-h-history-' || i::TEXT, 'succeeded', now(), now() + INTERVAL '1 hour', now());
+            END LOOP;
+            UPDATE public.users SET plan = 'elite', is_pro = true WHERE id = v_user_id;
+            v_request_id := gen_random_uuid();
+            SELECT * INTO v_result
+            FROM public.reserve_trade_quota(v_user_id, v_request_id, 'test-h-elite-bypass');
+            IF NOT v_result.success THEN
+              RAISE EXCEPTION 'FAILED H: Elite user did not bypass quota: %', v_result.error_message;
+            END IF;
           END $$;
           BEHAVIOR006
           echo "✅ Migration 006 behavioral tests A-H verified"
@@ -760,7 +959,7 @@ jobs:
           if [ -z "$TEST_USER" ]; then echo "❌ FAILED: No test user"; exit 1; fi
           psql -X -v ON_ERROR_STOP=1 "$SUPABASE_TEST_DB_URL" << SETUP
           DELETE FROM public.trade_analysis_usage WHERE user_id = '$TEST_USER'::uuid;
-          UPDATE public.users SET plan = 'free' WHERE id = '$TEST_USER'::uuid;
+          UPDATE public.users SET plan = 'free', is_pro = false WHERE id = '$TEST_USER'::uuid;
           INSERT INTO public.trade_analysis_usage (user_id, quota_date, request_id, request_fingerprint, status, created_at, expires_at, completed_at) VALUES ('$TEST_USER'::uuid, now()::date, gen_random_uuid(), 'fp1', 'succeeded', now(), now() + INTERVAL '1 hour', now());
           INSERT INTO public.trade_analysis_usage (user_id, quota_date, request_id, request_fingerprint, status, created_at, expires_at, completed_at) VALUES ('$TEST_USER'::uuid, now()::date, gen_random_uuid(), 'fp2', 'succeeded', now(), now() + INTERVAL '1 hour', now());
           SETUP
@@ -783,37 +982,37 @@ jobs:
           V_SUCC=$(psql -X -v ON_ERROR_STOP=1 -At \
             -v test_user="$TEST_USER" \
             "$SUPABASE_TEST_DB_URL" <<'SQL'
-SELECT COUNT(*)
-FROM public.trade_analysis_usage
-WHERE user_id = :'test_user'::uuid
-  AND status = 'succeeded';
-SQL
-)
+          SELECT COUNT(*)
+          FROM public.trade_analysis_usage
+          WHERE user_id = :'test_user'::uuid
+            AND status = 'succeeded';
+          SQL
+          )
           V_ACTV=$(psql -X -v ON_ERROR_STOP=1 -At \
             -v test_user="$TEST_USER" \
             -v req1="$REQ_ID_1" \
             -v req2="$REQ_ID_2" \
             "$SUPABASE_TEST_DB_URL" <<'SQL'
-SELECT COUNT(*)
-FROM public.trade_analysis_usage
-WHERE user_id = :'test_user'::uuid
-  AND request_id IN (:'req1'::uuid, :'req2'::uuid)
-  AND status = 'reserved'
-  AND expires_at > now();
-SQL
-)
+          SELECT COUNT(*)
+          FROM public.trade_analysis_usage
+          WHERE user_id = :'test_user'::uuid
+            AND request_id IN (:'req1'::uuid, :'req2'::uuid)
+            AND status = 'reserved'
+            AND expires_at > now();
+          SQL
+          )
           V_TOTAL=$(psql -X -v ON_ERROR_STOP=1 -At \
             -v test_user="$TEST_USER" \
             "$SUPABASE_TEST_DB_URL" <<'SQL'
-SELECT COUNT(*)
-FROM public.trade_analysis_usage
-WHERE user_id = :'test_user'::uuid
-  AND (
-    status = 'succeeded'
-    OR (status = 'reserved' AND expires_at > now())
-  );
-SQL
-)
+          SELECT COUNT(*)
+          FROM public.trade_analysis_usage
+          WHERE user_id = :'test_user'::uuid
+            AND (
+              status = 'succeeded'
+              OR (status = 'reserved' AND expires_at > now())
+            );
+          SQL
+          )
           if [ "$V_SUCC" != "2" ]; then echo "❌ FAILED: Expected 2 succeeded, got $V_SUCC"; exit 1; fi
           if [ "$V_ACTV" != "1" ]; then echo "❌ FAILED: Expected 1 active, got $V_ACTV"; exit 1; fi
           if [ "$V_TOTAL" != "3" ]; then echo "❌ FAILED: Expected 3 total, got $V_TOTAL"; exit 1; fi
@@ -864,11 +1063,15 @@ SQL
           echo "✅ Verified: Migration 003 (odds_cache)"
           echo "✅ Verified: Migration 004 (fdp_value_snapshots)"
           echo "✅ Verified: Migration 005 (entitlement_security) - metadata + 13 behavioral"
-          echo "✅ Verified: Migration 006 (trade_analysis_quota) - 6 behavioral + concurrency"
-          echo "  └─ Tests A-F: failed/active/expired/lifetime/advisory-lock/idempotency"
-          echo "  └─ Concurrency: Two bounded sessions, ONE acquires final slot"
+          echo "  └─ Authenticated signup_ip/signup_visitor_id updates each changed exactly one row and persisted"
+          echo "✅ Verified: Migration 006 (trade_analysis_quota) - 8 behavioral + concurrency"
+          echo "  └─ Free: 3 lifetime capacity; additional use blocked"
+          echo "  └─ Failed analyses release quota; active reservations consume capacity"
+          echo "  └─ Expired reservations release capacity; historical quota_date does not reset lifetime limit"
+          echo "  └─ Idempotency verified; Pro bypass verified; Elite bypass verified"
+          echo "  └─ Concurrency: two bounded sessions, only ONE acquires the final slot"
           echo "✅ Verified: Migration 007 (billing_event_ledger)"
           echo ""
           echo "Commit: 2adfbb954190a5066af27e8987dfcda1961b0e4b"
-          echo "Status: READY FOR PRODUCTION"
+          echo "Status: CANDIDATE READY FOR PRODUCTION REVIEW"
           echo ""
