@@ -1,0 +1,166 @@
+name: Supabase Migration Preflight Audit (READ-ONLY)
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  audit-migration-effects:
+    runs-on: ubuntu-latest
+    env:
+      PGOPTIONS: "-c default_transaction_read_only=on"
+    steps:
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Verify Migration 1 - public.users columns
+        env:
+          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          cat << 'SQL' | psql -X -v ON_ERROR_STOP=1 "$DATABASE_URL" 2>&1
+          SET default_transaction_read_only = on;
+          -- READ-ONLY: Verify public.users table structure
+          \echo '===== MIGRATION 1 VERIFICATION ====='
+
+          \echo '1. TABLE EXISTS:'
+          SELECT EXISTS (
+            SELECT 1 FROM information_schema.tables
+            WHERE table_name = 'users' AND table_schema = 'public'
+          ) AS "public.users exists";
+
+          \echo ''
+          \echo '2. COLUMNS AND TYPES:'
+          SELECT
+            column_name,
+            data_type,
+            is_nullable,
+            column_default
+          FROM information_schema.columns
+          WHERE table_name = 'users' AND table_schema = 'public'
+          ORDER BY ordinal_position;
+
+          \echo ''
+          \echo '3. RLS ENABLED:'
+          SELECT relrowsecurity
+          FROM pg_class
+          WHERE relname = 'users' AND relnamespace = 'public'::regnamespace;
+
+          \echo ''
+          \echo '4. RLS POLICIES:'
+          SELECT policyname, qual, with_check
+          FROM pg_policies
+          WHERE tablename = 'users' AND schemaname = 'public'
+          ORDER BY policyname;
+
+          \echo ''
+          \echo '5. FUNCTIONS public.handle_new_user():'
+          SELECT prosrc
+          FROM pg_proc
+          WHERE proname = 'handle_new_user'
+          AND pronamespace = 'public'::regnamespace;
+
+          \echo ''
+          \echo '6. TRIGGERS ON auth.users:'
+          SELECT
+            trigger_name,
+            event_object_schema,
+            event_object_table,
+            event_manipulation,
+            action_statement
+          FROM information_schema.triggers
+          WHERE trigger_name = 'on_auth_user_created';
+
+          SQL
+
+      - name: Verify Migration 2 - Abuse Prevention columns
+        env:
+          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          cat << 'SQL' | psql -X -v ON_ERROR_STOP=1 "$DATABASE_URL" 2>&1
+          SET default_transaction_read_only = on;
+          -- READ-ONLY: Verify Migration 2 columns on public.users
+          \echo '===== MIGRATION 2 VERIFICATION ====='
+
+          \echo '1. COLUMNS ADDED BY MIGRATION 2:'
+          SELECT column_name, data_type, is_nullable, column_default
+          FROM information_schema.columns
+          WHERE table_name = 'users' AND table_schema = 'public'
+          AND column_name IN ('signup_ip', 'signup_visitor_id', 'trial_used')
+          ORDER BY column_name;
+
+          \echo ''
+          \echo '2. INDEXES FOR ABUSE PREVENTION:'
+          SELECT
+            schemaname,
+            tablename,
+            indexname,
+            indexdef
+          FROM pg_indexes
+          WHERE tablename = 'users' AND schemaname = 'public'
+          AND indexname LIKE '%signup%'
+          ORDER BY indexname;
+
+          SQL
+
+      - name: Verify Migration 5 - Entitlement Security Grants
+        env:
+          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          cat << 'SQL' | psql -X -v ON_ERROR_STOP=1 "$DATABASE_URL" 2>&1
+          SET default_transaction_read_only = on;
+          -- READ-ONLY: Verify Migration 5 permissions on public.users
+          \echo '===== MIGRATION 5 VERIFICATION ====='
+
+          \echo '1. TABLE PRIVILEGES FOR public.users:'
+          SELECT
+            grantee,
+            privilege_type,
+            is_grantable
+          FROM information_schema.role_table_grants
+          WHERE table_name = 'users' AND table_schema = 'public'
+          ORDER BY grantee, privilege_type;
+
+          \echo ''
+          \echo '2. COLUMN-LEVEL UPDATE PRIVILEGES FOR authenticated:'
+          SELECT
+            column_name,
+            privilege_type
+          FROM information_schema.role_column_grants
+          WHERE table_name = 'users' AND table_schema = 'public'
+          AND grantee = 'authenticated'
+          AND privilege_type = 'UPDATE'
+          ORDER BY column_name;
+
+          SQL
+
+      - name: Verify Migrations 3-7 tables absent
+        env:
+          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          cat << 'SQL' | psql -X -v ON_ERROR_STOP=1 "$DATABASE_URL" 2>&1
+          SET default_transaction_read_only = on;
+          -- READ-ONLY: Check for tables created by Migrations 3-7
+          \echo '===== MIGRATION 3-7 TABLE VERIFICATION ====='
+
+          SELECT
+            table_name,
+            CASE
+              WHEN table_name = 'odds_cache' THEN 'Migration 3'
+              WHEN table_name IN ('fdp_snapshot_batches', 'fdp_value_snapshots') THEN 'Migration 4'
+              WHEN table_name = 'trade_analysis_usage' THEN 'Migration 6'
+              WHEN table_name IN ('billing_reconciliation_state', 'stripe_events') THEN 'Migration 7'
+            END AS "Created by Migration"
+          FROM information_schema.tables
+          WHERE table_schema = 'public'
+          AND table_name IN (
+            'odds_cache',
+            'fdp_snapshot_batches', 'fdp_value_snapshots',
+            'trade_analysis_usage',
+            'billing_reconciliation_state', 'stripe_events'
+          )
+          ORDER BY table_name;
+
+          SQL
