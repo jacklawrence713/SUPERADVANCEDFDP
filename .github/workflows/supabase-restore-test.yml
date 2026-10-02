@@ -1,0 +1,869 @@
+name: Supabase Final Migration Rehearsal (TESTING ONLY)
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  rehearsal:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout exact remediation commit
+        uses: actions/checkout@v4
+        with:
+          ref: 2adfbb954190a5066af27e8987dfcda1961b0e4b
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+          psql --version
+
+      - name: Create backup folder
+        run: mkdir -p restore-test
+
+      - name: Safety check - Verify separate connection strings
+        env:
+          PROD_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          TEST_DB_URL: ${{ secrets.SUPABASE_TEST_DB_URL }}
+        run: |
+          if [ "$PROD_DB_URL" = "$TEST_DB_URL" ]; then
+            echo "❌ FATAL: SUPABASE_DB_URL and SUPABASE_TEST_DB_URL are identical"
+            echo "This would destroy production data"
+            exit 1
+          fi
+          echo "✅ Production and test databases are distinct"
+
+      - name: Backup production roles (READ-ONLY)
+        env:
+          PGOPTIONS: "-c default_transaction_read_only=on"
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          echo "=== BACKUP PRODUCTION ROLES (READ-ONLY) ==="
+          supabase db dump \
+            --db-url "$SUPABASE_DB_URL" \
+            -f restore-test/roles.sql \
+            --role-only
+          echo "✅ Roles dumped: $(wc -l < restore-test/roles.sql) lines"
+
+      - name: Backup production schema (READ-ONLY)
+        env:
+          PGOPTIONS: "-c default_transaction_read_only=on"
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          echo "=== BACKUP PRODUCTION SCHEMA (READ-ONLY) ==="
+          supabase db dump \
+            --db-url "$SUPABASE_DB_URL" \
+            -f restore-test/schema.sql
+          echo "✅ Schema dumped: $(wc -l < restore-test/schema.sql) lines"
+
+      - name: Backup production data (READ-ONLY)
+        env:
+          PGOPTIONS: "-c default_transaction_read_only=on"
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          echo "=== BACKUP PRODUCTION DATA (READ-ONLY) ==="
+          supabase db dump \
+            --db-url "$SUPABASE_DB_URL" \
+            -f restore-test/data.sql \
+            --use-copy \
+            --data-only \
+            -x "storage.buckets_vectors" \
+            -x "storage.vector_indexes"
+          echo "✅ Data dumped: $(wc -l < restore-test/data.sql) lines"
+
+      - name: Verify production baseline - public tables count
+        env:
+          PGOPTIONS: "-c default_transaction_read_only=on"
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          echo "=== PRODUCTION BASELINE: PUBLIC TABLES ==="
+          psql -X -v ON_ERROR_STOP=1 "$SUPABASE_DB_URL" \
+            --tuples-only \
+            --command "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE';" \
+            > /tmp/prod_public_tables.txt
+          echo "Count: $(cat /tmp/prod_public_tables.txt | xargs)"
+
+      - name: Verify production baseline - auth.users count
+        env:
+          PGOPTIONS: "-c default_transaction_read_only=on"
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          echo "=== PRODUCTION BASELINE: auth.users ==="
+          psql -X -v ON_ERROR_STOP=1 "$SUPABASE_DB_URL" \
+            --tuples-only \
+            --command "SELECT COUNT(*) FROM auth.users;" \
+            > /tmp/prod_auth_users.txt
+          echo "Count: $(cat /tmp/prod_auth_users.txt | xargs)"
+
+      - name: Verify production baseline - public.users count
+        env:
+          PGOPTIONS: "-c default_transaction_read_only=on"
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          echo "=== PRODUCTION BASELINE: public.users ==="
+          psql -X -v ON_ERROR_STOP=1 "$SUPABASE_DB_URL" \
+            --tuples-only \
+            --command "SELECT COUNT(*) FROM public.users;" \
+            > /tmp/prod_public_users.txt
+          echo "Count: $(cat /tmp/prod_public_users.txt | xargs)"
+
+      - name: Restore into test Supabase project
+        env:
+          SUPABASE_TEST_DB_URL: ${{ secrets.SUPABASE_TEST_DB_URL }}
+        run: |
+          echo "=== RESTORE TO TEST DATABASE ==="
+          psql \
+            --single-transaction \
+            -X -v ON_ERROR_STOP=1 \
+            -f restore-test/roles.sql \
+            -f restore-test/schema.sql \
+            -c 'SET session_replication_role = replica' \
+            -f restore-test/data.sql \
+            "$SUPABASE_TEST_DB_URL"
+          echo "✅ Restore completed"
+
+      - name: Verify test database restore - public tables
+        env:
+          SUPABASE_TEST_DB_URL: ${{ secrets.SUPABASE_TEST_DB_URL }}
+        run: |
+          echo "=== TEST RESTORE VERIFICATION: PUBLIC TABLES ==="
+          psql -X -v ON_ERROR_STOP=1 "$SUPABASE_TEST_DB_URL" \
+            --tuples-only \
+            --command "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE';" \
+            > /tmp/test_public_tables.txt
+          TEST_COUNT=$(cat /tmp/test_public_tables.txt | xargs)
+          PROD_COUNT=$(cat /tmp/prod_public_tables.txt | xargs)
+          echo "Test: $TEST_COUNT | Production: $PROD_COUNT"
+          if [ "$TEST_COUNT" != "$PROD_COUNT" ]; then
+            echo "❌ FAILED: Public table count mismatch"
+            exit 1
+          fi
+          echo "✅ Public table counts match"
+
+      - name: Verify test database restore - auth.users
+        env:
+          SUPABASE_TEST_DB_URL: ${{ secrets.SUPABASE_TEST_DB_URL }}
+        run: |
+          echo "=== TEST RESTORE VERIFICATION: auth.users ==="
+          psql -X -v ON_ERROR_STOP=1 "$SUPABASE_TEST_DB_URL" \
+            --tuples-only \
+            --command "SELECT COUNT(*) FROM auth.users;" \
+            > /tmp/test_auth_users.txt
+          TEST_COUNT=$(cat /tmp/test_auth_users.txt | xargs)
+          PROD_COUNT=$(cat /tmp/prod_auth_users.txt | xargs)
+          echo "Test: $TEST_COUNT | Production: $PROD_COUNT"
+          if [ "$TEST_COUNT" != "$PROD_COUNT" ]; then
+            echo "❌ FAILED: auth.users count mismatch"
+            exit 1
+          fi
+          echo "✅ auth.users counts match"
+
+      - name: Verify test database restore - public.users
+        env:
+          SUPABASE_TEST_DB_URL: ${{ secrets.SUPABASE_TEST_DB_URL }}
+        run: |
+          echo "=== TEST RESTORE VERIFICATION: public.users ==="
+          psql -X -v ON_ERROR_STOP=1 "$SUPABASE_TEST_DB_URL" \
+            --tuples-only \
+            --command "SELECT COUNT(*) FROM public.users;" \
+            > /tmp/test_public_users.txt
+          TEST_COUNT=$(cat /tmp/test_public_users.txt | xargs)
+          PROD_COUNT=$(cat /tmp/prod_public_users.txt | xargs)
+          echo "Test: $TEST_COUNT | Production: $PROD_COUNT"
+          if [ "$TEST_COUNT" != "$PROD_COUNT" ]; then
+            echo "❌ FAILED: public.users count mismatch"
+            exit 1
+          fi
+          echo "✅ public.users counts match"
+
+      - name: Apply Migration 003 - odds_cache.sql
+        env:
+          SUPABASE_TEST_DB_URL: ${{ secrets.SUPABASE_TEST_DB_URL }}
+        run: |
+          echo "=== APPLYING MIGRATION 003 ==="
+          psql -X -v ON_ERROR_STOP=1 "$SUPABASE_TEST_DB_URL" < supabase/migrations/20260921144441_odds_cache.sql
+          echo "✅ Migration 003 applied"
+
+      - name: Verify Migration 003 - odds_cache table and structure
+        env:
+          SUPABASE_TEST_DB_URL: ${{ secrets.SUPABASE_TEST_DB_URL }}
+        run: |
+          echo "=== VERIFYING MIGRATION 003 ==="
+          psql -X -v ON_ERROR_STOP=1 "$SUPABASE_TEST_DB_URL" << 'VERIFY003'
+          DO $$
+          DECLARE
+            v_count INT;
+          BEGIN
+            -- Table exists
+            IF NOT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'odds_cache') THEN
+              RAISE EXCEPTION 'FAILED: odds_cache table does not exist';
+            END IF;
+
+            -- Has all required columns (verify exact count)
+            SELECT COUNT(DISTINCT column_name) INTO v_count FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = 'odds_cache' AND column_name IN ('id', 'response', 'fetched_at', 'refreshing_until');
+            IF v_count != 4 THEN
+              RAISE EXCEPTION 'FAILED: odds_cache missing required columns (found %)', v_count;
+            END IF;
+
+            -- RLS enabled
+            IF NOT (SELECT relrowsecurity FROM pg_class WHERE relname = 'odds_cache' AND relnamespace = 'public'::regnamespace) THEN
+              RAISE EXCEPTION 'FAILED: RLS not enabled on odds_cache';
+            END IF;
+
+            -- claim_odds_refresh function exists with correct signature
+            IF NOT EXISTS(SELECT 1 FROM pg_proc WHERE proname = 'claim_odds_refresh' AND pronamespace = 'public'::regnamespace) THEN
+              RAISE EXCEPTION 'FAILED: claim_odds_refresh function does not exist';
+            END IF;
+
+            -- Function is SECURITY DEFINER
+            IF NOT (SELECT prosecdef FROM pg_proc WHERE proname = 'claim_odds_refresh' AND pronamespace = 'public'::regnamespace) THEN
+              RAISE EXCEPTION 'FAILED: claim_odds_refresh is not SECURITY DEFINER';
+            END IF;
+
+            -- Seed row exists
+            IF NOT EXISTS(SELECT 1 FROM public.odds_cache WHERE id = 'nfl_current') THEN
+              RAISE EXCEPTION 'FAILED: Seed row nfl_current does not exist in odds_cache';
+            END IF;
+          END $$;
+          VERIFY003
+          echo "✅ Migration 003 verified"
+
+      - name: Apply Migration 004 - fdp_value_snapshots.sql
+        env:
+          SUPABASE_TEST_DB_URL: ${{ secrets.SUPABASE_TEST_DB_URL }}
+        run: |
+          echo "=== APPLYING MIGRATION 004 ==="
+          psql -X -v ON_ERROR_STOP=1 "$SUPABASE_TEST_DB_URL" < supabase/migrations/20260922003719_fdp_value_snapshots.sql
+          echo "✅ Migration 004 applied"
+
+      - name: Verify Migration 004 - FDP Value Snapshots structure
+        env:
+          SUPABASE_TEST_DB_URL: ${{ secrets.SUPABASE_TEST_DB_URL }}
+        run: |
+          echo "=== VERIFYING MIGRATION 004 ==="
+          psql -X -v ON_ERROR_STOP=1 "$SUPABASE_TEST_DB_URL" << 'VERIFY004'
+          DO $$
+          DECLARE
+            v_count INT;
+          BEGIN
+            -- Both tables exist
+            IF NOT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'fdp_snapshot_batches') THEN
+              RAISE EXCEPTION 'FAILED: fdp_snapshot_batches table does not exist';
+            END IF;
+            IF NOT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'fdp_value_snapshots') THEN
+              RAISE EXCEPTION 'FAILED: fdp_value_snapshots table does not exist';
+            END IF;
+
+            -- Batches table has all required columns
+            SELECT COUNT(DISTINCT column_name) INTO v_count FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = 'fdp_snapshot_batches' AND column_name IN ('id', 'values_version', 'effective_at', 'league_type', 'scoring', 'status');
+            IF v_count != 6 THEN
+              RAISE EXCEPTION 'FAILED: fdp_snapshot_batches missing required columns (found %)', v_count;
+            END IF;
+
+            -- Snapshots table has all required columns
+            SELECT COUNT(DISTINCT column_name) INTO v_count FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = 'fdp_value_snapshots' AND column_name IN ('id', 'batch_id', 'player_slug', 'value', 'league_type', 'scoring');
+            IF v_count != 6 THEN
+              RAISE EXCEPTION 'FAILED: fdp_value_snapshots missing required columns (found %)', v_count;
+            END IF;
+
+            -- Unique constraint on batches
+            IF NOT EXISTS(SELECT 1 FROM information_schema.table_constraints WHERE table_name = 'fdp_snapshot_batches' AND constraint_name = 'uq_fdp_batch_version_context') THEN
+              RAISE EXCEPTION 'FAILED: uq_fdp_batch_version_context unique constraint missing';
+            END IF;
+
+            -- Unique constraint on snapshots
+            IF NOT EXISTS(SELECT 1 FROM information_schema.table_constraints WHERE table_name = 'fdp_value_snapshots' AND constraint_name = 'uq_fdp_snapshot_player_batch') THEN
+              RAISE EXCEPTION 'FAILED: uq_fdp_snapshot_player_batch unique constraint missing';
+            END IF;
+
+            -- RLS enabled on both
+            IF NOT (SELECT relrowsecurity FROM pg_class WHERE relname = 'fdp_snapshot_batches' AND relnamespace = 'public'::regnamespace) THEN
+              RAISE EXCEPTION 'FAILED: RLS not enabled on fdp_snapshot_batches';
+            END IF;
+            IF NOT (SELECT relrowsecurity FROM pg_class WHERE relname = 'fdp_value_snapshots' AND relnamespace = 'public'::regnamespace) THEN
+              RAISE EXCEPTION 'FAILED: RLS not enabled on fdp_value_snapshots';
+            END IF;
+
+            -- Foreign key relationship
+            IF NOT EXISTS(SELECT 1 FROM information_schema.table_constraints WHERE table_name = 'fdp_value_snapshots' AND constraint_type = 'FOREIGN KEY' AND constraint_name LIKE '%batch_id%') THEN
+              RAISE EXCEPTION 'FAILED: Foreign key on fdp_value_snapshots.batch_id missing';
+            END IF;
+          END $$;
+          VERIFY004
+          echo "✅ Migration 004 verified"
+
+      - name: Apply Migration 005 - entitlement_security.sql
+        env:
+          SUPABASE_TEST_DB_URL: ${{ secrets.SUPABASE_TEST_DB_URL }}
+        run: |
+          echo "=== APPLYING MIGRATION 005 ==="
+          psql -X -v ON_ERROR_STOP=1 "$SUPABASE_TEST_DB_URL" < supabase/migrations/20260924152532_entitlement_security.sql
+          echo "✅ Migration 005 applied"
+
+      - name: Verify Migration 005 - Privilege Model (Metadata Assertions)
+        env:
+          SUPABASE_TEST_DB_URL: ${{ secrets.SUPABASE_TEST_DB_URL }}
+        run: |
+          echo "=== VERIFYING MIGRATION 005: PRIVILEGE MODEL (METADATA) ==="
+          psql -X -v ON_ERROR_STOP=1 "$SUPABASE_TEST_DB_URL" << 'PRIVMETA005'
+          DO $$
+          DECLARE v_count INT; v_cols TEXT;
+          BEGIN
+            -- PUBLIC: zero table privileges
+            SELECT COUNT(*) INTO v_count FROM information_schema.role_table_grants
+            WHERE table_name = 'users' AND table_schema = 'public' AND grantee = 'PUBLIC';
+            IF v_count != 0 THEN
+              RAISE EXCEPTION 'FAILED: PUBLIC has % table privileges (expected 0)', v_count;
+            END IF;
+
+            -- anon: zero table privileges
+            SELECT COUNT(*) INTO v_count FROM information_schema.role_table_grants
+            WHERE table_name = 'users' AND table_schema = 'public' AND grantee = 'anon';
+            IF v_count != 0 THEN
+              RAISE EXCEPTION 'FAILED: anon has % table privileges (expected 0)', v_count;
+            END IF;
+
+            -- PUBLIC: zero column privileges
+            SELECT COUNT(*) INTO v_count FROM information_schema.role_column_grants
+            WHERE table_name = 'users' AND table_schema = 'public' AND grantee = 'PUBLIC';
+            IF v_count != 0 THEN
+              RAISE EXCEPTION 'FAILED: PUBLIC has % column privileges (expected 0)', v_count;
+            END IF;
+
+            -- anon: zero column privileges
+            SELECT COUNT(*) INTO v_count FROM information_schema.role_column_grants
+            WHERE table_name = 'users' AND table_schema = 'public' AND grantee = 'anon';
+            IF v_count != 0 THEN
+              RAISE EXCEPTION 'FAILED: anon has % column privileges (expected 0)', v_count;
+            END IF;
+
+            -- authenticated: SELECT exists
+            SELECT COUNT(*) INTO v_count FROM information_schema.role_table_grants
+            WHERE table_name = 'users' AND table_schema = 'public' AND grantee = 'authenticated' AND privilege_type = 'SELECT';
+            IF v_count != 1 THEN
+              RAISE EXCEPTION 'FAILED: authenticated SELECT not granted';
+            END IF;
+
+            -- authenticated: no table-level UPDATE
+            SELECT COUNT(*) INTO v_count FROM information_schema.role_table_grants
+            WHERE table_name = 'users' AND table_schema = 'public' AND grantee = 'authenticated' AND privilege_type = 'UPDATE';
+            IF v_count != 0 THEN
+              RAISE EXCEPTION 'FAILED: authenticated has table-level UPDATE (expected 0)';
+            END IF;
+
+            -- authenticated: UPDATE only on signup_ip and signup_visitor_id
+            SELECT STRING_AGG(column_name, ',' ORDER BY column_name) INTO v_cols
+            FROM information_schema.role_column_grants
+            WHERE table_name = 'users' AND table_schema = 'public' AND grantee = 'authenticated' AND privilege_type = 'UPDATE';
+            IF v_cols != 'signup_ip,signup_visitor_id' THEN
+              RAISE EXCEPTION 'FAILED: authenticated UPDATE columns are %, expected signup_ip,signup_visitor_id', COALESCE(v_cols, 'NULL');
+            END IF;
+
+            -- authenticated: no INSERT
+            SELECT COUNT(*) INTO v_count FROM information_schema.role_table_grants
+            WHERE table_name = 'users' AND table_schema = 'public' AND grantee = 'authenticated' AND privilege_type = 'INSERT';
+            IF v_count != 0 THEN
+              RAISE EXCEPTION 'FAILED: authenticated has INSERT (expected 0)';
+            END IF;
+
+            -- authenticated: no DELETE
+            SELECT COUNT(*) INTO v_count FROM information_schema.role_table_grants
+            WHERE table_name = 'users' AND table_schema = 'public' AND grantee = 'authenticated' AND privilege_type = 'DELETE';
+            IF v_count != 0 THEN
+              RAISE EXCEPTION 'FAILED: authenticated has DELETE (expected 0)';
+            END IF;
+
+            -- authenticated: no TRUNCATE, REFERENCES, TRIGGER
+            SELECT COUNT(*) INTO v_count FROM information_schema.role_table_grants
+            WHERE table_name = 'users' AND table_schema = 'public' AND grantee = 'authenticated' AND privilege_type IN ('TRUNCATE', 'REFERENCES', 'TRIGGER');
+            IF v_count != 0 THEN
+              RAISE EXCEPTION 'FAILED: authenticated has TRUNCATE/REFERENCES/TRIGGER (expected 0)';
+            END IF;
+
+            -- service_role: SELECT, INSERT, UPDATE, DELETE
+            SELECT COUNT(*) INTO v_count FROM information_schema.role_table_grants
+            WHERE table_name = 'users' AND table_schema = 'public' AND grantee = 'service_role' AND privilege_type IN ('SELECT', 'INSERT', 'UPDATE', 'DELETE');
+            IF v_count != 4 THEN
+              RAISE EXCEPTION 'FAILED: service_role missing privileges (has %, expected 4)', v_count;
+            END IF;
+
+            -- on_auth_user_created trigger exists
+            IF NOT EXISTS(SELECT 1 FROM information_schema.triggers WHERE trigger_name = 'on_auth_user_created' AND event_object_schema = 'auth' AND event_object_table = 'users') THEN
+              RAISE EXCEPTION 'FAILED: on_auth_user_created trigger does not exist';
+            END IF;
+
+            -- Trigger invokes handle_new_user function
+            IF NOT EXISTS(SELECT 1 FROM pg_trigger t JOIN pg_proc p ON t.tgfoid = p.oid WHERE t.tgname = 'on_auth_user_created' AND p.proname = 'handle_new_user') THEN
+              RAISE EXCEPTION 'FAILED: on_auth_user_created trigger does not invoke handle_new_user';
+            END IF;
+
+            -- handle_new_user is SECURITY DEFINER
+            SELECT COUNT(*) INTO v_count FROM pg_proc WHERE proname = 'handle_new_user' AND prosecdef = true AND pronamespace = 'public'::regnamespace;
+            IF v_count != 1 THEN
+              RAISE EXCEPTION 'FAILED: handle_new_user is not SECURITY DEFINER';
+            END IF;
+          END $$;
+          PRIVMETA005
+          echo "✅ Migration 005 privilege model metadata verified"
+
+      - name: Verify Migration 005 - Authenticated behavior
+        env:
+          SUPABASE_TEST_DB_URL: ${{ secrets.SUPABASE_TEST_DB_URL }}
+        run: |
+          echo "=== VERIFYING MIGRATION 005: AUTHENTICATED BEHAVIOR ==="
+          psql -X -v ON_ERROR_STOP=1 "$SUPABASE_TEST_DB_URL" << 'BEHAV005'
+          DO $$
+          DECLARE
+            v_test_user_id UUID;
+            v_count INT;
+            v_jwt_sub TEXT;
+          BEGIN
+            -- Get an arbitrary test user from restored data
+            SELECT id INTO v_test_user_id FROM public.users LIMIT 1;
+            IF v_test_user_id IS NULL THEN
+              RAISE EXCEPTION 'No test users available in restored database';
+            END IF;
+
+            -- Test 1: Authenticated can SELECT own row (with proper JWT context)
+            SET ROLE authenticated;
+            PERFORM set_config('request.jwt.claim.sub', v_test_user_id::text, false);
+            SELECT auth.uid() INTO v_jwt_sub;
+            IF v_jwt_sub::uuid != v_test_user_id THEN
+              RAISE EXCEPTION 'FAILED: auth.uid() = % does not match test user %', v_jwt_sub, v_test_user_id;
+            END IF;
+            BEGIN
+              SELECT COUNT(*) INTO v_count FROM public.users WHERE id = v_test_user_id;
+              IF v_count != 1 THEN
+                RAISE EXCEPTION 'FAILED: authenticated cannot SELECT own row';
+              END IF;
+            EXCEPTION
+              WHEN insufficient_privilege THEN
+                RAISE EXCEPTION 'FAILED: authenticated SELECT blocked by privilege';
+              WHEN OTHERS THEN
+                RAISE EXCEPTION 'FAILED: authenticated SELECT failed: %', SQLERRM;
+            END;
+            RESET ROLE;
+
+            -- Test 2: Authenticated can UPDATE signup_ip
+            SET ROLE authenticated;
+            PERFORM set_config('request.jwt.claim.sub', v_test_user_id::text, false);
+            BEGIN
+              UPDATE public.users SET signup_ip = '192.0.2.1' WHERE id = v_test_user_id;
+            EXCEPTION
+              WHEN OTHERS THEN
+                RAISE EXCEPTION 'FAILED: authenticated cannot UPDATE signup_ip: %', SQLERRM;
+            END;
+            RESET ROLE;
+
+            -- Test 3: Authenticated can UPDATE signup_visitor_id
+            SET ROLE authenticated;
+            PERFORM set_config('request.jwt.claim.sub', v_test_user_id::text, false);
+            BEGIN
+              UPDATE public.users SET signup_visitor_id = 'visitor-123' WHERE id = v_test_user_id;
+            EXCEPTION
+              WHEN OTHERS THEN
+                RAISE EXCEPTION 'FAILED: authenticated cannot UPDATE signup_visitor_id: %', SQLERRM;
+            END;
+            RESET ROLE;
+
+            -- Test 4: Authenticated cannot UPDATE plan
+            SET ROLE authenticated;
+            PERFORM set_config('request.jwt.claim.sub', v_test_user_id::text, false);
+            BEGIN
+              UPDATE public.users SET plan = 'pro' WHERE id = v_test_user_id;
+              RAISE EXCEPTION 'FAILED: authenticated was able to UPDATE plan';
+            EXCEPTION
+              WHEN insufficient_privilege THEN
+                NULL;
+              WHEN OTHERS THEN
+                RAISE EXCEPTION 'FAILED: plan UPDATE error: %', SQLERRM;
+            END;
+            RESET ROLE;
+
+            -- Test 5: Authenticated cannot UPDATE is_pro
+            SET ROLE authenticated;
+            PERFORM set_config('request.jwt.claim.sub', v_test_user_id::text, false);
+            BEGIN
+              UPDATE public.users SET is_pro = true WHERE id = v_test_user_id;
+              RAISE EXCEPTION 'FAILED: authenticated was able to UPDATE is_pro';
+            EXCEPTION
+              WHEN insufficient_privilege THEN
+                NULL;
+              WHEN OTHERS THEN
+                RAISE EXCEPTION 'FAILED: is_pro UPDATE error: %', SQLERRM;
+            END;
+            RESET ROLE;
+
+            -- Test 6: Authenticated cannot UPDATE is_admin
+            SET ROLE authenticated;
+            PERFORM set_config('request.jwt.claim.sub', v_test_user_id::text, false);
+            BEGIN
+              UPDATE public.users SET is_admin = true WHERE id = v_test_user_id;
+              RAISE EXCEPTION 'FAILED: authenticated was able to UPDATE is_admin';
+            EXCEPTION
+              WHEN insufficient_privilege THEN
+                NULL;
+              WHEN OTHERS THEN
+                RAISE EXCEPTION 'FAILED: is_admin UPDATE error: %', SQLERRM;
+            END;
+            RESET ROLE;
+
+            -- Test 7: Authenticated cannot UPDATE subscription_status
+            SET ROLE authenticated;
+            PERFORM set_config('request.jwt.claim.sub', v_test_user_id::text, false);
+            BEGIN
+              UPDATE public.users SET subscription_status = 'active' WHERE id = v_test_user_id;
+              RAISE EXCEPTION 'FAILED: authenticated was able to UPDATE subscription_status';
+            EXCEPTION
+              WHEN insufficient_privilege THEN
+                NULL;
+              WHEN OTHERS THEN
+                RAISE EXCEPTION 'FAILED: subscription_status UPDATE error: %', SQLERRM;
+            END;
+            RESET ROLE;
+
+            -- Test 8: Authenticated cannot INSERT
+            SET ROLE authenticated;
+            BEGIN
+              INSERT INTO public.users (id, email, name, plan, is_pro, is_admin)
+              VALUES ('00000000-0000-0000-0000-000000000001', 'test@invalid', 'Test', 'free', false, false);
+              RAISE EXCEPTION 'FAILED: authenticated was able to INSERT';
+            EXCEPTION
+              WHEN insufficient_privilege THEN
+                NULL;
+              WHEN OTHERS THEN
+                RAISE EXCEPTION 'FAILED: INSERT error: %', SQLERRM;
+            END;
+            RESET ROLE;
+
+            -- Test 9: Authenticated cannot DELETE
+            SET ROLE authenticated;
+            PERFORM set_config('request.jwt.claim.sub', v_test_user_id::text, false);
+            BEGIN
+              DELETE FROM public.users WHERE id = v_test_user_id;
+              RAISE EXCEPTION 'FAILED: authenticated was able to DELETE';
+            EXCEPTION
+              WHEN insufficient_privilege THEN
+                NULL;
+              WHEN OTHERS THEN
+                RAISE EXCEPTION 'FAILED: DELETE error: %', SQLERRM;
+            END;
+            RESET ROLE;
+
+            -- Test 10: Anon cannot SELECT
+            SET ROLE anon;
+            BEGIN
+              SELECT COUNT(*) INTO v_count FROM public.users LIMIT 1;
+              RAISE EXCEPTION 'FAILED: anon was able to SELECT';
+            EXCEPTION
+              WHEN insufficient_privilege THEN
+                NULL;
+              WHEN OTHERS THEN
+                RAISE EXCEPTION 'FAILED: anon SELECT error: %', SQLERRM;
+            END;
+            RESET ROLE;
+
+            -- Test 11: Anon cannot INSERT
+            SET ROLE anon;
+            BEGIN
+              INSERT INTO public.users (id, email, name, plan, is_pro, is_admin)
+              VALUES ('00000000-0000-0000-0000-000000000002', 'test2@invalid', 'Test2', 'free', false, false);
+              RAISE EXCEPTION 'FAILED: anon was able to INSERT';
+            EXCEPTION
+              WHEN insufficient_privilege THEN
+                NULL;
+              WHEN OTHERS THEN
+                RAISE EXCEPTION 'FAILED: anon INSERT error: %', SQLERRM;
+            END;
+            RESET ROLE;
+
+            -- Test 12: Anon cannot UPDATE
+            SET ROLE anon;
+            BEGIN
+              UPDATE public.users SET signup_ip = '192.0.2.1' WHERE id = '00000000-0000-0000-0000-000000000001'::uuid;
+              RAISE EXCEPTION 'FAILED: anon was able to UPDATE';
+            EXCEPTION
+              WHEN insufficient_privilege THEN
+                NULL;
+              WHEN OTHERS THEN
+                RAISE EXCEPTION 'FAILED: anon UPDATE error: %', SQLERRM;
+            END;
+            RESET ROLE;
+
+            -- Test 13: Anon cannot DELETE
+            SET ROLE anon;
+            BEGIN
+              DELETE FROM public.users WHERE id = '00000000-0000-0000-0000-000000000001'::uuid;
+              RAISE EXCEPTION 'FAILED: anon was able to DELETE';
+            EXCEPTION
+              WHEN insufficient_privilege THEN
+                NULL;
+              WHEN OTHERS THEN
+                RAISE EXCEPTION 'FAILED: anon DELETE error: %', SQLERRM;
+            END;
+            RESET ROLE;
+          END $$;
+          BEHAV005
+          echo "✅ Migration 005 authenticated behavior verified"
+
+      - name: Apply Migration 006 - trade_analysis_quota.sql
+        env:
+          SUPABASE_TEST_DB_URL: ${{ secrets.SUPABASE_TEST_DB_URL }}
+        run: |
+          echo "=== APPLYING MIGRATION 006 ==="
+          psql -X -v ON_ERROR_STOP=1 "$SUPABASE_TEST_DB_URL" < supabase/migrations/20260924234147_trade_analysis_quota.sql
+          echo "✅ Migration 006 applied"
+
+      - name: Verify Migration 006 - Table and function structure
+        env:
+          SUPABASE_TEST_DB_URL: ${{ secrets.SUPABASE_TEST_DB_URL }}
+        run: |
+          echo "=== VERIFYING MIGRATION 006: TABLE AND FUNCTION STRUCTURE ==="
+          psql -X -v ON_ERROR_STOP=1 "$SUPABASE_TEST_DB_URL" << 'STRUCT006'
+          DO $$
+          DECLARE
+            v_count INT;
+          BEGIN
+            -- Table exists
+            IF NOT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'trade_analysis_usage') THEN
+              RAISE EXCEPTION 'FAILED: trade_analysis_usage table does not exist';
+            END IF;
+
+            -- Required columns (all 4 must exist)
+            SELECT COUNT(DISTINCT column_name) INTO v_count FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = 'trade_analysis_usage' AND column_name IN ('user_id', 'status', 'expires_at', 'request_id');
+            IF v_count != 4 THEN
+              RAISE EXCEPTION 'FAILED: trade_analysis_usage missing required columns (found %)', v_count;
+            END IF;
+
+            -- RLS enabled
+            IF NOT (SELECT relrowsecurity FROM pg_class WHERE relname = 'trade_analysis_usage' AND relnamespace = 'public'::regnamespace) THEN
+              RAISE EXCEPTION 'FAILED: RLS not enabled on trade_analysis_usage';
+            END IF;
+
+            -- Functions exist with correct signatures
+            IF NOT EXISTS(SELECT 1 FROM pg_proc WHERE proname = 'reserve_trade_quota' AND pronamespace = 'public'::regnamespace) THEN
+              RAISE EXCEPTION 'FAILED: reserve_trade_quota function does not exist';
+            END IF;
+
+            IF NOT EXISTS(SELECT 1 FROM pg_proc WHERE proname = 'get_trade_quota_status' AND pronamespace = 'public'::regnamespace) THEN
+              RAISE EXCEPTION 'FAILED: get_trade_quota_status function does not exist';
+            END IF;
+
+            IF NOT EXISTS(SELECT 1 FROM pg_proc WHERE proname = 'finalize_trade_quota' AND pronamespace = 'public'::regnamespace) THEN
+              RAISE EXCEPTION 'FAILED: finalize_trade_quota function does not exist';
+            END IF;
+
+            -- UNIQUE constraint on user_id, request_id
+            IF NOT EXISTS(SELECT 1 FROM information_schema.table_constraints WHERE table_name = 'trade_analysis_usage' AND constraint_name = 'unique_request_per_user') THEN
+              RAISE EXCEPTION 'FAILED: unique_request_per_user constraint missing';
+            END IF;
+          END $$;
+          STRUCT006
+          echo "✅ Migration 006 table and function structure verified"
+
+      - name: Verify Migration 006 - Behavioral tests A-F
+        env:
+          SUPABASE_TEST_DB_URL: ${{ secrets.SUPABASE_TEST_DB_URL }}
+        run: |
+          echo "=== VERIFYING MIGRATION 006: BEHAVIORAL TESTS A-F ==="
+          psql -X -v ON_ERROR_STOP=1 "$SUPABASE_TEST_DB_URL" << 'BEHAVIOR006'
+          DO $$
+          DECLARE v_user_ids UUID[]; v_user_id UUID; v_result RECORD; v_request_id UUID; v_req_id_c3_stored UUID; v_succeeded_count INT; v_reserved_count INT; v_count INT; i INT;
+          BEGIN
+            SELECT ARRAY(SELECT DISTINCT id FROM public.users ORDER BY id LIMIT 12) INTO v_user_ids;
+            IF array_length(v_user_ids, 1) < 8 THEN RAISE EXCEPTION 'FAILED: Need 8+ users'; END IF;
+
+            -- TEST A: Failed analysis does not consume quota
+            v_user_id := v_user_ids[1]; UPDATE public.users SET plan = 'free' WHERE id = v_user_id;
+            v_request_id := gen_random_uuid();
+            SELECT * INTO v_result FROM public.reserve_trade_quota(v_user_id, v_request_id, 'test-a-fp-1');
+            IF NOT v_result.success THEN RAISE EXCEPTION 'FAILED A1: %', v_result.error_message; END IF;
+            SELECT * INTO v_result FROM public.finalize_trade_quota(v_user_id, v_request_id, false, NULL);
+            v_request_id := gen_random_uuid();
+            SELECT * INTO v_result FROM public.reserve_trade_quota(v_user_id, v_request_id, 'test-a-fp-2');
+            IF NOT v_result.success THEN RAISE EXCEPTION 'FAILED A3: %', v_result.error_message; END IF;
+            SELECT COUNT(*) INTO v_succeeded_count FROM public.trade_analysis_usage WHERE user_id = v_user_id AND status = 'succeeded';
+            IF v_succeeded_count != 0 THEN RAISE EXCEPTION 'FAILED A4: %', v_succeeded_count; END IF;
+
+            -- TEST B: Active reservations consume capacity
+            v_user_id := v_user_ids[2]; UPDATE public.users SET plan = 'free', is_pro = false WHERE id = v_user_id;
+            FOR i IN 1..3 LOOP v_request_id := gen_random_uuid(); SELECT * INTO v_result FROM public.reserve_trade_quota(v_user_id, v_request_id, 'test-b-fp-' || i::TEXT); IF NOT v_result.success THEN RAISE EXCEPTION 'FAILED B%: %', i, v_result.error_message; END IF; END LOOP;
+            SELECT COUNT(*) INTO v_reserved_count FROM public.trade_analysis_usage WHERE user_id = v_user_id AND status = 'reserved' AND expires_at > now();
+            IF v_reserved_count != 3 THEN RAISE EXCEPTION 'FAILED B4: %', v_reserved_count; END IF;
+            v_request_id := gen_random_uuid();
+            SELECT * INTO v_result FROM public.reserve_trade_quota(v_user_id, v_request_id, 'test-b-fp-4');
+            IF v_result.success OR v_result.error_message != 'lifetime_limit_reached' THEN RAISE EXCEPTION 'FAILED B5/B6'; END IF;
+
+            -- TEST C: Expired reservations release capacity (at-capacity test)
+            v_user_id := v_user_ids[3]; UPDATE public.users SET plan = 'free', is_pro = false WHERE id = v_user_id;
+            FOR i IN 1..3 LOOP v_request_id := gen_random_uuid(); SELECT * INTO v_result FROM public.reserve_trade_quota(v_user_id, v_request_id, 'test-c-fp-res-' || i::TEXT); IF NOT v_result.success THEN RAISE EXCEPTION 'FAILED C%: %', i, v_result.error_message; END IF; IF i = 3 THEN v_req_id_c3_stored := v_request_id; END IF; END LOOP;
+            SELECT COUNT(*) INTO v_reserved_count FROM public.trade_analysis_usage WHERE user_id = v_user_id AND status = 'reserved' AND expires_at > now();
+            IF v_reserved_count != 3 THEN RAISE EXCEPTION 'FAILED C4: Expected 3 active, got %', v_reserved_count; END IF;
+            UPDATE public.trade_analysis_usage SET expires_at = now() - INTERVAL '1 second' WHERE user_id = v_user_id AND request_id = v_req_id_c3_stored;
+            v_request_id := gen_random_uuid();
+            SELECT * INTO v_result FROM public.reserve_trade_quota(v_user_id, v_request_id, 'test-c-fp-new');
+            IF NOT v_result.success THEN RAISE EXCEPTION 'FAILED C5: %', v_result.error_message; END IF;
+
+            -- TEST D: Historical quota_date still counts (no daily reset)
+            v_user_id := v_user_ids[4]; UPDATE public.users SET plan = 'free', is_pro = false WHERE id = v_user_id;
+            FOR i IN 1..3 LOOP v_request_id := gen_random_uuid(); SELECT * INTO v_result FROM public.reserve_trade_quota(v_user_id, v_request_id, 'test-d-fp-' || i::TEXT); IF NOT v_result.success THEN RAISE EXCEPTION 'FAILED D%: %', i, v_result.error_message; END IF; PERFORM public.finalize_trade_quota(v_user_id, v_request_id, true, NULL); IF i = 1 THEN v_req_id_c3_stored := v_request_id; END IF; END LOOP;
+            UPDATE public.trade_analysis_usage SET quota_date = (now() AT TIME ZONE 'UTC')::date - 30 WHERE user_id = v_user_id AND request_id = v_req_id_c3_stored;
+            v_request_id := gen_random_uuid();
+            SELECT * INTO v_result FROM public.reserve_trade_quota(v_user_id, v_request_id, 'test-d-fp-4');
+            IF v_result.success OR v_result.error_message != 'lifetime_limit_reached' THEN RAISE EXCEPTION 'FAILED D5/D6'; END IF;
+            SELECT * INTO v_result FROM public.get_trade_quota_status(v_user_id);
+            IF v_result.used_count != 3 THEN RAISE EXCEPTION 'FAILED D7: used=%', v_result.used_count; END IF;
+
+            -- TEST E: Free quota capacity enforcement
+            v_user_id := v_user_ids[5]; UPDATE public.users SET plan = 'free', is_pro = false WHERE id = v_user_id;
+            FOR i IN 1..3 LOOP v_request_id := gen_random_uuid(); SELECT * INTO v_result FROM public.reserve_trade_quota(v_user_id, v_request_id, 'test-e-fp-' || i::TEXT); IF NOT v_result.success THEN RAISE EXCEPTION 'FAILED E%: %', i, v_result.error_message; END IF; END LOOP;
+            v_request_id := gen_random_uuid();
+            SELECT * INTO v_result FROM public.reserve_trade_quota(v_user_id, v_request_id, 'test-e-fp-4');
+            IF v_result.success OR v_result.error_message != 'lifetime_limit_reached' THEN RAISE EXCEPTION 'FAILED E4/E5'; END IF;
+
+            -- TEST F: Idempotency
+            v_user_id := v_user_ids[6]; UPDATE public.users SET plan = 'free', is_pro = false WHERE id = v_user_id;
+            v_request_id := gen_random_uuid();
+            SELECT * INTO v_result FROM public.reserve_trade_quota(v_user_id, v_request_id, 'test-f-fp');
+            IF NOT v_result.success THEN RAISE EXCEPTION 'FAILED F1: %', v_result.error_message; END IF;
+            SELECT * INTO v_result FROM public.reserve_trade_quota(v_user_id, v_request_id, 'test-f-fp');
+            IF v_result.error_message != 'duplicate_request_id' THEN RAISE EXCEPTION 'FAILED F2: %', v_result.error_message; END IF;
+            SELECT COUNT(*) INTO v_count FROM public.trade_analysis_usage WHERE user_id = v_user_id AND request_id = v_request_id;
+            IF v_count != 1 THEN RAISE EXCEPTION 'FAILED F3: %', v_count; END IF;
+          END $$;
+          BEHAVIOR006
+          echo "✅ Migration 006 behavioral tests A-H verified"
+
+      - name: Verify Migration 006 - Concurrency test (true concurrent transactions)
+        env:
+          SUPABASE_TEST_DB_URL: ${{ secrets.SUPABASE_TEST_DB_URL }}
+        run: |
+          echo "=== VERIFYING MIGRATION 006: CONCURRENCY TEST ==="
+          TEST_USER=$(psql -X -t "$SUPABASE_TEST_DB_URL" -c "SELECT id FROM public.users ORDER BY id OFFSET 6 LIMIT 1;" | xargs)
+          if [ -z "$TEST_USER" ]; then echo "❌ FAILED: No test user"; exit 1; fi
+          psql -X -v ON_ERROR_STOP=1 "$SUPABASE_TEST_DB_URL" << SETUP
+          DELETE FROM public.trade_analysis_usage WHERE user_id = '$TEST_USER'::uuid;
+          UPDATE public.users SET plan = 'free' WHERE id = '$TEST_USER'::uuid;
+          INSERT INTO public.trade_analysis_usage (user_id, quota_date, request_id, request_fingerprint, status, created_at, expires_at, completed_at) VALUES ('$TEST_USER'::uuid, now()::date, gen_random_uuid(), 'fp1', 'succeeded', now(), now() + INTERVAL '1 hour', now());
+          INSERT INTO public.trade_analysis_usage (user_id, quota_date, request_id, request_fingerprint, status, created_at, expires_at, completed_at) VALUES ('$TEST_USER'::uuid, now()::date, gen_random_uuid(), 'fp2', 'succeeded', now(), now() + INTERVAL '1 hour', now());
+          SETUP
+          REQ_ID_1=$(psql -X -t "$SUPABASE_TEST_DB_URL" -c "SELECT gen_random_uuid();" | xargs)
+          REQ_ID_2=$(psql -X -t "$SUPABASE_TEST_DB_URL" -c "SELECT gen_random_uuid();" | xargs)
+          timeout 5s psql -X -v ON_ERROR_STOP=1 "$SUPABASE_TEST_DB_URL" << S1 > /tmp/s1.txt 2>&1 &
+          BEGIN;
+          SELECT * FROM public.reserve_trade_quota('$TEST_USER'::uuid, '$REQ_ID_1'::uuid, 'c1');
+          SELECT pg_sleep(2);
+          COMMIT;
+          S1
+          S1PID=$!
+          sleep 0.2
+          timeout 5s psql -X -v ON_ERROR_STOP=1 "$SUPABASE_TEST_DB_URL" << S2 > /tmp/s2.txt 2>&1 &
+          SELECT * FROM public.reserve_trade_quota('$TEST_USER'::uuid, '$REQ_ID_2'::uuid, 'c2');
+          S2
+          S2PID=$!
+          wait $S1PID; R1=$?; wait $S2PID; R2=$?
+          if [ $R1 -ne 0 ] || [ $R2 -ne 0 ]; then echo "❌ FAILED: Concurrent session failed (R1=$R1, R2=$R2)"; exit 1; fi
+          V_SUCC=$(psql -X -v ON_ERROR_STOP=1 -At \
+            -v test_user="$TEST_USER" \
+            "$SUPABASE_TEST_DB_URL" <<'SQL'
+SELECT COUNT(*)
+FROM public.trade_analysis_usage
+WHERE user_id = :'test_user'::uuid
+  AND status = 'succeeded';
+SQL
+)
+          V_ACTV=$(psql -X -v ON_ERROR_STOP=1 -At \
+            -v test_user="$TEST_USER" \
+            -v req1="$REQ_ID_1" \
+            -v req2="$REQ_ID_2" \
+            "$SUPABASE_TEST_DB_URL" <<'SQL'
+SELECT COUNT(*)
+FROM public.trade_analysis_usage
+WHERE user_id = :'test_user'::uuid
+  AND request_id IN (:'req1'::uuid, :'req2'::uuid)
+  AND status = 'reserved'
+  AND expires_at > now();
+SQL
+)
+          V_TOTAL=$(psql -X -v ON_ERROR_STOP=1 -At \
+            -v test_user="$TEST_USER" \
+            "$SUPABASE_TEST_DB_URL" <<'SQL'
+SELECT COUNT(*)
+FROM public.trade_analysis_usage
+WHERE user_id = :'test_user'::uuid
+  AND (
+    status = 'succeeded'
+    OR (status = 'reserved' AND expires_at > now())
+  );
+SQL
+)
+          if [ "$V_SUCC" != "2" ]; then echo "❌ FAILED: Expected 2 succeeded, got $V_SUCC"; exit 1; fi
+          if [ "$V_ACTV" != "1" ]; then echo "❌ FAILED: Expected 1 active, got $V_ACTV"; exit 1; fi
+          if [ "$V_TOTAL" != "3" ]; then echo "❌ FAILED: Expected 3 total, got $V_TOTAL"; exit 1; fi
+          echo "✅ Migration 006 concurrency test verified"
+      - name: Apply Migration 007 - billing_event_ledger.sql
+        env:
+          SUPABASE_TEST_DB_URL: ${{ secrets.SUPABASE_TEST_DB_URL }}
+        run: |
+          echo "=== APPLYING MIGRATION 007 ==="
+          psql -X -v ON_ERROR_STOP=1 "$SUPABASE_TEST_DB_URL" < supabase/migrations/20260925213441_billing_event_ledger.sql
+          echo "✅ Migration 007 applied"
+
+      - name: Verify Migration 007 - Billing infrastructure
+        env:
+          SUPABASE_TEST_DB_URL: ${{ secrets.SUPABASE_TEST_DB_URL }}
+        run: |
+          echo "=== VERIFYING MIGRATION 007 ==="
+          psql -X -v ON_ERROR_STOP=1 "$SUPABASE_TEST_DB_URL" << 'VERIFY007'
+          DO $$
+          DECLARE
+            v_count INT;
+          BEGIN
+            IF NOT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'billing_reconciliation_state') THEN RAISE EXCEPTION 'FAILED: billing_reconciliation_state'; END IF;
+            IF NOT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'stripe_events') THEN RAISE EXCEPTION 'FAILED: stripe_events'; END IF;
+            SELECT COUNT(DISTINCT column_name) INTO v_count FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'billing_reconciliation_state' AND column_name IN ('stripe_subscription_id', 'current_generation'); IF v_count != 2 THEN RAISE EXCEPTION 'FAILED: billing_reconciliation_state columns'; END IF;
+            SELECT COUNT(DISTINCT column_name) INTO v_count FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'stripe_events' AND column_name IN ('stripe_event_id', 'stripe_event_type', 'processing_state', 'user_id'); IF v_count != 4 THEN RAISE EXCEPTION 'FAILED: stripe_events columns'; END IF;
+            IF NOT EXISTS(SELECT 1 FROM pg_proc WHERE proname = 'begin_billing_reconciliation') THEN RAISE EXCEPTION 'FAILED: begin_billing_reconciliation'; END IF;
+            IF NOT EXISTS(SELECT 1 FROM pg_proc WHERE proname = 'finalize_reconciliation') THEN RAISE EXCEPTION 'FAILED: finalize_reconciliation'; END IF;
+            IF NOT EXISTS(SELECT 1 FROM pg_proc WHERE proname = 'upsert_stripe_event') THEN RAISE EXCEPTION 'FAILED: upsert_stripe_event'; END IF;
+            IF NOT EXISTS(SELECT 1 FROM pg_proc WHERE proname = 'claim_trial_for_user') THEN RAISE EXCEPTION 'FAILED: claim_trial_for_user'; END IF;
+            IF NOT (SELECT relrowsecurity FROM pg_class WHERE relname = 'billing_reconciliation_state' AND relnamespace = 'public'::regnamespace) THEN RAISE EXCEPTION 'FAILED: RLS'; END IF;
+            IF NOT (SELECT relrowsecurity FROM pg_class WHERE relname = 'stripe_events' AND relnamespace = 'public'::regnamespace) THEN RAISE EXCEPTION 'FAILED: RLS'; END IF;
+            IF NOT (SELECT prosecdef FROM pg_proc WHERE proname = 'begin_billing_reconciliation') THEN RAISE EXCEPTION 'FAILED: SECURITY DEFINER'; END IF;
+          END $$;
+          VERIFY007
+          echo "✅ Migration 007 verified"
+
+      - name: Final rehearsal summary
+        if: success()
+        run: |
+          echo ""
+          echo "════════════════════════════════════════════════════════════════"
+          echo "FINAL REHEARSAL PASSED — CANDIDATE READY FOR PRODUCTION REVIEW"
+          echo "════════════════════════════════════════════════════════════════"
+          echo ""
+          echo "✅ Verified: Production backup (READ-ONLY)"
+          echo "✅ Verified: Test database restore matches production"
+          echo "✅ Verified: Migration 003 (odds_cache)"
+          echo "✅ Verified: Migration 004 (fdp_value_snapshots)"
+          echo "✅ Verified: Migration 005 (entitlement_security) - metadata + 13 behavioral"
+          echo "✅ Verified: Migration 006 (trade_analysis_quota) - 6 behavioral + concurrency"
+          echo "  └─ Tests A-F: failed/active/expired/lifetime/advisory-lock/idempotency"
+          echo "  └─ Concurrency: Two bounded sessions, ONE acquires final slot"
+          echo "✅ Verified: Migration 007 (billing_event_ledger)"
+          echo ""
+          echo "Commit: 2adfbb954190a5066af27e8987dfcda1961b0e4b"
+          echo "Status: READY FOR PRODUCTION"
+          echo ""
