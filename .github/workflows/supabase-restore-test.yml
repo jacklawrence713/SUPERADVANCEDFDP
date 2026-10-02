@@ -40,11 +40,11 @@ jobs:
           TEST_DB_URL: ${{ secrets.SUPABASE_TEST_DB_URL }}
         run: |
           if [ "$PROD_DB_URL" = "$TEST_DB_URL" ]; then
-            echo "❌ FATAL: SUPABASE_DB_URL and SUPABASE_TEST_DB_URL are identical"
+            echo "âŒ FATAL: SUPABASE_DB_URL and SUPABASE_TEST_DB_URL are identical"
             echo "This would destroy production data"
             exit 1
           fi
-          echo "✅ Production and test databases are distinct"
+          echo "âœ… Production and test databases are distinct"
 
       - name: Backup production roles (READ-ONLY)
         env:
@@ -56,7 +56,7 @@ jobs:
             --db-url "$SUPABASE_DB_URL" \
             -f restore-test/roles.sql \
             --role-only
-          echo "✅ Roles dumped: $(wc -l < restore-test/roles.sql) lines"
+          echo "âœ… Roles dumped: $(wc -l < restore-test/roles.sql) lines"
 
       - name: Backup production schema (READ-ONLY)
         env:
@@ -67,7 +67,7 @@ jobs:
           supabase db dump \
             --db-url "$SUPABASE_DB_URL" \
             -f restore-test/schema.sql
-          echo "✅ Schema dumped: $(wc -l < restore-test/schema.sql) lines"
+          echo "âœ… Schema dumped: $(wc -l < restore-test/schema.sql) lines"
 
       - name: Backup production data (READ-ONLY)
         env:
@@ -82,7 +82,7 @@ jobs:
             --data-only \
             -x "storage.buckets_vectors" \
             -x "storage.vector_indexes"
-          echo "✅ Data dumped: $(wc -l < restore-test/data.sql) lines"
+          echo "âœ… Data dumped: $(wc -l < restore-test/data.sql) lines"
 
       - name: Verify production baseline - public tables count
         env:
@@ -133,7 +133,7 @@ jobs:
             -c 'SET session_replication_role = replica' \
             -f restore-test/data.sql \
             "$SUPABASE_TEST_DB_URL"
-          echo "✅ Restore completed"
+          echo "âœ… Restore completed"
 
       - name: Verify test database restore - public tables
         env:
@@ -148,10 +148,10 @@ jobs:
           PROD_COUNT=$(cat /tmp/prod_public_tables.txt | xargs)
           echo "Test: $TEST_COUNT | Production: $PROD_COUNT"
           if [ "$TEST_COUNT" != "$PROD_COUNT" ]; then
-            echo "❌ FAILED: Public table count mismatch"
+            echo "âŒ FAILED: Public table count mismatch"
             exit 1
           fi
-          echo "✅ Public table counts match"
+          echo "âœ… Public table counts match"
 
       - name: Verify test database restore - auth.users
         env:
@@ -166,10 +166,10 @@ jobs:
           PROD_COUNT=$(cat /tmp/prod_auth_users.txt | xargs)
           echo "Test: $TEST_COUNT | Production: $PROD_COUNT"
           if [ "$TEST_COUNT" != "$PROD_COUNT" ]; then
-            echo "❌ FAILED: auth.users count mismatch"
+            echo "âŒ FAILED: auth.users count mismatch"
             exit 1
           fi
-          echo "✅ auth.users counts match"
+          echo "âœ… auth.users counts match"
 
       - name: Verify test database restore - public.users
         env:
@@ -184,10 +184,10 @@ jobs:
           PROD_COUNT=$(cat /tmp/prod_public_users.txt | xargs)
           echo "Test: $TEST_COUNT | Production: $PROD_COUNT"
           if [ "$TEST_COUNT" != "$PROD_COUNT" ]; then
-            echo "❌ FAILED: public.users count mismatch"
+            echo "âŒ FAILED: public.users count mismatch"
             exit 1
           fi
-          echo "✅ public.users counts match"
+          echo "âœ… public.users counts match"
 
       - name: Apply Migration 003 - odds_cache.sql
         env:
@@ -195,7 +195,7 @@ jobs:
         run: |
           echo "=== APPLYING MIGRATION 003 ==="
           psql -X -v ON_ERROR_STOP=1 "$SUPABASE_TEST_DB_URL" < supabase/migrations/20260921144441_odds_cache.sql
-          echo "✅ Migration 003 applied"
+          echo "âœ… Migration 003 applied"
 
       - name: Verify Migration 003 - odds_cache table and structure
         env:
@@ -240,7 +240,7 @@ jobs:
             END IF;
           END $$;
           VERIFY003
-          echo "✅ Migration 003 verified"
+          echo "âœ… Migration 003 verified"
 
       - name: Apply Migration 004 - fdp_value_snapshots.sql
         env:
@@ -248,7 +248,7 @@ jobs:
         run: |
           echo "=== APPLYING MIGRATION 004 ==="
           psql -X -v ON_ERROR_STOP=1 "$SUPABASE_TEST_DB_URL" < supabase/migrations/20260922003719_fdp_value_snapshots.sql
-          echo "✅ Migration 004 applied"
+          echo "âœ… Migration 004 applied"
 
       - name: Verify Migration 004 - FDP Value Snapshots structure
         env:
@@ -283,12 +283,12 @@ jobs:
             END IF;
 
             -- Unique constraint on batches
-            IF NOT EXISTS(SELECT 1 FROM information_schema.table_constraints WHERE table_name = 'fdp_snapshot_batches' AND constraint_name = 'uq_fdp_batch_version_context') THEN
+            IF NOT EXISTS(SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND tablename = 'fdp_snapshot_batches' AND indexname = 'uq_fdp_batch_version_context' AND indexdef ILIKE 'CREATE UNIQUE INDEX%') THEN
               RAISE EXCEPTION 'FAILED: uq_fdp_batch_version_context unique constraint missing';
             END IF;
 
             -- Unique constraint on snapshots
-            IF NOT EXISTS(SELECT 1 FROM information_schema.table_constraints WHERE table_name = 'fdp_value_snapshots' AND constraint_name = 'uq_fdp_snapshot_player_batch') THEN
+            IF NOT EXISTS(SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND tablename = 'fdp_value_snapshots' AND indexname = 'uq_fdp_snapshot_player_batch' AND indexdef ILIKE 'CREATE UNIQUE INDEX%') THEN
               RAISE EXCEPTION 'FAILED: uq_fdp_snapshot_player_batch unique constraint missing';
             END IF;
 
@@ -306,7 +306,7 @@ jobs:
             END IF;
           END $$;
           VERIFY004
-          echo "✅ Migration 004 verified"
+          echo "âœ… Migration 004 verified"
 
       - name: Apply Migration 005 - entitlement_security.sql
         env:
@@ -314,7 +314,7 @@ jobs:
         run: |
           echo "=== APPLYING MIGRATION 005 ==="
           psql -X -v ON_ERROR_STOP=1 "$SUPABASE_TEST_DB_URL" < supabase/migrations/20260924152532_entitlement_security.sql
-          echo "✅ Migration 005 applied"
+          echo "âœ… Migration 005 applied"
 
       - name: Verify Migration 005 - Privilege Model (Metadata Assertions)
         env:
@@ -420,7 +420,7 @@ jobs:
             END IF;
           END $$;
           PRIVMETA005
-          echo "✅ Migration 005 privilege model metadata verified"
+          echo "âœ… Migration 005 privilege model metadata verified"
 
       - name: Verify Migration 005 - Authenticated behavior
         env:
@@ -638,7 +638,7 @@ jobs:
             RESET ROLE;
           END $$;
           BEHAV005
-          echo "✅ Migration 005 authenticated behavior verified"
+          echo "âœ… Migration 005 authenticated behavior verified"
 
       - name: Apply Migration 006 - trade_analysis_quota.sql
         env:
@@ -646,7 +646,7 @@ jobs:
         run: |
           echo "=== APPLYING MIGRATION 006 ==="
           psql -X -v ON_ERROR_STOP=1 "$SUPABASE_TEST_DB_URL" < supabase/migrations/20260924234147_trade_analysis_quota.sql
-          echo "✅ Migration 006 applied"
+          echo "âœ… Migration 006 applied"
 
       - name: Verify Migration 006 - Table and function structure
         env:
@@ -694,7 +694,7 @@ jobs:
             END IF;
           END $$;
           STRUCT006
-          echo "✅ Migration 006 table and function structure verified"
+          echo "âœ… Migration 006 table and function structure verified"
 
       - name: Verify Migration 006 - Behavioral tests A-H
         env:
@@ -948,7 +948,7 @@ jobs:
             END IF;
           END $$;
           BEHAVIOR006
-          echo "✅ Migration 006 behavioral tests A-H verified"
+          echo "âœ… Migration 006 behavioral tests A-H verified"
 
       - name: Verify Migration 006 - Concurrency test (true concurrent transactions)
         env:
@@ -956,7 +956,7 @@ jobs:
         run: |
           echo "=== VERIFYING MIGRATION 006: CONCURRENCY TEST ==="
           TEST_USER=$(psql -X -t "$SUPABASE_TEST_DB_URL" -c "SELECT id FROM public.users ORDER BY id OFFSET 6 LIMIT 1;" | xargs)
-          if [ -z "$TEST_USER" ]; then echo "❌ FAILED: No test user"; exit 1; fi
+          if [ -z "$TEST_USER" ]; then echo "âŒ FAILED: No test user"; exit 1; fi
           psql -X -v ON_ERROR_STOP=1 "$SUPABASE_TEST_DB_URL" << SETUP
           DELETE FROM public.trade_analysis_usage WHERE user_id = '$TEST_USER'::uuid;
           UPDATE public.users SET plan = 'free', is_pro = false WHERE id = '$TEST_USER'::uuid;
@@ -978,7 +978,7 @@ jobs:
           S2
           S2PID=$!
           wait $S1PID; R1=$?; wait $S2PID; R2=$?
-          if [ $R1 -ne 0 ] || [ $R2 -ne 0 ]; then echo "❌ FAILED: Concurrent session failed (R1=$R1, R2=$R2)"; exit 1; fi
+          if [ $R1 -ne 0 ] || [ $R2 -ne 0 ]; then echo "âŒ FAILED: Concurrent session failed (R1=$R1, R2=$R2)"; exit 1; fi
           V_SUCC=$(psql -X -v ON_ERROR_STOP=1 -At \
             -v test_user="$TEST_USER" \
             "$SUPABASE_TEST_DB_URL" <<'SQL'
@@ -1013,17 +1013,17 @@ jobs:
             );
           SQL
           )
-          if [ "$V_SUCC" != "2" ]; then echo "❌ FAILED: Expected 2 succeeded, got $V_SUCC"; exit 1; fi
-          if [ "$V_ACTV" != "1" ]; then echo "❌ FAILED: Expected 1 active, got $V_ACTV"; exit 1; fi
-          if [ "$V_TOTAL" != "3" ]; then echo "❌ FAILED: Expected 3 total, got $V_TOTAL"; exit 1; fi
-          echo "✅ Migration 006 concurrency test verified"
+          if [ "$V_SUCC" != "2" ]; then echo "âŒ FAILED: Expected 2 succeeded, got $V_SUCC"; exit 1; fi
+          if [ "$V_ACTV" != "1" ]; then echo "âŒ FAILED: Expected 1 active, got $V_ACTV"; exit 1; fi
+          if [ "$V_TOTAL" != "3" ]; then echo "âŒ FAILED: Expected 3 total, got $V_TOTAL"; exit 1; fi
+          echo "âœ… Migration 006 concurrency test verified"
       - name: Apply Migration 007 - billing_event_ledger.sql
         env:
           SUPABASE_TEST_DB_URL: ${{ secrets.SUPABASE_TEST_DB_URL }}
         run: |
           echo "=== APPLYING MIGRATION 007 ==="
           psql -X -v ON_ERROR_STOP=1 "$SUPABASE_TEST_DB_URL" < supabase/migrations/20260925213441_billing_event_ledger.sql
-          echo "✅ Migration 007 applied"
+          echo "âœ… Migration 007 applied"
 
       - name: Verify Migration 007 - Billing infrastructure
         env:
@@ -1048,29 +1048,29 @@ jobs:
             IF NOT (SELECT prosecdef FROM pg_proc WHERE proname = 'begin_billing_reconciliation') THEN RAISE EXCEPTION 'FAILED: SECURITY DEFINER'; END IF;
           END $$;
           VERIFY007
-          echo "✅ Migration 007 verified"
+          echo "âœ… Migration 007 verified"
 
       - name: Final rehearsal summary
         if: success()
         run: |
           echo ""
-          echo "════════════════════════════════════════════════════════════════"
-          echo "FINAL REHEARSAL PASSED — CANDIDATE READY FOR PRODUCTION REVIEW"
-          echo "════════════════════════════════════════════════════════════════"
+          echo "â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•"
+          echo "FINAL REHEARSAL PASSED â€” CANDIDATE READY FOR PRODUCTION REVIEW"
+          echo "â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•"
           echo ""
-          echo "✅ Verified: Production backup (READ-ONLY)"
-          echo "✅ Verified: Test database restore matches production"
-          echo "✅ Verified: Migration 003 (odds_cache)"
-          echo "✅ Verified: Migration 004 (fdp_value_snapshots)"
-          echo "✅ Verified: Migration 005 (entitlement_security) - metadata + 13 behavioral"
-          echo "  └─ Authenticated signup_ip/signup_visitor_id updates each changed exactly one row and persisted"
-          echo "✅ Verified: Migration 006 (trade_analysis_quota) - 8 behavioral + concurrency"
-          echo "  └─ Free: 3 lifetime capacity; additional use blocked"
-          echo "  └─ Failed analyses release quota; active reservations consume capacity"
-          echo "  └─ Expired reservations release capacity; historical quota_date does not reset lifetime limit"
-          echo "  └─ Idempotency verified; Pro bypass verified; Elite bypass verified"
-          echo "  └─ Concurrency: two bounded sessions, only ONE acquires the final slot"
-          echo "✅ Verified: Migration 007 (billing_event_ledger)"
+          echo "âœ… Verified: Production backup (READ-ONLY)"
+          echo "âœ… Verified: Test database restore matches production"
+          echo "âœ… Verified: Migration 003 (odds_cache)"
+          echo "âœ… Verified: Migration 004 (fdp_value_snapshots)"
+          echo "âœ… Verified: Migration 005 (entitlement_security) - metadata + 13 behavioral"
+          echo "  â””â”€ Authenticated signup_ip/signup_visitor_id updates each changed exactly one row and persisted"
+          echo "âœ… Verified: Migration 006 (trade_analysis_quota) - 8 behavioral + concurrency"
+          echo "  â””â”€ Free: 3 lifetime capacity; additional use blocked"
+          echo "  â””â”€ Failed analyses release quota; active reservations consume capacity"
+          echo "  â””â”€ Expired reservations release capacity; historical quota_date does not reset lifetime limit"
+          echo "  â””â”€ Idempotency verified; Pro bypass verified; Elite bypass verified"
+          echo "  â””â”€ Concurrency: two bounded sessions, only ONE acquires the final slot"
+          echo "âœ… Verified: Migration 007 (billing_event_ledger)"
           echo ""
           echo "Commit: 2adfbb954190a5066af27e8987dfcda1961b0e4b"
           echo "Status: CANDIDATE READY FOR PRODUCTION REVIEW"
