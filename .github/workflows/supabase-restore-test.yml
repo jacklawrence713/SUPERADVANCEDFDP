@@ -135,6 +135,19 @@ jobs:
             "$SUPABASE_TEST_DB_URL"
           echo "OK: Restore completed"
 
+      - name: Recreate production auth trigger baseline in TEST ONLY
+        env:
+          SUPABASE_TEST_DB_URL: ${{ secrets.SUPABASE_TEST_DB_URL }}
+        run: |
+          echo "=== RECREATING AUTH TRIGGER BASELINE IN TEST ONLY ==="
+          psql -X -v ON_ERROR_STOP=1 "$SUPABASE_TEST_DB_URL" <<'AUTHBASELINE'
+          DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+          CREATE TRIGGER on_auth_user_created
+            AFTER INSERT ON auth.users
+            FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+          AUTHBASELINE
+          echo "OK: auth trigger baseline recreated"
+
       - name: Verify test database restore - public tables
         env:
           SUPABASE_TEST_DB_URL: ${{ secrets.SUPABASE_TEST_DB_URL }}
