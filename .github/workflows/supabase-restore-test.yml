@@ -2,6 +2,11 @@ name: Supabase Final Migration Rehearsal (TESTING ONLY)
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - fdp-value-consistency
+    paths:
+      - '.github/workflows/supabase-restore-test.yml'
 
 permissions: {}
 
