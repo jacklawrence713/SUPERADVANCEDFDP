@@ -1,5 +1,5 @@
--- Migration: 006_trade_analysis_quota (CORRECTED)
--- Implements server-authoritative daily Trade Analyzer quota for Free users
+-- Migration: 006_trade_analysis_quota (LIFETIME QUOTA)
+-- Implements server-authoritative lifetime Trade Analyzer quota for Free users (3 total per account)
 -- Replaces insecure browser-local fdp_tc_v2 with database-backed entitlements
 -- FIXES: Atomic admission with advisory locks, stale-worker finalization protection
 
@@ -107,22 +107,22 @@ BEGIN
     RETURN;
   END IF;
 
-  -- Count successful analyses for today
+  -- Count successful analyses LIFETIME (all time, not just today)
   SELECT COUNT(*) INTO v_succeeded_count
   FROM public.trade_analysis_usage
-  WHERE user_id = p_user_id AND quota_date = v_today AND status = 'succeeded';
+  WHERE user_id = p_user_id AND status = 'succeeded';
 
-  -- Count active (non-expired) reservations
+  -- Count active (non-expired) reservations LIFETIME
+  -- Note: reservations auto-expire after 5 minutes, so stale reservations don't block new attempts
   SELECT COUNT(*) INTO v_reserved_count
   FROM public.trade_analysis_usage
   WHERE user_id = p_user_id
-    AND quota_date = v_today
     AND status = 'reserved'
     AND expires_at > now();
 
-  -- Free limit: 2 per day total (succeeded + active reservations)
-  IF (v_succeeded_count + v_reserved_count) >= 2 THEN
-    RETURN QUERY SELECT false, 'daily_limit_reached'::TEXT, NULL::UUID;
+  -- Free limit: 3 total analyses LIFETIME (succeeded + active reservations)
+  IF (v_succeeded_count + v_reserved_count) >= 3 THEN
+    RETURN QUERY SELECT false, 'lifetime_limit_reached'::TEXT, NULL::UUID;
     RETURN;
   END IF;
 
@@ -245,21 +245,20 @@ BEGIN
     RETURN;
   END IF;
 
-  -- Free users: count SUCCEEDED analyses
+  -- Free users: count SUCCEEDED analyses LIFETIME
   SELECT COUNT(*) INTO v_used
   FROM public.trade_analysis_usage
-  WHERE user_id = p_user_id AND quota_date = v_today AND status = 'succeeded';
+  WHERE user_id = p_user_id AND status = 'succeeded';
 
-  -- Count active (non-expired) reservations
+  -- Count active (non-expired) reservations LIFETIME
   SELECT COUNT(*) INTO v_reserved
   FROM public.trade_analysis_usage
   WHERE user_id = p_user_id
-    AND quota_date = v_today
     AND status = 'reserved'
     AND expires_at > now();
 
-  -- Admission capacity = 2 - succeeded - active_reserved
-  RETURN QUERY SELECT 2, v_used, v_reserved, GREATEST(0, 2 - v_used - v_reserved), v_today::TEXT, false;
+  -- Admission capacity = 3 - succeeded - active_reserved (lifetime total)
+  RETURN QUERY SELECT 3, v_used, v_reserved, GREATEST(0, 3 - v_used - v_reserved), v_today::TEXT, false;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 

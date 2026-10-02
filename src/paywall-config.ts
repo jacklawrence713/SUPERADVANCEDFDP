@@ -75,7 +75,7 @@ export const FEATURE_PAYWALL_CONFIG: Record<FeatureKey, FeatureConfig> = {
     displayName: 'Trade Analyzer',
     description: 'Unlimited AI-powered trade analysis.',
     requiredTier: 'pro',
-    shortCopy: 'Free users get 2 analyses per day. Upgrade for unlimited.'
+    shortCopy: 'Free users get 3 lifetime analyses. Upgrade for unlimited.'
   }
 };
 
@@ -87,8 +87,8 @@ export function getFeaturePaywallCopy(feature: FeatureKey): { title: string; des
 
   if (feature === 'trade_analyzer_limit') {
     return {
-      title: 'Daily Analysis Limit Reached',
-      description: 'Free accounts get 2 successful Trade Analyzer analyses per UTC calendar day. Your quota resets at midnight UTC.',
+      title: 'Analysis Limit Reached',
+      description: 'Free accounts get 3 total successful Trade Analyzer analyses. Lifetime limit, no daily reset.',
       cta: 'Upgrade to Unlimited'
     };
   }

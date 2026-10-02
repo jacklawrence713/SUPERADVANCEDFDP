@@ -152,7 +152,7 @@ describe("PROMPT 29: Adversarial Security Testing — Real Tests Only", () => {
 
     test("[STATIC SQL CONTRACT] Migration 005 revokes UPDATE from authenticated on public.users", () => {
       expect(migration005).toContain(
-        "REVOKE UPDATE ON public.users FROM authenticated"
+        "REVOKE ALL PRIVILEGES ON public.users FROM authenticated"
       );
     });
 

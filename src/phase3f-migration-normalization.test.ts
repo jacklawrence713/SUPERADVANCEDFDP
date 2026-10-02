@@ -78,10 +78,10 @@ describe("Phase 3F: Migration 005 Remediation", () => {
     expect(existsSync(migration005Path)).toBe(true);
   });
 
-  it("migration 005 should revoke broad UPDATE from authenticated", () => {
+  it("migration 005 should revoke all privileges from authenticated", () => {
     const content = readFileSync(migration005Path, "utf-8");
     expect(content).toContain(
-      "REVOKE UPDATE ON public.users FROM authenticated;"
+      "REVOKE ALL PRIVILEGES ON public.users FROM authenticated;"
     );
   });
 
@@ -247,9 +247,10 @@ describe("Phase 3F: Migration Content Preservation", () => {
     const content = readFileSync(migration005Path, "utf-8");
 
     // Should have REVOKE
-    expect(content).toContain("REVOKE UPDATE ON public.users FROM authenticated");
+    expect(content).toContain("REVOKE ALL PRIVILEGES ON public.users FROM authenticated");
 
-    // Should have NEW GRANT (added in Phase 3F)
+    // Should have NEW GRANT (added in Phase 3F/4D.0.3)
+    expect(content).toContain("GRANT SELECT ON public.users TO authenticated");
     expect(content).toContain(
       "GRANT UPDATE (signup_ip, signup_visitor_id)"
     );

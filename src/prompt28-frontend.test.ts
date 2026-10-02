@@ -160,7 +160,7 @@ describe("Prompt 28 Frontend - Request ID Lifecycle", () => {
 describe("Prompt 28 Frontend - Quota State Management", () => {
   it("should initialize quota with fail-closed defaults", () => {
     const failClosedQuota = {
-      limit_per_day: 2,
+      limit_per_day: 3,
       used_count: 0,
       reserved_count: 0,
       remaining_count: 0,
@@ -177,7 +177,7 @@ describe("Prompt 28 Frontend - Quota State Management", () => {
 
   it("should update quota from server response", () => {
     let tradeQuota = {
-      limit_per_day: 2,
+      limit_per_day: 3,
       used_count: 0,
       reserved_count: 0,
       remaining_count: 0,
@@ -189,7 +189,7 @@ describe("Prompt 28 Frontend - Quota State Management", () => {
 
     const serverResponse = {
       quota: {
-        limit_per_day: 2,
+        limit_per_day: 3,
         used_count: 1,
         reserved_count: 1,
         remaining_count: 0,
@@ -335,7 +335,7 @@ describe("Prompt 28 Frontend - LocalStorage Bypass", () => {
     };
 
     const tradeQuota = {
-      limit_per_day: 2,
+      limit_per_day: 3,
       used_count: 0,
       reserved_count: 1,
       remaining_count: 1, // Server says 1 remaining
@@ -352,7 +352,7 @@ describe("Prompt 28 Frontend - LocalStorage Bypass", () => {
 
   it("should work even if fdp_tc_v2 is missing", () => {
     const tradeQuota = {
-      limit_per_day: 2,
+      limit_per_day: 3,
       used_count: 1,
       reserved_count: 0,
       remaining_count: 1,
@@ -453,7 +453,7 @@ describe("Prompt 28 Frontend - Active Reservation Accounting", () => {
 describe("Prompt 28 Frontend - Free User Limit Enforcement", () => {
   it("should enforce 2-per-day limit for Free users", () => {
     const tradeQuota = {
-      limit_per_day: 2,
+      limit_per_day: 3,
       used_count: 2,
       reserved_count: 0,
       remaining_count: 0,
@@ -466,7 +466,7 @@ describe("Prompt 28 Frontend - Free User Limit Enforcement", () => {
 
   it("should allow analysis when under limit", () => {
     const tradeQuota = {
-      limit_per_day: 2,
+      limit_per_day: 3,
       used_count: 0,
       reserved_count: 1,
       remaining_count: 1,

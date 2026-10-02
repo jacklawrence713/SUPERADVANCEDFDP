@@ -192,21 +192,20 @@ describe('Paywall UX (Prompt 30)', () => {
   describe('Trade Analyzer Daily Limit', () => {
     test('Trade analyzer limit paywall has correct copy', () => {
       const copy = getFeaturePaywallCopy('trade_analyzer_limit');
-      expect(copy.title).toBe('Daily Analysis Limit Reached');
-      expect(copy.description).toContain('2');
-      expect(copy.description).toContain('UTC');
+      expect(copy.title).toBe('Analysis Limit Reached');
+      expect(copy.description).toContain('3');
       expect(copy.cta).toBe('Upgrade to Unlimited');
     });
 
-    test('Paywall copy mentions 2/day not 3/day', () => {
+    test('Paywall copy mentions 3 lifetime not 2/day', () => {
       const copy = getFeaturePaywallCopy('trade_analyzer_limit');
-      expect(copy.description).toContain('2');
-      expect(copy.description).not.toContain('3');
+      expect(copy.description).toContain('3');
+      expect(copy.description).not.toContain('2');
     });
 
-    test('Limit paywall mentions quota reset', () => {
+    test('Limit paywall mentions lifetime limit', () => {
       const copy = getFeaturePaywallCopy('trade_analyzer_limit');
-      expect(copy.description.toLowerCase()).toContain('reset');
+      expect(copy.description.toLowerCase()).toContain('lifetime');
     });
   });
 

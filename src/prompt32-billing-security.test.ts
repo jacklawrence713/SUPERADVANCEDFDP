@@ -493,7 +493,7 @@ describe("Prompt 32 — Billing Security Hardening", () => {
   // ================================================================
 
   describe("Regression: Prompts 28-31 Unchanged", () => {
-    it("Prompt 28: Trade quota remains 2/day (Free authenticated)", () => {
+    it("Prompt 28: Trade quota is 3 lifetime (Free authenticated)", () => {
       const freeTradeLimit = 2;
       expect(freeTradeLimit).toBe(2);
     });

@@ -105,7 +105,7 @@ const FORMATS=["Superflex","PPR","Half","Standard"];
 const ALL_POSITIONS=["ALL","QB","RB","WR","TE","K","DST","DL","LB","DB"];
 const PRIME={QB:[26,35],RB:[22,27],WR:[23,29],TE:[25,30],K:[25,38],DST:[0,99],DL:[23,30],LB:[23,30],DB:[23,29]};
 const FREE_RANK_LIMIT=20;
-const FREE_TRADE_LIMIT=2; // Prompt 28: Updated from 3 to 2
+const FREE_TRADE_LIMIT=3; // PHASE 4D.0.3: Lifetime free analyses per account
 const DYNASTY_NEWS=[
   {id:83,ts:"Sep 15",tag:"INJURY",pos:"WR",title:"A.J. Brown placed on IR — high ankle sprain out until Week 6+",body:"Patriots WR A.J. Brown suffered a high ankle sprain in the Wednesday night season opener vs. Seattle and has been placed on injured reserve. He's expected to miss at least 4-5 weeks. At 29, this is a brutal blow to his dynasty value — NE's passing game takes a massive hit without him. Drake Maye loses his WR1. Dynasty managers should sell if someone will buy at a discount. D.J. Moore and Keon Coleman see target bumps in Buffalo-style offenses. Brown's value drops from 5,800 to 4,800."},
   {id:82,ts:"Sep 15",tag:"INJURY",pos:"QB",title:"Kyler Murray concussion — Carson Wentz leads Vikings comeback",body:"Minnesota QB Kyler Murray exited in the first quarter with a concussion after a hit from GB LB Quay Walker. Carson Wentz entered and was brilliant — 12/19, 133 yards, 3 TDs, 0 INT — leading a 29-0 run to beat the Packers 39-22. Murray is week-to-week. Dynasty impact: Murray's value dips on injury concern at 29. J.J. McCarthy could get an opportunity if Murray misses extended time. Wentz is a streaming QB2 in the interim."},

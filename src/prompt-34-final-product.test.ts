@@ -11,13 +11,13 @@ describe('PROMPT 34: Final Product Validation', () => {
 
   // ===== SECTION 1: ENTITLEMENT MATRIX VALIDATION =====
 
-  it('product defines Free plan limit as exactly 2 successful Trade Analyzer analyses per UTC day', () => {
-    const limit = afdpSrc.match(/FREE_TRADE_LIMIT\s*=\s*2/)
+  it('product defines Free plan limit as 3 lifetime successful Trade Analyzer analyses', () => {
+    const limit = afdpSrc.match(/FREE_TRADE_LIMIT\s*=\s*3/)
     expect(limit).toBeTruthy()
   })
 
-  it('product does not hardcode outdated limits (3, 20, 5)', () => {
-    expect(afdpSrc).not.toMatch(/FREE_TRADE_LIMIT\s*=\s*3/)
+  it('product does not hardcode outdated limits (2, 20, 5)', () => {
+    expect(afdpSrc).not.toMatch(/FREE_TRADE_LIMIT\s*=\s*2/)
     expect(afdpSrc).not.toMatch(/FREE_TRADE_LIMIT\s*=\s*20/)
     expect(afdpSrc).not.toMatch(/FREE_TRADE_LIMIT\s*=\s*5/)
   })
@@ -189,8 +189,8 @@ describe('PROMPT 34: Final Product Validation', () => {
     expect(afdpSrc).not.toMatch(/expect\s*\(\s*true\s*\)\s*\.toBe\s*\(\s*true\s*\)/)
   })
 
-  it('Free plan contract: 2 analyses per UTC day', () => {
-    expect(afdpSrc).toMatch(/FREE_TRADE_LIMIT\s*=\s*2/)
+  it('Free plan contract: 3 lifetime analyses', () => {
+    expect(afdpSrc).toMatch(/FREE_TRADE_LIMIT\s*=\s*3/)
   })
 
   it('Pro plan contract: unlimited Trade Analyzer access', () => {
