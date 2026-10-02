@@ -1,0 +1,76 @@
+name: Supabase Restore Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  restore-test:
+    runs-on: ubuntu-latest
+
+    env:
+      PROD_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      TEST_DB_URL: ${{ secrets.SUPABASE_TEST_DB_URL }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+          psql --version
+
+      - name: Create backup folder
+        run: mkdir -p restore-test
+
+      - name: Backup production roles
+        run: |
+          supabase db dump \
+            --db-url "$PROD_DB_URL" \
+            -f restore-test/roles.sql \
+            --role-only
+
+      - name: Backup production schema
+        run: |
+          supabase db dump \
+            --db-url "$PROD_DB_URL" \
+            -f restore-test/schema.sql
+
+      - name: Backup production data
+        run: |
+          supabase db dump \
+            --db-url "$PROD_DB_URL" \
+            -f restore-test/data.sql \
+            --use-copy \
+            --data-only \
+            -x "storage.buckets_vectors" \
+            -x "storage.vector_indexes"
+
+      - name: Restore into temporary Supabase project
+        run: |
+          psql \
+            --single-transaction \
+            --variable ON_ERROR_STOP=1 \
+            --file restore-test/roles.sql \
+            --file restore-test/schema.sql \
+            --command 'SET session_replication_role = replica' \
+            --file restore-test/data.sql \
+            --dbname "$TEST_DB_URL"
+
+      - name: Verify restored public tables
+        run: |
+          psql "$TEST_DB_URL" \
+            --variable ON_ERROR_STOP=1 \
+            --command "SELECT COUNT(*) AS public_table_count FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE';"
+
+      - name: Verify restored users
+        run: |
+          psql "$TEST_DB_URL" \
+            --variable ON_ERROR_STOP=1 \
+            --command "SELECT COUNT(*) AS auth_user_count FROM auth.users;"
