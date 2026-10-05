@@ -75,14 +75,11 @@ BEGIN
   -- Get server UTC date (not client clock)
   v_today := (now() AT TIME ZONE 'UTC')::date;
 
-  -- FIX #1: Obtain TRANSACTION-SCOPED advisory lock for this user/date
-  -- This serializes all concurrent quota checks for same user/date
-  v_lock_key := (
-    (('x' || md5(p_user_id::text))::bit(64))::bigint +
-    (('x' || md5(v_today::text))::bit(64))::bigint
-  );
+  -- Lifetime quota: serialize all quota admissions for this user,
+  -- including requests that cross a UTC date boundary.
+  v_lock_key := hashtextextended(p_user_id::text, 0);
   PERFORM pg_advisory_xact_lock(v_lock_key);
-  -- Lock is automatically released when function transaction ends
+  -- Lock is automatically released when the transaction ends.
 
   -- Fetch authoritative plan from public.users
   SELECT plan INTO v_plan FROM public.users WHERE id = p_user_id;
@@ -129,9 +126,9 @@ BEGIN
   -- Reserve a slot
   v_new_id := gen_random_uuid();
   INSERT INTO public.trade_analysis_usage (
-    user_id, quota_date, request_id, request_fingerprint, status, created_at, expires_at
+    id, user_id, quota_date, request_id, request_fingerprint, status, created_at, expires_at
   ) VALUES (
-    p_user_id, v_today, p_request_id, p_request_fingerprint, 'reserved', now(), now() + INTERVAL '5 minutes'
+    v_new_id, p_user_id, v_today, p_request_id, p_request_fingerprint, 'reserved', now(), now() + INTERVAL '5 minutes'
   );
 
   RETURN QUERY SELECT true, NULL::TEXT, v_new_id;
@@ -154,17 +151,14 @@ CREATE OR REPLACE FUNCTION public.finalize_trade_quota(
 )
 RETURNS TABLE (success BOOLEAN, error_message TEXT) AS $$
 DECLARE
-  v_today DATE;
-  v_found BOOLEAN;
   v_current_status TEXT;
   v_expires_at TIMESTAMP WITH TIME ZONE;
 BEGIN
-  v_today := (now() AT TIME ZONE 'UTC')::date;
-
-  -- FIX #2: Verify reservation exists AND is not expired AND has valid state
+  -- Lifetime quota reservations may legitimately be finalized after a UTC
+  -- date boundary, so lookup is keyed by user_id + request_id, not quota_date.
   SELECT status, expires_at INTO v_current_status, v_expires_at
   FROM public.trade_analysis_usage
-  WHERE user_id = p_user_id AND request_id = p_request_id AND quota_date = v_today;
+  WHERE user_id = p_user_id AND request_id = p_request_id;
 
   IF v_current_status IS NULL THEN
     RETURN QUERY SELECT false, 'reservation_not_found'::TEXT;
@@ -190,7 +184,7 @@ BEGIN
     status = CASE WHEN p_succeeded THEN 'succeeded' ELSE 'failed' END,
     completed_at = now(),
     result_json = p_result_json
-  WHERE user_id = p_user_id AND request_id = p_request_id AND quota_date = v_today
+  WHERE user_id = p_user_id AND request_id = p_request_id
     AND status = 'reserved'
     AND expires_at > now();
 
@@ -282,19 +276,17 @@ RETURNS TABLE (
   result_json JSONB
 ) AS $$
 DECLARE
-  v_today DATE;
   v_stored_status TEXT;
   v_stored_fingerprint TEXT;
   v_stored_result JSONB;
   v_expires_at TIMESTAMP WITH TIME ZONE;
 BEGIN
-  v_today := (now() AT TIME ZONE 'UTC')::date;
-
-  -- Fetch existing reservation
+  -- Result retrieval is lifetime-scoped by the idempotency key and must keep
+  -- working after a UTC date boundary.
   SELECT status, request_fingerprint, result_json, expires_at
   INTO v_stored_status, v_stored_fingerprint, v_stored_result, v_expires_at
   FROM public.trade_analysis_usage
-  WHERE user_id = p_user_id AND request_id = p_request_id AND quota_date = v_today;
+  WHERE user_id = p_user_id AND request_id = p_request_id;
 
   IF v_stored_status IS NULL THEN
     RETURN QUERY SELECT false, 'not_found'::TEXT, NULL::TEXT, NULL::JSONB;
@@ -336,8 +328,12 @@ DO $$
 DECLARE
   v_rls_enabled BOOLEAN;
 BEGIN
-  SELECT row_security_enabled INTO v_rls_enabled
-  FROM pg_tables WHERE schemaname = 'public' AND tablename = 'trade_analysis_usage';
+  SELECT c.relrowsecurity INTO v_rls_enabled
+  FROM pg_class c
+  JOIN pg_namespace n ON n.oid = c.relnamespace
+  WHERE n.nspname = 'public'
+    AND c.relname = 'trade_analysis_usage'
+    AND c.relkind = 'r';
 
   IF NOT v_rls_enabled THEN
     RAISE EXCEPTION 'RLS not enabled on trade_analysis_usage';

@@ -30,6 +30,11 @@ CREATE TABLE IF NOT EXISTS public.billing_reconciliation_state (
 CREATE INDEX IF NOT EXISTS idx_billing_recon_sub_id ON public.billing_reconciliation_state(stripe_subscription_id);
 CREATE INDEX IF NOT EXISTS idx_billing_recon_cust_id ON public.billing_reconciliation_state(stripe_customer_id);
 
+-- Customer-only fallback rows also need a unique conflict target.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_billing_recon_customer_fallback
+  ON public.billing_reconciliation_state(stripe_customer_id)
+  WHERE stripe_subscription_id IS NULL AND stripe_customer_id IS NOT NULL;
+
 -- ================================================================
 -- Event Ledger Table: Durable webhook processing history
 -- ================================================================
@@ -121,10 +126,11 @@ BEGIN
       1,
       NOW()
     )
-    ON CONFLICT (stripe_customer_id) DO UPDATE SET
-      current_generation = current_generation + 1,
+    ON CONFLICT (stripe_customer_id)
+      WHERE stripe_subscription_id IS NULL AND stripe_customer_id IS NOT NULL
+    DO UPDATE SET
+      current_generation = billing_reconciliation_state.current_generation + 1,
       updated_at = NOW()
-    WHERE stripe_subscription_id IS NULL
     RETURNING current_generation INTO v_new_generation;
   ELSE
     RAISE EXCEPTION 'begin_billing_reconciliation requires subscription_id or customer_id';
@@ -134,6 +140,12 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public;
+
+-- ================================================================
+-- Finalize Billing Reconciliation
+REVOKE EXECUTE ON FUNCTION public.begin_billing_reconciliation(TEXT, TEXT) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.begin_billing_reconciliation(TEXT, TEXT) FROM authenticated;
+GRANT EXECUTE ON FUNCTION public.begin_billing_reconciliation(TEXT, TEXT) TO service_role;
 
 -- ================================================================
 -- Finalize Billing Reconciliation (compare-and-apply at write time)
@@ -148,8 +160,8 @@ CREATE OR REPLACE FUNCTION finalize_reconciliation(
   p_stripe_event_id TEXT,
   p_stripe_subscription_id TEXT DEFAULT NULL,
   p_stripe_customer_id TEXT DEFAULT NULL,
-  p_submitted_generation BIGINT,
-  p_user_id UUID,
+  p_submitted_generation BIGINT DEFAULT NULL,
+  p_user_id UUID DEFAULT NULL,
   p_plan TEXT DEFAULT NULL,
   p_is_pro BOOLEAN DEFAULT NULL,
   p_subscription_status TEXT DEFAULT NULL,
@@ -166,17 +178,27 @@ CREATE OR REPLACE FUNCTION finalize_reconciliation(
 DECLARE
   v_current_generation BIGINT;
   v_user_updated BOOLEAN := FALSE;
+  v_user_update_count INT := 0;
 BEGIN
-  -- Fetch current generation for this subscription/customer
+  IF p_submitted_generation IS NULL OR p_user_id IS NULL THEN
+    RAISE EXCEPTION 'finalize_reconciliation requires submitted_generation and user_id';
+  END IF;
+
+  -- Lock the reconciliation row so begin/finalize cannot race between
+  -- generation comparison and the user-state write.
   IF p_stripe_subscription_id IS NOT NULL THEN
     SELECT current_generation INTO v_current_generation
       FROM public.billing_reconciliation_state
-      WHERE stripe_subscription_id = p_stripe_subscription_id;
+      WHERE stripe_subscription_id = p_stripe_subscription_id
+      FOR UPDATE;
   ELSIF p_stripe_customer_id IS NOT NULL THEN
     SELECT current_generation INTO v_current_generation
       FROM public.billing_reconciliation_state
       WHERE stripe_customer_id = p_stripe_customer_id
-        AND stripe_subscription_id IS NULL;
+        AND stripe_subscription_id IS NULL
+      FOR UPDATE;
+  ELSE
+    RAISE EXCEPTION 'finalize_reconciliation requires subscription_id or customer_id';
   END IF;
 
   -- Check if submitted generation is still current
@@ -184,9 +206,8 @@ BEGIN
     v_current_generation := 0;
   END IF;
 
-  -- If generation is current, apply billing state
-  IF p_submitted_generation >= v_current_generation THEN
-    -- Update user billing state atomically
+  -- Only the exact currently allocated generation may write billing state.
+  IF p_submitted_generation = v_current_generation THEN
     IF p_plan IS NOT NULL OR p_is_pro IS NOT NULL OR p_subscription_status IS NOT NULL THEN
       UPDATE public.users
         SET
@@ -195,7 +216,8 @@ BEGIN
           subscription_status = COALESCE(p_subscription_status, subscription_status),
           updated_at = NOW()
         WHERE id = p_user_id;
-      v_user_updated := TRUE;
+      GET DIAGNOSTICS v_user_update_count = ROW_COUNT;
+      v_user_updated := (v_user_update_count = 1);
     END IF;
   END IF;
 
@@ -203,6 +225,8 @@ BEGIN
   -- This prevents infinite retry loops while preserving retry capability
   INSERT INTO public.stripe_events (
     stripe_event_id,
+    stripe_event_type,
+    stripe_event_created,
     stripe_subscription_id,
     stripe_customer_id,
     user_id,
@@ -214,10 +238,12 @@ BEGIN
     subscription_status_after
   ) VALUES (
     p_stripe_event_id,
+    'reconciliation.finalized',
+    EXTRACT(EPOCH FROM NOW())::BIGINT,
     p_stripe_subscription_id,
     p_stripe_customer_id,
     p_user_id,
-    CASE WHEN p_submitted_generation >= v_current_generation THEN 'success' ELSE 'superseded' END,
+    CASE WHEN p_submitted_generation = v_current_generation THEN 'success' ELSE 'superseded' END,
     p_submitted_generation,
     p_plan_before,
     p_plan_after,
@@ -226,22 +252,29 @@ BEGIN
   )
   ON CONFLICT (stripe_event_id) DO UPDATE SET
     processing_state = CASE
-      WHEN EXCLUDED.processing_state IN ('success', 'superseded') THEN stripe_events.processing_state
-      ELSE CASE WHEN EXCLUDED.reconciliation_generation >= stripe_events.reconciliation_generation THEN 'success' ELSE 'superseded' END
+      WHEN stripe_events.processing_state IN ('success', 'superseded') THEN stripe_events.processing_state
+      ELSE EXCLUDED.processing_state
     END,
-    reconciliation_generation = GREATEST(stripe_events.reconciliation_generation, EXCLUDED.reconciliation_generation),
-    attempt_count = attempt_count + 1,
+    reconciliation_generation = GREATEST(
+      COALESCE(stripe_events.reconciliation_generation, 0),
+      COALESCE(EXCLUDED.reconciliation_generation, 0)
+    ),
+    attempt_count = stripe_events.attempt_count + 1,
     processed_at = NOW()
-  WHERE processing_state IN ('received', 'processing', 'failed');
+  WHERE stripe_events.processing_state IN ('received', 'processing', 'failed');
 
   RETURN QUERY SELECT
-    (p_submitted_generation >= v_current_generation)::BOOLEAN,
+    (p_submitted_generation = v_current_generation)::BOOLEAN,
     v_current_generation,
     p_submitted_generation,
     v_user_updated;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public;
+
+REVOKE EXECUTE ON FUNCTION public.finalize_reconciliation(TEXT, TEXT, TEXT, BIGINT, UUID, TEXT, BOOLEAN, TEXT, TEXT, TEXT, TEXT, TEXT) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.finalize_reconciliation(TEXT, TEXT, TEXT, BIGINT, UUID, TEXT, BOOLEAN, TEXT, TEXT, TEXT, TEXT, TEXT) FROM authenticated;
+GRANT EXECUTE ON FUNCTION public.finalize_reconciliation(TEXT, TEXT, TEXT, BIGINT, UUID, TEXT, BOOLEAN, TEXT, TEXT, TEXT, TEXT, TEXT) TO service_role;
 
 -- ================================================================
 -- Upsert Stripe Event (handles retry of failed events)
@@ -313,6 +346,10 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public;
 
+REVOKE EXECUTE ON FUNCTION public.upsert_stripe_event(TEXT, TEXT, BIGINT, UUID, TEXT, TEXT, JSONB, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.upsert_stripe_event(TEXT, TEXT, BIGINT, UUID, TEXT, TEXT, JSONB, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT) FROM authenticated;
+GRANT EXECUTE ON FUNCTION public.upsert_stripe_event(TEXT, TEXT, BIGINT, UUID, TEXT, TEXT, JSONB, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT) TO service_role;
+
 -- ================================================================
 -- Atomic Trial Claiming (prevents concurrent trial claiming for same user)
 -- ================================================================
@@ -332,22 +369,29 @@ BEGIN
   -- Acquire exclusive transaction-level advisory lock keyed to user_id
   PERFORM pg_advisory_xact_lock(v_lock_id);
 
-  -- Check if user already claimed trial
-  SELECT trial_used INTO v_already_claimed FROM public.users WHERE id = p_user_id;
+  -- Check if user exists and whether the trial was already claimed.
+  SELECT COALESCE(trial_used, false) INTO v_already_claimed
+  FROM public.users
+  WHERE id = p_user_id;
 
-  IF v_already_claimed THEN
+  IF NOT FOUND OR v_already_claimed THEN
     RETURN false;
   END IF;
 
-  -- Mark trial as used (atomically under lock)
+  -- Mark trial as used atomically under the per-user lock.
   UPDATE public.users
     SET trial_used = true, updated_at = NOW()
-    WHERE id = p_user_id;
+    WHERE id = p_user_id
+      AND COALESCE(trial_used, false) = false;
 
-  RETURN true;
+  RETURN FOUND;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public;
+
+REVOKE EXECUTE ON FUNCTION public.claim_trial_for_user(UUID) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.claim_trial_for_user(UUID) FROM authenticated;
+GRANT EXECUTE ON FUNCTION public.claim_trial_for_user(UUID) TO service_role;
 
 -- ================================================================
 -- RLS: Service role only
