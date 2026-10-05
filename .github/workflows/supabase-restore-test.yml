@@ -18,7 +18,7 @@ jobs:
       - name: Checkout exact remediation commit
         uses: actions/checkout@v4
         with:
-          ref: 2adfbb954190a5066af27e8987dfcda1961b0e4b
+          ref: 06503e90262fd43d2cca33ee1dbf46b22a404985
 
       - name: Install Supabase CLI
         uses: supabase/setup-cli@v1
@@ -1085,6 +1085,6 @@ jobs:
           echo "  - Concurrency: two bounded sessions, only ONE acquires the final slot"
           echo "OK: Verified: Migration 007 (billing_event_ledger)"
           echo ""
-          echo "Commit: 2adfbb954190a5066af27e8987dfcda1961b0e4b"
+          echo "Commit: 06503e90262fd43d2cca33ee1dbf46b22a404985"
           echo "Status: CANDIDATE READY FOR PRODUCTION REVIEW"
           echo ""
