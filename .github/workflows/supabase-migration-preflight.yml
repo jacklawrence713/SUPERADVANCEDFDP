@@ -1,13 +1,95 @@
-name: Supabase Production Migration Preflight
-
+name: Supabase Controlled Production Migration
 on:
   workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type EXACTLY: PUSH_M3_M7_TO_PRODUCTION'
+        required: true
+        type: string
 
 permissions:
   contents: read
 
 jobs:
+  confirm-and-backup:
+    runs-on: ubuntu-latest
+    env:
+      PGOPTIONS: "-c default_transaction_read_only=on"
+
+    steps:
+      - name: Verify confirmation input matches exactly
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "PUSH_M3_M7_TO_PRODUCTION" ]; then
+            echo "ERROR: Confirmation input does not match exactly"
+            echo "Expected: PUSH_M3_M7_TO_PRODUCTION"
+            echo "Received: ${{ github.event.inputs.confirm }}"
+            exit 1
+          fi
+          echo "OK: Confirmation input verified"
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Create backup folder
+        run: mkdir -p production-backup
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Backup production roles (READ-ONLY)
+        env:
+          PGOPTIONS: "-c default_transaction_read_only=on"
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          echo "=== BACKUP PRODUCTION ROLES (READ-ONLY) ==="
+          supabase db dump \
+            --db-url "$SUPABASE_DB_URL" \
+            -f production-backup/roles.sql \
+            --role-only
+          echo "OK: Roles dumped: $(wc -l < production-backup/roles.sql) lines"
+
+      - name: Backup production schema (READ-ONLY)
+        env:
+          PGOPTIONS: "-c default_transaction_read_only=on"
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          echo "=== BACKUP PRODUCTION SCHEMA (READ-ONLY) ==="
+          supabase db dump \
+            --db-url "$SUPABASE_DB_URL" \
+            -f production-backup/schema.sql
+          echo "OK: Schema dumped: $(wc -l < production-backup/schema.sql) lines"
+
+      - name: Backup production data (READ-ONLY)
+        env:
+          PGOPTIONS: "-c default_transaction_read_only=on"
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          echo "=== BACKUP PRODUCTION DATA (READ-ONLY) ==="
+          supabase db dump \
+            --db-url "$SUPABASE_DB_URL" \
+            -f production-backup/data.sql \
+            --use-copy \
+            --data-only \
+            -x "storage.buckets_vectors" \
+            -x "storage.vector_indexes"
+          echo "OK: Data dumped: $(wc -l < production-backup/data.sql) lines"
+
+      - name: Upload backup as artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: production-backup-before-migration
+          path: production-backup/
+          retention-days: 30
+          if-no-files-found: error
+
+
   audit-production:
+    needs: confirm-and-backup
     runs-on: ubuntu-latest
     env:
       PGOPTIONS: "-c default_transaction_read_only=on"
@@ -22,7 +104,7 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
-          psql -X -v ON_ERROR_STOP=1 "$DATABASE_URL" <<'SQL'
+          psql -X -v ON_ERROR_STOP=1 "$DATABASE_URL" <<'SQLBLOCK'
           SET default_transaction_read_only = on;
 
           DO $$
@@ -73,9 +155,9 @@ jobs:
           $$;
 
           SELECT 'OK: Production baseline matches expected pre-migration state' AS result;
-          SQL
+          SQLBLOCK
 
-  history-repair-and-dry-run:
+  verify-and-push-production:
     needs: audit-production
     runs-on: ubuntu-latest
 
@@ -89,6 +171,11 @@ jobs:
         uses: supabase/setup-cli@v1
         with:
           version: latest
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
 
       - name: Verify canonical migration set
         shell: bash
@@ -117,29 +204,457 @@ jobs:
 
           echo "OK: canonical seven-migration set verified"
 
-      - name: Show migration history before repair
+      - name: Verify production migration history
         env:
           DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
+          echo "=== CURRENT PRODUCTION MIGRATION HISTORY ==="
           supabase migration list --db-url "$DB_URL"
 
-      - name: Mark M001 and M002 as already applied
+      - name: Verify pre-push migration state
         env:
           DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
           set -euo pipefail
-          supabase migration repair 20260428000000 --status applied --db-url "$DB_URL"
-          supabase migration repair 20260904133837 --status applied --db-url "$DB_URL"
+          echo "=== VERIFYING PRE-PUSH MIGRATION STATE ==="
+          OUTPUT=$(supabase migration list --db-url "$DB_URL")
+          echo "$OUTPUT"
 
-      - name: Show migration history after repair
-        env:
-          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
-        run: |
-          supabase migration list --db-url "$DB_URL"
+          echo ""
+          echo "=== CHECKING MIGRATION STATE ==="
+
+          # Parse migration list output
+          # Format: Local | Remote | Time
+          # Extract fields 1 and 2, strip whitespace and backticks, validate 14-digit IDs
+          mapfile -t actual < <(
+            awk -F'|' '
+            {
+              local = $1
+              remote = $2
+
+              gsub(/[`[:space:]]/, "", local)
+              gsub(/[`[:space:]]/, "", remote)
+
+              if (!(local ~ /^[0-9]+$/ && length(local) == 14)) local = ""
+              if (!(remote ~ /^[0-9]+$/ && length(remote) == 14)) remote = ""
+
+              if (local != "" || remote != "") {
+                print local "|" remote
+              }
+            }' <<< "$OUTPUT" | sort
+          )
+
+          expected=(
+            "20260428000000|20260428000000"
+            "20260904133837|20260904133837"
+            "20260921144441|"
+            "20260922003719|"
+            "20260924152532|"
+            "20260924234147|"
+            "20260925213441|"
+          )
+
+          if [ "${actual[*]}" != "${expected[*]}" ]; then
+            echo "STOP: Pre-push migration state does not match expected"
+            echo "Actual:"
+            printf '  %s\n' "${actual[@]}"
+            echo "Expected:"
+            printf '  %s\n' "${expected[@]}"
+            exit 1
+          fi
+
+          echo "OK: Pre-push migration state verified"
+
 
       - name: Production db push dry run
         env:
           DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
-          echo "DRY RUN ONLY - M003-M007 WILL NOT BE APPLIED"
-          supabase db push --dry-run --db-url "$DB_URL"
+          set -euo pipefail
+          echo "=== DRY RUN VERIFICATION ==="
+          if ! DRY_RUN_OUTPUT=$(supabase db push --dry-run --db-url "$DB_URL" 2>&1); then
+            echo "$DRY_RUN_OUTPUT"
+            echo "STOP: Supabase dry-run failed"
+            exit 1
+          fi
+          echo "$DRY_RUN_OUTPUT"
+
+          echo ""
+          echo "=== VERIFYING DRY RUN CONTAINS EXACTLY FIVE MIGRATIONS ==="
+
+          # Extract migration filenames, remove duplicates, and sort
+          mapfile -t actual < <(
+            echo "$DRY_RUN_OUTPUT" | grep -oE '[0-9]{14}_[A-Za-z0-9._-]+\.sql' | sort -u
+          )
+
+          expected=(
+            "20260921144441_odds_cache.sql"
+            "20260922003719_fdp_value_snapshots.sql"
+            "20260924152532_entitlement_security.sql"
+            "20260924234147_trade_analysis_quota.sql"
+            "20260925213441_billing_event_ledger.sql"
+          )
+
+          if [ "${actual[*]}" != "${expected[*]}" ]; then
+            echo "STOP: Dry-run migrations do not match expected set"
+            echo "Actual:"
+            printf '  %s\n' "${actual[@]}"
+            echo "Expected:"
+            printf '  %s\n' "${expected[@]}"
+            exit 1
+          fi
+
+          echo "OK: Dry-run verified - exactly five migrations will be applied"
+
+      - name: Apply M003-M007 to production
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          echo "=== APPLYING M003-M007 TO PRODUCTION ==="
+          supabase db push --db-url "$DB_URL"
+          echo "OK: Migrations applied"
+
+      - name: Verify all seven migrations applied
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          echo "=== VERIFYING POST-MIGRATION STATE ==="
+          OUTPUT=$(supabase migration list --db-url "$DB_URL")
+          echo "$OUTPUT"
+
+          echo ""
+          echo "=== CHECKING MIGRATION STATE ==="
+
+          # Parse migration list output
+          # Format: Local | Remote | Time
+          # Extract fields 1 and 2, strip whitespace and backticks, validate 14-digit IDs
+          mapfile -t actual < <(
+            awk -F'|' '
+            {
+              local = $1
+              remote = $2
+
+              gsub(/[`[:space:]]/, "", local)
+              gsub(/[`[:space:]]/, "", remote)
+
+              if (!(local ~ /^[0-9]+$/ && length(local) == 14)) local = ""
+              if (!(remote ~ /^[0-9]+$/ && length(remote) == 14)) remote = ""
+
+              if (local != "" || remote != "") {
+                print local "|" remote
+              }
+            }' <<< "$OUTPUT" | sort
+          )
+
+          expected=(
+            "20260428000000|20260428000000"
+            "20260904133837|20260904133837"
+            "20260921144441|20260921144441"
+            "20260922003719|20260922003719"
+            "20260924152532|20260924152532"
+            "20260924234147|20260924234147"
+            "20260925213441|20260925213441"
+          )
+
+          if [ "${actual[*]}" != "${expected[*]}" ]; then
+            echo "STOP: Post-push migration state does not match expected"
+            echo "Actual:"
+            printf '  %s\n' "${actual[@]}"
+            echo "Expected:"
+            printf '  %s\n' "${expected[@]}"
+            exit 1
+          fi
+
+          echo "OK: All migrations verified as applied"
+
+
+      - name: Verify M003 - odds_cache exists
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          PGOPTIONS: "-c default_transaction_read_only=on"
+        run: |
+          psql -X -v ON_ERROR_STOP=1 "$DB_URL" <<'VER3END'
+          SET default_transaction_read_only = on;
+
+          DO $$
+          BEGIN
+            IF NOT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'odds_cache') THEN
+              RAISE EXCEPTION 'FAILED: odds_cache table does not exist';
+            END IF;
+
+            IF NOT EXISTS(SELECT 1 FROM public.odds_cache WHERE id = 'nfl_current') THEN
+              RAISE EXCEPTION 'FAILED: Seed row nfl_current does not exist in odds_cache';
+            END IF;
+
+            IF NOT EXISTS(SELECT 1 FROM pg_proc WHERE proname = 'claim_odds_refresh' AND pronamespace = 'public'::regnamespace) THEN
+              RAISE EXCEPTION 'FAILED: claim_odds_refresh function does not exist';
+            END IF;
+          END $$;
+
+          SELECT 'OK: M003 verified (odds_cache)' AS result;
+          VER3END
+
+      - name: Verify M004 - fdp_value_snapshots exists
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          PGOPTIONS: "-c default_transaction_read_only=on"
+        run: |
+          psql -X -v ON_ERROR_STOP=1 "$DB_URL" <<'VER4END'
+          SET default_transaction_read_only = on;
+
+          DO $$
+          BEGIN
+            IF NOT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'fdp_snapshot_batches') THEN
+              RAISE EXCEPTION 'FAILED: fdp_snapshot_batches does not exist';
+            END IF;
+
+            IF NOT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'fdp_value_snapshots') THEN
+              RAISE EXCEPTION 'FAILED: fdp_value_snapshots does not exist';
+            END IF;
+          END $$;
+
+          SELECT 'OK: M004 verified (fdp_value_snapshots)' AS result;
+          VER4END
+
+      - name: Verify M005 - public.users privileges (READ-ONLY metadata)
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          PGOPTIONS: "-c default_transaction_read_only=on"
+        run: |
+          psql -X -v ON_ERROR_STOP=1 "$DB_URL" <<'VER5PRIVEND'
+          SET default_transaction_read_only = on;
+
+          DO $$
+          DECLARE
+            public_privs_count INT;
+            auth_table_privs TEXT;
+            auth_update_cols TEXT;
+            service_role_privs TEXT;
+          BEGIN
+            -- Verify RLS enabled
+            IF NOT (SELECT relrowsecurity FROM pg_class WHERE relname = 'users' AND relnamespace = 'public'::regnamespace) THEN
+              RAISE EXCEPTION 'FAILED: RLS not enabled on public.users';
+            END IF;
+
+            -- Verify PUBLIC has ZERO table privileges using table_privileges
+            SELECT COUNT(*) INTO public_privs_count
+            FROM information_schema.table_privileges
+            WHERE table_schema = 'public' AND table_name = 'users'
+              AND grantee = 'PUBLIC';
+
+            IF public_privs_count > 0 THEN
+              RAISE EXCEPTION 'FAILED: PUBLIC has table privileges on public.users';
+            END IF;
+
+            -- Verify anon has ZERO table privileges
+            IF EXISTS(
+              SELECT 1 FROM information_schema.role_table_grants
+              WHERE table_schema = 'public' AND table_name = 'users'
+              AND grantee = 'anon'
+            ) THEN
+              RAISE EXCEPTION 'FAILED: anon has table privileges on public.users';
+            END IF;
+
+            -- Verify authenticated table privileges are EXACTLY 'SELECT'
+            SELECT STRING_AGG(DISTINCT privilege_type, ',' ORDER BY privilege_type) INTO auth_table_privs
+            FROM information_schema.role_table_grants
+            WHERE table_schema = 'public' AND table_name = 'users'
+              AND grantee = 'authenticated';
+
+            IF auth_table_privs IS DISTINCT FROM 'SELECT' THEN
+              RAISE EXCEPTION 'FAILED: authenticated table privileges are not exactly SELECT (found: %)', COALESCE(auth_table_privs, 'NULL');
+            END IF;
+
+            -- Verify authenticated UPDATE columns are EXACTLY 'signup_ip,signup_visitor_id'
+            SELECT STRING_AGG(DISTINCT column_name, ',' ORDER BY column_name) INTO auth_update_cols
+            FROM information_schema.role_column_grants
+            WHERE table_schema = 'public' AND table_name = 'users'
+              AND grantee = 'authenticated'
+              AND privilege_type = 'UPDATE';
+
+            IF auth_update_cols IS DISTINCT FROM 'signup_ip,signup_visitor_id' THEN
+              RAISE EXCEPTION 'FAILED: authenticated UPDATE columns are not exactly signup_ip,signup_visitor_id (found: %)', COALESCE(auth_update_cols, 'NULL');
+            END IF;
+
+            -- Verify service_role privileges are EXACTLY 'DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE'
+            SELECT STRING_AGG(DISTINCT privilege_type, ',' ORDER BY privilege_type) INTO service_role_privs
+            FROM information_schema.role_table_grants
+            WHERE table_schema = 'public' AND table_name = 'users'
+              AND grantee = 'service_role';
+
+            IF service_role_privs IS DISTINCT FROM 'DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE' THEN
+              RAISE EXCEPTION 'FAILED: service_role privileges are not exactly DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE (found: %)', COALESCE(service_role_privs, 'NULL');
+            END IF;
+
+            -- Verify public.handle_new_user is SECURITY DEFINER
+            IF NOT EXISTS(
+              SELECT 1 FROM pg_proc
+              WHERE proname = 'handle_new_user'
+              AND prosecdef = true
+              AND pronamespace = 'public'::regnamespace
+            ) THEN
+              RAISE EXCEPTION 'FAILED: public.handle_new_user is not SECURITY DEFINER';
+            END IF;
+          END $$;
+
+          SELECT 'OK: M005 public.users privileges verified (READ-ONLY)' AS result;
+          VER5PRIVEND
+
+      - name: Verify M006 - trade_analysis_quota exists (READ-ONLY)
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          PGOPTIONS: "-c default_transaction_read_only=on"
+        run: |
+          psql -X -v ON_ERROR_STOP=1 "$DB_URL" <<'VER6END'
+          SET default_transaction_read_only = on;
+
+          DO $$
+          BEGIN
+            -- Verify table exists
+            IF NOT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'trade_analysis_usage') THEN
+              RAISE EXCEPTION 'FAILED: trade_analysis_usage table does not exist';
+            END IF;
+
+            -- Verify required columns exist
+            IF NOT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'trade_analysis_usage' AND column_name = 'user_id') THEN
+              RAISE EXCEPTION 'FAILED: user_id column missing';
+            END IF;
+
+            IF NOT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'trade_analysis_usage' AND column_name = 'status') THEN
+              RAISE EXCEPTION 'FAILED: status column missing';
+            END IF;
+
+            IF NOT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'trade_analysis_usage' AND column_name = 'expires_at') THEN
+              RAISE EXCEPTION 'FAILED: expires_at column missing';
+            END IF;
+
+            IF NOT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'trade_analysis_usage' AND column_name = 'request_id') THEN
+              RAISE EXCEPTION 'FAILED: request_id column missing';
+            END IF;
+
+            -- Verify RLS enabled
+            IF NOT (SELECT relrowsecurity FROM pg_class WHERE relname = 'trade_analysis_usage' AND relnamespace = 'public'::regnamespace) THEN
+              RAISE EXCEPTION 'FAILED: RLS not enabled on trade_analysis_usage';
+            END IF;
+
+            -- Verify unique_request_per_user constraint exists
+            IF NOT EXISTS(
+              SELECT 1 FROM information_schema.table_constraints
+              WHERE table_schema = 'public' AND table_name = 'trade_analysis_usage'
+              AND constraint_name LIKE '%unique_request_per_user%'
+            ) THEN
+              RAISE EXCEPTION 'FAILED: unique_request_per_user constraint missing';
+            END IF;
+
+            -- Verify required functions exist
+            IF NOT EXISTS(SELECT 1 FROM pg_proc WHERE proname = 'reserve_trade_quota' AND pronamespace = 'public'::regnamespace) THEN
+              RAISE EXCEPTION 'FAILED: reserve_trade_quota function missing';
+            END IF;
+
+            IF NOT EXISTS(SELECT 1 FROM pg_proc WHERE proname = 'finalize_trade_quota' AND pronamespace = 'public'::regnamespace) THEN
+              RAISE EXCEPTION 'FAILED: finalize_trade_quota function missing';
+            END IF;
+
+            IF NOT EXISTS(SELECT 1 FROM pg_proc WHERE proname = 'get_trade_quota_status' AND pronamespace = 'public'::regnamespace) THEN
+              RAISE EXCEPTION 'FAILED: get_trade_quota_status function missing';
+            END IF;
+
+            IF NOT EXISTS(SELECT 1 FROM pg_proc WHERE proname = 'get_trade_analysis_result' AND pronamespace = 'public'::regnamespace) THEN
+              RAISE EXCEPTION 'FAILED: get_trade_analysis_result function missing';
+            END IF;
+          END $$;
+
+          SELECT 'OK: M006 verified (trade_analysis_quota - READ-ONLY)' AS result;
+          VER6END
+
+      - name: Verify M007 - billing_event_ledger exists (READ-ONLY)
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          PGOPTIONS: "-c default_transaction_read_only=on"
+        run: |
+          psql -X -v ON_ERROR_STOP=1 "$DB_URL" <<'VER7END'
+          SET default_transaction_read_only = on;
+
+          DO $$
+          BEGIN
+            -- Verify billing_reconciliation_state table exists
+            IF NOT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'billing_reconciliation_state') THEN
+              RAISE EXCEPTION 'FAILED: billing_reconciliation_state does not exist';
+            END IF;
+
+            -- Verify stripe_events table exists
+            IF NOT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'stripe_events') THEN
+              RAISE EXCEPTION 'FAILED: stripe_events does not exist';
+            END IF;
+
+            -- Verify billing_reconciliation_state required columns
+            IF NOT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'billing_reconciliation_state' AND column_name = 'stripe_subscription_id') THEN
+              RAISE EXCEPTION 'FAILED: stripe_subscription_id column missing in billing_reconciliation_state';
+            END IF;
+
+            IF NOT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'billing_reconciliation_state' AND column_name = 'current_generation') THEN
+              RAISE EXCEPTION 'FAILED: current_generation column missing in billing_reconciliation_state';
+            END IF;
+
+            -- Verify stripe_events required columns
+            IF NOT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'stripe_events' AND column_name = 'stripe_event_id') THEN
+              RAISE EXCEPTION 'FAILED: stripe_event_id column missing in stripe_events';
+            END IF;
+
+            IF NOT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'stripe_events' AND column_name = 'stripe_event_type') THEN
+              RAISE EXCEPTION 'FAILED: stripe_event_type column missing in stripe_events';
+            END IF;
+
+            IF NOT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'stripe_events' AND column_name = 'processing_state') THEN
+              RAISE EXCEPTION 'FAILED: processing_state column missing in stripe_events';
+            END IF;
+
+            IF NOT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'stripe_events' AND column_name = 'user_id') THEN
+              RAISE EXCEPTION 'FAILED: user_id column missing in stripe_events';
+            END IF;
+
+            -- Verify RLS enabled on both tables
+            IF NOT (SELECT relrowsecurity FROM pg_class WHERE relname = 'billing_reconciliation_state' AND relnamespace = 'public'::regnamespace) THEN
+              RAISE EXCEPTION 'FAILED: RLS not enabled on billing_reconciliation_state';
+            END IF;
+
+            IF NOT (SELECT relrowsecurity FROM pg_class WHERE relname = 'stripe_events' AND relnamespace = 'public'::regnamespace) THEN
+              RAISE EXCEPTION 'FAILED: RLS not enabled on stripe_events';
+            END IF;
+
+            -- Verify required SECURITY DEFINER functions exist
+            IF NOT EXISTS(SELECT 1 FROM pg_proc WHERE proname = 'begin_billing_reconciliation' AND prosecdef = true AND pronamespace = 'public'::regnamespace) THEN
+              RAISE EXCEPTION 'FAILED: begin_billing_reconciliation function missing or not SECURITY DEFINER';
+            END IF;
+
+            IF NOT EXISTS(SELECT 1 FROM pg_proc WHERE proname = 'finalize_reconciliation' AND prosecdef = true AND pronamespace = 'public'::regnamespace) THEN
+              RAISE EXCEPTION 'FAILED: finalize_reconciliation function missing or not SECURITY DEFINER';
+            END IF;
+
+            IF NOT EXISTS(SELECT 1 FROM pg_proc WHERE proname = 'upsert_stripe_event' AND prosecdef = true AND pronamespace = 'public'::regnamespace) THEN
+              RAISE EXCEPTION 'FAILED: upsert_stripe_event function missing or not SECURITY DEFINER';
+            END IF;
+
+            IF NOT EXISTS(SELECT 1 FROM pg_proc WHERE proname = 'claim_trial_for_user' AND prosecdef = true AND pronamespace = 'public'::regnamespace) THEN
+              RAISE EXCEPTION 'FAILED: claim_trial_for_user function missing or not SECURITY DEFINER';
+            END IF;
+          END $$;
+
+          SELECT 'OK: M007 verified (billing_event_ledger - READ-ONLY)' AS result;
+          VER7END
+
+      - name: Final production state verification
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          PGOPTIONS: "-c default_transaction_read_only=on"
+        run: |
+          psql -X -v ON_ERROR_STOP=1 "$DB_URL" <<'FINALEND'
+          SET default_transaction_read_only = on;
+
+          SELECT 'PRODUCTION MIGRATION COMPLETE' AS status;
+          SELECT COUNT(*) AS public_table_count
+          FROM information_schema.tables
+          WHERE table_schema = 'public'
+            AND table_type = 'BASE TABLE';
+          FINALEND
