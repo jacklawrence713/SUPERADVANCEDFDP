@@ -1,166 +1,145 @@
-name: Supabase Migration Preflight Audit (READ-ONLY)
+name: Supabase Production Migration Preflight
 
 on:
   workflow_dispatch:
 
-permissions: {}
+permissions:
+  contents: read
 
 jobs:
-  audit-migration-effects:
+  audit-production:
     runs-on: ubuntu-latest
     env:
       PGOPTIONS: "-c default_transaction_read_only=on"
+
     steps:
       - name: Install PostgreSQL client
         run: |
           sudo apt-get update
           sudo apt-get install -y postgresql-client
 
-      - name: Verify Migration 1 - public.users columns
+      - name: Verify production baseline
         env:
           DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
-          cat << 'SQL' | psql -X -v ON_ERROR_STOP=1 "$DATABASE_URL" 2>&1
+          psql -X -v ON_ERROR_STOP=1 "$DATABASE_URL" <<'SQL'
           SET default_transaction_read_only = on;
-          -- READ-ONLY: Verify public.users table structure
-          \echo '===== MIGRATION 1 VERIFICATION ====='
 
-          \echo '1. TABLE EXISTS:'
-          SELECT EXISTS (
-            SELECT 1 FROM information_schema.tables
-            WHERE table_name = 'users' AND table_schema = 'public'
-          ) AS "public.users exists";
+          DO $$
+          BEGIN
+            IF to_regclass('public.users') IS NULL THEN
+              RAISE EXCEPTION 'STOP: public.users is missing';
+            END IF;
 
-          \echo ''
-          \echo '2. COLUMNS AND TYPES:'
-          SELECT
-            column_name,
-            data_type,
-            is_nullable,
-            column_default
-          FROM information_schema.columns
-          WHERE table_name = 'users' AND table_schema = 'public'
-          ORDER BY ordinal_position;
+            IF NOT EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'public'
+                AND table_name = 'users'
+                AND column_name = 'signup_ip'
+            ) THEN
+              RAISE EXCEPTION 'STOP: M002 signup_ip column is missing';
+            END IF;
 
-          \echo ''
-          \echo '3. RLS ENABLED:'
-          SELECT relrowsecurity
-          FROM pg_class
-          WHERE relname = 'users' AND relnamespace = 'public'::regnamespace;
+            IF NOT EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'public'
+                AND table_name = 'users'
+                AND column_name = 'signup_visitor_id'
+            ) THEN
+              RAISE EXCEPTION 'STOP: M002 signup_visitor_id column is missing';
+            END IF;
 
-          \echo ''
-          \echo '4. RLS POLICIES:'
-          SELECT policyname, qual, with_check
-          FROM pg_policies
-          WHERE tablename = 'users' AND schemaname = 'public'
-          ORDER BY policyname;
+            IF NOT EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'public'
+                AND table_name = 'users'
+                AND column_name = 'trial_used'
+            ) THEN
+              RAISE EXCEPTION 'STOP: M002 trial_used column is missing';
+            END IF;
 
-          \echo ''
-          \echo '5. FUNCTIONS public.handle_new_user():'
-          SELECT prosrc
-          FROM pg_proc
-          WHERE proname = 'handle_new_user'
-          AND pronamespace = 'public'::regnamespace;
+            IF to_regclass('public.odds_cache') IS NOT NULL
+               OR to_regclass('public.fdp_snapshot_batches') IS NOT NULL
+               OR to_regclass('public.fdp_value_snapshots') IS NOT NULL
+               OR to_regclass('public.trade_analysis_usage') IS NOT NULL
+               OR to_regclass('public.billing_reconciliation_state') IS NOT NULL
+               OR to_regclass('public.stripe_events') IS NOT NULL THEN
+              RAISE EXCEPTION 'STOP: One or more M003-M007 tables already exist';
+            END IF;
+          END
+          $$;
 
-          \echo ''
-          \echo '6. TRIGGERS ON auth.users:'
-          SELECT
-            trigger_name,
-            event_object_schema,
-            event_object_table,
-            event_manipulation,
-            action_statement
-          FROM information_schema.triggers
-          WHERE trigger_name = 'on_auth_user_created';
-
+          SELECT 'OK: Production baseline matches expected pre-migration state' AS result;
           SQL
 
-      - name: Verify Migration 2 - Abuse Prevention columns
-        env:
-          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
+  history-repair-and-dry-run:
+    needs: audit-production
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout rehearsed migration candidate
+        uses: actions/checkout@v4
+        with:
+          ref: 06503e90262fd43d2cca33ee1dbf46b22a404985
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Verify canonical migration set
+        shell: bash
         run: |
-          cat << 'SQL' | psql -X -v ON_ERROR_STOP=1 "$DATABASE_URL" 2>&1
-          SET default_transaction_read_only = on;
-          -- READ-ONLY: Verify Migration 2 columns on public.users
-          \echo '===== MIGRATION 2 VERIFICATION ====='
+          set -euo pipefail
 
-          \echo '1. COLUMNS ADDED BY MIGRATION 2:'
-          SELECT column_name, data_type, is_nullable, column_default
-          FROM information_schema.columns
-          WHERE table_name = 'users' AND table_schema = 'public'
-          AND column_name IN ('signup_ip', 'signup_visitor_id', 'trial_used')
-          ORDER BY column_name;
-
-          \echo ''
-          \echo '2. INDEXES FOR ABUSE PREVENTION:'
-          SELECT
-            schemaname,
-            tablename,
-            indexname,
-            indexdef
-          FROM pg_indexes
-          WHERE tablename = 'users' AND schemaname = 'public'
-          AND indexname LIKE '%signup%'
-          ORDER BY indexname;
-
-          SQL
-
-      - name: Verify Migration 5 - Entitlement Security Grants
-        env:
-          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
-        run: |
-          cat << 'SQL' | psql -X -v ON_ERROR_STOP=1 "$DATABASE_URL" 2>&1
-          SET default_transaction_read_only = on;
-          -- READ-ONLY: Verify Migration 5 permissions on public.users
-          \echo '===== MIGRATION 5 VERIFICATION ====='
-
-          \echo '1. TABLE PRIVILEGES FOR public.users:'
-          SELECT
-            grantee,
-            privilege_type,
-            is_grantable
-          FROM information_schema.role_table_grants
-          WHERE table_name = 'users' AND table_schema = 'public'
-          ORDER BY grantee, privilege_type;
-
-          \echo ''
-          \echo '2. COLUMN-LEVEL UPDATE PRIVILEGES FOR authenticated:'
-          SELECT
-            column_name,
-            privilege_type
-          FROM information_schema.role_column_grants
-          WHERE table_name = 'users' AND table_schema = 'public'
-          AND grantee = 'authenticated'
-          AND privilege_type = 'UPDATE'
-          ORDER BY column_name;
-
-          SQL
-
-      - name: Verify Migrations 3-7 tables absent
-        env:
-          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
-        run: |
-          cat << 'SQL' | psql -X -v ON_ERROR_STOP=1 "$DATABASE_URL" 2>&1
-          SET default_transaction_read_only = on;
-          -- READ-ONLY: Check for tables created by Migrations 3-7
-          \echo '===== MIGRATION 3-7 TABLE VERIFICATION ====='
-
-          SELECT
-            table_name,
-            CASE
-              WHEN table_name = 'odds_cache' THEN 'Migration 3'
-              WHEN table_name IN ('fdp_snapshot_batches', 'fdp_value_snapshots') THEN 'Migration 4'
-              WHEN table_name = 'trade_analysis_usage' THEN 'Migration 6'
-              WHEN table_name IN ('billing_reconciliation_state', 'stripe_events') THEN 'Migration 7'
-            END AS "Created by Migration"
-          FROM information_schema.tables
-          WHERE table_schema = 'public'
-          AND table_name IN (
-            'odds_cache',
-            'fdp_snapshot_batches', 'fdp_value_snapshots',
-            'trade_analysis_usage',
-            'billing_reconciliation_state', 'stripe_events'
+          mapfile -t actual < <(
+            find supabase/migrations -maxdepth 1 -type f -name '*.sql' -printf '%f\n' | sort
           )
-          ORDER BY table_name;
 
-          SQL
+          expected=(
+            "20260428000000_create_users_table.sql"
+            "20260904133837_add_abuse_prevention.sql"
+            "20260921144441_odds_cache.sql"
+            "20260922003719_fdp_value_snapshots.sql"
+            "20260924152532_entitlement_security.sql"
+            "20260924234147_trade_analysis_quota.sql"
+            "20260925213441_billing_event_ledger.sql"
+          )
+
+          if [ "${actual[*]}" != "${expected[*]}" ]; then
+            echo "STOP: migration set does not match canonical seven migrations"
+            printf 'Actual: %s\n' "${actual[@]}"
+            exit 1
+          fi
+
+          echo "OK: canonical seven-migration set verified"
+
+      - name: Show migration history before repair
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          supabase migration list --db-url "$DB_URL"
+
+      - name: Mark M001 and M002 as already applied
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          supabase migration repair 20260428000000 --status applied --db-url "$DB_URL"
+          supabase migration repair 20260904133837 --status applied --db-url "$DB_URL"
+
+      - name: Show migration history after repair
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          supabase migration list --db-url "$DB_URL"
+
+      - name: Production db push dry run
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          echo "DRY RUN ONLY - M003-M007 WILL NOT BE APPLIED"
+          supabase db push --dry-run --db-url "$DB_URL"
