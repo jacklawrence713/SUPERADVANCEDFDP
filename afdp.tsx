@@ -2309,7 +2309,14 @@ function AuthModal(props){
           setSignupConfirmationPending(true);
           setErr("");
         }
+      } else if(mode==="signin"){
+        var signInResult=await authClient!.auth.signInWithPassword({email,password});
+        if(signInResult.error)throw signInResult.error;
+        // DEFENSIVE: Verify user and session exist before dereferencing
+        if(!signInResult.data.user)throw new Error("Sign in succeeded but no user data returned");
+        if(!signInResult.data.session)throw new Error("Sign in succeeded but no session returned");
         var usr=signInResult.data.user;
+        var sess=signInResult.data.session;
         var admin3=isAdminEmail(usr.email||"");
         var fa3=isFullAccessEmail(usr.email||"");
         // Log in immediately with auth data — don't wait for DB
@@ -2320,7 +2327,7 @@ function AuthModal(props){
           if(!prof)return;
           var isAdm=admin3||prof.is_admin||false;
           onAuth({id:usr.id,name:prof.name||usr.user_metadata?.name||usr.email||"",email:usr.email||"",plan:(isAdm||fa3)?"elite":(prof.plan||"free"),isPro:prof.is_pro||isAdm||fa3,isAdmin:isAdm,token:sess.access_token});
-          // Backfill IP + visitor_id if missing (for users who signed up before this feature)
+          // Backfill IP + visitor_id if missing (for users who signed in before this feature)
           if(!prof.signup_ip||!prof.signup_visitor_id){(async function(){try{var g=await getGeo().catch(function(){return null;});var upd:any={};if(!prof.signup_ip&&g?.ip)upd.signup_ip=g.ip;if(!prof.signup_visitor_id){var vid=getVisitorId();if(vid)upd.signup_visitor_id=vid;}if(Object.keys(upd).length>0)authClient!.from("users").update(upd).eq("id",usr.id);}catch(e){}})();}
         }).catch(function(){});
       }
@@ -2603,6 +2610,8 @@ export default function App(){
   var [impErr,setImpErr]=useState("");
   var [checkoutLoading,setCheckoutLoading]=useState(false);
   var [checkoutErr,setCheckoutErr]=useState("");
+  var [pendingCheckoutIntent,setPendingCheckoutIntent]=useState<{plan:string,billing:string}|null>(null);
+  var pendingCheckoutIntentRef=React.useRef<{plan:string,billing:string}|null>(null);
   var [impRoster,setImpRoster]=useState([]);
   var [manRaw,setManRaw]=useState("");
   var [manMatched,setManMatched]=useState([]);
@@ -2679,8 +2688,8 @@ export default function App(){
     setPostPaymentLoading(false);
     setPostPaymentStatus("Payment not confirmed yet. If you completed checkout, please wait 1 minute and try again — or contact support.");
   }
-  async function handleCheckout(plan:string,billing:string){
-    if(!user){setAuthMode("signup");setShowAuth(true);return;}
+  async function executeCheckout(plan:string,billing:string,authenticatedUser:any){
+    if(!authenticatedUser){return;}
     setCheckoutLoading(true);setCheckoutErr("");
     // Open blank tab synchronously — browsers block window.open after any await
     var newTab=window.open("","_blank");
@@ -2693,7 +2702,7 @@ export default function App(){
     }
     // Dynamic checkout — embeds supabase_user_id in metadata for reliable webhook matching
     try{
-      var result=await callEdgeFn("create-checkout",{plan,billing,visitor_id:getVisitorId()},user.token);
+      var result=await callEdgeFn("create-checkout",{plan,billing,visitor_id:getVisitorId()},authenticatedUser.token);
       if(result?.url){navigateTo(result.url);return;}
       // Dynamic checkout returned no URL — show error
       console.error("create-checkout returned no URL:", result);
@@ -2704,6 +2713,10 @@ export default function App(){
     if(newTab)newTab.close();
     setCheckoutErr("Checkout failed — please try again. If the problem persists, contact support at fantasydraftproshelp@gmail.com");
     setCheckoutLoading(false);
+  }
+  function handleCheckout(plan:string,billing:string){
+    if(!user){var intent={plan,billing};pendingCheckoutIntentRef.current=intent;setPendingCheckoutIntent(intent);setAuthMode("signup");setShowAuth(true);return;}
+    executeCheckout(plan,billing,user);
   }
   var [showAuth,setShowAuth]=useState(false);
   var [authMode,setAuthMode]=useState("signup");
@@ -4254,7 +4267,7 @@ export default function App(){
 
   return React.createElement("div",{style:{background:T.bg,height:"100vh",color:T.text,fontFamily:"-apple-system,BlinkMacSystemFont,'Inter',sans-serif",maxWidth:isDesktop?"100%":480,margin:"0 auto",display:"flex",flexDirection:isDesktop?"row":"column",overflow:"hidden"}},
 
-    showAuth&&React.createElement(AuthModal,{mode:authMode,onClose:function(){setShowAuth(false);},onAuth:function(u){saveAndSetUser(u);setShowAuth(false);if(u.plan&&u.plan!=="free"&&!u.subscriptionStatus){handleCheckout(u.plan,"monthly");}},T:T}),
+    showAuth&&React.createElement(AuthModal,{mode:authMode,onClose:function(){pendingCheckoutIntentRef.current=null;setPendingCheckoutIntent(null);setShowAuth(false);},onAuth:function(u){saveAndSetUser(u);setShowAuth(false);const intent=pendingCheckoutIntentRef.current;pendingCheckoutIntentRef.current=null;setPendingCheckoutIntent(null);if(intent){executeCheckout(intent.plan,intent.billing,u);}},T:T}),
     showResetPw&&React.createElement("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}},
       React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:20,padding:28,width:"100%",maxWidth:400,position:"relative"}},
         React.createElement("div",{style:{textAlign:"center",marginBottom:18}},
@@ -5254,14 +5267,14 @@ export default function App(){
           React.createElement("div",{style:{position:"absolute",top:0,right:0,background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",borderBottomLeftRadius:12,padding:"4px 14px",fontSize:10,fontWeight:800,color:"#fff"}},"MOST POPULAR"),
           React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16,marginTop:6}},React.createElement("div",null,React.createElement("div",{style:{fontWeight:900,fontSize:18,color:T.purple,marginBottom:2}},"Pro"),React.createElement("div",{style:{fontSize:12,color:T.textSub}},"7-day free trial")),React.createElement("div",{style:{textAlign:"right"}},React.createElement("div",{style:{fontWeight:900,fontSize:28}},"$2.99",React.createElement("span",{style:{fontSize:14,fontWeight:400,color:T.textSub}},"/mo")),React.createElement("div",{style:{fontSize:10,color:T.textDim}},"cancel anytime"))),
           ["Everything in Free","Full rankings - 600+ players","Sleeper league import","ESPN import + manual roster entry","AI trade suggestions + analysis","Roster grades + team strategy","Power rankings + playoff odds","Market alerts - buy low sell high"].map(function(f){return React.createElement("div",{key:f,style:{display:"flex",alignItems:"flex-start",gap:10,marginBottom:7}},React.createElement("span",{style:{color:T.purple,fontSize:14,flexShrink:0,marginTop:1}},"v"),React.createElement("span",{style:{fontSize:13,color:"#fff",lineHeight:1.4}},f));}),
-          React.createElement("button",{disabled:checkoutLoading,onClick:function(){user?handleCheckout("pro","monthly"):(setAuthMode("signup"),setShowAuth(true));},style:{width:"100%",marginTop:16,padding:"14px",borderRadius:12,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",cursor:checkoutLoading?"wait":"pointer",fontWeight:800,fontSize:14,opacity:checkoutLoading?0.7:1}},checkoutLoading?"Processing...":user?"Upgrade to Pro →":"Start 7-Day Free Trial"),
+          React.createElement("button",{disabled:checkoutLoading,onClick:function(){handleCheckout("pro","monthly");},style:{width:"100%",marginTop:16,padding:"14px",borderRadius:12,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",cursor:checkoutLoading?"wait":"pointer",fontWeight:800,fontSize:14,opacity:checkoutLoading?0.7:1}},checkoutLoading?"Processing...":user?"Upgrade to Pro →":"Start 7-Day Free Trial"),
           checkoutErr&&React.createElement("div",{style:{marginTop:8,padding:"8px 12px",background:"#ff000020",border:"1px solid #ff000044",borderRadius:8,fontSize:12,color:"#ff6b6b",textAlign:"center"}},checkoutErr),
           React.createElement("div",{style:{textAlign:"center",marginTop:8,fontSize:11,color:T.textDim}},"No credit card required - Cancel anytime")
         ),
         React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:20,padding:20,marginBottom:16}},
           React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}},React.createElement("div",null,React.createElement("div",{style:{fontWeight:900,fontSize:18,color:T.purpleLight,marginBottom:2}},"Elite"),React.createElement("div",{style:{fontSize:12,color:T.textSub}},"For serious dynasty managers")),React.createElement("div",{style:{textAlign:"right"}},React.createElement("div",{style:{fontWeight:900,fontSize:28}},"$9.99",React.createElement("span",{style:{fontSize:14,fontWeight:400,color:T.textSub}},"/mo")),React.createElement("div",{style:{fontSize:11,color:T.green,fontWeight:700}},"$99.99/yr — save 17%"))),
           ["Everything in Pro","Vegas lines & game totals","Priority support - 24hr response","Early access to new features","Export rankings to CSV"].map(function(f){return React.createElement("div",{key:f,style:{display:"flex",alignItems:"flex-start",gap:10,marginBottom:7}},React.createElement("span",{style:{color:T.purpleLight,fontSize:14,flexShrink:0,marginTop:1}},"v"),React.createElement("span",{style:{fontSize:13,color:T.textSub}},f));}),
-          React.createElement("button",{onClick:function(){user?handleCheckout("elite","monthly"):(setAuthMode("signup"),setShowAuth(true));},style:{width:"100%",marginTop:14,padding:"13px",borderRadius:12,border:"1px solid "+T.borderPurple,background:"transparent",color:T.purpleLight,cursor:"pointer",fontWeight:700,fontSize:13}},user?"Upgrade to Elite →":"Start 7-Day Free Trial")
+          React.createElement("button",{onClick:function(){handleCheckout("elite","monthly");},style:{width:"100%",marginTop:14,padding:"13px",borderRadius:12,border:"1px solid "+T.borderPurple,background:"transparent",color:T.purpleLight,cursor:"pointer",fontWeight:700,fontSize:13}},user?"Upgrade to Elite →":"Start 7-Day Free Trial")
         ),
         React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,overflow:"hidden"}},
           React.createElement("div",{style:{padding:"14px 16px",borderBottom:"1px solid "+T.border,fontWeight:800,fontSize:14}},"Feature Comparison"),
@@ -7358,7 +7371,7 @@ export default function App(){
         (!user||!user.isPro)&&React.createElement("div",{style:{background:T.purpleDim,border:"1px solid "+T.purple+"44",borderRadius:14,padding:"16px",textAlign:"center",margin:"16px"}},
           React.createElement("div",{style:{fontWeight:700,fontSize:14,color:T.purpleLight,marginBottom:6}},"Unlock Full Rankings"),
           React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:12}},"See all 600+ players with Pro"),
-          React.createElement("button",{onClick:function(){user?handleCheckout("pro","monthly"):(setAuthMode("signup"),setShowAuth(true));},style:{padding:"10px 24px",borderRadius:12,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}},user?"Upgrade to Pro →":"Start Free Trial")
+          React.createElement("button",{onClick:function(){handleCheckout("pro","monthly");},style:{padding:"10px 24px",borderRadius:12,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}},user?"Upgrade to Pro →":"Start Free Trial")
         )
       ),
 
@@ -7444,7 +7457,7 @@ export default function App(){
         (!user||!user.isPro)&&React.createElement("div",{style:{background:T.purpleDim,border:"1px solid "+T.purple+"44",borderRadius:14,padding:"16px",textAlign:"center",margin:"16px"}},
           React.createElement("div",{style:{fontWeight:700,fontSize:14,color:T.purpleLight,marginBottom:6}},"Unlock Full Rankings"),
           React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:12}},"See all 600+ players with Pro"),
-          React.createElement("button",{onClick:function(){user?handleCheckout("pro","monthly"):(setAuthMode("signup"),setShowAuth(true));},style:{padding:"10px 24px",borderRadius:12,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}},user?"Upgrade to Pro →":"Start Free Trial")
+          React.createElement("button",{onClick:function(){handleCheckout("pro","monthly");},style:{padding:"10px 24px",borderRadius:12,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}},user?"Upgrade to Pro →":"Start Free Trial")
         )
       ),
 
