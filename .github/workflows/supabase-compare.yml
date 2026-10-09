@@ -1,0 +1,91 @@
+name: Supabase Production vs Restore Check
+
+on:
+  workflow_dispatch:
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+
+    env:
+      PROD_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      TEST_DB_URL: ${{ secrets.SUPABASE_TEST_DB_URL }}
+
+    steps:
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Compare production and restored database
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          echo "Checking production database..."
+          PROD_TABLE_COUNT=$(psql "$PROD_DB_URL" -Atc \
+            "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE';")
+
+          PROD_USER_COUNT=$(psql "$PROD_DB_URL" -Atc \
+            "SELECT COUNT(*) FROM auth.users;")
+
+          PROD_TABLES=$(psql "$PROD_DB_URL" -Atc \
+            "SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE' ORDER BY table_name;")
+
+          echo "Checking restored test database..."
+          TEST_TABLE_COUNT=$(psql "$TEST_DB_URL" -Atc \
+            "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE';")
+
+          TEST_USER_COUNT=$(psql "$TEST_DB_URL" -Atc \
+            "SELECT COUNT(*) FROM auth.users;")
+
+          TEST_TABLES=$(psql "$TEST_DB_URL" -Atc \
+            "SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE' ORDER BY table_name;")
+
+          echo ""
+          echo "========== RESULTS =========="
+          echo "Production public tables: $PROD_TABLE_COUNT"
+          echo "Restored public tables:   $TEST_TABLE_COUNT"
+          echo ""
+          echo "Production auth users:    $PROD_USER_COUNT"
+          echo "Restored auth users:      $TEST_USER_COUNT"
+          echo "============================="
+          echo ""
+
+          FAILED=0
+
+          if [ "$PROD_TABLE_COUNT" != "$TEST_TABLE_COUNT" ]; then
+            echo "ERROR: Public table counts do not match."
+            FAILED=1
+          else
+            echo "PASS: Public table counts match."
+          fi
+
+          if [ "$PROD_TABLES" != "$TEST_TABLES" ]; then
+            echo "ERROR: Public table names do not match."
+            echo ""
+            echo "Differences:"
+            diff -u \
+              <(printf "%s\n" "$PROD_TABLES") \
+              <(printf "%s\n" "$TEST_TABLES") || true
+            FAILED=1
+          else
+            echo "PASS: Public table names match."
+          fi
+
+          if [ "$PROD_USER_COUNT" != "$TEST_USER_COUNT" ]; then
+            echo "WARNING: Auth user counts do not match."
+            echo "This can happen if users were added or removed after the backup."
+            FAILED=1
+          else
+            echo "PASS: Auth user counts match."
+          fi
+
+          echo ""
+
+          if [ "$FAILED" -ne 0 ]; then
+            echo "COMPARISON FAILED"
+            exit 1
+          fi
+
+          echo "ALL CHECKS PASSED"
