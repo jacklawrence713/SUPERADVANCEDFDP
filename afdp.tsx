@@ -25,6 +25,7 @@ async function callEdgeFn(fn: string, body: any, userToken?: string) {
   if (!res.ok) { const txt = await res.text().catch(() => ""); try { return JSON.parse(txt); } catch { return { error: `HTTP ${res.status}` }; } }
   return res.json();
 
+}
 // Prompt 28: Request ID generation
 function generateRequestId(){return crypto.randomUUID();}
 
@@ -32,7 +33,6 @@ function generateRequestId(){return crypto.randomUUID();}
 function getPayloadKey(sideA,sideB,tvA,tvB,scoring,posImpact,ageContext,draftCapital,rosterFit,warnings,formatNotes){
   const key={sideA:sideA.map(p=>({n:p.name,p:p.pos,v:p.val})),sideB:sideB.map(p=>({n:p.name,p:p.pos,v:p.val})),tvA,tvB,scoring:scoring||"PPR Dynasty",posImpact:posImpact?posImpact.map(p=>({p:p.pos,n:p.net})):null,ageContext:ageContext?{a:ageContext.avgA,b:ageContext.avgB}:null,draftCapital:draftCapital?{s:draftCapital.valSent,r:draftCapital.valReceived}:null,rosterFit:rosterFit?{t:rosterFit.team,d:rosterFit.valDelta}:null,warnings:warnings?[...warnings].sort():null,formatNotes:formatNotes?[...formatNotes].sort():null};
   return JSON.stringify(key);
-}
 }
 
 function getVisitorId(): string {
