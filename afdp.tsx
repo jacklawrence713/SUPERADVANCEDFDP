@@ -44,24 +44,7 @@ function getVisitorId(): string {
     }
     return id;
   } catch { return "anonymous"; }
-
-// Prompt 28: Fetch authoritative server quota status
-async function fetchTradeQuotaStatus(userToken){
-  if(!userToken){setTradeQuota({limit_per_day:2,used_count:0,reserved_count:0,remaining_count:0,quota_date:"",is_unlimited:false,loading:false,error:"Not authenticated"});return;}
-  try{
-    const res=await callEdgeFn("trade-quota-status",{},userToken);
-    if(res.quota){
-      setTradeQuota({...res.quota,loading:false,error:null});
-    }else{
-      setTradeQuota({limit_per_day:2,used_count:0,reserved_count:0,remaining_count:0,quota_date:"",is_unlimited:false,loading:false,error:"Failed to load quota"});
-    }
-  }catch(e){
-    console.error("[trade-quota] fetch failed:",e);
-    setTradeQuota({limit_per_day:2,used_count:0,reserved_count:0,remaining_count:0,quota_date:"",is_unlimited:false,loading:false,error:"Quota fetch error"});
-  }
 }
-}
-
 let _trackedEmail = "";
 function setTrackedUser(email: string) { _trackedEmail = email || ""; }
 
@@ -2602,6 +2585,20 @@ export default function App(){
   var [faabB,setFaabB]=useState(0);
   var [analyzed,setAnalyzed]=useState(false);
   var [tradeQuota,setTradeQuota]=useState({limit_per_day:2,used_count:0,reserved_count:0,remaining_count:0,quota_date:"",is_unlimited:false,loading:true,error:null});
+  async function fetchTradeQuotaStatus(userToken: string) {
+    if(!userToken){setTradeQuota({limit_per_day:2,used_count:0,reserved_count:0,remaining_count:0,quota_date:"",is_unlimited:false,loading:false,error:"Not authenticated"});return;}
+    try{
+      const res=await callEdgeFn("trade-quota-status",{},userToken);
+      if(res.quota){
+        setTradeQuota({...res.quota,loading:false,error:null});
+      }else{
+        setTradeQuota({limit_per_day:2,used_count:0,reserved_count:0,remaining_count:0,quota_date:"",is_unlimited:false,loading:false,error:"Failed to load quota"});
+      }
+    }catch(e){
+      console.error("[trade-quota] fetch failed:",e);
+      setTradeQuota({limit_per_day:2,used_count:0,reserved_count:0,remaining_count:0,quota_date:"",is_unlimited:false,loading:false,error:"Quota fetch error"});
+    }
+  }
   var [pendingRequestRef]=useState({requestId:null,payloadKey:null});
   var [impTab,setImpTab]=useState("sleeper");
   var [slUser,setSlUser]=useState("");
