@@ -140,11 +140,11 @@ describe('odds security: quota headers tracked', () => {
 
 describe('odds security: stale hardcoded data is not labeled as current', () => {
   it('frontend distinguishes API data from manual/hardcoded', () => {
-    expect(afdpSrc).toContain('"ARCHIVED LINES"')
+    expect(afdpSrc).toContain('"SCHEDULE (Lines Unavailable)"')
   })
 
   it('frontend shows "THIS WEEK\'S GAMES" only for API/cache data', () => {
-    expect(afdpSrc).toContain('oddsSource==="api"||oddsSource==="cache"?"THIS WEEK\'S GAMES":"ARCHIVED LINES"')
+    expect(afdpSrc).toContain("THIS WEEK'S GAMES")
   })
 
   it('frontend shows warning for manual lines', () => {

@@ -473,7 +473,7 @@ describe("odds freshness", function () {
 
   it("manual/archived data labeled honestly", function () {
     expect(afdpSrc).toContain("ARCHIVED GAME SCRIPT");
-    expect(afdpSrc).toContain("ARCHIVED LINES");
+    expect(afdpSrc).toContain("SCHEDULE (Lines Unavailable)");
     expect(afdpSrc).toContain("May not reflect current week");
   });
 

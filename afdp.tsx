@@ -338,27 +338,48 @@ propResults:{
 } as {[k:string]:number|string}
 }
 ];
-// Current week's lines (Week 2, updated Sep 15)
-var WEEKLY_LINES:[string,string,number,number][]=[
-  // [home, away, homeSpread, total]  — Week 2 lines (updated Sep 15)
-  ["BUF","DET",-4,53.5],["ATL","CAR",1.5,43.5],
-  ["HOU","CIN",-3,46.5],["TB","CLE",-8.5,41],["NYJ","GB",3.5,44.5],
-  ["CHI","MIN",-5.5,49],["BAL","NO",-8.5,47],["TEN","PHI",7,40],
-  ["NE","PIT",-5.5,41.5],["DEN","JAX",-2.5,44],["LAC","LV",-7,44],
-  ["SF","MIA",-13,46],["ARI","SEA",4.5,41.5],["DAL","WAS",-3.5,50.5],
-  ["KC","IND",-6.5,48],["LAR","NYG",-7.5,48.5]
+// Current week's lines (Week 5, Oct 8-12 2026)
+var WEEKLY_LINES:[string,string,number|null,number|null][]=[
+  // [home, away, homeSpread, total]  — Week 5 schedule (Oct 8-12 2026) — 15 games
+  // Byes: CAR, KC · LIVE ODDS FETCHED FROM THE_ODDS_API — schedule only, no fabricated odds
+  ["DAL","TB",null,null],["JAX","PHI",null,null],["MIA","CIN",null,null],
+  ["NE","LV",null,null],["NO","MIN",null,null],["NYJ","CLE",null,null],
+  ["PIT","IND",null,null],["TEN","HOU",null,null],["WAS","NYG",null,null],
+  ["GB","CHI",null,null],["LAC","DEN",null,null],["ARI","DET",null,null],
+  ["SEA","SF",null,null],["ATL","BAL",null,null],["LAR","BUF",null,null]
 ];
 // Current week's results — add scores as games finish
 var WEEKLY_RESULTS:{[k:string]:[number,number]}={
 };
-function buildHardcodedOdds():{[t:string]:{spread:number,total:number,opp:string}}{
-  var r:{[t:string]:{spread:number,total:number,opp:string}}={};
+// Week 6 schedule (Oct 15-19 2026) — 14 games
+// Byes: CIN, DET, MIA, MIN · Fallback for provider unavailability
+var WEEK_6_LINES:[string,string,number|null,number|null][]=[
+  // [home, away, homeSpread, total]  — Week 6 schedule (Oct 15-19 2026) — 14 games
+  // Byes: CIN, DET, MIA, MIN
+  ["DEN","SEA",null,null],["HOU","JAX",null,null],["CHI","ATL",null,null],
+  ["BAL","CLE",null,null],["TEN","IND",null,null],["NYJ","NE",null,null],
+  ["NYG","NO",null,null],["PHI","CAR",null,null],["PIT","TB",null,null],
+  ["LAR","ARI",null,null],["KC","LAC",null,null],["BUF","LV",null,null],
+  ["DAL","GB",null,null],["SF","WAS",null,null]
+];
+// Get current NFL week based on date (Oct 2026)
+function getCurrentNFLWeek(date:Date=new Date()):{week:number,lines:[string,string,number|null,number|null][],label:string}{
+  var month=date.getMonth(),day=date.getDate();
+  if(month===9){// October
+    if(day<=12){return{week:5,lines:WEEKLY_LINES,label:"Week 5"};}
+    if(day<=19){return{week:6,lines:WEEK_6_LINES,label:"Week 6"};}
+  }
+  // Fallback: return Week 5
+  return{week:5,lines:WEEKLY_LINES,label:"Week 5"};
+}
+function buildHardcodedOdds():{[t:string]:{spread:number|null,total:number|null,opp:string}}{
+  var r:{[t:string]:{spread:number|null,total:number|null,opp:string}}={};
   WEEKLY_LINES.forEach(function(g){r[g[0]]={spread:g[2],total:g[3],opp:g[1]};r[g[1]]={spread:-g[2],total:g[3],opp:g[0]};});
   return r;
 }
 // fetchOdds calls the server-side fetch-odds Edge Function (never the provider directly).
 // Returns {odds, source} — source distinguishes "api" / "cache" / "manual" / "unavailable".
-async function fetchOdds():Promise<{odds:{[t:string]:{spread:number,total:number,opp:string}},source:string,fetchedAt:string,stale:boolean}>{
+async function fetchOdds():Promise<{odds:{[t:string]:{spread:number|null,total:number|null,opp:string}},source:string,fetchedAt:string,stale:boolean}>{
   try{
     var r=await fetch(EDGE_URL+"/fetch-odds",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPA_KEY},body:"{}"});
     var data=await r.json();
@@ -370,16 +391,16 @@ async function fetchOdds():Promise<{odds:{[t:string]:{spread:number,total:number
     return {odds:{},source:"unavailable",fetchedAt:"",stale:false};
   }
 }
-function getGameScript(team:string,odds:{[t:string]:{spread:number,total:number,opp:string}}|null):{spread:number,total:number,script:string,label:string,color:string,opp:string}|null{
+function getGameScript(team:string,odds:{[t:string]:{spread:number|null,total:number|null,opp:string}}|null):{spread:number|null,total:number|null,script:string,label:string,color:string,opp:string}|null{
   if(!odds)return null;
   var g=odds[team];if(!g)return null;
   var spread=g.spread,total=g.total;
   var script="Neutral",label="Neutral",color="#94a3b8";
-  if(spread<=-7){script="Positive";label="Positive Script";color="#22c55e";}
+  if(spread!==null){if(spread<=-7){script="Positive";label="Positive Script";color="#22c55e";}
   else if(spread<=-3){script="Positive";label="Slight Fav";color="#4ade80";}
   else if(spread>=7){script="Negative";label="Negative Script";color="#f87171";}
-  else if(spread>=3){script="Negative";label="Slight Dog";color="#fb923c";}
-  var totalNote=total>=50?" · Shootout":total<=41?" · Low O/U":"";
+  else if(spread>=3){script="Negative";label="Slight Dog";color="#fb923c";}}
+  var totalNote=total!==null?(total>=50?" · Shootout":total<=41?" · Low O/U":""):" · Unavailable";
   return{spread,total,script,label:label+totalNote,color,opp:g.opp};
 }
 
@@ -2014,110 +2035,11 @@ const OROY_ODDS=[
 {name:"Ty Simpson",pos:"QB",team:"LAR",odds:"+3300"},{name:"Omar Cooper Jr.",pos:"WR",team:"NYJ",odds:"+4000"},
 {name:"KC Concepcion",pos:"WR",team:"CLE",odds:"+5000"},{name:"Kaelon Black",pos:"RB",team:"SF",odds:"+6000"}
 ];
-// Week 2 Game Props (Sep 18-21, 2026) — updated weekly
+// Week 5 Game Props (Oct 12-14, 2026) — updated from provider
 const WEEKLY_PROPS=[
-// Week 2 Passing Yards (updated Sep 17)
-{name:"Josh Allen",pos:"QB",team:"BUF",stat:"Pass Yds",ou:268.5,opp:"DET"},
-{name:"Jared Goff",pos:"QB",team:"DET",stat:"Pass Yds",ou:268.5,opp:"BUF"},
-{name:"Dak Prescott",pos:"QB",team:"DAL",stat:"Pass Yds",ou:262.5,opp:"WAS"},
-{name:"Joe Burrow",pos:"QB",team:"CIN",stat:"Pass Yds",ou:258.5,opp:"HOU"},
-{name:"Jordan Love",pos:"QB",team:"GB",stat:"Pass Yds",ou:254.5,opp:"NYJ"},
-{name:"C.J. Stroud",pos:"QB",team:"HOU",stat:"Pass Yds",ou:248.5,opp:"CIN"},
-{name:"Caleb Williams",pos:"QB",team:"CHI",stat:"Pass Yds",ou:244.5,opp:"MIN"},
-{name:"Patrick Mahomes",pos:"QB",team:"KC",stat:"Pass Yds",ou:244.5,opp:"IND"},
-{name:"Jayden Daniels",pos:"QB",team:"WAS",stat:"Pass Yds",ou:238.5,opp:"DAL"},
-{name:"Tyler Shough",pos:"QB",team:"NO",stat:"Pass Yds",ou:237.5,opp:"BAL"},
-{name:"Brock Purdy",pos:"QB",team:"SF",stat:"Pass Yds",ou:235.5,opp:"MIA"},
-{name:"Lamar Jackson",pos:"QB",team:"BAL",stat:"Pass Yds",ou:224.5,opp:"NO"},
-{name:"Bo Nix",pos:"QB",team:"DEN",stat:"Pass Yds",ou:224.5,opp:"JAX"},
-{name:"Bryce Young",pos:"QB",team:"CAR",stat:"Pass Yds",ou:220.5,opp:"ATL"},
-// Week 2 Rushing Yards (updated Sep 17)
-{name:"Jahmyr Gibbs",pos:"RB",team:"DET",stat:"Rush Yds",ou:90.5,opp:"BUF"},
-{name:"Derrick Henry",pos:"RB",team:"BAL",stat:"Rush Yds",ou:88.5,opp:"NO"},
-{name:"Jonathan Taylor",pos:"RB",team:"IND",stat:"Rush Yds",ou:87.5,opp:"KC"},
-{name:"Bijan Robinson",pos:"RB",team:"ATL",stat:"Rush Yds",ou:84.5,opp:"CAR"},
-{name:"Saquon Barkley",pos:"RB",team:"PHI",stat:"Rush Yds",ou:82.5,opp:"TEN"},
-{name:"Kenneth Walker III",pos:"RB",team:"KC",stat:"Rush Yds",ou:78.5,opp:"IND"},
-{name:"James Cook",pos:"RB",team:"BUF",stat:"Rush Yds",ou:78.5,opp:"DET"},
-{name:"D'Andre Swift",pos:"RB",team:"CHI",stat:"Rush Yds",ou:73.5,opp:"MIN"},
-{name:"Breece Hall",pos:"RB",team:"NYJ",stat:"Rush Yds",ou:68.5,opp:"GB"},
-{name:"David Montgomery",pos:"RB",team:"HOU",stat:"Rush Yds",ou:66.5,opp:"CIN"},
-{name:"Christian McCaffrey",pos:"RB",team:"SF",stat:"Rush Yds",ou:66.5,opp:"MIA"},
-{name:"Ashton Jeanty",pos:"RB",team:"LV",stat:"Rush Yds",ou:58.5,opp:"LAC"},
-{name:"Chase Brown",pos:"RB",team:"CIN",stat:"Rush Yds",ou:56.5,opp:"HOU"},
-{name:"Caleb Williams",pos:"QB",team:"CHI",stat:"Rush Yds",ou:20.5,opp:"MIN"},
-// Week 2 Receiving Yards (updated Sep 17)
-{name:"Puka Nacua",pos:"WR",team:"LAR",stat:"Rec Yds",ou:82.5,opp:"NYG"},
-{name:"Justin Jefferson",pos:"WR",team:"MIN",stat:"Rec Yds",ou:78.5,opp:"CHI"},
-{name:"Jaxon Smith-Njigba",pos:"WR",team:"SEA",stat:"Rec Yds",ou:76.5,opp:"ARI"},
-{name:"Nico Collins",pos:"WR",team:"HOU",stat:"Rec Yds",ou:76.5,opp:"CIN"},
-{name:"CeeDee Lamb",pos:"WR",team:"DAL",stat:"Rec Yds",ou:75.5,opp:"WAS"},
-{name:"Chris Olave",pos:"WR",team:"NO",stat:"Rec Yds",ou:69.5,opp:"BAL"},
-{name:"Ja'Marr Chase",pos:"WR",team:"CIN",stat:"Rec Yds",ou:69.5,opp:"HOU"},
-{name:"Amon-Ra St. Brown",pos:"WR",team:"DET",stat:"Rec Yds",ou:68.5,opp:"BUF"},
-{name:"Malik Nabers",pos:"WR",team:"NYG",stat:"Rec Yds",ou:64.5,opp:"LAR"},
-{name:"Trey McBride",pos:"TE",team:"ARI",stat:"Rec Yds",ou:62.5,opp:"SEA"},
-{name:"Dalton Kincaid",pos:"TE",team:"BUF",stat:"Rec Yds",ou:62.5,opp:"DET"},
-{name:"Christian Watson",pos:"WR",team:"GB",stat:"Rec Yds",ou:60.5,opp:"NYJ"},
-{name:"Tee Higgins",pos:"WR",team:"CIN",stat:"Rec Yds",ou:58.5,opp:"HOU"},
-{name:"Parker Washington",pos:"WR",team:"JAX",stat:"Rec Yds",ou:54.5,opp:"DEN"},
-{name:"Jaylen Waddle",pos:"WR",team:"DEN",stat:"Rec Yds",ou:52.5,opp:"JAX"},
-{name:"Jalen Coker",pos:"WR",team:"CAR",stat:"Rec Yds",ou:48.5,opp:"ATL"},
-{name:"Colston Loveland",pos:"TE",team:"CHI",stat:"Rec Yds",ou:47.5,opp:"MIN"},
-{name:"Tucker Kraft",pos:"TE",team:"GB",stat:"Rec Yds",ou:46.5,opp:"NYJ"},
-{name:"Sam LaPorta",pos:"TE",team:"DET",stat:"Rec Yds",ou:46.5,opp:"BUF"},
-{name:"Tyler Warren",pos:"TE",team:"IND",stat:"Rec Yds",ou:45.5,opp:"KC"},
-{name:"Travis Kelce",pos:"TE",team:"KC",stat:"Rec Yds",ou:42.5,opp:"IND"},
-// Week 2 Receiving Yards — Jahmyr Gibbs RB receiving
-{name:"Jahmyr Gibbs",pos:"RB",team:"DET",stat:"Rec Yds",ou:29.5,opp:"BUF"},
-// Week 2 Passing TDs
-{name:"Josh Allen",pos:"QB",team:"BUF",stat:"Pass TD",ou:1.5,opp:"DET"},
-{name:"Caleb Williams",pos:"QB",team:"CHI",stat:"Pass TD",ou:1.5,opp:"MIN"},
-{name:"Joe Burrow",pos:"QB",team:"CIN",stat:"Pass TD",ou:1.5,opp:"HOU"},
-{name:"Patrick Mahomes",pos:"QB",team:"KC",stat:"Pass TD",ou:1.5,opp:"IND"},
-{name:"Jared Goff",pos:"QB",team:"DET",stat:"Pass TD",ou:1.5,opp:"BUF"},
-{name:"Brock Purdy",pos:"QB",team:"SF",stat:"Pass TD",ou:1.5,opp:"MIA"},
-{name:"Jordan Love",pos:"QB",team:"GB",stat:"Pass TD",ou:1.5,opp:"NYJ"},
-{name:"Lamar Jackson",pos:"QB",team:"BAL",stat:"Pass TD",ou:1.5,opp:"NO"},
-{name:"Dak Prescott",pos:"QB",team:"DAL",stat:"Pass TD",ou:1.5,opp:"WAS"},
-{name:"Tyler Shough",pos:"QB",team:"NO",stat:"Pass TD",ou:1.5,opp:"BAL"},
-{name:"C.J. Stroud",pos:"QB",team:"HOU",stat:"Pass TD",ou:1.5,opp:"CIN"},
-{name:"Jayden Daniels",pos:"QB",team:"WAS",stat:"Pass TD",ou:1.5,opp:"DAL"},
-// Week 2 Receptions
-{name:"Puka Nacua",pos:"WR",team:"LAR",stat:"Receptions",ou:7.5,opp:"NYG"},
-{name:"Chris Olave",pos:"WR",team:"NO",stat:"Receptions",ou:6.5,opp:"BAL"},
-{name:"Amon-Ra St. Brown",pos:"WR",team:"DET",stat:"Receptions",ou:6.5,opp:"BUF"},
-{name:"Justin Jefferson",pos:"WR",team:"MIN",stat:"Receptions",ou:6.5,opp:"CHI"},
-{name:"CeeDee Lamb",pos:"WR",team:"DAL",stat:"Receptions",ou:6.5,opp:"WAS"},
-{name:"Trey McBride",pos:"TE",team:"ARI",stat:"Receptions",ou:6.5,opp:"SEA"},
-{name:"Jaxon Smith-Njigba",pos:"WR",team:"SEA",stat:"Receptions",ou:6.5,opp:"ARI"},
-{name:"Ja'Marr Chase",pos:"WR",team:"CIN",stat:"Receptions",ou:5.5,opp:"HOU"},
-{name:"Nico Collins",pos:"WR",team:"HOU",stat:"Receptions",ou:5.5,opp:"CIN"},
-{name:"Malik Nabers",pos:"WR",team:"NYG",stat:"Receptions",ou:5.5,opp:"LAR"},
-{name:"Dalton Kincaid",pos:"TE",team:"BUF",stat:"Receptions",ou:4.5,opp:"DET"},
-{name:"DeVonta Smith",pos:"WR",team:"PHI",stat:"Receptions",ou:4.5,opp:"TEN"},
-// Week 2 Anytime TD
-{name:"Derrick Henry",pos:"RB",team:"BAL",stat:"Any TD",ou:0,opp:"NO",odds:"-165"},
-{name:"Saquon Barkley",pos:"RB",team:"PHI",stat:"Any TD",ou:0,opp:"TEN",odds:"-155"},
-{name:"Jahmyr Gibbs",pos:"RB",team:"DET",stat:"Any TD",ou:0,opp:"BUF",odds:"-150"},
-{name:"Kenneth Walker III",pos:"RB",team:"KC",stat:"Any TD",ou:0,opp:"IND",odds:"-140"},
-{name:"Bijan Robinson",pos:"RB",team:"ATL",stat:"Any TD",ou:0,opp:"CAR",odds:"-120"},
-{name:"D'Andre Swift",pos:"RB",team:"CHI",stat:"Any TD",ou:0,opp:"MIN",odds:"-120"},
-{name:"Christian McCaffrey",pos:"RB",team:"SF",stat:"Any TD",ou:0,opp:"MIA",odds:"-120"},
-{name:"Ja'Marr Chase",pos:"WR",team:"CIN",stat:"Any TD",ou:0,opp:"HOU",odds:"-110"},
-{name:"James Cook",pos:"RB",team:"BUF",stat:"Any TD",ou:0,opp:"DET",odds:"+120"},
-{name:"Josh Allen",pos:"QB",team:"BUF",stat:"Any TD",ou:0,opp:"DET",odds:"+120"},
-{name:"Amon-Ra St. Brown",pos:"WR",team:"DET",stat:"Any TD",ou:0,opp:"BUF",odds:"+100"},
-{name:"CeeDee Lamb",pos:"WR",team:"DAL",stat:"Any TD",ou:0,opp:"WAS",odds:"+105"},
-{name:"Puka Nacua",pos:"WR",team:"LAR",stat:"Any TD",ou:0,opp:"NYG",odds:"+105"},
-{name:"Justin Jefferson",pos:"WR",team:"MIN",stat:"Any TD",ou:0,opp:"CHI",odds:"+110"},
-{name:"Breece Hall",pos:"RB",team:"NYJ",stat:"Any TD",ou:0,opp:"GB",odds:"+130"},
-{name:"Jonathan Taylor",pos:"RB",team:"IND",stat:"Any TD",ou:0,opp:"KC",odds:"+130"},
-{name:"Nico Collins",pos:"WR",team:"HOU",stat:"Any TD",ou:0,opp:"CIN",odds:"+140"},
-{name:"Chris Olave",pos:"WR",team:"NO",stat:"Any TD",ou:0,opp:"BAL",odds:"+150"},
-{name:"Jalen Coker",pos:"WR",team:"CAR",stat:"Any TD",ou:0,opp:"ATL",odds:"+175"},
-{name:"Trey McBride",pos:"TE",team:"ARI",stat:"Any TD",ou:0,opp:"SEA",odds:"+210"},
-{name:"Dalton Kincaid",pos:"TE",team:"BUF",stat:"Any TD",ou:0,opp:"DET",odds:"+280"}
+  // Player props should be fetched from the odds provider
+  // If available, provider will return current week props
+  // Hardcoded fallback should only be used if provider unavailable
 ];
 // Current week's prop results — add as games finish
 var PROP_RESULTS:{[k:string]:number|string}={
@@ -8284,7 +8206,7 @@ export default function App(){
       // VEGAS LINES
       rankSubTab==="vegas"&&!canAccessVegas(user)&&PaywallCard("vegas"),
       rankSubTab==="vegas"&&canAccessVegas(user)&&(function(){
-        var games=oddsData?(function(){var eventMap:any={};Object.keys(oddsData).forEach(function(team){var g=oddsData[team];if(!g)return;if(!g.eventId)return;if(!eventMap[g.eventId]){eventMap[g.eventId]=g;}});return Object.values(eventMap).filter(function(g:any){return g.spread!==null||g.total!==null;}).sort(function(a:any,b:any){if(a.total===null&&b.total===null)return 0;if(a.total===null)return 1;if(b.total===null)return-1;return b.total-a.total;}).map(function(g:any){return{home:g.homeTeam,away:g.awayTeam,spread:g.spread,total:g.total,eventId:g.eventId};});})():[];
+        var games=oddsData?(function(){var eventMap:any={};Object.keys(oddsData).forEach(function(team){var g=oddsData[team];if(!g)return;if(!g.eventId)return;if(!eventMap[g.eventId]){eventMap[g.eventId]=g;}});return Object.values(eventMap).sort(function(a:any,b:any){if(a.total===null&&b.total===null)return 0;if(a.total===null)return 1;if(b.total===null)return-1;return b.total-a.total;}).map(function(g:any){return{home:g.homeTeam,away:g.awayTeam,spread:g.spread,total:g.total,eventId:g.eventId};});})():[];
         var hasData=games.length>0;
         var TEAM_FULL:{[k:string]:string}={"ARI":"Cardinals","ATL":"Falcons","BAL":"Ravens","BUF":"Bills","CAR":"Panthers","CHI":"Bears","CIN":"Bengals","CLE":"Browns","DAL":"Cowboys","DEN":"Broncos","DET":"Lions","GB":"Packers","HOU":"Texans","IND":"Colts","JAX":"Jaguars","KC":"Chiefs","LAC":"Chargers","LAR":"Rams","LV":"Raiders","MIA":"Dolphins","MIN":"Vikings","NE":"Patriots","NO":"Saints","NYG":"Giants","NYJ":"Jets","PHI":"Eagles","PIT":"Steelers","SF":"49ers","SEA":"Seahawks","TB":"Buccaneers","TEN":"Titans","WAS":"Commanders"};
         var sbTier=function(i:number){return i<4?"#22c55e":i<10?"#4ade80":i<17?"#94a3b8":i<24?"#fb923c":"#f87171";};
@@ -8324,7 +8246,7 @@ export default function App(){
             ),
             hasData&&React.createElement("div",{style:{marginBottom:12}},
               React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:12,flexWrap:"wrap"}},
-                React.createElement("div",{style:{fontSize:10,fontWeight:800,color:"#059669",letterSpacing:1}},oddsSource==="api"||oddsSource==="cache"?"THIS WEEK'S GAMES":"ARCHIVED LINES"),
+                React.createElement("div",{style:{fontSize:10,fontWeight:800,color:"#059669",letterSpacing:1}},oddsSource==="api"||oddsSource==="cache"?"THIS WEEK'S GAMES":oddsSource==="manual"?"SCHEDULE (Lines Unavailable)":"LINES UNAVAILABLE"),
                 React.createElement("div",{style:{background:"#059669",color:"#fff",borderRadius:10,padding:"2px 8px",fontSize:10,fontWeight:800}},games.length),
                 oddsStale&&(oddsSource==="api"||oddsSource==="cache")&&React.createElement("div",{style:{fontSize:9,color:"#f59e0b",fontWeight:600}},"Updating lines\u2026"),
                 !oddsStale&&oddsFetchedAt&&(oddsSource==="api"||oddsSource==="cache")&&React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:500}},"Fetched "+new Date(oddsFetchedAt).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})),
@@ -8371,12 +8293,12 @@ export default function App(){
                     React.createElement("div",{style:{display:"flex",gap:8,marginBottom:10}},
                       React.createElement("div",{style:{flex:1,background:T.bgInput,borderRadius:12,padding:"10px 12px",textAlign:"center"}},
                         React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:700,letterSpacing:0.5,marginBottom:4}},"SPREAD"),
-                        React.createElement("div",{style:{fontWeight:900,fontSize:18,color:T.text}},(g.spread>0?"+":"")+g.spread),
+                        React.createElement("div",{style:{fontWeight:900,fontSize:18,color:T.text}},(g.spread===null?"Line N/A":g.spread>0?"+":"")+g.spread),
                         isFinal&&React.createElement("div",{style:{fontSize:10,fontWeight:800,color:spreadColor,marginTop:4}},spreadCover)
                       ),
                       React.createElement("div",{style:{flex:1,background:T.bgInput,borderRadius:12,padding:"10px 12px",textAlign:"center"}},
                         React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:700,letterSpacing:0.5,marginBottom:4}},"O/U TOTAL"),
-                        React.createElement("div",{style:{fontWeight:900,fontSize:18,color:T.text}},g.total),
+                        React.createElement("div",{style:{fontWeight:900,fontSize:18,color:T.text}},g.total===null?"Unavailable":g.total),
                         isFinal&&React.createElement("div",{style:{fontSize:10,fontWeight:800,color:ouColor,marginTop:4}},ouResult+" ("+actualTotal+")")
                       )
                     ),
@@ -8384,12 +8306,12 @@ export default function App(){
                       gsAway&&React.createElement("div",{style:{background:gsAway.color+"10",border:"1px solid "+gsAway.color+"28",borderRadius:12,padding:"10px 12px"}},
                         React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:3,fontWeight:600}},g.away),
                         React.createElement("div",{style:{fontWeight:800,fontSize:13,color:gsAway.color}},gsAway.script),
-                        React.createElement("div",{style:{fontSize:10,color:T.textDim,marginTop:2}},"Spread: "+(gsAway.spread>0?"+":"")+gsAway.spread)
+                        React.createElement("div",{style:{fontSize:10,color:T.textDim,marginTop:2}},"Spread: "+(gsAway.spread===null?"Unavailable":gsAway.spread>0?"+":"")+gsAway.spread)
                       ),
                       gsHome&&React.createElement("div",{style:{background:gsHome.color+"10",border:"1px solid "+gsHome.color+"28",borderRadius:12,padding:"10px 12px"}},
                         React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:3,fontWeight:600}},g.home),
                         React.createElement("div",{style:{fontWeight:800,fontSize:13,color:gsHome.color}},gsHome.script),
-                        React.createElement("div",{style:{fontSize:10,color:T.textDim,marginTop:2}},"Spread: "+(gsHome.spread>0?"+":"")+gsHome.spread)
+                        React.createElement("div",{style:{fontSize:10,color:T.textDim,marginTop:2}},"Spread: "+(gsHome.spread===null?"Unavailable":gsHome.spread>0?"+":"")+gsHome.spread)
                       )
                     )
                   )
