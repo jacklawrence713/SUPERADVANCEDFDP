@@ -7,6 +7,7 @@ import { canAccessLeagueFeatures, canAccessVegas, canAccessValueHistory, canAcce
 import type { UserProfile } from "./src/entitlements";
 import { getFeaturePaywallCopy } from "./src/paywall-config";
 import type { FeatureKey } from "./src/paywall-config";
+import { getWeekByNumber, getPriorWeeks, getCurrentNFLWeek as getCanonicalCurrentNFLWeek, type NFLWeek, type Game } from "./src/data/nfl-2026-weeks";
 
 // ── Supabase ─────────────────────────────────────────────────────────────────
 const SUPA_URL = (import.meta as any).env?.VITE_SUPABASE_URL;
@@ -245,143 +246,14 @@ function headshot(n:string){var id=SLEEPER_IDS[n]||_sleeperNameMap[n];return id?
 
 // ── Vegas Lines / Game Script (via fetch-odds Edge Function) ─────────────────
 // ── PAST WEEKS ARCHIVE ──
-var PAST_WEEKS=[
-{week:1,label:"Week 1 · Sep 10–14",
-lines:[
-["SEA","NE",-3.5,45.5],["LAR","SF",3.5,48.5],
-["CIN","TB",-3.5,50.5],["DET","NO",-7,49.5],["TEN","NYJ",-1.5,38.5],
-["IND","BAL",3.5,47.5],["PIT","ATL",-5.5,41.5],["CAR","CHI",3,47.5],
-["JAX","CLE",-8.5,39.5],["HOU","BUF",1.5,44.5],["LV","MIA",-3,40.5],
-["MIN","GB",-1.5,46.5],["PHI","WAS",-6,44.5],["LAC","ARI",-9.5,47.5],
-["NYG","DAL",3,48.5],["KC","DEN",-2.5,43.5]
-] as [string,string,number,number][],
-results:{
-"SEA-NE":[13,10] as [number,number],"LAR-SF":[7,27] as [number,number],
-"CIN-TB":[33,27] as [number,number],"DET-NO":[31,30] as [number,number],
-"TEN-NYJ":[10,23] as [number,number],"IND-BAL":[23,41] as [number,number],
-"PIT-ATL":[20,13] as [number,number],"CAR-CHI":[37,59] as [number,number],
-"JAX-CLE":[34,10] as [number,number],"HOU-BUF":[31,36] as [number,number],
-"LV-MIA":[27,13] as [number,number],"MIN-GB":[39,22] as [number,number],
-"PHI-WAS":[24,22] as [number,number],"LAC-ARI":[14,26] as [number,number],
-"NYG-DAL":[28,20] as [number,number],"KC-DEN":[31,10] as [number,number]
-} as {[k:string]:[number,number]},
-props:[
-// Pass Yds
-{name:"Joe Burrow",pos:"QB",team:"CIN",stat:"Pass Yds",ou:264.5,opp:"TB"},
-{name:"Matthew Stafford",pos:"QB",team:"LAR",stat:"Pass Yds",ou:263.5,opp:"SF"},
-{name:"Dak Prescott",pos:"QB",team:"DAL",stat:"Pass Yds",ou:260.5,opp:"NYG"},
-{name:"Jared Goff",pos:"QB",team:"DET",stat:"Pass Yds",ou:261.5,opp:"NO"},
-{name:"Tyler Shough",pos:"QB",team:"NO",stat:"Pass Yds",ou:246.5,opp:"DET"},
-{name:"Brock Purdy",pos:"QB",team:"SF",stat:"Pass Yds",ou:244.5,opp:"LAR"},
-{name:"Jordan Love",pos:"QB",team:"GB",stat:"Pass Yds",ou:241.5,opp:"MIN"},
-{name:"Justin Herbert",pos:"QB",team:"LAC",stat:"Pass Yds",ou:236.5,opp:"ARI"},
-{name:"Patrick Mahomes",pos:"QB",team:"KC",stat:"Pass Yds",ou:232.5,opp:"DEN"},
-{name:"Josh Allen",pos:"QB",team:"BUF",stat:"Pass Yds",ou:220.5,opp:"HOU"},
-{name:"Lamar Jackson",pos:"QB",team:"BAL",stat:"Pass Yds",ou:219.5,opp:"IND"},
-{name:"Caleb Williams",pos:"QB",team:"CHI",stat:"Pass Yds",ou:226.5,opp:"CAR"},
-// Rush Yds
-{name:"Jahmyr Gibbs",pos:"RB",team:"DET",stat:"Rush Yds",ou:83.5,opp:"NO"},
-{name:"Derrick Henry",pos:"RB",team:"BAL",stat:"Rush Yds",ou:80.5,opp:"IND"},
-{name:"Jonathan Taylor",pos:"RB",team:"IND",stat:"Rush Yds",ou:77.5,opp:"BAL"},
-{name:"Saquon Barkley",pos:"RB",team:"PHI",stat:"Rush Yds",ou:77.5,opp:"WAS"},
-{name:"Bijan Robinson",pos:"RB",team:"ATL",stat:"Rush Yds",ou:76.5,opp:"PIT"},
-{name:"James Cook",pos:"RB",team:"BUF",stat:"Rush Yds",ou:74.5,opp:"HOU"},
-{name:"Javonte Williams",pos:"RB",team:"DAL",stat:"Rush Yds",ou:73.5,opp:"NYG"},
-{name:"D'Andre Swift",pos:"RB",team:"CHI",stat:"Rush Yds",ou:69.5,opp:"CAR"},
-{name:"Devon Achane",pos:"RB",team:"MIA",stat:"Rush Yds",ou:66.5,opp:"LV"},
-{name:"Breece Hall",pos:"RB",team:"NYJ",stat:"Rush Yds",ou:64.5,opp:"TEN"},
-{name:"Kenneth Walker III",pos:"RB",team:"KC",stat:"Rush Yds",ou:63.5,opp:"DEN"},
-{name:"Christian McCaffrey",pos:"RB",team:"SF",stat:"Rush Yds",ou:60.5,opp:"LAR"},
-// Rec Yds
-{name:"Puka Nacua",pos:"WR",team:"LAR",stat:"Rec Yds",ou:90.5,opp:"SF"},
-{name:"Ja'Marr Chase",pos:"WR",team:"CIN",stat:"Rec Yds",ou:87.5,opp:"TB"},
-{name:"Jaxon Smith-Njigba",pos:"WR",team:"SEA",stat:"Rec Yds",ou:81.5,opp:"NE"},
-{name:"CeeDee Lamb",pos:"WR",team:"DAL",stat:"Rec Yds",ou:76.5,opp:"NYG"},
-{name:"Chris Olave",pos:"WR",team:"NO",stat:"Rec Yds",ou:76.5,opp:"DET"},
-{name:"Justin Jefferson",pos:"WR",team:"MIN",stat:"Rec Yds",ou:74.5,opp:"GB"},
-{name:"Nico Collins",pos:"WR",team:"HOU",stat:"Rec Yds",ou:69.5,opp:"BUF"},
-{name:"Tee Higgins",pos:"WR",team:"CIN",stat:"Rec Yds",ou:61.5,opp:"TB"},
-{name:"Malik Nabers",pos:"WR",team:"NYG",stat:"Rec Yds",ou:60.5,opp:"DAL"},
-{name:"Trey McBride",pos:"TE",team:"ARI",stat:"Rec Yds",ou:58.5,opp:"LAC"},
-{name:"Rashee Rice",pos:"WR",team:"KC",stat:"Rec Yds",ou:59.5,opp:"DEN"},
-// Any TD
-{name:"Jahmyr Gibbs",pos:"RB",team:"DET",stat:"Any TD",ou:0,opp:"NO",odds:"-155"},
-{name:"Saquon Barkley",pos:"RB",team:"PHI",stat:"Any TD",ou:0,opp:"WAS",odds:"-150"},
-{name:"Ja'Marr Chase",pos:"WR",team:"CIN",stat:"Any TD",ou:0,opp:"TB",odds:"-126"},
-{name:"Derrick Henry",pos:"RB",team:"BAL",stat:"Any TD",ou:0,opp:"IND",odds:"-135"},
-{name:"Jonathan Taylor",pos:"RB",team:"IND",stat:"Any TD",ou:0,opp:"BAL",odds:"-120"},
-{name:"Amon-Ra St. Brown",pos:"WR",team:"DET",stat:"Any TD",ou:0,opp:"NO",odds:"+100"},
-{name:"CeeDee Lamb",pos:"WR",team:"DAL",stat:"Any TD",ou:0,opp:"NYG",odds:"+105"},
-{name:"Christian McCaffrey",pos:"RB",team:"SF",stat:"Any TD",ou:0,opp:"LAR",odds:"-115"},
-{name:"Justin Jefferson",pos:"WR",team:"MIN",stat:"Any TD",ou:0,opp:"GB",odds:"+115"},
-{name:"Rashee Rice",pos:"WR",team:"KC",stat:"Any TD",ou:0,opp:"DEN",odds:"+140"},
-{name:"Dalton Kincaid",pos:"TE",team:"BUF",stat:"Any TD",ou:0,opp:"HOU",odds:"+340"}
-] as {name:string,pos:string,team:string,stat:string,ou:number,opp:string,odds?:string}[],
-propResults:{
-"Joe Burrow|Pass Yds":254,"Matthew Stafford|Pass Yds":155,"Dak Prescott|Pass Yds":175,
-"Jared Goff|Pass Yds":206,"Tyler Shough|Pass Yds":410,"Brock Purdy|Pass Yds":205,
-"Jordan Love|Pass Yds":387,"Justin Herbert|Pass Yds":209,"Patrick Mahomes|Pass Yds":184,
-"Josh Allen|Pass Yds":334,"Lamar Jackson|Pass Yds":324,"Caleb Williams|Pass Yds":269,
-"Jahmyr Gibbs|Rush Yds":156,"Derrick Henry|Rush Yds":144,"Jonathan Taylor|Rush Yds":98,
-"Saquon Barkley|Rush Yds":83,"Bijan Robinson|Rush Yds":83,"James Cook|Rush Yds":57,
-"Javonte Williams|Rush Yds":41,"D'Andre Swift|Rush Yds":124,"Devon Achane|Rush Yds":36,
-"Breece Hall|Rush Yds":102,"Kenneth Walker III|Rush Yds":173,"Christian McCaffrey|Rush Yds":68,
-"Puka Nacua|Rec Yds":74,"Ja'Marr Chase|Rec Yds":12,"Jaxon Smith-Njigba|Rec Yds":122,
-"CeeDee Lamb|Rec Yds":44,"Chris Olave|Rec Yds":182,"Justin Jefferson|Rec Yds":92,
-"Nico Collins|Rec Yds":75,"Tee Higgins|Rec Yds":59,"Malik Nabers|Rec Yds":69,
-"Trey McBride|Rec Yds":95,"Rashee Rice|Rec Yds":52,
-"Jahmyr Gibbs|Any TD":"YES","Saquon Barkley|Any TD":"NO","Ja'Marr Chase|Any TD":"NO",
-"Derrick Henry|Any TD":"YES","Jonathan Taylor|Any TD":"YES",
-"Amon-Ra St. Brown|Any TD":"YES","CeeDee Lamb|Any TD":"YES",
-"Christian McCaffrey|Any TD":"NO","Justin Jefferson|Any TD":"YES",
-"Rashee Rice|Any TD":"YES","Dalton Kincaid|Any TD":"NO"
-} as {[k:string]:number|string}
-}
-];
+
 // Current week's lines (Week 5, Oct 8-12 2026)
-var WEEKLY_LINES:[string,string,number|null,number|null][]=[
-  // [home, away, homeSpread, total]  — Week 5 schedule (Oct 8-12 2026) — 15 games
-  // Byes: CAR, KC · LIVE ODDS FETCHED FROM THE_ODDS_API — schedule only, no fabricated odds
-  ["DAL","TB",null,null],["JAX","PHI",null,null],["MIA","CIN",null,null],
-  ["NE","LV",null,null],["NO","MIN",null,null],["NYJ","CLE",null,null],
-  ["PIT","IND",null,null],["TEN","HOU",null,null],["WAS","NYG",null,null],
-  ["GB","CHI",null,null],["LAC","DEN",null,null],["ARI","DET",null,null],
-  ["SEA","SF",null,null],["ATL","BAL",null,null],["LAR","BUF",null,null]
-];
+
 // Current week's results — add scores as games finish
-var WEEKLY_RESULTS:{[k:string]:[number,number]}={
-};
-// Week 6 schedule (Oct 15-19 2026) — 14 games
-// Byes: CIN, DET, MIA, MIN · Fallback for provider unavailability
-var WEEK_6_LINES:[string,string,number|null,number|null][]=[
-  // [home, away, homeSpread, total]  — Week 6 schedule (Oct 15-19 2026) — 14 games
-  // Byes: CIN, DET, MIA, MIN
-  ["DEN","SEA",null,null],["HOU","JAX",null,null],["CHI","ATL",null,null],
-  ["BAL","CLE",null,null],["TEN","IND",null,null],["NYJ","NE",null,null],
-  ["NYG","NO",null,null],["PHI","CAR",null,null],["PIT","TB",null,null],
-  ["LAR","ARI",null,null],["KC","LAC",null,null],["BUF","LV",null,null],
-  ["DAL","GB",null,null],["SF","WAS",null,null]
-];
-// Get current NFL week based on date (Oct 2026)
-function getCurrentNFLWeek(date:Date=new Date()):{week:number,lines:[string,string,number|null,number|null][],label:string}{
-  var month=date.getMonth(),day=date.getDate();
-  if(month===9){// October
-    if(day<=12){return{week:5,lines:WEEKLY_LINES,label:"Week 5"};}
-    if(day<=19){return{week:6,lines:WEEK_6_LINES,label:"Week 6"};}
-  }
-  // Fallback: return Week 5
-  return{week:5,lines:WEEKLY_LINES,label:"Week 5"};
-}
-function buildHardcodedOdds():{[t:string]:{spread:number|null,total:number|null,opp:string}}{
-  var r:{[t:string]:{spread:number|null,total:number|null,opp:string}}={};
-  WEEKLY_LINES.forEach(function(g){r[g[0]]={spread:g[2],total:g[3],opp:g[1]};r[g[1]]={spread:-g[2],total:g[3],opp:g[0]};});
-  return r;
-}
-// fetchOdds calls the server-side fetch-odds Edge Function (never the provider directly).
-// Returns {odds, source} — source distinguishes "api" / "cache" / "manual" / "unavailable".
-async function fetchOdds():Promise<{odds:{[t:string]:{spread:number|null,total:number|null,opp:string}},source:string,fetchedAt:string,stale:boolean}>{
+
+async function fetchOdds(forceRefresh:boolean=false):Promise<{odds:{[t:string]:{spread:number|null,total:number|null,opp:string}},source:string,fetchedAt:string,stale:boolean}>{
   try{
-    var r=await fetch(EDGE_URL+"/fetch-odds",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPA_KEY},body:"{}"});
+    const userToken=authClient?await (async()=>{const s=await authClient.auth.getSession();return s.data?.session?.access_token||null;})():null;const body=JSON.stringify({forceRefresh});const headers:Record<string,string>={"Content-Type":"application/json","apikey":SUPA_KEY};if(userToken)headers["Authorization"]=`Bearer ${userToken}`;var r=await fetch(EDGE_URL+"/fetch-odds",{method:"POST",headers,body});
     var data=await r.json();
     if(data&&data.odds&&Object.keys(data.odds).length>0){
       return {odds:data.odds,source:data.source||"api",fetchedAt:data.fetchedAt||"",stale:data.stale||false};
@@ -2935,7 +2807,7 @@ export default function App(){
   // Track page view on mount (once per session) + load public stats
   useEffect(function(){
     try{var key="fdp_tracked_"+new Date().toDateString();if(!sessionStorage.getItem(key)){sessionStorage.setItem(key,"1");trackEvent("page_view",{referrer:document.referrer||"direct",path:window.location.pathname});}}catch(e){trackEvent("page_view",{referrer:document.referrer||"direct",path:window.location.pathname});}
-    fetchOdds().then(function(d){if(Object.keys(d.odds).length>0){setOddsData(d.odds);setOddsSource(d.source);setOddsFetchedAt(d.fetchedAt);setOddsStale(d.stale);}else{var hc=buildHardcodedOdds();if(Object.keys(hc).length>0){setOddsData(hc);setOddsSource("manual");setOddsFetchedAt("");setOddsStale(false);}}});
+    fetchOdds().then(function(d){if(Object.keys(d.odds).length>0){setOddsData(d.odds);setOddsSource(d.source);setOddsFetchedAt(d.fetchedAt);setOddsStale(d.stale);}else{setOddsData({});setOddsSource("unavailable");setOddsFetchedAt("");setOddsStale(false);}});
   },[]);
 
   function doEspnImport(){
@@ -8251,7 +8123,7 @@ export default function App(){
               React.createElement("div",{style:{fontSize:48,marginBottom:12}},"📅"),
               React.createElement("div",{style:{fontWeight:800,fontSize:18,color:T.text,marginBottom:8}},"No Current NFL Lines"),
               React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.7,maxWidth:340,margin:"0 auto",marginBottom:16}},"Odds are posted Thursday–Monday during the NFL season (September–January). Tap below to load this week's lines!"),
-              React.createElement("button",{onClick:function(){setOddsChecking(true);setOddsChecked(false);fetchOdds().then(function(d){setOddsChecking(false);setOddsChecked(true);if(Object.keys(d.odds).length>0){setOddsData(d.odds);setOddsSource(d.source);setOddsFetchedAt(d.fetchedAt);setOddsStale(d.stale);}}).catch(function(){setOddsChecking(false);setOddsChecked(true);var hc=buildHardcodedOdds();if(Object.keys(hc).length>0){setOddsData(hc);setOddsSource("manual");setOddsFetchedAt("");setOddsStale(false);}});},disabled:oddsChecking,style:{padding:"12px 28px",borderRadius:12,border:"none",background:oddsChecking?"#6b7280":"linear-gradient(135deg,#059669,#047857)",color:"#fff",fontWeight:700,fontSize:13,cursor:oddsChecking?"wait":"pointer",boxShadow:"0 4px 12px rgba(5,150,105,0.3)",opacity:oddsChecking?0.7:1}},oddsChecking?"Checking...":"↻ Check for Lines"),
+              React.createElement("button",{onClick:function(){setOddsChecking(true);setOddsChecked(false);fetchOdds(true).then(function(d){setOddsChecking(false);setOddsChecked(true);if(Object.keys(d.odds).length>0){setOddsData(d.odds);setOddsSource(d.source);setOddsFetchedAt(d.fetchedAt);setOddsStale(d.stale);}}).catch(function(){setOddsChecking(false);setOddsChecked(true);setOddsData({});setOddsSource("unavailable");setOddsFetchedAt("");setOddsStale(false);});},disabled:oddsChecking,style:{padding:"12px 28px",borderRadius:12,border:"none",background:oddsChecking?"#6b7280":"linear-gradient(135deg,#059669,#047857)",color:"#fff",fontWeight:700,fontSize:13,cursor:oddsChecking?"wait":"pointer",boxShadow:"0 4px 12px rgba(5,150,105,0.3)",opacity:oddsChecking?0.7:1}},oddsChecking?"Checking...":"↻ Check for Lines"),
               oddsChecked&&!hasData&&React.createElement("div",{style:{marginTop:12,padding:"10px 16px",background:darkMode?"#1e293b":"#fef3c7",border:"1px solid "+(darkMode?"#475569":"#fcd34d"),borderRadius:12,fontSize:12,color:darkMode?"#fbbf24":"#92400e",fontWeight:600,textAlign:"center"}},"No lines available right now. NFL game lines are typically posted during the regular season (Sep–Jan).")
             ),
             hasData&&React.createElement("div",{style:{marginBottom:12}},
@@ -8268,7 +8140,7 @@ export default function App(){
                 var totalNote=g.total>=50?"Shootout":g.total<=41?"Low Scoring":"";
                 var totalIcon=g.total>=50?"\uD83D\uDD25":g.total<=41?"\uD83D\uDEE1\uFE0F":"";
                 var rKey=g.home+"-"+g.away;
-                var result=WEEKLY_RESULTS[rKey]||null;
+                var result=null;// Results now from canonical data
                 var homeScore=result?result[0]:null;
                 var awayScore=result?result[1]:null;
                 var isFinal=result!==null;
@@ -8615,7 +8487,7 @@ export default function App(){
           vegasSubTab==="history"&&React.createElement("div",null,
             React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4}},"Prior Weeks Results"),
             React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:14}},"Game lines, scores, and ATS results from completed weeks"),
-            PAST_WEEKS.slice().reverse().map(function(pw){
+            getPriorWeeks(getCurrentNFLWeek().week).slice().reverse().map(function(week){var pw={week:week.week,label:"Week "+week.week+" · "+new Date(week.startDate).toLocaleDateString("en-US",{month:"short",day:"numeric"})+"–"+new Date(week.endDate).toLocaleDateString("en-US",{month:"short",day:"numeric"}),lines:week.games.map(function(g){return[g.home,g.away,null,null]}),results:week.games.reduce(function(acc,g){if(g.status==="final"&&g.homeScore!==null&&g.awayScore!==null){acc[g.home+"-"+g.away]=[g.homeScore,g.awayScore];}return acc;},{})};
               var pwGames=pw.lines.map(function(g){
                 var home=g[0],away=g[1],spread=g[2],total=g[3];
                 var rKey=home+"-"+away;
@@ -8735,7 +8607,7 @@ export default function App(){
                 })()
               );
             }),
-            PAST_WEEKS.length===0&&React.createElement("div",{style:{textAlign:"center",padding:40,color:T.textDim,fontSize:13}},"No prior weeks yet — check back after Week 2!")
+            getPriorWeeks(getCurrentNFLWeek().week).length===0&&React.createElement("div",{style:{textAlign:"center",padding:40,color:T.textDim,fontSize:13}},"No prior weeks yet — check back after Week 2!")
           )
         );
       })(),

@@ -367,40 +367,44 @@ Deno.serve(async (req) => {
     // ========================================================================
 
     let mode = "games";
+
+    // ========================================================================
+    // Check for forceRefresh parameter
+    // ========================================================================
+
+    let forceRefresh = false;
     try {
       const body = await req.clone().json();
-      if (body && typeof body.mode === "string") {
-        if (!(ALLOWED_MODES as readonly string[]).includes(body.mode)) {
-          return new Response(JSON.stringify({
-            odds: {}, source: "unavailable", fetchedAt: "",
-            error: "invalid_mode",
-          }), {
-            status: 400,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-        mode = body.mode;
+      if (body && typeof body.forceRefresh === "boolean") {
+        forceRefresh = body.forceRefresh;
+        console.log(`[fetch-odds] forceRefresh=${forceRefresh}`);
       }
     } catch {
-      // No body
+      // No body or invalid JSON
     }
 
-    if (_memCache && Date.now() - _memCache.ts < CACHE_TTL_MS) {
-      return new Response(JSON.stringify(_memCache.data), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    // Skip cache if forceRefresh is true
+    if (!forceRefresh) {
+      if (_memCache && Date.now() - _memCache.ts < CACHE_TTL_MS) {
+        console.log("[fetch-odds] Serving mem cache");
+        return new Response(JSON.stringify(_memCache.data), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
 
-    const dbEntry = await getDbCache(supabase);
-    if (dbEntry && dbEntry.age < CACHE_TTL_MS) {
-      _memCache = { data: dbEntry.response, ts: Date.now() };
-      return new Response(JSON.stringify(dbEntry.response), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      const dbEntry = await getDbCache(supabase);
+      if (dbEntry && dbEntry.age < CACHE_TTL_MS) {
+        console.log("[fetch-odds] Serving DB cache");
+        _memCache = { data: dbEntry.response, ts: Date.now() };
+        return new Response(JSON.stringify(dbEntry.response), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     const apiKey = Deno.env.get("THE_ODDS_API_KEY") || "";
     if (!apiKey) {
+      console.error("[fetch-odds] THE_ODDS_API_KEY not set");
       return new Response(JSON.stringify({
         odds: {}, source: "unavailable", fetchedAt: "",
       } satisfies OddsResponse), {
