@@ -8208,7 +8208,15 @@ export default function App(){
       // VEGAS LINES
       rankSubTab==="vegas"&&!canAccessVegas(user)&&PaywallCard("vegas"),
       rankSubTab==="vegas"&&canAccessVegas(user)&&(function(){
-        var games=oddsData?(function(){var eventMap:any={};Object.keys(oddsData).forEach(function(team){var g=oddsData[team];if(!g)return;if(!g.eventId)return;if(!eventMap[g.eventId]){eventMap[g.eventId]=g;}});return Object.values(eventMap).sort(function(a:any,b:any){if(a.total===null&&b.total===null)return 0;if(a.total===null)return 1;if(b.total===null)return-1;return b.total-a.total;}).map(function(g:any){return{home:g.homeTeam,away:g.awayTeam,spread:g.spread,total:g.total,eventId:g.eventId};});})():[];
+        var weekInfo=getCurrentNFLWeek();
+        var scheduleGames=weekInfo.lines;
+        var games=scheduleGames.map(function(sg){
+          var home=sg[0],away=sg[1],scheduleSpread=sg[2],scheduleTotal=sg[3];
+          var homeOdds=oddsData?oddsData[home]:null;
+          var homeSpread=homeOdds?.spread??scheduleSpread;
+          var homeTotal=homeOdds?.total??scheduleTotal;
+          return {home:home,away:away,spread:homeSpread,total:homeTotal,eventId:homeOdds?.eventId??null};
+        });
         var hasData=games.length>0;
         var TEAM_FULL:{[k:string]:string}={"ARI":"Cardinals","ATL":"Falcons","BAL":"Ravens","BUF":"Bills","CAR":"Panthers","CHI":"Bears","CIN":"Bengals","CLE":"Browns","DAL":"Cowboys","DEN":"Broncos","DET":"Lions","GB":"Packers","HOU":"Texans","IND":"Colts","JAX":"Jaguars","KC":"Chiefs","LAC":"Chargers","LAR":"Rams","LV":"Raiders","MIA":"Dolphins","MIN":"Vikings","NE":"Patriots","NO":"Saints","NYG":"Giants","NYJ":"Jets","PHI":"Eagles","PIT":"Steelers","SF":"49ers","SEA":"Seahawks","TB":"Buccaneers","TEN":"Titans","WAS":"Commanders"};
         var sbTier=function(i:number){return i<4?"#22c55e":i<10?"#4ade80":i<17?"#94a3b8":i<24?"#fb923c":"#f87171";};

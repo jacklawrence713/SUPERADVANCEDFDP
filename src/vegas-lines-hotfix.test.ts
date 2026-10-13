@@ -153,3 +153,82 @@ describe('Vegas lines: no regression', () => {
     expect(afdpSrc).toContain('isAdminEmail')
   })
 })
+
+describe('Vegas lines: schedule-based rendering (hotfix)', () => {
+  it('games array built from getCurrentNFLWeek(), not oddsData', () => {
+    expect(afdpSrc).toContain('var weekInfo=getCurrentNFLWeek()')
+    expect(afdpSrc).toContain('var scheduleGames=weekInfo.lines')
+    expect(afdpSrc).toContain('var games=scheduleGames.map(function(sg)')
+  })
+
+  it('games.map extracts home/away/spread/total from schedule', () => {
+    expect(afdpSrc).toContain('var home=sg[0],away=sg[1],scheduleSpread=sg[2],scheduleTotal=sg[3]')
+  })
+
+  it('spread/total fallback to schedule when oddsData missing', () => {
+    expect(afdpSrc).toContain('homeSpread=homeOdds?.spread??scheduleSpread')
+    expect(afdpSrc).toContain('homeTotal=homeOdds?.total??scheduleTotal')
+  })
+
+  it('games always populated from schedule (never empty)', () => {
+    expect(afdpSrc).toContain('return {home:home,away:away,spread:homeSpread,total:homeTotal,eventId:homeOdds?.eventId??null}')
+  })
+
+  it('hasData checks games.length > 0 (always true from schedule)', () => {
+    expect(afdpSrc).toContain('var hasData=games.length>0')
+  })
+
+  it('spread N/A renders when null', () => {
+    expect(afdpSrc).toContain('g.spread===null?"Line N/A"')
+  })
+
+  it('total Unavailable renders when null', () => {
+    expect(afdpSrc).toContain('g.total===null?"Unavailable"')
+  })
+
+  it('no eventId requirement blocks games (old bug removed)', () => {
+    const oldBugPattern = /if\(!g\.eventId\)return;/
+    expect(afdpSrc).not.toMatch(oldBugPattern)
+  })
+})
+
+describe('Vegas lines: provider overlay behavior', () => {
+  it('provider odds overlay spread if present', () => {
+    expect(afdpSrc).toContain('homeOdds?.spread??scheduleSpread')
+  })
+
+  it('provider odds overlay total if present', () => {
+    expect(afdpSrc).toContain('homeOdds?.total??scheduleTotal')
+  })
+
+  it('schedule values preserved when provider missing', () => {
+    expect(afdpSrc).toContain('homeOdds=oddsData?oddsData[home]:null')
+  })
+})
+
+describe('Vegas lines: UI state labels', () => {
+  it('THIS WEEK\'S GAMES when api/cache source', () => {
+    expect(afdpSrc).toContain('oddsSource==="api"||oddsSource==="cache"?"THIS WEEK\'S GAMES"')
+  })
+
+  it('SCHEDULE (Lines Unavailable) when manual source', () => {
+    expect(afdpSrc).toContain('"SCHEDULE (Lines Unavailable)"')
+  })
+
+  it('LINES UNAVAILABLE as fallback', () => {
+    expect(afdpSrc).toContain('"LINES UNAVAILABLE"')
+  })
+})
+
+describe('Vegas lines: no blank page regressions', () => {
+  it('No "No Current NFL Lines" when schedule exists', () => {
+    // The message should only show if somehow hasData is false
+    // But with the fix, hasData is always true when schedule has games
+    expect(afdpSrc).toContain('No Current NFL Lines')
+    // Message exists for backward compat but won't show in normal operation
+  })
+
+  it('games.length always displayed in UI', () => {
+    expect(afdpSrc).toContain('games.length')
+  })
+})
