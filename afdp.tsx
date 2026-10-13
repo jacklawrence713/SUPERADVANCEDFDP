@@ -4508,23 +4508,25 @@ export default function App(){
       })
     ),
 
-    // Dynasty Value Ticker (all tabs — outside scroll wrapper so it stays fixed)
-    React.createElement("div",{style:{overflow:"hidden",background:darkMode?"#0a0818":"#f8f7ff",borderBottom:"1px solid "+T.border,padding:"6px 0",flexShrink:0}},
-      React.createElement("style",null,"@keyframes fdp-ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}"),
-      React.createElement("div",{style:{display:"flex",gap:20,animation:"fdp-ticker 120s linear infinite",width:"max-content"}},
-        rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;}).slice(0,100).concat(rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;}).slice(0,100)).map(function(p,i){
-          var pc=POS_COLORS[p.pos]||T.purple;
-          return React.createElement("div",{key:p.name+"-t-"+i,style:{display:"flex",alignItems:"center",gap:5,flexShrink:0}},
-            React.createElement("span",{style:{fontSize:9,fontWeight:800,color:pc}},p.pos),
-            React.createElement("span",{style:{fontSize:11,fontWeight:700,color:T.text}},(function(){var parts=p.name.split(" ");var last=parts[parts.length-1];var suffixes=["Jr.","Jr","II","III","IV","V","Sr.","Sr"];if(parts.length>=3&&suffixes.indexOf(last)>=0)return parts[parts.length-2]+" "+last;return last;})()),
-            React.createElement("span",{style:{fontSize:11,fontWeight:800,color:T.purpleLight}},(p.tradeVal||0).toLocaleString())
-          );
-        })
-      )
-    ),
+    // RIGHT COLUMN WRAPPER (ticker + main content for proper desktop flex layout)
+    React.createElement("div",{style:{flex:1,display:"flex",flexDirection:"column",minWidth:0,height:"100vh"}},
+      // Dynasty Value Ticker (all tabs — outside scroll wrapper so it stays fixed)
+      React.createElement("div",{style:{overflow:"hidden",background:darkMode?"#0a0818":"#f8f7ff",borderBottom:"1px solid "+T.border,padding:"6px 0",flexShrink:0}},
+        React.createElement("style",null,"@keyframes fdp-ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}"),
+        React.createElement("div",{style:{display:"flex",gap:20,animation:"fdp-ticker 120s linear infinite",width:"max-content"}},
+          rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;}).slice(0,100).concat(rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;}).slice(0,100)).map(function(p,i){
+            var pc=POS_COLORS[p.pos]||T.purple;
+            return React.createElement("div",{key:p.name+"-t-"+i,style:{display:"flex",alignItems:"center",gap:5,flexShrink:0}},
+              React.createElement("span",{style:{fontSize:9,fontWeight:800,color:pc}},p.pos),
+              React.createElement("span",{style:{fontSize:11,fontWeight:700,color:T.text}},(function(){var parts=p.name.split(" ");var last=parts[parts.length-1];var suffixes=["Jr.","Jr","II","III","IV","V","Sr.","Sr"];if(parts.length>=3&&suffixes.indexOf(last)>=0)return parts[parts.length-2]+" "+last;return last;})()),
+              React.createElement("span",{style:{fontSize:11,fontWeight:800,color:T.purpleLight}},(p.tradeVal||0).toLocaleString())
+            );
+          })
+        )
+      ),
 
-    // MAIN CONTENT WRAPPER (flex:1 on desktop for sidebar layout)
-    React.createElement("div",{style:{flex:1,minWidth:0,overflowY:"auto",maxWidth:isDesktop?900:undefined,width:isDesktop?"100%":undefined,paddingBottom:isDesktop?40:70}},
+      // MAIN CONTENT WRAPPER (flex:1 on desktop for sidebar layout)
+      React.createElement("div",{style:{flex:1,minWidth:0,overflowY:"auto",maxWidth:isDesktop?900:undefined,width:isDesktop?"100%":undefined,paddingBottom:isDesktop?40:70}},
 
     // ════ TRADE TAB ════
     tab==="trade"&&React.createElement("div",{style:{padding:"16px 16px 0"}},
@@ -10628,10 +10630,11 @@ export default function App(){
         })
       ),
       React.createElement("div",{style:{fontSize:11,color:T.textDim}},"© 2026 Fantasy Draft Pros · Not affiliated with Sleeper, ESPN, or Yahoo · For entertainment only")
-    ),
+      ),
 
-    // END MAIN CONTENT WRAPPER
-    ),
+      // END MAIN CONTENT WRAPPER
+      )
+    ), // END RIGHT COLUMN WRAPPER
 
     // FLOATING CHAT BUTTON
     React.createElement("button",{onClick:function(){setTab("reports");setReportSubTab("contact");},style:{position:"fixed",bottom:isDesktop?20:72,right:20,width:52,height:52,borderRadius:"50%",background:"#3b82f6",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 16px rgba(59,130,246,0.5)",zIndex:200,fontSize:22,color:"#fff"}},"\uD83D\uDCAC")
