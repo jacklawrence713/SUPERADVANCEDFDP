@@ -422,7 +422,12 @@ Deno.serve(async (req) => {
       // No body or invalid JSON
     }
 
-    // Skip cache if forceRefresh is true
+    // ========================================================================
+    // Cache: Try mem cache first, then DB cache
+    // ========================================================================
+
+    let dbEntry: DbCacheEntry | null = null;
+
     if (!forceRefresh) {
       if (_memCache && Date.now() - _memCache.ts < CACHE_TTL_MS) {
         console.log("[fetch-odds] Serving mem cache");
@@ -431,7 +436,7 @@ Deno.serve(async (req) => {
         });
       }
 
-      const dbEntry = await getDbCache(supabase);
+      dbEntry = await getDbCache(supabase);
       if (dbEntry && dbEntry.age < CACHE_TTL_MS) {
         console.log("[fetch-odds] Serving DB cache");
         _memCache = { data: dbEntry.response, ts: Date.now() };

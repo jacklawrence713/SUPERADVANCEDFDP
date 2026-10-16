@@ -25,7 +25,8 @@
       "Bash(/tmp/verify-deployment.txt:*)",
       "Read(//tmp/**)",
       "Bash(supabase:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(git push:*)"
     ]
   }
 }
