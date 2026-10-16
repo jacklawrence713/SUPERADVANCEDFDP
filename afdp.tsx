@@ -8176,7 +8176,7 @@ export default function App(){
                     React.createElement("div",{style:{display:"flex",gap:8,marginBottom:10}},
                       React.createElement("div",{style:{flex:1,background:T.bgInput,borderRadius:12,padding:"10px 12px",textAlign:"center"}},
                         React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:700,letterSpacing:0.5,marginBottom:4}},"SPREAD"),
-                        React.createElement("div",{style:{fontWeight:900,fontSize:18,color:T.text}},(g.spread===null?"Line N/A":g.spread>0?"+":"")+g.spread),
+                        React.createElement("div",{style:{fontWeight:900,fontSize:18,color:T.text}},g.spread===null?"Line Unavailable":(g.spread>0?"+":"")+g.spread),
                         isFinal&&React.createElement("div",{style:{fontSize:10,fontWeight:800,color:spreadColor,marginTop:4}},spreadCover)
                       ),
                       React.createElement("div",{style:{flex:1,background:T.bgInput,borderRadius:12,padding:"10px 12px",textAlign:"center"}},
@@ -8189,12 +8189,12 @@ export default function App(){
                       gsAway&&React.createElement("div",{style:{background:gsAway.color+"10",border:"1px solid "+gsAway.color+"28",borderRadius:12,padding:"10px 12px"}},
                         React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:3,fontWeight:600}},g.away),
                         React.createElement("div",{style:{fontWeight:800,fontSize:13,color:gsAway.color}},gsAway.script),
-                        React.createElement("div",{style:{fontSize:10,color:T.textDim,marginTop:2}},"Spread: "+(gsAway.spread===null?"Unavailable":gsAway.spread>0?"+":"")+gsAway.spread)
+                        React.createElement("div",{style:{fontSize:10,color:T.textDim,marginTop:2}},"Spread: "+(gsAway.spread===null?"Unavailable":(gsAway.spread>0?"+":"")+gsAway.spread))
                       ),
                       gsHome&&React.createElement("div",{style:{background:gsHome.color+"10",border:"1px solid "+gsHome.color+"28",borderRadius:12,padding:"10px 12px"}},
                         React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:3,fontWeight:600}},g.home),
                         React.createElement("div",{style:{fontWeight:800,fontSize:13,color:gsHome.color}},gsHome.script),
-                        React.createElement("div",{style:{fontSize:10,color:T.textDim,marginTop:2}},"Spread: "+(gsHome.spread===null?"Unavailable":gsHome.spread>0?"+":"")+gsHome.spread)
+                        React.createElement("div",{style:{fontSize:10,color:T.textDim,marginTop:2}},"Spread: "+(gsHome.spread===null?"Unavailable":(gsHome.spread>0?"+":"")+gsHome.spread))
                       )
                     )
                   )
