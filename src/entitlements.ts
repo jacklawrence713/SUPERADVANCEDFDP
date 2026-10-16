@@ -48,23 +48,23 @@ export const isFreeTier = (profile: UserProfile | null | undefined): boolean => 
  */
 
 export const canAccessLeagueFeatures = (profile: UserProfile | null | undefined): boolean => {
-  // League Connect, Trade Finder, League Intelligence = Pro/Elite only
-  return isPaidTier(profile);
+  // League Connect, Trade Finder, League Intelligence = Pro/Elite or Admin
+  return isPaidTier(profile) || isAdmin(profile);
 };
 
 export const canAccessVegas = (profile: UserProfile | null | undefined): boolean => {
-  // Vegas/Game Intelligence = Pro/Elite only
-  return isPaidTier(profile);
+  // Vegas/Game Intelligence = Pro/Elite or Admin
+  return isPaidTier(profile) || isAdmin(profile);
 };
 
 export const canAccessValueHistory = (profile: UserProfile | null | undefined): boolean => {
-  // Value History = Pro/Elite only
-  return isPaidTier(profile);
+  // Value History = Pro/Elite or Admin
+  return isPaidTier(profile) || isAdmin(profile);
 };
 
 export const canAccessWhyValueChanged = (profile: UserProfile | null | undefined): boolean => {
-  // Why Value Changed (inherits Value History entitlement) = Pro/Elite only
-  return isPaidTier(profile);
+  // Why Value Changed (inherits Value History entitlement) = Pro/Elite or Admin
+  return isPaidTier(profile) || isAdmin(profile);
 };
 
 /**
@@ -74,8 +74,8 @@ export const canAccessWhyValueChanged = (profile: UserProfile | null | undefined
  */
 
 export const canAccessUnlimitedTradeAnalyzer = (profile: UserProfile | null | undefined): boolean => {
-  // Pro/Elite = unlimited (no daily quota)
-  return isPaidTier(profile);
+  // Pro/Elite or Admin = unlimited (no daily quota)
+  return isPaidTier(profile) || isAdmin(profile);
 };
 
 /**

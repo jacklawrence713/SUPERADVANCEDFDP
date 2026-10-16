@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd:*)",
+      "Bash(python3:*)",
+      "Bash(npm test:*)",
+      "Bash(npm run:*)",
+      "WebSearch",
+      "WebFetch(domain:www.nfl.com)",
+      "Bash(rm:*)",
+      "Bash(curl:*)",
+      "WebFetch(domain:api.nfl.com)",
+      "Bash(do:*)",
+      "Bash(sed:*)",
+      "Bash(node:*)",
+      "Bash(npx vitest:*)",
+      "Bash(git fetch:*)",
+      "Bash(grep:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git rev-list:*)",
+      "Bash(npx supabase:*)",
+      "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:fantasydraftpros.com)",
+      "Bash(/tmp/verify-deployment.txt:*)",
+      "Read(//tmp/**)",
+      "Bash(supabase:*)",
+      "Bash(ls:*)"
+    ]
+  }
+}
