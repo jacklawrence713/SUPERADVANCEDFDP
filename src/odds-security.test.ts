@@ -38,12 +38,13 @@ describe('odds security: entitlements gate', () => {
   })
 
   it('User profile checked for plan', () => {
-    expect(fetchOddsSrc).toContain('"plan"')
+    expect(fetchOddsSrc).toContain('"plan,is_admin"')
     expect(fetchOddsSrc).toContain('userPlan')
   })
 
-  it('Pro or Elite users only', () => {
-    expect(fetchOddsSrc).toContain('userPlan !== "pro" && userPlan !== "elite"')
+  it('Pro or Elite users only (or admins)', () => {
+    expect(fetchOddsSrc).toContain('hasPaidPlan')
+    expect(fetchOddsSrc).toContain('isAdmin')
   })
 
   it('Free users get 403', () => {
@@ -70,7 +71,8 @@ describe('odds security: cache key is hardcoded', () => {
     // Vegas rebuild: forceRefresh now supported for manual refresh (behind entitlements)
     // This is safe because entitlements are checked before forceRefresh is processed
     expect(fetchOddsSrc).toContain('forceRefresh')
-    expect(fetchOddsSrc).toContain('userPlan !== "pro"')
+    expect(fetchOddsSrc).toContain('isAdmin')
+    expect(fetchOddsSrc).toContain('hasPaidPlan')
   })
 
 })

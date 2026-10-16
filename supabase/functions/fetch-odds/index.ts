@@ -333,7 +333,7 @@ Deno.serve(async (req) => {
 
     const { data: profile, error: profileError } = await supabase
       .from("users")
-      .select("plan")
+      .select("plan,is_admin")
       .eq("id", user.id)
       .single();
 
@@ -350,7 +350,10 @@ Deno.serve(async (req) => {
     }
 
     const userPlan = profile.plan;
-    if (userPlan !== "pro" && userPlan !== "elite") {
+    const isAdmin = profile.is_admin === true;
+    const hasPaidPlan = userPlan === "pro" || userPlan === "elite";
+
+    if (!isAdmin && !hasPaidPlan) {
       return new Response(JSON.stringify({
         error: "insufficient_entitlement",
         odds: {},
@@ -363,7 +366,7 @@ Deno.serve(async (req) => {
     }
 
     // ========================================================================
-    // User is Pro/Elite — proceed with odds fetch
+    // User is Pro/Elite or Admin — proceed with odds fetch
     // ========================================================================
 
     let mode = "games";

@@ -279,8 +279,8 @@ describe("PROMPT 29: Adversarial Security Testing — Real Tests Only", () => {
     });
 
     test("[STATIC SOURCE CONTRACT] fetch-odds denies Free users", () => {
-      expect(fetchOddsSource).toContain('userPlan !== "pro"');
-      expect(fetchOddsSource).toContain('userPlan !== "elite"');
+      expect(fetchOddsSource).toContain("isAdmin")
+      expect(fetchOddsSource).toContain("hasPaidPlan")
     });
   });
 
