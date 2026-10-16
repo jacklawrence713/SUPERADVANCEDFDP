@@ -157,27 +157,49 @@ async function fetchFromProvider(apiKey: string, supabase: ReturnType<typeof cre
     const now = Date.now();
     const candidates: Array<{ game: typeof games[0]; homeAbb: string; awayAbb: string; kickoff: number }> = [];
 
+    // DIAGNOSTIC: Track filtering
+    let rawEventCount = games.length;
+    let filterTeamMapping = 0;
+    let filterEventIdOrTime = 0;
+    let filterInvalidTime = 0;
+    let filterOldGames = 0;
+
     for (const game of games) {
       const home = ODDS_TEAM_MAP[game.home_team];
       const away = ODDS_TEAM_MAP[game.away_team];
-      if (!home || !away) continue;
+      if (!home || !away) {
+        filterTeamMapping++;
+        continue;
+      }
 
       const eventId = game.id || "";
       const commenceTime = game.commence_time || "";
-      if (!eventId || !commenceTime) continue;
+      if (!eventId || !commenceTime) {
+        filterEventIdOrTime++;
+        continue;
+      }
 
       let kickoff = NaN;
       try {
         kickoff = new Date(commenceTime).getTime();
       } catch {}
 
-      if (!isFinite(kickoff)) continue;
+      if (!isFinite(kickoff)) {
+        filterInvalidTime++;
+        continue;
+      }
 
       const ageMs = now - kickoff;
-      if (ageMs > 4 * 60 * 60 * 1000) continue;
+      if (ageMs > 4 * 60 * 60 * 1000) {
+        filterOldGames++;
+        console.log(`[fetch-odds] FILTERED OLD GAME: ${game.home_team} @ ${game.away_team}, commence: ${game.commence_time}, age: ${Math.round(ageMs/(60*60*1000))} hours`);
+        continue;
+      }
 
       candidates.push({ game, homeAbb: home, awayAbb: away, kickoff });
     }
+
+    console.log(`[fetch-odds] FILTER DIAGNOSTICS - Raw: ${rawEventCount}, TeamMap: -${filterTeamMapping}, EventIdOrTime: -${filterEventIdOrTime}, InvalidTime: -${filterInvalidTime}, OldGames: -${filterOldGames}, Final Candidates: ${candidates.length}`);
 
     candidates.sort((a, b) => a.kickoff - b.kickoff);
 
@@ -269,6 +291,15 @@ async function fetchFromProvider(apiKey: string, supabase: ReturnType<typeof cre
         totalBookmakers: validTotals.length
       };
     }
+
+    // DIAGNOSTIC: Count final odds
+    let spreadCount = 0;
+    let totalCount = 0;
+    for (const team in odds) {
+      if (odds[team].spread !== null) spreadCount++;
+      if (odds[team].total !== null) totalCount++;
+    }
+    console.log(`[fetch-odds] ODDS EXTRACTION - Total teams: ${Object.keys(odds).length}, WithSpread: ${spreadCount}, WithTotal: ${totalCount}`);
 
     const fetchedAt = new Date().toISOString();
     const response: OddsResponse = {
@@ -376,11 +407,16 @@ Deno.serve(async (req) => {
     // ========================================================================
 
     let forceRefresh = false;
+    let debug = false;
     try {
       const body = await req.clone().json();
       if (body && typeof body.forceRefresh === "boolean") {
         forceRefresh = body.forceRefresh;
         console.log(`[fetch-odds] forceRefresh=${forceRefresh}`);
+      }
+      if (body && typeof body.debug === "boolean" && isAdmin) {
+        debug = body.debug;
+        console.log(`[fetch-odds] debug=${debug}`);
       }
     } catch {
       // No body or invalid JSON
