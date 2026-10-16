@@ -405,9 +405,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    const apiKey = Deno.env.get("THE_ODDS_API_KEY") || "";
+    const apiKey = Deno.env.get("THE_ODDS_API") || "";
     if (!apiKey) {
-      console.error("[fetch-odds] THE_ODDS_API_KEY not set");
+      console.error("[fetch-odds] THE_ODDS_API not set");
       return new Response(JSON.stringify({
         odds: {}, source: "unavailable", fetchedAt: "",
       } satisfies OddsResponse), {

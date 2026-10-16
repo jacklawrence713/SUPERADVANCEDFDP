@@ -20,7 +20,7 @@ describe('odds security: API key handling', () => {
   })
 
   it('API key is read only via Deno.env.get', () => {
-    expect(fetchOddsSrc).toContain('Deno.env.get("THE_ODDS_API_KEY")')
+    expect(fetchOddsSrc).toContain('Deno.env.get("THE_ODDS_API")')
   })
 
   it('API key is checked before use', () => {
@@ -91,9 +91,9 @@ describe('odds security: logging never contains secrets', () => {
   })
 
   it('API key name in error messages is acceptable', () => {
-    // Error messages like "THE_ODDS_API_KEY not set" are acceptable
+    // Error messages like "THE_ODDS_API not set" are acceptable
     // (they don't leak the actual key value, just the env var name)
-    expect(fetchOddsSrc).toContain('THE_ODDS_API_KEY')
+    expect(fetchOddsSrc).toContain('THE_ODDS_API')
   })
 
   it('Database credentials never logged', () => {
