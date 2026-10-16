@@ -20,16 +20,22 @@ describe('Vegas lines: Week 5 authoritative schedule', () => {
   });
 
   it('Week 5 contains DAL @ TB', () => {
-    const game = WEEK_5.games.find(g => g.home === 'DAL' && g.away === 'TB');
+    // Canonical: TB home, DAL away (Week 5 completed)
+    const game = WEEK_5.games.find(g => g.home === 'TB' && g.away === 'DAL');
     expect(game).toBeDefined();
-    expect(game?.status).toBe('scheduled');
+    expect(game?.status).toBe('final');
+    expect(game?.homeScore).toBe(24);
+    expect(game?.awayScore).toBe(16);
   });
 
-  it('Week 5 contains LAR @ BUF (Monday)', () => {
-    const game = WEEK_5.games.find(g => g.home === 'LAR' && g.away === 'BUF');
+  it('Week 5 contains LA @ BUF (Monday)', () => {
+    // Canonical: LA (not LAR) home, BUF away (Week 5 completed)
+    const game = WEEK_5.games.find(g => g.home === 'LA' && g.away === 'BUF');
     expect(game).toBeDefined();
-    expect(game?.status).toBe('scheduled');
+    expect(game?.status).toBe('final');
     expect(game?.kickoff).toContain('2026-10-12T20:15:00Z');
+    expect(game?.homeScore).toBe(34);
+    expect(game?.awayScore).toBe(37);
   });
 
   it('Week 5 has correct byes (CAR, KC)', () => {
@@ -134,8 +140,11 @@ describe('Vegas lines: all weeks verified', () => {
     });
   });
 
-  it('Week 5 has scheduled games', () => {
-    expect(WEEK_5.games.some(g => g.status === 'scheduled')).toBe(true);
+  it('Week 5 is complete (all games final)', () => {
+    // Week 5 is complete: all games are final, none are scheduled
+    expect(WEEK_5.games.every(g => g.status === 'final')).toBe(true);
+    expect(WEEK_5.games.every(g => g.homeScore !== null && g.awayScore !== null)).toBe(true);
+    expect(WEEK_5.games.some(g => g.status === 'scheduled')).toBe(false);
   });
 
   it('Week 6 has scheduled games', () => {
