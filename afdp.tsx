@@ -7,7 +7,7 @@ import { canAccessLeagueFeatures, canAccessVegas, canAccessValueHistory, canAcce
 import type { UserProfile } from "./src/entitlements";
 import { getFeaturePaywallCopy } from "./src/paywall-config";
 import type { FeatureKey } from "./src/paywall-config";
-import { getWeekByNumber, getPriorWeeks, getCurrentNFLWeek as getCanonicalCurrentNFLWeek, type NFLWeek, type Game } from "./src/data/nfl-2026-weeks";
+import { getWeekByNumber, getPriorWeeks, getCurrentNFLWeek, type NFLWeek, type Game } from "./src/data/nfl-2026-weeks";
 
 // ── Supabase ─────────────────────────────────────────────────────────────────
 const SUPA_URL = (import.meta as any).env?.VITE_SUPABASE_URL;
