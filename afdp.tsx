@@ -8080,13 +8080,14 @@ export default function App(){
       // VEGAS LINES
       rankSubTab==="vegas"&&!canAccessVegas(user)&&PaywallCard("vegas"),
       rankSubTab==="vegas"&&canAccessVegas(user)&&(function(){
-        var weekInfo=getCurrentNFLWeek();
-        var scheduleGames=weekInfo.lines;
+        var currentWeekInfo=getCurrentNFLWeek();
+        var weekInfo=getWeekByNumber(currentWeekInfo.week);
+        var scheduleGames=(weekInfo||{games:[]}).games;
         var games=scheduleGames.map(function(sg){
-          var home=sg[0],away=sg[1],scheduleSpread=sg[2],scheduleTotal=sg[3];
+          var home=sg.home,away=sg.away;
           var homeOdds=oddsData?oddsData[home]:null;
-          var homeSpread=homeOdds?.spread??scheduleSpread;
-          var homeTotal=homeOdds?.total??scheduleTotal;
+          var homeSpread=homeOdds?.spread??null;
+          var homeTotal=homeOdds?.total??null;
           return {home:home,away:away,spread:homeSpread,total:homeTotal,eventId:homeOdds?.eventId??null};
         });
         var hasData=games.length>0;
