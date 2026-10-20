@@ -54,6 +54,11 @@ Deno.serve(async (req) => {
       .gte("created_at", startDate.toISOString())
       .lte("created_at", endDate.toISOString())
       .order("created_at", { ascending: false });
+    
+    if (eventsError) {
+      console.error("Analytics events query error:", eventsError);
+      return new Response(JSON.stringify({ error: "Failed to fetch analytics events", details: eventsError.message }), { status: 400 });
+    }
 
     // Build unique visitors by day
     const uniqueVisitorsByDay: Record<string, Set<string>> = {};
