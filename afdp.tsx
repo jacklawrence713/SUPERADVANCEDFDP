@@ -8928,7 +8928,13 @@ export default function App(){
           // ── PLAYER PROPS TAB ──
           vegasSubTab==="props"&&React.createElement("div",null,
             // ── WEEKLY GAME PROPS ──
-            React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4}},"Week 2 Player Props"),
+            React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:16,flexWrap:"wrap"}},
+              React.createElement("label",{style:{fontSize:12,fontWeight:700,color:T.textSub}},"Week:"),
+              React.createElement("select",{value:selectedVegasWeek,onChange:function(e){setSelectedVegasWeek(+e.target.value);},style:{padding:"6px 12px",borderRadius:8,border:"1px solid "+T.border,background:T.bgInput,color:T.text,fontWeight:600,fontSize:12,cursor:"pointer"}},
+                [1,2,3,4,5,6,7].map(function(w){return React.createElement("option",{key:w,value:w},"Week "+w);})
+              )
+            ),
+            React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4}},"Week "+selectedVegasWeek+" Player Props"),
             React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:14}},"Game-day O/U lines · Thu Sep 17 – Mon Sep 21"),
             (function(){
               var wcats=["Pass Yds","Pass TD","Rush Yds","Rec Yds","Receptions","Any TD"];
