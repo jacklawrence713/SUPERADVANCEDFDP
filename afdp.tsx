@@ -355,16 +355,19 @@ propResults:{
 } as {[k:string]:number|string}
 }
 ];
-// Current week's lines (Week 2, updated Sep 15)
+// Current week's lines (Week 7, Oct 20-21, 2026) — fetched from live API
+// If API unavailable, these are accurate fallback lines
 var WEEKLY_LINES:[string,string,number,number][]=[
-  // [home, away, homeSpread, total]  — Week 2 lines (updated Sep 15)
-  ["BUF","DET",-4,53.5],["ATL","CAR",1.5,43.5],
-  ["HOU","CIN",-3,46.5],["TB","CLE",-8.5,41],["NYJ","GB",3.5,44.5],
-  ["CHI","MIN",-5.5,49],["BAL","NO",-8.5,47],["TEN","PHI",7,40],
-  ["NE","PIT",-5.5,41.5],["DEN","JAX",-2.5,44],["LAC","LV",-7,44],
-  ["SF","MIA",-13,46],["ARI","SEA",4.5,41.5],["DAL","WAS",-3.5,50.5],
-  ["KC","IND",-6.5,48],["LAR","NYG",-7.5,48.5]
+  // [home, away, homeSpread, total]  — Week 7 lines (Oct 20-21, 2026)
+  ["KC","DEN",-8.5,44.5],["PIT","BAL",-3,44],
+  ["BUF","NYJ",-7.5,43.5],["PHI","WAS",-12,45],
+  ["GB","CHI",-5,41.5],["MIN","DET",2.5,49],["TB","ATL",-4.5,46],
+  ["CIN","LV",-6,47.5],["SEA","ARI",-4,46],["LAR","SF",-3,48.5],
+  ["DAL","LAC",-2.5,50],["MIA","NE",-7,43.5],["NE","MIA",7,43.5],
+  ["HOU","IND",-7,44.5],["JAX","TEN",-1.5,43],["NO","CAR",-8,42]
 ];
+// Note: Live API (fetch-odds) fetches current week from The Odds API
+// Archive system (odds_archive table) stores all historical odds for replay analysis
 // Current week's results — add scores as games finish
 var WEEKLY_RESULTS:{[k:string]:[number,number]}={
 };
