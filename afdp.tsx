@@ -341,7 +341,8 @@ propResults:{
 }
 ,
 {week:2,label:"Week 2 · Sep 17–21",
-lines:[] as [string,string,number,number][],
+lines:[
+["KC","BUF",-2.5,45.5],["SF","LAR",-4.0,47.0],["TB","DET",3.0,50.0],["BAL","LAC",-3.5,46.0],["PHI","WAS",-7.0,44.5],["GB","ATL",-5.5,42.0],["CIN","SEA",-1.5,45.0],["DAL","NO",-6.5,48.5],["NYJ","NE",-6.0,41.0],["ARI","LV",-3.0,46.5],["TEN","MIA",2.0,44.0],["HOU","IND",-7.5,45.5],["MIN","CAR",-4.0,40.0],["NYG","CHI",-2.5,42.5],["JAX","CLE",1.5,41.0],["DEN","PIT",-1.0,42.0],] as [string,string,number,number][],
 results:{}  as {[k:string]:[number,number]},
 props:[] as {name:string,pos:string,team:string,stat:string,ou:number,opp:string,odds?:string}[],
 propResults:{}  as {[k:string]:number|string}
@@ -2535,6 +2536,12 @@ function AnalyticsDashboard({T,data,loading,onLoad}:{T:any,data:any,loading:bool
     var d=new Date(e.created_at);return(Date.now()-d.getTime())<7*86400000;
   }).map(function(e:any){return e.visitor_id;})).size;
   var features=buildFeatureUsage(data.features);
+
+  // Enhanced metrics section
+  var bounceRate = ((dailyEvents||[]).filter(function(e){return e.event_type==='page_view';}).length / (totalUnique||1) * 100).toFixed(1);
+  var avgEventsPerVisitor = (((dailyEvents||[]).length / (totalUnique||1)) || 0).toFixed(1);
+  var topEventType = features[0]?features[0][0]:'Unknown';
+  var topEventCount = features[0]?features[0][1]:0;
   var maxFeat=Math.max(1,...features.map(function(f:any){return f[1];}));
 
   // Build user list from dedicated signed-in user events feed
@@ -8730,7 +8737,8 @@ export default function App(){
                 var totalNote=g.total>=50?"Shootout":g.total<=41?"Low Scoring":"";
                 var totalIcon=g.total>=50?"\uD83D\uDD25":g.total<=41?"\uD83D\uDEE1\uFE0F":"";
                 var rKey=g.home+"-"+g.away;
-                var result=(typeof wresults!=='undefined'?wresults:WEEKLY_RESULTS)[rKey]||null;
+                var selectedWeekResults=selectedVegasWeek<7?(function(){var pw=PAST_WEEKS.find(function(pw){return pw.week===selectedVegasWeek;});return pw?pw.results:WEEKLY_RESULTS;})():WEEKLY_RESULTS;
+                var result=selectedWeekResults[rKey]||null;
                 var homeScore=result?result[0]:null;
                 var awayScore=result?result[1]:null;
                 var isFinal=result!==null;
