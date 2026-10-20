@@ -9024,9 +9024,15 @@ export default function App(){
           ),
           // ── PRIOR WEEKS HISTORY TAB ──
           vegasSubTab==="history"&&React.createElement("div",null,
-            React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4}},"Prior Weeks Results"),
-            React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:14}},"Game lines, scores, and ATS results from completed weeks"),
-            PAST_WEEKS.slice().reverse().map(function(pw){
+            React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:16,flexWrap:"wrap"}},
+              React.createElement("label",{style:{fontSize:12,fontWeight:700,color:T.textSub}},"Week:"),
+              React.createElement("select",{value:selectedVegasWeek,onChange:function(e){setSelectedVegasWeek(+e.target.value);},style:{padding:"6px 12px",borderRadius:8,border:"1px solid "+T.border,background:T.bgInput,color:T.text,fontWeight:600,fontSize:12,cursor:"pointer"}},
+                [1,2,3,4,5,6,7].map(function(w){return React.createElement("option",{key:w,value:w},"Week "+w);})
+              )
+            ),
+            React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4}},"Week "+selectedVegasWeek+" Results"),
+            React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:14}},"Game lines, scores, and ATS results"),
+            PAST_WEEKS.filter(function(pw){return pw.week===selectedVegasWeek;}).slice().reverse().map(function(pw){
               var pwGames=pw.lines.map(function(g){
                 var home=g[0],away=g[1],spread=g[2],total=g[3];
                 var rKey=home+"-"+away;
