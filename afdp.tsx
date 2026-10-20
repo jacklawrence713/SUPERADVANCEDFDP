@@ -8973,9 +8973,9 @@ export default function App(){
                         React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
                         React.createElement("div",{style:{fontSize:10,color:T.textSub}},p.pos+" · "+p.team+" vs "+p.opp)
                       ),
-                      selectedVegasWeek===7&&React.createElement("div",{style:{textAlign:"right",flexShrink:0}},
-                        React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:600,marginBottom:2}},labelText),
-                        React.createElement("div",{style:{fontWeight:900,fontSize:16,color:valColor}},displayVal)
+                      React.createElement("div",{style:{textAlign:"right",flexShrink:0}},
+                        selectedVegasWeek===7&&React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:600,marginBottom:2}},labelText),
+                        React.createElement("div",{style:{fontWeight:900,fontSize:16,color:selectedVegasWeek===7?valColor:(hasResult?resultColor:T.textDim)}},selectedVegasWeek===7?displayVal:(hasResult&&!isDNP?actual:"—"))
                       ),
                       hasResult&&React.createElement("div",{style:{textAlign:"right",flexShrink:0,minWidth:52}},
                         !isDNP&&!isATD&&React.createElement("div",{style:{fontWeight:900,fontSize:16,color:resultColor}},actual),
