@@ -355,6 +355,7 @@ var WEEKLY_LINES:[string,string,number,number][]=[
 // Archive system (odds_archive table) stores all historical odds for replay analysis
 // Current week's results — add scores as games finish
 var WEEKLY_RESULTS:{[k:string]:[number,number]}={
+"SEA-NE":[13,10],"LAR-SF":[7,27],"CIN-TB":[33,27],"DET-NO":[31,30],"TEN-NYJ":[10,23],"IND-BAL":[23,41],"PIT-ATL":[20,13],"CAR-CHI":[37,59],"JAX-CLE":[34,10],"HOU-BUF":[31,36],"LV-MIA":[27,13],"MIN-GB":[39,22],"PHI-WAS":[24,22],"LAC-ARI":[14,26],"NYG-DAL":[28,20],"KC-DEN":[31,10]
 };
 function buildHardcodedOdds():{[t:string]:{spread:number,total:number,opp:string}}{
   var r:{[t:string]:{spread:number,total:number,opp:string}}={};
@@ -2114,6 +2115,7 @@ const WEEKLY_PROPS=[
 ];
 // Current week's prop results — add as games finish
 var PROP_RESULTS:{[k:string]:number|string}={
+"Joe Burrow|Pass Yds":254,"Matthew Stafford|Pass Yds":155,"Dak Prescott|Pass Yds":175,"Jared Goff|Pass Yds":206,"Tyler Shough|Pass Yds":410,"Brock Purdy|Pass Yds":205,"Jordan Love|Pass Yds":387,"Justin Herbert|Pass Yds":209,"Patrick Mahomes|Pass Yds":184,"Josh Allen|Pass Yds":334,"Lamar Jackson|Pass Yds":324,"Caleb Williams|Pass Yds":269,"Jahmyr Gibbs|Rush Yds":156,"Derrick Henry|Rush Yds":144,"Jonathan Taylor|Rush Yds":98,"Saquon Barkley|Rush Yds":83,"Bijan Robinson|Rush Yds":83,"James Cook|Rush Yds":57,"Javonte Williams|Rush Yds":41,"D'Andre Swift|Rush Yds":124,"Devon Achane|Rush Yds":36,"Breece Hall|Rush Yds":102,"Kenneth Walker III|Rush Yds":173,"Christian McCaffrey|Rush Yds":68,"Puka Nacua|Rec Yds":74,"Ja'Marr Chase|Rec Yds":12,"Jaxon Smith-Njigba|Rec Yds":122,"CeeDee Lamb|Rec Yds":44,"Chris Olave|Rec Yds":182,"Justin Jefferson|Rec Yds":92,"Nico Collins|Rec Yds":75,"Tee Higgins|Rec Yds":59,"Malik Nabers|Rec Yds":69,"Trey McBride|Rec Yds":95,"Rashee Rice|Rec Yds":52,"Jahmyr Gibbs|Any TD":"YES","Saquon Barkley|Any TD":"NO","Ja'Marr Chase|Any TD":"NO","Derrick Henry|Any TD":"YES","Jonathan Taylor|Any TD":"YES","Amon-Ra St. Brown|Any TD":"YES","CeeDee Lamb|Any TD":"YES","Christian McCaffrey|Any TD":"NO","Justin Jefferson|Any TD":"YES","Rashee Rice|Any TD":"YES","Dalton Kincaid|Any TD":"NO"
 };
 const PLAYER_PROPS=[
 {name:"Josh Allen",pos:"QB",team:"BUF",stat:"Pass Yds",ou:4450.5},{name:"Josh Allen",pos:"QB",team:"BUF",stat:"Pass TD",ou:38.5},
