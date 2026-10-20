@@ -47,61 +47,62 @@ Deno.serve(async (req) => {
     const endDate = new Date();
     const startDate = new Date(endDate.getTime() - 14 * 24 * 60 * 60 * 1000);
 
-    // Fetch daily analytics events for unique visitor calculation
-    const { data: dailyEvents, error: eventsError } = await supabase
+    // Fetch all analytics events for the period
+    const { data: allEvents, error: eventsError } = await supabase
       .from("analytics_events")
       .select("created_at, visitor_id, event_type, event_data")
       .gte("created_at", startDate.toISOString())
       .lte("created_at", endDate.toISOString())
       .order("created_at", { ascending: false });
-    
+
     if (eventsError) {
       console.error("Analytics events query error:", eventsError);
       return new Response(JSON.stringify({ error: "Failed to fetch analytics events", details: eventsError.message }), { status: 400 });
     }
 
-    // Build unique visitors by day
-    const uniqueVisitorsByDay: Record<string, Set<string>> = {};
-    const dailyEventCounts: Record<string, number> = {};
+    // Count all-time trades
+    const { data: allTimeEvents, error: allTimeError } = await supabase
+      .from("analytics_events")
+      .select("event_type", { count: "exact" })
+      .eq("event_type", "trade_analyzed");
 
-    if (dailyEvents) {
-      dailyEvents.forEach((event: any) => {
-        const day = event.created_at.slice(0, 10);
-        if (!uniqueVisitorsByDay[day]) uniqueVisitorsByDay[day] = new Set();
-        if (!dailyEventCounts[day]) dailyEventCounts[day] = 0;
-        uniqueVisitorsByDay[day].add(event.visitor_id);
-        dailyEventCounts[day]++;
-      });
-    }
+    const totalTrades = allTimeEvents?.length || 0;
 
-    const uniqueVisitors = Object.entries(uniqueVisitorsByDay).map(([day, visitors]) => ({
-      visitor_date: day,
-      unique_count: visitors.size,
-      total_events: dailyEventCounts[day]
-    })).sort((a, b) => b.visitor_date.localeCompare(a.visitor_date));
+    // Calculate unique visitors all-time
+    const { data: allTimeVisitors, error: visitorError } = await supabase
+      .from("analytics_events")
+      .select("visitor_id", { count: "exact", head: true });
 
-    // Fetch Week 6 odds
-    const { data: week6Odds } = await supabase
-      .from("odds_archive")
-      .select("*")
-      .eq("nfl_week", 6)
-      .eq("nfl_season", 2026)
-      .order("game_date", { ascending: true });
+    const totalAllTimeVisitors = new Set(
+      (allTimeVisitors || []).map((e: any) => e.visitor_id)
+    ).size;
 
-    // Fetch Week 7 odds
-    const { data: week7Odds } = await supabase
-      .from("odds_archive")
-      .select("*")
-      .eq("nfl_week", 7)
-      .eq("nfl_season", 2026)
-      .order("game_date", { ascending: true });
+    // Separate events: daily page views, user events (with emails), recent activity
+    const daily = (allEvents || []).filter((e: any) => e.event_type === "page_view");
+    const userEvents = (allEvents || []).filter((e: any) =>
+      e.event_data?.user_email && (e.event_type === "trade_analyzed" || e.event_type === "page_view")
+    );
+    const recent = (allEvents || []).slice(0, 100); // Last 100 events for anonymous visitor feed
+
+    // Build feature usage (event type distribution)
+    const featureCounts: Record<string, number> = {};
+    (allEvents || []).forEach((e: any) => {
+      const eventType = e.event_type || "unknown";
+      featureCounts[eventType] = (featureCounts[eventType] || 0) + 1;
+    });
+    const features = Object.entries(featureCounts)
+      .map(([event_type, count]) => [event_type, count] as [string, number])
+      .sort((a, b) => b[1] - a[1]);
 
     return new Response(
       JSON.stringify({
-        uniqueVisitors: uniqueVisitors || [],
-        week6Odds: week6Odds || [],
-        week7Odds: week7Odds || [],
-        dailyEvents: dailyEvents || [],
+        daily: daily || [],
+        dailyEvents: allEvents || [],
+        userEvents: userEvents || [],
+        recent: recent || [],
+        features: features || [],
+        totalVisitors: totalAllTimeVisitors,
+        trades: totalTrades,
         success: true
       }),
       {

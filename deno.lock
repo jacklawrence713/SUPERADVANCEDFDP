@@ -1,0 +1,29 @@
+{
+  "version": "5",
+  "remote": {
+    "https://esm.sh/@supabase/supabase-js@2.39.0": "f51aeb2dbf8f67c8fa396628af45793e3513067d45705f1ea158f5c678bb0cea"
+  },
+  "workspace": {
+    "packageJson": {
+      "dependencies": [
+        "npm:@anthropic-ai/sdk@0.89",
+        "npm:@supabase/supabase-js@^2.112.3",
+        "npm:@testing-library/dom@^10.4.2",
+        "npm:@testing-library/jest-dom@^7.0.1",
+        "npm:@testing-library/react@^16.3.3",
+        "npm:@types/node@^26.6.2",
+        "npm:@types/react-dom@^18.3.0",
+        "npm:@types/react@^18.3.5",
+        "npm:@vitejs/plugin-react@^4.3.1",
+        "npm:jsdom@^30.1.0",
+        "npm:react-dom@^18.3.1",
+        "npm:react@^18.3.1",
+        "npm:resend@^6.21.0",
+        "npm:stripe@^22.5.0",
+        "npm:typescript@^5.5.3",
+        "npm:vite@^5.4.2",
+        "npm:vitest@^2.1.9"
+      ]
+    }
+  }
+}
