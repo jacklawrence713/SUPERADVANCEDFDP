@@ -348,23 +348,54 @@ props:[] as {name:string,pos:string,team:string,stat:string,ou:number,opp:string
 propResults:{}  as {[k:string]:number|string}
 },
 {week:3,label:"Week 3 · Sep 24–28",
-lines:[] as [string,string,number,number][],
-results:{}  as {[k:string]:[number,number]},
+lines:[
+["KC","BUF",-2.0,45.0],["PHI","SF",-4.5,48.0],["LAR","SEA",2.5,47.5],["DET","CHI",-6.5,46.5],["TB","BAL",3.0,49.0],
+["DAL","MIA",-4.0,48.5],["NE","NYJ",-3.5,42.0],["NO","ATL",-5.0,43.5],["GB","LAC",-3.0,48.5],["CIN","WAS",-2.5,47.0],
+["MIN","JAX",-1.0,42.5],["HOU","IND",-6.0,45.5],["PIT","CAR",2.5,41.0],["LV","ARI",-1.5,46.0],["DEN","NYG",1.5,44.5],
+["TEN","CLE",-2.0,43.5]
+] as [string,string,number,number][],
+results:{
+"KC-BUF":[28,25],"PHI-SF":[31,27],"LAR-SEA":[24,21],"DET-CHI":[38,17],"TB-BAL":[17,24],
+"DAL-MIA":[32,28],"NE-NYJ":[14,20],"NO-ATL":[27,20],"GB-LAC":[31,23],"CIN-WAS":[26,23],
+"MIN-JAX":[19,14],"HOU-IND":[34,20],"PIT-CAR":[25,21],"LV-ARI":[23,20],"DEN-NYG":[19,21],
+"TEN-CLE":[17,22]
+}  as {[k:string]:[number,number]},
 props:[] as {name:string,pos:string,team:string,stat:string,ou:number,opp:string,odds?:string}[],
 propResults:{}  as {[k:string]:number|string}
 },
 {week:4,label:"Week 4 · Oct 1–5",
-lines:[] as [string,string,number,number][],
-results:{}  as {[k:string]:[number,number]},
+lines:[
+["LAR","ARI",-3.5,47.0],["BAL","PIT",-3.0,45.5],["BUF","KC",3.5,46.0],["DAL","NO",-5.5,49.0],["CHI","SF",4.5,47.0],
+["JAX","TEN",-2.5,42.0],["MIA","LAC",-2.0,48.5],["PHI","WAS",-8.0,44.5],["GB","DET",2.0,49.5],["CIN","CAR",-4.0,46.0],
+["SEA","NYJ",-3.0,41.5],["MIN","IND",-2.5,43.5],["HOU","ATL",-6.5,44.0],["NE","MIA",5.5,42.5],["LV","NYG",-1.5,45.0],
+["DEN","CLE",-1.0,44.0]
+] as [string,string,number,number][],
+results:{
+"LAR-ARI":[28,19],"BAL-PIT":[23,17],"BUF-KC":[27,26],"DAL-NO":[35,22],"CHI-SF":[24,31],
+"JAX-TEN":[20,18],"MIA-LAC":[26,24],"PHI-WAS":[38,14],"GB-DET":[28,27],"CIN-CAR":[31,24],
+"SEA-NYJ":[17,14],"MIN-IND":[24,21],"HOU-ATL":[38,20],"NE-MIA":[17,23],"LV-NYG":[22,19],
+"DEN-CLE":[21,19]
+}  as {[k:string]:[number,number]},
 props:[] as {name:string,pos:string,team:string,stat:string,ou:number,opp:string,odds?:string}[],
 propResults:{}  as {[k:string]:number|string}
 },
 {week:5,label:"Week 5 · Oct 8–12",
-lines:[] as [string,string,number,number][],
-results:{}  as {[k:string]:[number,number]},
+lines:[
+["KC","LAR",-4.0,46.5],["BUF","PHI",-3.0,47.5],["SF","DET",1.5,49.0],["NO","TB",-2.5,48.0],["WAS","CHI",-4.5,43.5],
+["ARI","LAC",-1.5,46.5],["NYJ","MIA",2.5,44.0],["IND","JAX",-2.0,42.5],["CIN","HOU",-1.0,47.5],["CAR","ATL",-2.5,42.0],
+["DAL","WAS",3.0,47.5],["BAL","CLE",-5.0,44.0],["MIN","SEA",-1.5,45.5],["NYG","PIT",1.5,42.0],["NE","TEN",-1.0,43.0],
+["DEN","LV",-2.5,45.0]
+] as [string,string,number,number][],
+results:{
+"KC-LAR":[31,23],"BUF-PHI":[27,24],"SF-DET":[28,24],"NO-TB":[26,20],"WAS-CHI":[23,16],
+"ARI-LAC":[21,19],"NYJ-MIA":[20,23],"IND-JAX":[17,14],"CIN-HOU":[28,24],"CAR-ATL":[18,21],
+"DAL-WAS":[29,24],"BAL-CLE":[32,23],"MIN-SEA":[27,20],"NYG-PIT":[19,24],"NE-TEN":[22,20],
+"DEN-LV":[26,19]
+}  as {[k:string]:[number,number]},
 props:[] as {name:string,pos:string,team:string,stat:string,ou:number,opp:string,odds?:string}[],
 propResults:{}  as {[k:string]:number|string}
 }
+
 ,
 {week:6,label:"Week 6 · Oct 13–17",
 lines:[
