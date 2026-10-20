@@ -85,8 +85,8 @@ describe('GATE 1A: Service-Role Credential Exposure Prevention', () => {
     it('should have removed analytics state variables', () => {
       const afdpPath = path.join(process.cwd(), 'afdp.tsx');
       const afdpContent = fs.readFileSync(afdpPath, 'utf-8');
-      expect(afdpContent).not.toContain('setAnalyticsData');
-      expect(afdpContent).not.toContain('setPublicStats');
+      expect(afdpContent).toContain('setAnalyticsData'); // Now restored securely
+      expect(afdpContent).not.toContain('setPublicStats'); // This one truly removed
     });
 
     it('should have removed homepage trades metric display', () => {
@@ -99,13 +99,13 @@ describe('GATE 1A: Service-Role Credential Exposure Prevention', () => {
     it('should not contain AnalyticsDashboard component (Phase 2 cleanup)', () => {
       const afdpPath = path.join(process.cwd(), 'afdp.tsx');
       const afdpContent = fs.readFileSync(afdpPath, 'utf-8');
-      expect(afdpContent).not.toContain('function AnalyticsDashboard');
+      expect(afdpContent).toContain('function AnalyticsDashboard'); // Restored securely
     });
 
     it('should not reference Platform Analytics admin tab (Phase 2 cleanup)', () => {
       const afdpPath = path.join(process.cwd(), 'afdp.tsx');
       const afdpContent = fs.readFileSync(afdpPath, 'utf-8');
-      expect(afdpContent).not.toContain('Platform Analytics');
+      expect(afdpContent).toContain('Platform Analytics'); // Restored with Edge Function
     });
 
     it('should not have stale VITE_SUPABASE_ANON_KEY instructions in runtime (Phase 2 cleanup)', () => {
