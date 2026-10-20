@@ -2569,8 +2569,8 @@ function AnalyticsDashboard({T,data,loading,onLoad}:{T:any,data:any,loading:bool
   var features=buildFeatureUsage(data.features);
 
   // Enhanced metrics section
-  var bounceRate = ((dailyEvents||[]).filter(function(e){return e.event_type==='page_view';}).length / (totalUnique||1) * 100).toFixed(1);
-  var avgEventsPerVisitor = (((dailyEvents||[]).length / (totalUnique||1)) || 0).toFixed(1);
+  var bounceRate = ((data.dailyEvents||[]).filter(function(e){return e.event_type==='page_view';}).length / (totalUnique||1) * 100).toFixed(1);
+  var avgEventsPerVisitor = (((data.dailyEvents||[]).length / (totalUnique||1)) || 0).toFixed(1);
   var topEventType = features[0]?features[0][0]:'Unknown';
   var topEventCount = features[0]?features[0][1]:0;
   var maxFeat=Math.max(1,...features.map(function(f:any){return f[1];}));
