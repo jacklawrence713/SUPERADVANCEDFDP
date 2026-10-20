@@ -340,6 +340,31 @@ propResults:{
 } as {[k:string]:number|string}
 }
 ,
+{week:2,label:"Week 2 · Sep 17–21",
+lines:[] as [string,string,number,number][],
+results:{}  as {[k:string]:[number,number]},
+props:[] as {name:string,pos:string,team:string,stat:string,ou:number,opp:string,odds?:string}[],
+propResults:{}  as {[k:string]:number|string}
+},
+{week:3,label:"Week 3 · Sep 24–28",
+lines:[] as [string,string,number,number][],
+results:{}  as {[k:string]:[number,number]},
+props:[] as {name:string,pos:string,team:string,stat:string,ou:number,opp:string,odds?:string}[],
+propResults:{}  as {[k:string]:number|string}
+},
+{week:4,label:"Week 4 · Oct 1–5",
+lines:[] as [string,string,number,number][],
+results:{}  as {[k:string]:[number,number]},
+props:[] as {name:string,pos:string,team:string,stat:string,ou:number,opp:string,odds?:string}[],
+propResults:{}  as {[k:string]:number|string}
+},
+{week:5,label:"Week 5 · Oct 8–12",
+lines:[] as [string,string,number,number][],
+results:{}  as {[k:string]:[number,number]},
+props:[] as {name:string,pos:string,team:string,stat:string,ou:number,opp:string,odds?:string}[],
+propResults:{}  as {[k:string]:number|string}
+}
+,
 {week:6,label:"Week 6 · Oct 13–17",
 lines:[
 ["KC","DEN",-7.5,43.5],["TB","ATL",-3.5,45.0],
