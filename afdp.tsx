@@ -9045,7 +9045,8 @@ export default function App(){
               var wcatColors:{[k:string]:string}={"Pass Yds":"#818cf8","Pass TD":"#60a5fa","Rush Yds":"#34d399","Rec Yds":"#c084fc","Receptions":"#f59e0b","Any TD":"#f87171"};
               var wcatIcons:{[k:string]:string}={"Pass Yds":"\uD83C\uDFC8","Pass TD":"\uD83C\uDFC8","Rush Yds":"\uD83C\uDFC3","Rec Yds":"\uD83D\uDC50","Receptions":"\uD83C\uDFAF","Any TD":"\uD83C\uDFC6"};
               var wgrouped:{[k:string]:typeof WEEKLY_PROPS}={};
-              WEEKLY_PROPS.forEach(function(p){if(!wgrouped[p.stat])wgrouped[p.stat]=[];wgrouped[p.stat].push(p);});
+              var weekProps=selectedVegasWeek<7?PAST_WEEKS.find(function(pw){return pw.week===selectedVegasWeek;})?.props||[]:WEEKLY_PROPS;
+              weekProps.forEach(function(p){if(!wgrouped[p.stat])wgrouped[p.stat]=[];wgrouped[p.stat].push(p);});
               return wcats.filter(function(c){return wgrouped[c];}).map(function(cat){
                 var cc=wcatColors[cat]||T.text;
                 return React.createElement("div",{key:"wk"+cat,style:{marginBottom:16}},
