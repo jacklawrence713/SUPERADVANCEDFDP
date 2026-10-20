@@ -7,7 +7,10 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(getSupabaseUrl(), getSupabaseSecretKey());
+    // Use service role credentials for admin operations
+    const supabase = createClient(getSupabaseUrl(), getSupabaseSecretKey(), {
+      auth: { persistSession: false }
+    });
 
     // Get authorization header
     const authHeader = req.headers.get("Authorization");
@@ -47,42 +50,47 @@ Deno.serve(async (req) => {
     const endDate = new Date();
     const startDate = new Date(endDate.getTime() - 14 * 24 * 60 * 60 * 1000);
 
-    // Fetch all analytics events for the period
+    // Fetch all analytics events for the period (limit to prevent timeout)
     const { data: allEvents, error: eventsError } = await supabase
       .from("analytics_events")
       .select("created_at, visitor_id, event_type, event_data")
       .gte("created_at", startDate.toISOString())
       .lte("created_at", endDate.toISOString())
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(2000);
 
     if (eventsError) {
       console.error("Analytics events query error:", eventsError);
-      return new Response(JSON.stringify({ error: "Failed to fetch analytics events", details: eventsError.message }), { status: 400 });
+      return new Response(
+        JSON.stringify({ 
+          error: "Failed to fetch analytics events",
+          code: eventsError.code,
+          details: eventsError.message
+        }), 
+        { status: 400 }
+      );
     }
 
     // Count all-time trades
-    const { data: allTimeEvents, error: allTimeError } = await supabase
+    const { data: tradeEvents, error: tradeError } = await supabase
       .from("analytics_events")
-      .select("event_type", { count: "exact" })
+      .select("id", { count: "exact" })
       .eq("event_type", "trade_analyzed");
 
-    const totalTrades = allTimeEvents?.length || 0;
+    const totalTrades = tradeError ? 0 : (tradeEvents?.length || 0);
 
-    // Calculate unique visitors all-time
-    const { data: allTimeVisitors, error: visitorError } = await supabase
-      .from("analytics_events")
-      .select("visitor_id", { count: "exact", head: true });
-
-    const totalAllTimeVisitors = new Set(
-      (allTimeVisitors || []).map((e: any) => e.visitor_id)
-    ).size;
+    // Get unique visitors from all events
+    const visitorSet = new Set<string>();
+    (allEvents || []).forEach((e: any) => {
+      if (e.visitor_id) visitorSet.add(e.visitor_id);
+    });
 
     // Separate events: daily page views, user events (with emails), recent activity
     const daily = (allEvents || []).filter((e: any) => e.event_type === "page_view");
     const userEvents = (allEvents || []).filter((e: any) =>
       e.event_data?.user_email && (e.event_type === "trade_analyzed" || e.event_type === "page_view")
     );
-    const recent = (allEvents || []).slice(0, 100); // Last 100 events for anonymous visitor feed
+    const recent = (allEvents || []).slice(0, 100);
 
     // Build feature usage (event type distribution)
     const featureCounts: Record<string, number> = {};
@@ -101,7 +109,7 @@ Deno.serve(async (req) => {
         userEvents: userEvents || [],
         recent: recent || [],
         features: features || [],
-        totalVisitors: totalAllTimeVisitors,
+        totalVisitors: visitorSet.size,
         trades: totalTrades,
         success: true
       }),
@@ -112,7 +120,10 @@ Deno.serve(async (req) => {
   } catch (err) {
     console.error("Admin analytics error:", err);
     return new Response(
-      JSON.stringify({ error: "Internal server error", details: String(err) }),
+      JSON.stringify({ 
+        error: "Internal server error", 
+        details: String(err)
+      }),
       { status: 500 }
     );
   }
