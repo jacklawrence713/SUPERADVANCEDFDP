@@ -3105,6 +3105,9 @@ export default function App(){
   // Rankings
   var [rankSubTab,setRankSubTab]=useState(function(){try{return localStorage.getItem('fdp_rankSubTab')||"allrankings";}catch(e){return"allrankings";}});
   var [vegasSubTab,setVegasSubTab]=useState("lines");
+  var [selectedVegasWeek,setSelectedVegasWeek]=useState(7);
+  var [weekOddsData,setWeekOddsData]=useState(null);
+  var [weekOddsLoading,setWeekOddsLoading]=useState(false);
   var _setRankSubTab=setRankSubTab;setRankSubTab=function(v){_setRankSubTab(v);try{localStorage.setItem('fdp_rankSubTab',v);}catch(e){}};
   var [rankPos,setRankPos]=useState("QB");
 
