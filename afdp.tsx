@@ -8675,13 +8675,22 @@ export default function App(){
                 !oddsStale&&oddsFetchedAt&&(oddsSource==="api"||oddsSource==="cache")&&React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:500}},"Fetched "+new Date(oddsFetchedAt).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})),
                 oddsSource!=="api"&&oddsSource!=="cache"&&React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:600}},"Showing manual lines \u2014 may not reflect current week")
               ),
-              games.map(function(g){
+              (function(){
+                if(selectedVegasWeek<7){
+                  var pw=PAST_WEEKS.find(function(pw){return pw.week===selectedVegasWeek;});
+                  if(pw){
+                    var wgames=pw.lines.map(function(line){return{home:line[0],away:line[1],spread:line[2],total:line[3],eventId:null};});
+                    var wresults=pw.results;
+                  }
+                }
+                return(wgames||games);
+              })().map(function(g){
                 var gsHome=getGameScript(g.home,oddsData);
                 var gsAway=getGameScript(g.away,oddsData);
                 var totalNote=g.total>=50?"Shootout":g.total<=41?"Low Scoring":"";
                 var totalIcon=g.total>=50?"\uD83D\uDD25":g.total<=41?"\uD83D\uDEE1\uFE0F":"";
                 var rKey=g.home+"-"+g.away;
-                var result=WEEKLY_RESULTS[rKey]||null;
+                var result=(typeof wresults!=='undefined'?wresults:WEEKLY_RESULTS)[rKey]||null;
                 var homeScore=result?result[0]:null;
                 var awayScore=result?result[1]:null;
                 var isFinal=result!==null;
@@ -8963,7 +8972,8 @@ export default function App(){
                     var labelText=isATD?"ODDS":"O/U";
                     var valColor=isATD?((p as any).odds&&(p as any).odds.charAt(0)==="-"?"#34d399":"#f59e0b"):cc;
                     var rKey=p.name+"|"+p.stat;
-                    var actual=PROP_RESULTS[rKey];
+                    var pwp=selectedVegasWeek<7?PAST_WEEKS.find(function(pw){return pw.week===selectedVegasWeek;}):null;
+                    var actual=pwp?pwp.propResults[rKey]:PROP_RESULTS[rKey];
                     var hasResult=actual!==undefined;
                     var isDNP=actual==="DNP";
                     var isATDResult=isATD&&hasResult;
