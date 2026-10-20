@@ -15,7 +15,6 @@ const EDGE_URL = (import.meta as any).env?.VITE_EDGE_FUNCTIONS_URL || (SUPA_URL 
 // Auth + data client
 const authClient = SUPA_URL && SUPA_KEY ? createClient(SUPA_URL, SUPA_KEY) : null;
 // Analytics write client — separate instance so it always uses anon key, never inherits user session
-const analyticsClient = SUPA_URL && SUPA_KEY ? createClient(SUPA_URL, SUPA_KEY, {auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}}) : null;
 
 // ── Edge Function helpers ─────────────────────────────────────────────────────
 async function callEdgeFn(fn: string, body: any, userToken?: string) {
@@ -47,20 +46,6 @@ function getVisitorId(): string {
 }
 
 // Prompt 28: Fetch authoritative server quota status
-async function fetchTradeQuotaStatus(userToken){
-  if(!userToken){setTradeQuota({limit_per_day:2,used_count:0,reserved_count:0,remaining_count:0,quota_date:"",is_unlimited:false,loading:false,error:"Not authenticated"});return;}
-  try{
-    const res=await callEdgeFn("trade-quota-status",{},userToken);
-    if(res.quota){
-      setTradeQuota({...res.quota,loading:false,error:null});
-    }else{
-      setTradeQuota({limit_per_day:2,used_count:0,reserved_count:0,remaining_count:0,quota_date:"",is_unlimited:false,loading:false,error:"Failed to load quota"});
-    }
-  }catch(e){
-    console.error("[trade-quota] fetch failed:",e);
-    setTradeQuota({limit_per_day:2,used_count:0,reserved_count:0,remaining_count:0,quota_date:"",is_unlimited:false,loading:false,error:"Quota fetch error"});
-  }
-}
 
 let _trackedEmail = "";
 function setTrackedUser(email: string) { _trackedEmail = email || ""; }
@@ -378,18 +363,6 @@ function buildHardcodedOdds():{[t:string]:{spread:number,total:number,opp:string
 }
 // fetchOdds calls the server-side fetch-odds Edge Function (never the provider directly).
 // Returns {odds, source} — source distinguishes "api" / "cache" / "manual" / "unavailable".
-async function fetchOdds():Promise<{odds:{[t:string]:{spread:number,total:number,opp:string}},source:string,fetchedAt:string,stale:boolean}>{
-  try{
-    var r=await fetch(EDGE_URL+"/fetch-odds",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPA_KEY},body:"{}"});
-    var data=await r.json();
-    if(data&&data.odds&&Object.keys(data.odds).length>0){
-      return {odds:data.odds,source:data.source||"api",fetchedAt:data.fetchedAt||"",stale:data.stale||false};
-    }
-    return {odds:{},source:data?.source||"unavailable",fetchedAt:data?.fetchedAt||"",stale:false};
-  }catch{
-    return {odds:{},source:"unavailable",fetchedAt:"",stale:false};
-  }
-}
 function getGameScript(team:string,odds:{[t:string]:{spread:number,total:number,opp:string}}|null):{spread:number,total:number,script:string,label:string,color:string,opp:string}|null{
   if(!odds)return null;
   var g=odds[team];if(!g)return null;
@@ -2925,6 +2898,38 @@ export default function App(){
   var [faabB,setFaabB]=useState(0);
   var [analyzed,setAnalyzed]=useState(false);
   var [tradeQuota,setTradeQuota]=useState({limit_per_day:2,used_count:0,reserved_count:0,remaining_count:0,quota_date:"",is_unlimited:false,loading:true,error:null});
+
+  // fetchTradeQuotaStatus: NOW inside App, can access setTradeQuota via closure
+  async function fetchTradeQuotaStatus(userToken){
+    if(!userToken){setTradeQuota({limit_per_day:2,used_count:0,reserved_count:0,remaining_count:0,quota_date:"",is_unlimited:false,loading:false,error:"Not authenticated"});return;}
+    try{
+      const res=await callEdgeFn("trade-quota-status",{},userToken);
+      if(res.quota){
+        setTradeQuota({...res.quota,loading:false,error:null});
+      }else{
+        setTradeQuota({limit_per_day:2,used_count:0,reserved_count:0,remaining_count:0,quota_date:"",is_unlimited:false,loading:false,error:"Failed to load quota"});
+      }
+    }catch(e){
+      console.error("[trade-quota] fetch failed:",e);
+      setTradeQuota({limit_per_day:2,used_count:0,reserved_count:0,remaining_count:0,quota_date:"",is_unlimited:false,loading:false,error:"Quota fetch error"});
+    }
+  }
+
+  // fetchOdds: NOW inside App, HAS access to user via closure, includes auth token
+  async function fetchOdds():Promise<{odds:{[t:string]:{spread:number,total:number,opp:string}},source:string,fetchedAt:string,stale:boolean}>{
+    try{
+      const headers:any={"Content-Type":"application/json","apikey":SUPA_KEY};
+      if(user?.token){headers["Authorization"]=`Bearer ${user.token}`;}
+      var r=await fetch(EDGE_URL+"/fetch-odds",{method:"POST",headers,body:"{}"});
+      var data=await r.json();
+      if(data&&data.odds&&Object.keys(data.odds).length>0){
+        return {odds:data.odds,source:data.source||"api",fetchedAt:data.fetchedAt||"",stale:data.stale||false};
+      }
+      return {odds:{},source:data?.source||"unavailable",fetchedAt:data?.fetchedAt||"",stale:false};
+    }catch{
+      return {odds:{},source:"unavailable",fetchedAt:"",stale:false};
+    }
+  }
   var [pendingRequestRef]=useState({requestId:null,payloadKey:null});
   var [impTab,setImpTab]=useState("sleeper");
   var [slUser,setSlUser]=useState("");
