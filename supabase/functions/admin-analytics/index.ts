@@ -33,22 +33,38 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Admin access required" }), { status: 403 });
     }
 
-    // Fetch unique visitors data
-    const { data: uniqueVisitors } = await supabase.rpc("get_unique_visitors", {
-      p_start_date: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
-      p_end_date: new Date().toISOString()
-    });
+    // Build 14-day date range
+    const endDate = new Date();
+    const startDate = new Date(endDate.getTime() - 14 * 24 * 60 * 60 * 1000);
 
-    // Fetch top visitors
-    const { data: topVisitors } = await supabase.rpc("get_top_visitors", { p_limit: 10 });
+    // Fetch daily analytics events for unique visitor calculation
+    const { data: dailyEvents, error: eventsError } = await supabase
+      .from("analytics_events")
+      .select("created_at, visitor_id, event_type, event_data")
+      .gte("created_at", startDate.toISOString())
+      .order("created_at", { ascending: false });
 
-    // Fetch daily summary
-    const { data: dailySummary } = await supabase.rpc("get_daily_visitor_summary", { p_days: 14 });
+    // Build unique visitors by day
+    const uniqueVisitorsByDay: Record<string, Set<string>> = {};
+    const dailyEventCounts: Record<string, number> = {};
 
-    // Fetch event breakdown
-    const { data: eventBreakdown } = await supabase.rpc("get_event_type_breakdown", { p_days: 14 });
+    if (dailyEvents) {
+      dailyEvents.forEach((event: any) => {
+        const day = event.created_at.slice(0, 10);
+        if (!uniqueVisitorsByDay[day]) uniqueVisitorsByDay[day] = new Set();
+        if (!dailyEventCounts[day]) dailyEventCounts[day] = 0;
+        uniqueVisitorsByDay[day].add(event.visitor_id);
+        dailyEventCounts[day]++;
+      });
+    }
 
-    // Fetch Week 6 historical odds
+    const uniqueVisitors = Object.entries(uniqueVisitorsByDay).map(([day, visitors]) => ({
+      visitor_date: day,
+      unique_count: visitors.size,
+      total_events: dailyEventCounts[day]
+    })).sort((a, b) => b.visitor_date.localeCompare(a.visitor_date));
+
+    // Fetch Week 6 odds
     const { data: week6Odds } = await supabase
       .from("odds_archive")
       .select("*")
@@ -56,7 +72,7 @@ Deno.serve(async (req) => {
       .eq("nfl_season", 2026)
       .order("game_date", { ascending: true });
 
-    // Fetch Week 7 historical odds
+    // Fetch Week 7 odds
     const { data: week7Odds } = await supabase
       .from("odds_archive")
       .select("*")
@@ -64,19 +80,9 @@ Deno.serve(async (req) => {
       .eq("nfl_season", 2026)
       .order("game_date", { ascending: true });
 
-    // Fetch daily analytics events
-    const { data: dailyEvents } = await supabase
-      .from("analytics_events")
-      .select("*")
-      .gte("created_at", new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString())
-      .order("created_at", { ascending: false });
-
     return new Response(
       JSON.stringify({
         uniqueVisitors: uniqueVisitors || [],
-        topVisitors: topVisitors || [],
-        dailySummary: dailySummary?.[0] || null,
-        eventBreakdown: eventBreakdown || [],
         week6Odds: week6Odds || [],
         week7Odds: week7Odds || [],
         dailyEvents: dailyEvents || [],
