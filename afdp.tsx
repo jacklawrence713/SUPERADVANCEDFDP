@@ -345,7 +345,15 @@ lines:[
 ["KC","BUF",-2.5,45.5],["SF","LAR",-4.0,47.0],["TB","DET",3.0,50.0],["BAL","LAC",-3.5,46.0],["PHI","WAS",-7.0,44.5],["GB","ATL",-5.5,42.0],["CIN","SEA",-1.5,45.0],["DAL","NO",-6.5,48.5],["NYJ","NE",-6.0,41.0],["ARI","LV",-3.0,46.5],["TEN","MIA",2.0,44.0],["HOU","IND",-7.5,45.5],["MIN","CAR",-4.0,40.0],["NYG","CHI",-2.5,42.5],["JAX","CLE",1.5,41.0],["DEN","PIT",-1.0,42.0],] as [string,string,number,number][],
 results:{}  as {[k:string]:[number,number]},
 props:[] as {name:string,pos:string,team:string,stat:string,ou:number,opp:string,odds?:string}[],
-propResults:{}  as {[k:string]:number|string}
+propResults:{
+"Patrick Mahomes|Pass Yds":289,"Josh Allen|Pass Yds":285,"Joe Burrow|Pass Yds":326,
+"Jared Goff|Pass Yds":298,"Matthew Stafford|Pass Yds":267,"Brock Purdy|Pass Yds":312,
+"Jahmyr Gibbs|Rush Yds":142,"Derrick Henry|Rush Yds":156,"Saquon Barkley|Rush Yds":91,
+"Bijan Robinson|Rush Yds":127,"Puka Nacua|Rec Yds":104,"Ja'Marr Chase|Rec Yds":79,
+"Chris Olave|Rec Yds":98,"CeeDee Lamb|Rec Yds":112,"Trey McBride|Rec Yds":67,
+"Jahmyr Gibbs|Any TD":"YES","Derrick Henry|Any TD":"YES","CeeDee Lamb|Any TD":"YES",
+"Saquon Barkley|Any TD":"YES","Ja'Marr Chase|Any TD":"NO"
+}  as {[k:string]:number|string}
 },
 {week:3,label:"Week 3 · Sep 24–28",
 lines:[
