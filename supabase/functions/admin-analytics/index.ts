@@ -23,13 +23,23 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Invalid token" }), { status: 401 });
     }
 
+    // Check admin status - if users table fails, allow through with email check
+    let isAdmin = false;
     const { data: userData, error: userError } = await supabase
       .from("users")
       .select("is_admin")
       .eq("id", user.id)
       .single();
 
-    if (userError || !userData?.is_admin) {
+    if (!userError && userData?.is_admin) {
+      isAdmin = true;
+    } else if (userError) {
+      // If query fails, fall back to email check
+      const adminEmails = ["admin@fantasydraftpros.com", "jlawrence@cmgfi.com"];
+      isAdmin = adminEmails.includes((user.email || "").toLowerCase());
+    }
+
+    if (!isAdmin) {
       return new Response(JSON.stringify({ error: "Admin access required" }), { status: 403 });
     }
 
@@ -42,6 +52,7 @@ Deno.serve(async (req) => {
       .from("analytics_events")
       .select("created_at, visitor_id, event_type, event_data")
       .gte("created_at", startDate.toISOString())
+      .lte("created_at", endDate.toISOString())
       .order("created_at", { ascending: false });
 
     // Build unique visitors by day
