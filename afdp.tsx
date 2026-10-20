@@ -7,7 +7,6 @@ import { canAccessLeagueFeatures, canAccessVegas, canAccessValueHistory, canAcce
 import type { UserProfile } from "./src/entitlements";
 import { getFeaturePaywallCopy } from "./src/paywall-config";
 import type { FeatureKey } from "./src/paywall-config";
-import { getWeekByNumber, getPriorWeeks, getCurrentNFLWeek, type NFLWeek, type Game } from "./src/data/nfl-2026-weeks";
 
 // ── Supabase ─────────────────────────────────────────────────────────────────
 const SUPA_URL = (import.meta as any).env?.VITE_SUPABASE_URL;
@@ -26,7 +25,6 @@ async function callEdgeFn(fn: string, body: any, userToken?: string) {
   if (!res.ok) { const txt = await res.text().catch(() => ""); try { return JSON.parse(txt); } catch { return { error: `HTTP ${res.status}` }; } }
   return res.json();
 
-}
 // Prompt 28: Request ID generation
 function generateRequestId(){return crypto.randomUUID();}
 
@@ -34,6 +32,7 @@ function generateRequestId(){return crypto.randomUUID();}
 function getPayloadKey(sideA,sideB,tvA,tvB,scoring,posImpact,ageContext,draftCapital,rosterFit,warnings,formatNotes){
   const key={sideA:sideA.map(p=>({n:p.name,p:p.pos,v:p.val})),sideB:sideB.map(p=>({n:p.name,p:p.pos,v:p.val})),tvA,tvB,scoring:scoring||"PPR Dynasty",posImpact:posImpact?posImpact.map(p=>({p:p.pos,n:p.net})):null,ageContext:ageContext?{a:ageContext.avgA,b:ageContext.avgB}:null,draftCapital:draftCapital?{s:draftCapital.valSent,r:draftCapital.valReceived}:null,rosterFit:rosterFit?{t:rosterFit.team,d:rosterFit.valDelta}:null,warnings:warnings?[...warnings].sort():null,formatNotes:formatNotes?[...formatNotes].sort():null};
   return JSON.stringify(key);
+}
 }
 
 function getVisitorId(): string {
@@ -45,7 +44,24 @@ function getVisitorId(): string {
     }
     return id;
   } catch { return "anonymous"; }
+
+// Prompt 28: Fetch authoritative server quota status
+async function fetchTradeQuotaStatus(userToken){
+  if(!userToken){setTradeQuota({limit_per_day:2,used_count:0,reserved_count:0,remaining_count:0,quota_date:"",is_unlimited:false,loading:false,error:"Not authenticated"});return;}
+  try{
+    const res=await callEdgeFn("trade-quota-status",{},userToken);
+    if(res.quota){
+      setTradeQuota({...res.quota,loading:false,error:null});
+    }else{
+      setTradeQuota({limit_per_day:2,used_count:0,reserved_count:0,remaining_count:0,quota_date:"",is_unlimited:false,loading:false,error:"Failed to load quota"});
+    }
+  }catch(e){
+    console.error("[trade-quota] fetch failed:",e);
+    setTradeQuota({limit_per_day:2,used_count:0,reserved_count:0,remaining_count:0,quota_date:"",is_unlimited:false,loading:false,error:"Quota fetch error"});
+  }
 }
+}
+
 let _trackedEmail = "";
 function setTrackedUser(email: string) { _trackedEmail = email || ""; }
 
@@ -246,14 +262,125 @@ function headshot(n:string){var id=SLEEPER_IDS[n]||_sleeperNameMap[n];return id?
 
 // ── Vegas Lines / Game Script (via fetch-odds Edge Function) ─────────────────
 // ── PAST WEEKS ARCHIVE ──
-
-// Current week's lines (Week 5, Oct 8-12 2026)
-
+var PAST_WEEKS=[
+{week:1,label:"Week 1 · Sep 10–14",
+lines:[
+["SEA","NE",-3.5,45.5],["LAR","SF",3.5,48.5],
+["CIN","TB",-3.5,50.5],["DET","NO",-7,49.5],["TEN","NYJ",-1.5,38.5],
+["IND","BAL",3.5,47.5],["PIT","ATL",-5.5,41.5],["CAR","CHI",3,47.5],
+["JAX","CLE",-8.5,39.5],["HOU","BUF",1.5,44.5],["LV","MIA",-3,40.5],
+["MIN","GB",-1.5,46.5],["PHI","WAS",-6,44.5],["LAC","ARI",-9.5,47.5],
+["NYG","DAL",3,48.5],["KC","DEN",-2.5,43.5]
+] as [string,string,number,number][],
+results:{
+"SEA-NE":[13,10] as [number,number],"LAR-SF":[7,27] as [number,number],
+"CIN-TB":[33,27] as [number,number],"DET-NO":[31,30] as [number,number],
+"TEN-NYJ":[10,23] as [number,number],"IND-BAL":[23,41] as [number,number],
+"PIT-ATL":[20,13] as [number,number],"CAR-CHI":[37,59] as [number,number],
+"JAX-CLE":[34,10] as [number,number],"HOU-BUF":[31,36] as [number,number],
+"LV-MIA":[27,13] as [number,number],"MIN-GB":[39,22] as [number,number],
+"PHI-WAS":[24,22] as [number,number],"LAC-ARI":[14,26] as [number,number],
+"NYG-DAL":[28,20] as [number,number],"KC-DEN":[31,10] as [number,number]
+} as {[k:string]:[number,number]},
+props:[
+// Pass Yds
+{name:"Joe Burrow",pos:"QB",team:"CIN",stat:"Pass Yds",ou:264.5,opp:"TB"},
+{name:"Matthew Stafford",pos:"QB",team:"LAR",stat:"Pass Yds",ou:263.5,opp:"SF"},
+{name:"Dak Prescott",pos:"QB",team:"DAL",stat:"Pass Yds",ou:260.5,opp:"NYG"},
+{name:"Jared Goff",pos:"QB",team:"DET",stat:"Pass Yds",ou:261.5,opp:"NO"},
+{name:"Tyler Shough",pos:"QB",team:"NO",stat:"Pass Yds",ou:246.5,opp:"DET"},
+{name:"Brock Purdy",pos:"QB",team:"SF",stat:"Pass Yds",ou:244.5,opp:"LAR"},
+{name:"Jordan Love",pos:"QB",team:"GB",stat:"Pass Yds",ou:241.5,opp:"MIN"},
+{name:"Justin Herbert",pos:"QB",team:"LAC",stat:"Pass Yds",ou:236.5,opp:"ARI"},
+{name:"Patrick Mahomes",pos:"QB",team:"KC",stat:"Pass Yds",ou:232.5,opp:"DEN"},
+{name:"Josh Allen",pos:"QB",team:"BUF",stat:"Pass Yds",ou:220.5,opp:"HOU"},
+{name:"Lamar Jackson",pos:"QB",team:"BAL",stat:"Pass Yds",ou:219.5,opp:"IND"},
+{name:"Caleb Williams",pos:"QB",team:"CHI",stat:"Pass Yds",ou:226.5,opp:"CAR"},
+// Rush Yds
+{name:"Jahmyr Gibbs",pos:"RB",team:"DET",stat:"Rush Yds",ou:83.5,opp:"NO"},
+{name:"Derrick Henry",pos:"RB",team:"BAL",stat:"Rush Yds",ou:80.5,opp:"IND"},
+{name:"Jonathan Taylor",pos:"RB",team:"IND",stat:"Rush Yds",ou:77.5,opp:"BAL"},
+{name:"Saquon Barkley",pos:"RB",team:"PHI",stat:"Rush Yds",ou:77.5,opp:"WAS"},
+{name:"Bijan Robinson",pos:"RB",team:"ATL",stat:"Rush Yds",ou:76.5,opp:"PIT"},
+{name:"James Cook",pos:"RB",team:"BUF",stat:"Rush Yds",ou:74.5,opp:"HOU"},
+{name:"Javonte Williams",pos:"RB",team:"DAL",stat:"Rush Yds",ou:73.5,opp:"NYG"},
+{name:"D'Andre Swift",pos:"RB",team:"CHI",stat:"Rush Yds",ou:69.5,opp:"CAR"},
+{name:"Devon Achane",pos:"RB",team:"MIA",stat:"Rush Yds",ou:66.5,opp:"LV"},
+{name:"Breece Hall",pos:"RB",team:"NYJ",stat:"Rush Yds",ou:64.5,opp:"TEN"},
+{name:"Kenneth Walker III",pos:"RB",team:"KC",stat:"Rush Yds",ou:63.5,opp:"DEN"},
+{name:"Christian McCaffrey",pos:"RB",team:"SF",stat:"Rush Yds",ou:60.5,opp:"LAR"},
+// Rec Yds
+{name:"Puka Nacua",pos:"WR",team:"LAR",stat:"Rec Yds",ou:90.5,opp:"SF"},
+{name:"Ja'Marr Chase",pos:"WR",team:"CIN",stat:"Rec Yds",ou:87.5,opp:"TB"},
+{name:"Jaxon Smith-Njigba",pos:"WR",team:"SEA",stat:"Rec Yds",ou:81.5,opp:"NE"},
+{name:"CeeDee Lamb",pos:"WR",team:"DAL",stat:"Rec Yds",ou:76.5,opp:"NYG"},
+{name:"Chris Olave",pos:"WR",team:"NO",stat:"Rec Yds",ou:76.5,opp:"DET"},
+{name:"Justin Jefferson",pos:"WR",team:"MIN",stat:"Rec Yds",ou:74.5,opp:"GB"},
+{name:"Nico Collins",pos:"WR",team:"HOU",stat:"Rec Yds",ou:69.5,opp:"BUF"},
+{name:"Tee Higgins",pos:"WR",team:"CIN",stat:"Rec Yds",ou:61.5,opp:"TB"},
+{name:"Malik Nabers",pos:"WR",team:"NYG",stat:"Rec Yds",ou:60.5,opp:"DAL"},
+{name:"Trey McBride",pos:"TE",team:"ARI",stat:"Rec Yds",ou:58.5,opp:"LAC"},
+{name:"Rashee Rice",pos:"WR",team:"KC",stat:"Rec Yds",ou:59.5,opp:"DEN"},
+// Any TD
+{name:"Jahmyr Gibbs",pos:"RB",team:"DET",stat:"Any TD",ou:0,opp:"NO",odds:"-155"},
+{name:"Saquon Barkley",pos:"RB",team:"PHI",stat:"Any TD",ou:0,opp:"WAS",odds:"-150"},
+{name:"Ja'Marr Chase",pos:"WR",team:"CIN",stat:"Any TD",ou:0,opp:"TB",odds:"-126"},
+{name:"Derrick Henry",pos:"RB",team:"BAL",stat:"Any TD",ou:0,opp:"IND",odds:"-135"},
+{name:"Jonathan Taylor",pos:"RB",team:"IND",stat:"Any TD",ou:0,opp:"BAL",odds:"-120"},
+{name:"Amon-Ra St. Brown",pos:"WR",team:"DET",stat:"Any TD",ou:0,opp:"NO",odds:"+100"},
+{name:"CeeDee Lamb",pos:"WR",team:"DAL",stat:"Any TD",ou:0,opp:"NYG",odds:"+105"},
+{name:"Christian McCaffrey",pos:"RB",team:"SF",stat:"Any TD",ou:0,opp:"LAR",odds:"-115"},
+{name:"Justin Jefferson",pos:"WR",team:"MIN",stat:"Any TD",ou:0,opp:"GB",odds:"+115"},
+{name:"Rashee Rice",pos:"WR",team:"KC",stat:"Any TD",ou:0,opp:"DEN",odds:"+140"},
+{name:"Dalton Kincaid",pos:"TE",team:"BUF",stat:"Any TD",ou:0,opp:"HOU",odds:"+340"}
+] as {name:string,pos:string,team:string,stat:string,ou:number,opp:string,odds?:string}[],
+propResults:{
+"Joe Burrow|Pass Yds":254,"Matthew Stafford|Pass Yds":155,"Dak Prescott|Pass Yds":175,
+"Jared Goff|Pass Yds":206,"Tyler Shough|Pass Yds":410,"Brock Purdy|Pass Yds":205,
+"Jordan Love|Pass Yds":387,"Justin Herbert|Pass Yds":209,"Patrick Mahomes|Pass Yds":184,
+"Josh Allen|Pass Yds":334,"Lamar Jackson|Pass Yds":324,"Caleb Williams|Pass Yds":269,
+"Jahmyr Gibbs|Rush Yds":156,"Derrick Henry|Rush Yds":144,"Jonathan Taylor|Rush Yds":98,
+"Saquon Barkley|Rush Yds":83,"Bijan Robinson|Rush Yds":83,"James Cook|Rush Yds":57,
+"Javonte Williams|Rush Yds":41,"D'Andre Swift|Rush Yds":124,"Devon Achane|Rush Yds":36,
+"Breece Hall|Rush Yds":102,"Kenneth Walker III|Rush Yds":173,"Christian McCaffrey|Rush Yds":68,
+"Puka Nacua|Rec Yds":74,"Ja'Marr Chase|Rec Yds":12,"Jaxon Smith-Njigba|Rec Yds":122,
+"CeeDee Lamb|Rec Yds":44,"Chris Olave|Rec Yds":182,"Justin Jefferson|Rec Yds":92,
+"Nico Collins|Rec Yds":75,"Tee Higgins|Rec Yds":59,"Malik Nabers|Rec Yds":69,
+"Trey McBride|Rec Yds":95,"Rashee Rice|Rec Yds":52,
+"Jahmyr Gibbs|Any TD":"YES","Saquon Barkley|Any TD":"NO","Ja'Marr Chase|Any TD":"NO",
+"Derrick Henry|Any TD":"YES","Jonathan Taylor|Any TD":"YES",
+"Amon-Ra St. Brown|Any TD":"YES","CeeDee Lamb|Any TD":"YES",
+"Christian McCaffrey|Any TD":"NO","Justin Jefferson|Any TD":"YES",
+"Rashee Rice|Any TD":"YES","Dalton Kincaid|Any TD":"NO"
+} as {[k:string]:number|string}
+}
+];
+// Current week's lines (Week 7, Oct 20-21, 2026) — fetched from live API
+// If API unavailable, these are accurate fallback lines
+var WEEKLY_LINES:[string,string,number,number][]=[
+  // [home, away, homeSpread, total]  — Week 7 lines (Oct 20-21, 2026)
+  ["KC","DEN",-8.5,44.5],["PIT","BAL",-3,44],
+  ["BUF","NYJ",-7.5,43.5],["PHI","WAS",-12,45],
+  ["GB","CHI",-5,41.5],["MIN","DET",2.5,49],["TB","ATL",-4.5,46],
+  ["CIN","LV",-6,47.5],["SEA","ARI",-4,46],["LAR","SF",-3,48.5],
+  ["DAL","LAC",-2.5,50],["MIA","NE",-7,43.5],["NE","MIA",7,43.5],
+  ["HOU","IND",-7,44.5],["JAX","TEN",-1.5,43],["NO","CAR",-8,42]
+];
+// Note: Live API (fetch-odds) fetches current week from The Odds API
+// Archive system (odds_archive table) stores all historical odds for replay analysis
 // Current week's results — add scores as games finish
-
-async function fetchOdds(forceRefresh:boolean=false):Promise<{odds:{[t:string]:{spread:number|null,total:number|null,opp:string}},source:string,fetchedAt:string,stale:boolean}>{
+var WEEKLY_RESULTS:{[k:string]:[number,number]}={
+};
+function buildHardcodedOdds():{[t:string]:{spread:number,total:number,opp:string}}{
+  var r:{[t:string]:{spread:number,total:number,opp:string}}={};
+  WEEKLY_LINES.forEach(function(g){r[g[0]]={spread:g[2],total:g[3],opp:g[1]};r[g[1]]={spread:-g[2],total:g[3],opp:g[0]};});
+  return r;
+}
+// fetchOdds calls the server-side fetch-odds Edge Function (never the provider directly).
+// Returns {odds, source} — source distinguishes "api" / "cache" / "manual" / "unavailable".
+async function fetchOdds():Promise<{odds:{[t:string]:{spread:number,total:number,opp:string}},source:string,fetchedAt:string,stale:boolean}>{
   try{
-    const userToken=authClient?await (async()=>{const s=await authClient.auth.getSession();return s.data?.session?.access_token||null;})():null;const body=JSON.stringify({forceRefresh});const headers:Record<string,string>={"Content-Type":"application/json","apikey":SUPA_KEY};if(userToken)headers["Authorization"]=`Bearer ${userToken}`;var r=await fetch(EDGE_URL+"/fetch-odds",{method:"POST",headers,body});
+    var r=await fetch(EDGE_URL+"/fetch-odds",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPA_KEY},body:"{}"});
     var data=await r.json();
     if(data&&data.odds&&Object.keys(data.odds).length>0){
       return {odds:data.odds,source:data.source||"api",fetchedAt:data.fetchedAt||"",stale:data.stale||false};
@@ -263,16 +390,16 @@ async function fetchOdds(forceRefresh:boolean=false):Promise<{odds:{[t:string]:{
     return {odds:{},source:"unavailable",fetchedAt:"",stale:false};
   }
 }
-function getGameScript(team:string,odds:{[t:string]:{spread:number|null,total:number|null,opp:string}}|null):{spread:number|null,total:number|null,script:string,label:string,color:string,opp:string}|null{
+function getGameScript(team:string,odds:{[t:string]:{spread:number,total:number,opp:string}}|null):{spread:number,total:number,script:string,label:string,color:string,opp:string}|null{
   if(!odds)return null;
   var g=odds[team];if(!g)return null;
   var spread=g.spread,total=g.total;
   var script="Neutral",label="Neutral",color="#94a3b8";
-  if(spread!==null){if(spread<=-7){script="Positive";label="Positive Script";color="#22c55e";}
+  if(spread<=-7){script="Positive";label="Positive Script";color="#22c55e";}
   else if(spread<=-3){script="Positive";label="Slight Fav";color="#4ade80";}
   else if(spread>=7){script="Negative";label="Negative Script";color="#f87171";}
-  else if(spread>=3){script="Negative";label="Slight Dog";color="#fb923c";}}
-  var totalNote=total!==null?(total>=50?" · Shootout":total<=41?" · Low O/U":""):" · Unavailable";
+  else if(spread>=3){script="Negative";label="Slight Dog";color="#fb923c";}
+  var totalNote=total>=50?" · Shootout":total<=41?" · Low O/U":"";
   return{spread,total,script,label:label+totalNote,color,opp:g.opp};
 }
 
@@ -1907,11 +2034,110 @@ const OROY_ODDS=[
 {name:"Ty Simpson",pos:"QB",team:"LAR",odds:"+3300"},{name:"Omar Cooper Jr.",pos:"WR",team:"NYJ",odds:"+4000"},
 {name:"KC Concepcion",pos:"WR",team:"CLE",odds:"+5000"},{name:"Kaelon Black",pos:"RB",team:"SF",odds:"+6000"}
 ];
-// Week 5 Game Props (Oct 12-14, 2026) — updated from provider
+// Week 2 Game Props (Sep 18-21, 2026) — updated weekly
 const WEEKLY_PROPS=[
-  // Player props should be fetched from the odds provider
-  // If available, provider will return current week props
-  // Hardcoded fallback should only be used if provider unavailable
+// Week 2 Passing Yards (updated Sep 17)
+{name:"Josh Allen",pos:"QB",team:"BUF",stat:"Pass Yds",ou:268.5,opp:"DET"},
+{name:"Jared Goff",pos:"QB",team:"DET",stat:"Pass Yds",ou:268.5,opp:"BUF"},
+{name:"Dak Prescott",pos:"QB",team:"DAL",stat:"Pass Yds",ou:262.5,opp:"WAS"},
+{name:"Joe Burrow",pos:"QB",team:"CIN",stat:"Pass Yds",ou:258.5,opp:"HOU"},
+{name:"Jordan Love",pos:"QB",team:"GB",stat:"Pass Yds",ou:254.5,opp:"NYJ"},
+{name:"C.J. Stroud",pos:"QB",team:"HOU",stat:"Pass Yds",ou:248.5,opp:"CIN"},
+{name:"Caleb Williams",pos:"QB",team:"CHI",stat:"Pass Yds",ou:244.5,opp:"MIN"},
+{name:"Patrick Mahomes",pos:"QB",team:"KC",stat:"Pass Yds",ou:244.5,opp:"IND"},
+{name:"Jayden Daniels",pos:"QB",team:"WAS",stat:"Pass Yds",ou:238.5,opp:"DAL"},
+{name:"Tyler Shough",pos:"QB",team:"NO",stat:"Pass Yds",ou:237.5,opp:"BAL"},
+{name:"Brock Purdy",pos:"QB",team:"SF",stat:"Pass Yds",ou:235.5,opp:"MIA"},
+{name:"Lamar Jackson",pos:"QB",team:"BAL",stat:"Pass Yds",ou:224.5,opp:"NO"},
+{name:"Bo Nix",pos:"QB",team:"DEN",stat:"Pass Yds",ou:224.5,opp:"JAX"},
+{name:"Bryce Young",pos:"QB",team:"CAR",stat:"Pass Yds",ou:220.5,opp:"ATL"},
+// Week 2 Rushing Yards (updated Sep 17)
+{name:"Jahmyr Gibbs",pos:"RB",team:"DET",stat:"Rush Yds",ou:90.5,opp:"BUF"},
+{name:"Derrick Henry",pos:"RB",team:"BAL",stat:"Rush Yds",ou:88.5,opp:"NO"},
+{name:"Jonathan Taylor",pos:"RB",team:"IND",stat:"Rush Yds",ou:87.5,opp:"KC"},
+{name:"Bijan Robinson",pos:"RB",team:"ATL",stat:"Rush Yds",ou:84.5,opp:"CAR"},
+{name:"Saquon Barkley",pos:"RB",team:"PHI",stat:"Rush Yds",ou:82.5,opp:"TEN"},
+{name:"Kenneth Walker III",pos:"RB",team:"KC",stat:"Rush Yds",ou:78.5,opp:"IND"},
+{name:"James Cook",pos:"RB",team:"BUF",stat:"Rush Yds",ou:78.5,opp:"DET"},
+{name:"D'Andre Swift",pos:"RB",team:"CHI",stat:"Rush Yds",ou:73.5,opp:"MIN"},
+{name:"Breece Hall",pos:"RB",team:"NYJ",stat:"Rush Yds",ou:68.5,opp:"GB"},
+{name:"David Montgomery",pos:"RB",team:"HOU",stat:"Rush Yds",ou:66.5,opp:"CIN"},
+{name:"Christian McCaffrey",pos:"RB",team:"SF",stat:"Rush Yds",ou:66.5,opp:"MIA"},
+{name:"Ashton Jeanty",pos:"RB",team:"LV",stat:"Rush Yds",ou:58.5,opp:"LAC"},
+{name:"Chase Brown",pos:"RB",team:"CIN",stat:"Rush Yds",ou:56.5,opp:"HOU"},
+{name:"Caleb Williams",pos:"QB",team:"CHI",stat:"Rush Yds",ou:20.5,opp:"MIN"},
+// Week 2 Receiving Yards (updated Sep 17)
+{name:"Puka Nacua",pos:"WR",team:"LAR",stat:"Rec Yds",ou:82.5,opp:"NYG"},
+{name:"Justin Jefferson",pos:"WR",team:"MIN",stat:"Rec Yds",ou:78.5,opp:"CHI"},
+{name:"Jaxon Smith-Njigba",pos:"WR",team:"SEA",stat:"Rec Yds",ou:76.5,opp:"ARI"},
+{name:"Nico Collins",pos:"WR",team:"HOU",stat:"Rec Yds",ou:76.5,opp:"CIN"},
+{name:"CeeDee Lamb",pos:"WR",team:"DAL",stat:"Rec Yds",ou:75.5,opp:"WAS"},
+{name:"Chris Olave",pos:"WR",team:"NO",stat:"Rec Yds",ou:69.5,opp:"BAL"},
+{name:"Ja'Marr Chase",pos:"WR",team:"CIN",stat:"Rec Yds",ou:69.5,opp:"HOU"},
+{name:"Amon-Ra St. Brown",pos:"WR",team:"DET",stat:"Rec Yds",ou:68.5,opp:"BUF"},
+{name:"Malik Nabers",pos:"WR",team:"NYG",stat:"Rec Yds",ou:64.5,opp:"LAR"},
+{name:"Trey McBride",pos:"TE",team:"ARI",stat:"Rec Yds",ou:62.5,opp:"SEA"},
+{name:"Dalton Kincaid",pos:"TE",team:"BUF",stat:"Rec Yds",ou:62.5,opp:"DET"},
+{name:"Christian Watson",pos:"WR",team:"GB",stat:"Rec Yds",ou:60.5,opp:"NYJ"},
+{name:"Tee Higgins",pos:"WR",team:"CIN",stat:"Rec Yds",ou:58.5,opp:"HOU"},
+{name:"Parker Washington",pos:"WR",team:"JAX",stat:"Rec Yds",ou:54.5,opp:"DEN"},
+{name:"Jaylen Waddle",pos:"WR",team:"DEN",stat:"Rec Yds",ou:52.5,opp:"JAX"},
+{name:"Jalen Coker",pos:"WR",team:"CAR",stat:"Rec Yds",ou:48.5,opp:"ATL"},
+{name:"Colston Loveland",pos:"TE",team:"CHI",stat:"Rec Yds",ou:47.5,opp:"MIN"},
+{name:"Tucker Kraft",pos:"TE",team:"GB",stat:"Rec Yds",ou:46.5,opp:"NYJ"},
+{name:"Sam LaPorta",pos:"TE",team:"DET",stat:"Rec Yds",ou:46.5,opp:"BUF"},
+{name:"Tyler Warren",pos:"TE",team:"IND",stat:"Rec Yds",ou:45.5,opp:"KC"},
+{name:"Travis Kelce",pos:"TE",team:"KC",stat:"Rec Yds",ou:42.5,opp:"IND"},
+// Week 2 Receiving Yards — Jahmyr Gibbs RB receiving
+{name:"Jahmyr Gibbs",pos:"RB",team:"DET",stat:"Rec Yds",ou:29.5,opp:"BUF"},
+// Week 2 Passing TDs
+{name:"Josh Allen",pos:"QB",team:"BUF",stat:"Pass TD",ou:1.5,opp:"DET"},
+{name:"Caleb Williams",pos:"QB",team:"CHI",stat:"Pass TD",ou:1.5,opp:"MIN"},
+{name:"Joe Burrow",pos:"QB",team:"CIN",stat:"Pass TD",ou:1.5,opp:"HOU"},
+{name:"Patrick Mahomes",pos:"QB",team:"KC",stat:"Pass TD",ou:1.5,opp:"IND"},
+{name:"Jared Goff",pos:"QB",team:"DET",stat:"Pass TD",ou:1.5,opp:"BUF"},
+{name:"Brock Purdy",pos:"QB",team:"SF",stat:"Pass TD",ou:1.5,opp:"MIA"},
+{name:"Jordan Love",pos:"QB",team:"GB",stat:"Pass TD",ou:1.5,opp:"NYJ"},
+{name:"Lamar Jackson",pos:"QB",team:"BAL",stat:"Pass TD",ou:1.5,opp:"NO"},
+{name:"Dak Prescott",pos:"QB",team:"DAL",stat:"Pass TD",ou:1.5,opp:"WAS"},
+{name:"Tyler Shough",pos:"QB",team:"NO",stat:"Pass TD",ou:1.5,opp:"BAL"},
+{name:"C.J. Stroud",pos:"QB",team:"HOU",stat:"Pass TD",ou:1.5,opp:"CIN"},
+{name:"Jayden Daniels",pos:"QB",team:"WAS",stat:"Pass TD",ou:1.5,opp:"DAL"},
+// Week 2 Receptions
+{name:"Puka Nacua",pos:"WR",team:"LAR",stat:"Receptions",ou:7.5,opp:"NYG"},
+{name:"Chris Olave",pos:"WR",team:"NO",stat:"Receptions",ou:6.5,opp:"BAL"},
+{name:"Amon-Ra St. Brown",pos:"WR",team:"DET",stat:"Receptions",ou:6.5,opp:"BUF"},
+{name:"Justin Jefferson",pos:"WR",team:"MIN",stat:"Receptions",ou:6.5,opp:"CHI"},
+{name:"CeeDee Lamb",pos:"WR",team:"DAL",stat:"Receptions",ou:6.5,opp:"WAS"},
+{name:"Trey McBride",pos:"TE",team:"ARI",stat:"Receptions",ou:6.5,opp:"SEA"},
+{name:"Jaxon Smith-Njigba",pos:"WR",team:"SEA",stat:"Receptions",ou:6.5,opp:"ARI"},
+{name:"Ja'Marr Chase",pos:"WR",team:"CIN",stat:"Receptions",ou:5.5,opp:"HOU"},
+{name:"Nico Collins",pos:"WR",team:"HOU",stat:"Receptions",ou:5.5,opp:"CIN"},
+{name:"Malik Nabers",pos:"WR",team:"NYG",stat:"Receptions",ou:5.5,opp:"LAR"},
+{name:"Dalton Kincaid",pos:"TE",team:"BUF",stat:"Receptions",ou:4.5,opp:"DET"},
+{name:"DeVonta Smith",pos:"WR",team:"PHI",stat:"Receptions",ou:4.5,opp:"TEN"},
+// Week 2 Anytime TD
+{name:"Derrick Henry",pos:"RB",team:"BAL",stat:"Any TD",ou:0,opp:"NO",odds:"-165"},
+{name:"Saquon Barkley",pos:"RB",team:"PHI",stat:"Any TD",ou:0,opp:"TEN",odds:"-155"},
+{name:"Jahmyr Gibbs",pos:"RB",team:"DET",stat:"Any TD",ou:0,opp:"BUF",odds:"-150"},
+{name:"Kenneth Walker III",pos:"RB",team:"KC",stat:"Any TD",ou:0,opp:"IND",odds:"-140"},
+{name:"Bijan Robinson",pos:"RB",team:"ATL",stat:"Any TD",ou:0,opp:"CAR",odds:"-120"},
+{name:"D'Andre Swift",pos:"RB",team:"CHI",stat:"Any TD",ou:0,opp:"MIN",odds:"-120"},
+{name:"Christian McCaffrey",pos:"RB",team:"SF",stat:"Any TD",ou:0,opp:"MIA",odds:"-120"},
+{name:"Ja'Marr Chase",pos:"WR",team:"CIN",stat:"Any TD",ou:0,opp:"HOU",odds:"-110"},
+{name:"James Cook",pos:"RB",team:"BUF",stat:"Any TD",ou:0,opp:"DET",odds:"+120"},
+{name:"Josh Allen",pos:"QB",team:"BUF",stat:"Any TD",ou:0,opp:"DET",odds:"+120"},
+{name:"Amon-Ra St. Brown",pos:"WR",team:"DET",stat:"Any TD",ou:0,opp:"BUF",odds:"+100"},
+{name:"CeeDee Lamb",pos:"WR",team:"DAL",stat:"Any TD",ou:0,opp:"WAS",odds:"+105"},
+{name:"Puka Nacua",pos:"WR",team:"LAR",stat:"Any TD",ou:0,opp:"NYG",odds:"+105"},
+{name:"Justin Jefferson",pos:"WR",team:"MIN",stat:"Any TD",ou:0,opp:"CHI",odds:"+110"},
+{name:"Breece Hall",pos:"RB",team:"NYJ",stat:"Any TD",ou:0,opp:"GB",odds:"+130"},
+{name:"Jonathan Taylor",pos:"RB",team:"IND",stat:"Any TD",ou:0,opp:"KC",odds:"+130"},
+{name:"Nico Collins",pos:"WR",team:"HOU",stat:"Any TD",ou:0,opp:"CIN",odds:"+140"},
+{name:"Chris Olave",pos:"WR",team:"NO",stat:"Any TD",ou:0,opp:"BAL",odds:"+150"},
+{name:"Jalen Coker",pos:"WR",team:"CAR",stat:"Any TD",ou:0,opp:"ATL",odds:"+175"},
+{name:"Trey McBride",pos:"TE",team:"ARI",stat:"Any TD",ou:0,opp:"SEA",odds:"+210"},
+{name:"Dalton Kincaid",pos:"TE",team:"BUF",stat:"Any TD",ou:0,opp:"DET",odds:"+280"}
 ];
 // Current week's prop results — add as games finish
 var PROP_RESULTS:{[k:string]:number|string}={
@@ -2242,6 +2468,262 @@ function TradeItem(props){
 // ── Analytics Dashboard Component ─────────────────────────────────────────
 
 function playerSlug(name:string){return name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");}
+function AnalyticsDashboard({T,data,loading,onLoad}:{T:any,data:any,loading:boolean,onLoad:()=>void}){
+  useEffect(function(){onLoad();},[]);// eslint-disable-line react-hooks/exhaustive-deps
+
+  // Build daily chart from raw page_view events
+  function buildDailyBuckets(events:any[]){
+    var buckets:Record<string,Set<string>>={};
+    var today=new Date();
+    for(var i=13;i>=0;i--){
+      var d=new Date(today);d.setDate(d.getDate()-i);
+      var key=d.toISOString().slice(0,10);
+      buckets[key]=new Set();
+    }
+    (events||[]).forEach(function(e:any){
+      var day=e.created_at?e.created_at.slice(0,10):"";
+      if(buckets[day])buckets[day].add(e.visitor_id);
+    });
+    return Object.entries(buckets).map(function([day,set]){return {day,count:set.size};});
+  }
+
+  function buildFeatureUsage(features:any[]){
+    var counts:Record<string,number>={};
+    (features||[]).forEach(function(e:any){
+      var t=e.event_data?.tab||"unknown";
+      counts[t]=(counts[t]||0)+1;
+    });
+    return Object.entries(counts).sort(function(a,b){return b[1]-a[1];}).slice(0,6);
+  }
+
+
+  if(loading) return React.createElement("div",{style:{padding:40,textAlign:"center",color:T.textSub}},
+    React.createElement("div",{style:{width:32,height:32,borderRadius:"50%",border:"3px solid "+T.purple+"30",borderTopColor:T.purple,animation:"spin 0.8s linear infinite",margin:"0 auto 12px"}}),
+    "Loading analytics..."
+  );
+
+  if(!data) return React.createElement("div",{style:{padding:16,textAlign:"center",color:T.textSub}},"No data yet — visit the site to start collecting.");
+  if(data.error) return React.createElement("div",{style:{padding:16}},
+    React.createElement("div",{style:{background:"#ef444418",border:"1px solid #ef4444",borderRadius:12,padding:16,marginBottom:12}},
+      React.createElement("div",{style:{fontWeight:800,fontSize:14,color:"#ef4444",marginBottom:6}},"Analytics Query Error"),
+      React.createElement("div",{style:{fontSize:12,color:T.textSub,fontFamily:"monospace",wordBreak:"break-all"}},(data.error))),
+    React.createElement("div",{style:{fontSize:12,color:T.textSub,lineHeight:1.7}},"This usually means the SELECT policy on ",React.createElement("code",null,"analytics_events")," doesn't allow the anon key. Run this in Supabase SQL editor:",React.createElement("pre",{style:{background:T.bgInput,borderRadius:8,padding:10,fontSize:11,marginTop:8,color:T.purple,overflowX:"auto"}},'DROP POLICY IF EXISTS "admin select" ON analytics_events;\nCREATE POLICY "anon select" ON analytics_events\n  FOR SELECT TO anon USING (true);')),
+    React.createElement("button",{onClick:onLoad,style:{marginTop:12,padding:"10px 20px",borderRadius:10,border:"1px solid "+T.border,background:"transparent",color:T.textSub,cursor:"pointer",fontWeight:600,fontSize:13}},"\u21BB Retry")
+  );
+
+  var daily=buildDailyBuckets(data.daily);
+  var maxDay=Math.max(1,...daily.map(function(d:any){return d.count;}));
+  var totalUnique=new Set((data.daily||[]).map(function(e:any){return e.visitor_id;})).size;
+  var todayKey=new Date().toISOString().slice(0,10);
+  var todayVisitors=daily.find(function(d:any){return d.day===todayKey;})?.count||0;
+  var weekVisitors=new Set((data.daily||[]).filter(function(e:any){
+    var d=new Date(e.created_at);return(Date.now()-d.getTime())<7*86400000;
+  }).map(function(e:any){return e.visitor_id;})).size;
+  var features=buildFeatureUsage(data.features);
+  var maxFeat=Math.max(1,...features.map(function(f:any){return f[1];}));
+
+  // Build user list from dedicated signed-in user events feed
+  var userMap:Record<string,{email:string,lastSeen:string,events:number,trades:number,lastAction:string}> = {};
+  (data.userEvents||[]).forEach(function(e:any){
+    var email=e.event_data?.user_email;
+    if(!email) return;
+    if(!userMap[email]) userMap[email]={email,lastSeen:e.created_at,events:0,trades:0,lastAction:e.event_type};
+    userMap[email].events++;
+    if(e.event_type==="trade_analyzed"){userMap[email].trades++;userMap[email].lastAction="trade_analyzed";}
+    if(e.created_at>userMap[email].lastSeen){userMap[email].lastSeen=e.created_at;userMap[email].lastAction=e.event_type;}
+  });
+  var userList=Object.values(userMap).sort(function(a,b){return b.lastSeen.localeCompare(a.lastSeen);});
+
+  // Build anonymous visitor list from recent events (no user_email)
+  var anonMap:Record<string,{vid:string,lastSeen:string,events:number,trades:number,lastAction:string}> = {};
+  (data.recent||[]).forEach(function(e:any){
+    var vid=e.visitor_id;
+    if(!vid||e.event_data?.user_email) return; // skip signed-in users
+    if(!anonMap[vid]) anonMap[vid]={vid,lastSeen:e.created_at,events:0,trades:0,lastAction:e.event_type};
+    anonMap[vid].events++;
+    if(e.event_type==="trade_analyzed"){anonMap[vid].trades++;anonMap[vid].lastAction="trade_analyzed";}
+    if(e.created_at>anonMap[vid].lastSeen){anonMap[vid].lastSeen=e.created_at;anonMap[vid].lastAction=e.event_type;}
+  });
+  var anonList=Object.values(anonMap).sort(function(a,b){return b.lastSeen.localeCompare(a.lastSeen);});
+
+  return React.createElement("div",{style:{padding:16}},
+    // Header
+    React.createElement("div",{style:{marginBottom:16}},
+      React.createElement("div",{style:{fontWeight:900,fontSize:20,color:T.text}},"Site Analytics"),
+      React.createElement("div",{style:{fontSize:12,color:T.textSub,marginTop:2}},"Last 14 days · unique visitors")
+    ),
+
+    // Summary cards
+    React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(90px, 1fr))",gap:6,marginBottom:20}},
+      [["Today",todayVisitors,"📅"],["7d",weekVisitors,"📆"],["14d",totalUnique,"🗓️"],["All Time",data.totalVisitors,"👥"],["Trades",data.trades,"⚖️"]].map(function(s:any){
+        return React.createElement("div",{key:s[0] as string,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"12px 8px",textAlign:"center"}},
+          React.createElement("div",{style:{fontSize:20,marginBottom:4}},s[2]),
+          React.createElement("div",{style:{fontWeight:900,fontSize:22,color:T.purple}},s[1]),
+          React.createElement("div",{style:{fontSize:10,color:T.textSub,fontWeight:600}},s[0])
+        );
+      })
+    ),
+
+    // Signed-in Users
+    React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"14px 12px",marginBottom:16}},
+      React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}},
+        React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text}},"Signed-In Users"),
+        React.createElement("div",{style:{fontSize:11,color:T.textSub}},userList.length+" users")
+      ),
+      userList.length===0
+        ? React.createElement("div",{style:{fontSize:12,color:T.textSub,textAlign:"center",padding:"12px 0"}},"No signed-in user activity yet. Users must sign in before analyzing trades.")
+        : userList.map(function(u:any,i:number){
+            var when=new Date(u.lastSeen);
+            var actionLabel=u.lastAction==="trade_analyzed"?"⚖️ Analyzed trade":u.lastAction==="tab_change"?"🔀 Browsed":u.lastAction==="page_view"?"🌐 Visited":"📌 "+u.lastAction;
+            var isTrader=u.trades>0;
+            return React.createElement("div",{key:u.email,style:{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:i<userList.length-1?"1px solid "+T.border:"none"}},
+              React.createElement("div",{style:{width:34,height:34,borderRadius:"50%",background:isTrader?"linear-gradient(135deg,"+T.purple+",#5b21b6)":T.purpleDim,border:"1px solid "+T.borderPurple,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,color:"#fff",flexShrink:0}},u.email.charAt(0).toUpperCase()),
+              React.createElement("div",{style:{flex:1,minWidth:0}},
+                React.createElement("div",{style:{fontSize:12,fontWeight:700,color:T.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},u.email),
+                React.createElement("div",{style:{fontSize:10,color:T.textSub,marginTop:2}},actionLabel+" · "+u.trades+" trades · "+when.toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}))
+              ),
+              isTrader&&React.createElement("div",{style:{background:T.purple+"22",border:"1px solid "+T.purple+"44",borderRadius:6,padding:"2px 7px",fontSize:9,fontWeight:800,color:T.purple,flexShrink:0}},u.trades+" trades")
+            );
+          })
+    ),
+
+    // Anonymous Visitors
+    React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"14px 12px",marginBottom:16}},
+      React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}},
+        React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text}},"Anonymous Visitors"),
+        React.createElement("div",{style:{fontSize:11,color:T.textSub}},anonList.length+" unique")
+      ),
+      anonList.length===0
+        ? React.createElement("div",{style:{fontSize:12,color:T.textSub,textAlign:"center",padding:"12px 0"}},"No recent anonymous activity.")
+        : anonList.slice(0,20).map(function(u:any,i:number){
+            var when=new Date(u.lastSeen);
+            var actionLabel=u.lastAction==="trade_analyzed"?"⚖️ Analyzed trade":u.lastAction==="tab_change"?"🔀 Browsed":"🌐 Visited";
+            return React.createElement("div",{key:u.vid,style:{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:i<Math.min(anonList.length,20)-1?"1px solid "+T.border:"none"}},
+              React.createElement("div",{style:{width:30,height:30,borderRadius:"50%",background:T.bgInput,border:"1px solid "+T.border,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,color:T.textDim,flexShrink:0}},"?"),
+              React.createElement("div",{style:{flex:1,minWidth:0}},
+                React.createElement("div",{style:{fontSize:11,color:T.textSub,fontFamily:"monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},u.vid),
+                React.createElement("div",{style:{fontSize:10,color:T.textDim,marginTop:2}},actionLabel+" · "+u.events+" events"+(u.trades?" · "+u.trades+" trades":"")+" · "+when.toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}))
+              ),
+              u.trades>0&&React.createElement("div",{style:{background:T.green+"22",border:"1px solid "+T.green+"44",borderRadius:6,padding:"2px 7px",fontSize:9,fontWeight:800,color:T.green,flexShrink:0}},u.trades+" trades")
+            );
+          })
+    ),
+
+    // Daily bar chart
+    React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"14px 12px",marginBottom:16}},
+      React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text,marginBottom:12}},"Daily Unique Visitors"),
+      React.createElement("div",{style:{display:"flex",alignItems:"flex-end",gap:3,height:80}},
+        daily.map(function(d:any){
+          var h=Math.max(4,Math.round((d.count/maxDay)*76));
+          var isToday=d.day===todayKey;
+          return React.createElement("div",{key:d.day,style:{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:2}},
+            d.count>0&&React.createElement("div",{style:{fontSize:8,color:T.textSub,lineHeight:1}},d.count),
+            React.createElement("div",{title:d.day+" · "+d.count+" visitors",style:{width:"100%",height:h,borderRadius:3,background:isToday?T.purple:T.purple+"55",transition:"height 0.3s"}})
+          );
+        })
+      ),
+      React.createElement("div",{style:{display:"flex",justifyContent:"space-between",marginTop:6}},
+        React.createElement("div",{style:{fontSize:9,color:T.textDim}},daily[0]?.day?.slice(5)),
+        React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:700}},"Today")
+      )
+    ),
+
+    // Total trades
+    React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"12px 14px",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"space-between"}},
+      React.createElement("div",null,
+        React.createElement("div",{style:{fontSize:12,color:T.textSub,fontWeight:600}},"Total Trades Analyzed"),
+        React.createElement("div",{style:{fontSize:24,fontWeight:900,color:T.green}},data.trades.toLocaleString())
+      ),
+      React.createElement("div",{style:{fontSize:32}},"⚖️")
+    ),
+
+    // Feature usage
+    features.length>0&&React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"14px 12px",marginBottom:16}},
+      React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text,marginBottom:12}},"Feature Usage (14 days)"),
+      features.map(function(f:any){
+        var pct=Math.round((f[1]/maxFeat)*100);
+        return React.createElement("div",{key:f[0],style:{marginBottom:10}},
+          React.createElement("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:3}},
+            React.createElement("div",{style:{fontSize:12,color:T.text,fontWeight:600,textTransform:"capitalize"}},f[0]),
+            React.createElement("div",{style:{fontSize:12,color:T.textSub}},f[1]+" taps")
+          ),
+          React.createElement("div",{style:{height:6,background:T.bgInput,borderRadius:3,overflow:"hidden"}},
+            React.createElement("div",{style:{height:"100%",width:pct+"%",background:T.purple,borderRadius:3,transition:"width 0.4s"}})
+          )
+        );
+      })
+    ),
+
+    // Recent events
+    data.recent&&data.recent.length>0&&React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"14px 12px",marginBottom:16}},
+      React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text,marginBottom:10}},"Recent Activity"),
+      data.recent.slice(0,10).map(function(e:any,i:number){
+        var when=new Date(e.created_at);
+        var label=e.event_type==="page_view"?"🌐 Page View":e.event_type==="tab_change"?"🔀 Tab: "+e.event_data?.tab:e.event_type==="trade_analyzed"?"⚖️ Trade Analyzed":"📌 "+e.event_type;
+        var userEmail=e.event_data?.user_email||"";
+        return React.createElement("div",{key:i,style:{padding:"7px 0",borderBottom:i<9?"1px solid "+T.border:"none"}},
+          React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},
+            React.createElement("div",{style:{fontSize:12,color:T.text,fontWeight:600}},label),
+            React.createElement("div",{style:{fontSize:10,color:T.textSub}},when.toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}))
+          ),
+          userEmail&&React.createElement("div",{style:{fontSize:10,color:T.purple,marginTop:2}},userEmail)
+        );
+      })
+    ),
+
+    // Platform Trades Feed
+    React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"14px 12px",marginBottom:16}},
+      React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}},
+        React.createElement("div",null,
+          React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text}},"⚖️ All Platform Trades"),
+          React.createElement("div",{style:{fontSize:10,color:T.textSub,marginTop:2}},"Every trade analyzed across the platform")
+        ),
+        React.createElement("div",{style:{background:T.purple+"22",border:"1px solid "+T.purple+"44",borderRadius:8,padding:"4px 10px",fontSize:11,fontWeight:700,color:T.purple}},(data.platformTrades||[]).length+" trades")
+      ),
+      (data.platformTrades||[]).length===0
+        ? React.createElement("div",{style:{textAlign:"center",padding:"20px 0",fontSize:12,color:T.textSub}},"No trades logged yet.")
+        : (data.platformTrades||[]).map(function(e:any,i:number){
+            var d=e.event_data||{};
+            var sideA:string[]=(d.sideA||[]);
+            var sideB:string[]=(d.sideB||[]);
+            var when=new Date(e.created_at);
+            var email=d.user_email||null;
+            return React.createElement("div",{key:i,style:{padding:"10px 0",borderBottom:i<(data.platformTrades.length-1)?"1px solid "+T.border:"none"}},
+              React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}},
+                React.createElement("div",{style:{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap" as any}},
+                  email
+                    ? React.createElement("div",{style:{fontSize:11,fontWeight:700,color:T.purple}},email)
+                    : React.createElement("div",{style:{fontSize:11,color:T.textDim}},"Anonymous"),
+                  d.scoring&&React.createElement("div",{style:{fontSize:9,background:T.bgInput,borderRadius:4,padding:"1px 5px",color:T.textSub,fontWeight:600}},d.scoring),
+                  d.platform&&React.createElement("div",{style:{fontSize:9,background:d.platform==="iOS"?"#1d4ed8"+"22":d.platform==="Android"?"#15803d"+"22":T.bgInput,borderRadius:4,padding:"1px 5px",color:d.platform==="iOS"?"#60a5fa":d.platform==="Android"?"#4ade80":T.textSub,fontWeight:600}},d.platform==="iOS"?"📱 iOS":d.platform==="Android"?"🤖 Android":"🖥️ Web"),
+                  d.device&&React.createElement("div",{style:{fontSize:9,background:T.bgInput,borderRadius:4,padding:"1px 5px",color:T.textSub,fontWeight:600}},d.device),
+                  (d.country&&d.country!=="Unknown")&&React.createElement("div",{style:{fontSize:9,background:T.bgInput,borderRadius:4,padding:"1px 5px",color:T.textSub,fontWeight:600}},d.flag+" "+(d.city?d.city+", ":"")+d.country)
+                ),
+                React.createElement("div",{style:{fontSize:10,color:T.textDim}},when.toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}))
+              ),
+              React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr auto 1fr",gap:6,alignItems:"center"}},
+                React.createElement("div",{style:{background:T.bgInput,borderRadius:8,padding:"6px 8px"}},
+                  React.createElement("div",{style:{fontSize:9,color:T.textSub,fontWeight:700,marginBottom:3}},"TEAM A GIVES"),
+                  sideA.length>0
+                    ? sideA.map(function(name:string,j:number){return React.createElement("div",{key:j,style:{fontSize:11,color:T.text,fontWeight:600,marginBottom:1}},name);})
+                    : React.createElement("div",{style:{fontSize:10,color:T.textDim}},"—")
+                ),
+                React.createElement("div",{style:{fontSize:12,color:T.textDim,fontWeight:700}},"⇄"),
+                React.createElement("div",{style:{background:T.bgInput,borderRadius:8,padding:"6px 8px"}},
+                  React.createElement("div",{style:{fontSize:9,color:T.textSub,fontWeight:700,marginBottom:3}},"TEAM B GIVES"),
+                  sideB.length>0
+                    ? sideB.map(function(name:string,j:number){return React.createElement("div",{key:j,style:{fontSize:11,color:T.text,fontWeight:600,marginBottom:1}},name);})
+                    : React.createElement("div",{style:{fontSize:10,color:T.textDim}},"—")
+                )
+              )
+            );
+          })
+    ),
+
+    // Refresh button
+    React.createElement("button",{onClick:onLoad,style:{width:"100%",padding:"12px",borderRadius:12,border:"1px solid "+T.border,background:"transparent",color:T.textSub,cursor:"pointer",fontWeight:600,fontSize:13}},"↻ Refresh")
+  );
+}
 function findPlayerBySlug(slug:string){return PLAYERS.find(function(p){return playerSlug(p.name)===slug;})||null;}
 
 export default function App(){
@@ -2379,20 +2861,6 @@ export default function App(){
   var [faabB,setFaabB]=useState(0);
   var [analyzed,setAnalyzed]=useState(false);
   var [tradeQuota,setTradeQuota]=useState({limit_per_day:2,used_count:0,reserved_count:0,remaining_count:0,quota_date:"",is_unlimited:false,loading:true,error:null});
-  async function fetchTradeQuotaStatus(userToken: string) {
-    if(!userToken){setTradeQuota({limit_per_day:2,used_count:0,reserved_count:0,remaining_count:0,quota_date:"",is_unlimited:false,loading:false,error:"Not authenticated"});return;}
-    try{
-      const res=await callEdgeFn("trade-quota-status",{},userToken);
-      if(res.quota){
-        setTradeQuota({...res.quota,loading:false,error:null});
-      }else{
-        setTradeQuota({limit_per_day:2,used_count:0,reserved_count:0,remaining_count:0,quota_date:"",is_unlimited:false,loading:false,error:"Failed to load quota"});
-      }
-    }catch(e){
-      console.error("[trade-quota] fetch failed:",e);
-      setTradeQuota({limit_per_day:2,used_count:0,reserved_count:0,remaining_count:0,quota_date:"",is_unlimited:false,loading:false,error:"Quota fetch error"});
-    }
-  }
   var [pendingRequestRef]=useState({requestId:null,payloadKey:null});
   var [impTab,setImpTab]=useState("sleeper");
   var [slUser,setSlUser]=useState("");
@@ -2517,6 +2985,9 @@ export default function App(){
   var [resetPwDone,setResetPwDone]=useState(false);
   var [resetPwLoading,setResetPwLoading]=useState(false);
   var [showAdmin,setShowAdmin]=useState(false);
+  var [analyticsData,setAnalyticsData]=useState<any>(null);
+  var [analyticsLoading,setAnalyticsLoading]=useState(false);
+  async function loadAnalytics(){setAnalyticsLoading(true);try{var result=await callEdgeFn("admin-analytics",{},user?.token);setAnalyticsData(result);}catch(e:any){setAnalyticsData({error:e.message});}finally{setAnalyticsLoading(false);}}
   var [darkMode,setDarkMode]=useState(function(){try{var s=localStorage.getItem('fdp_dark_v1');return s?JSON.parse(s):true;}catch(e){return true;}});
   function toggleDarkMode(){setDarkMode(function(d){var next=!d;try{localStorage.setItem('fdp_dark_v1',JSON.stringify(next));}catch(e){}return next;});}
   // League
@@ -2807,7 +3278,7 @@ export default function App(){
   // Track page view on mount (once per session) + load public stats
   useEffect(function(){
     try{var key="fdp_tracked_"+new Date().toDateString();if(!sessionStorage.getItem(key)){sessionStorage.setItem(key,"1");trackEvent("page_view",{referrer:document.referrer||"direct",path:window.location.pathname});}}catch(e){trackEvent("page_view",{referrer:document.referrer||"direct",path:window.location.pathname});}
-    fetchOdds().then(function(d){if(Object.keys(d.odds).length>0){setOddsData(d.odds);setOddsSource(d.source);setOddsFetchedAt(d.fetchedAt);setOddsStale(d.stale);}else{setOddsData({});setOddsSource("unavailable");setOddsFetchedAt("");setOddsStale(false);}});
+    fetchOdds().then(function(d){if(Object.keys(d.odds).length>0){setOddsData(d.odds);setOddsSource(d.source);setOddsFetchedAt(d.fetchedAt);setOddsStale(d.stale);}else{var hc=buildHardcodedOdds();if(Object.keys(hc).length>0){setOddsData(hc);setOddsSource("manual");setOddsFetchedAt("");setOddsStale(false);}}});
   },[]);
 
   function doEspnImport(){
@@ -4142,7 +4613,7 @@ export default function App(){
           React.createElement("div",null,React.createElement("div",{style:{fontWeight:900,fontSize:20,color:"#f1c40f"}},"Admin Panel"),React.createElement("div",{style:{fontSize:11,color:T.textSub,marginTop:2}},user.email)),
           React.createElement("button",{onClick:function(){setShowAdmin(false);},style:{background:"none",border:"none",color:T.textDim,cursor:"pointer",fontSize:20,minWidth:44,minHeight:44,display:"flex",alignItems:"center",justifyContent:"center"}},"×")
         ),
-        [["Value Tuner","Override trade value multiplier for all players","#c084fc","valuetuner"],["RB Context","RB role definitions and depth chart adjustments","#f59e0b","rbcontext"],["RB AI","Generate AI RB role and value suggestions","#34d399","rbai"],["Headshots","Bulk player photo and avatar management","#f87171","headshots"],["IDP Upload","Bulk import IDP player data and rankings","#06b6d4","idpupload"],["System Health","Platform health, DB sync, rebuild controls","#fb923c","system"]].map(function(f){
+        [["Platform Analytics","User analytics, visitor trends, trade feed","#818cf8","analytics"],["Value Tuner","Override trade value multiplier for all players","#c084fc","valuetuner"],["RB Context","RB role definitions and depth chart adjustments","#f59e0b","rbcontext"],["RB AI","Generate AI RB role and value suggestions","#34d399","rbai"],["Headshots","Bulk player photo and avatar management","#f87171","headshots"],["IDP Upload","Bulk import IDP player data and rankings","#06b6d4","idpupload"],["System Health","Platform health, DB sync, rebuild controls","#fb923c","system"]].map(function(f){
           return React.createElement("div",{key:f[0],onClick:function(){setShowAdmin(false);setAdminSubTab(f[3]);setTab("admin");},style:{display:"flex",alignItems:"center",gap:12,background:T.bgInput,border:"1px solid "+T.border,borderRadius:12,padding:"12px 14px",marginBottom:8,cursor:"pointer"}},
             React.createElement("div",{style:{width:36,height:36,borderRadius:10,background:f[2]+"18",border:"1px solid "+f[2]+"33",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0,color:f[2]}},"→"),
             React.createElement("div",{style:{flex:1}},React.createElement("div",{style:{fontWeight:700,fontSize:13}},f[0]),React.createElement("div",{style:{fontSize:11,color:T.textSub,marginTop:1}},f[1])),
@@ -4330,7 +4801,7 @@ export default function App(){
     ),
 
     // DESKTOP SIDEBAR NAV
-    isDesktop&&React.createElement("div",{style:{width:220,flexShrink:0,position:"sticky",top:0,height:"100vh",background:T.bgCard,borderRight:"1px solid "+T.border,display:"flex",flexDirection:"column",padding:"20px 0",zIndex:100,overflowY:"auto",overflowX:"hidden"}},
+    isDesktop&&React.createElement("div",{style:{width:220,flexShrink:0,position:"sticky",top:0,height:"100vh",background:T.bgCard,borderRight:"1px solid "+T.border,display:"flex",flexDirection:"column",padding:"20px 0",zIndex:100}},
       React.createElement("div",{style:{padding:"0 16px 20px",borderBottom:"1px solid "+T.border,marginBottom:12}},
         React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10}},
           LogoSvg,
@@ -4380,25 +4851,23 @@ export default function App(){
       })
     ),
 
-    // RIGHT COLUMN WRAPPER (ticker + main content for proper desktop flex layout)
-    React.createElement("div",{style:{flex:1,display:"flex",flexDirection:"column",minWidth:0,height:"100vh"}},
-      // Dynasty Value Ticker (all tabs — outside scroll wrapper so it stays fixed)
-      React.createElement("div",{style:{overflow:"hidden",background:darkMode?"#0a0818":"#f8f7ff",borderBottom:"1px solid "+T.border,padding:"6px 0",flexShrink:0}},
-        React.createElement("style",null,"@keyframes fdp-ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}"),
-        React.createElement("div",{style:{display:"flex",gap:20,animation:"fdp-ticker 120s linear infinite",width:"max-content"}},
-          rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;}).slice(0,100).concat(rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;}).slice(0,100)).map(function(p,i){
-            var pc=POS_COLORS[p.pos]||T.purple;
-            return React.createElement("div",{key:p.name+"-t-"+i,style:{display:"flex",alignItems:"center",gap:5,flexShrink:0}},
-              React.createElement("span",{style:{fontSize:9,fontWeight:800,color:pc}},p.pos),
-              React.createElement("span",{style:{fontSize:11,fontWeight:700,color:T.text}},(function(){var parts=p.name.split(" ");var last=parts[parts.length-1];var suffixes=["Jr.","Jr","II","III","IV","V","Sr.","Sr"];if(parts.length>=3&&suffixes.indexOf(last)>=0)return parts[parts.length-2]+" "+last;return last;})()),
-              React.createElement("span",{style:{fontSize:11,fontWeight:800,color:T.purpleLight}},(p.tradeVal||0).toLocaleString())
-            );
-          })
-        )
-      ),
+    // Dynasty Value Ticker (all tabs — outside scroll wrapper so it stays fixed)
+    React.createElement("div",{style:{overflow:"hidden",background:darkMode?"#0a0818":"#f8f7ff",borderBottom:"1px solid "+T.border,padding:"6px 0",flexShrink:0}},
+      React.createElement("style",null,"@keyframes fdp-ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}"),
+      React.createElement("div",{style:{display:"flex",gap:20,animation:"fdp-ticker 120s linear infinite",width:"max-content"}},
+        rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;}).slice(0,100).concat(rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;}).slice(0,100)).map(function(p,i){
+          var pc=POS_COLORS[p.pos]||T.purple;
+          return React.createElement("div",{key:p.name+"-t-"+i,style:{display:"flex",alignItems:"center",gap:5,flexShrink:0}},
+            React.createElement("span",{style:{fontSize:9,fontWeight:800,color:pc}},p.pos),
+            React.createElement("span",{style:{fontSize:11,fontWeight:700,color:T.text}},(function(){var parts=p.name.split(" ");var last=parts[parts.length-1];var suffixes=["Jr.","Jr","II","III","IV","V","Sr.","Sr"];if(parts.length>=3&&suffixes.indexOf(last)>=0)return parts[parts.length-2]+" "+last;return last;})()),
+            React.createElement("span",{style:{fontSize:11,fontWeight:800,color:T.purpleLight}},(p.tradeVal||0).toLocaleString())
+          );
+        })
+      )
+    ),
 
-      // MAIN CONTENT WRAPPER (flex:1 on desktop for sidebar layout)
-      React.createElement("div",{style:{flex:1,minWidth:0,overflowY:"auto",maxWidth:isDesktop?900:undefined,width:isDesktop?"100%":undefined,paddingBottom:isDesktop?40:70}},
+    // MAIN CONTENT WRAPPER (flex:1 on desktop for sidebar layout)
+    React.createElement("div",{style:{flex:1,minWidth:0,overflowY:"auto",maxWidth:isDesktop?900:undefined,width:isDesktop?"100%":undefined,paddingBottom:isDesktop?40:70}},
 
     // ════ TRADE TAB ════
     tab==="trade"&&React.createElement("div",{style:{padding:"16px 16px 0"}},
@@ -8080,16 +8549,7 @@ export default function App(){
       // VEGAS LINES
       rankSubTab==="vegas"&&!canAccessVegas(user)&&PaywallCard("vegas"),
       rankSubTab==="vegas"&&canAccessVegas(user)&&(function(){
-        var currentWeekInfo=getCurrentNFLWeek();
-        var weekInfo=getWeekByNumber(currentWeekInfo.week);
-        var scheduleGames=(weekInfo||{games:[]}).games;
-        var games=scheduleGames.map(function(sg){
-          var home=sg.home,away=sg.away;
-          var homeOdds=oddsData?oddsData[home]:null;
-          var homeSpread=homeOdds?.spread??null;
-          var homeTotal=homeOdds?.total??null;
-          return {home:home,away:away,spread:homeSpread,total:homeTotal,eventId:homeOdds?.eventId??null};
-        });
+        var games=oddsData?(function(){var eventMap:any={};Object.keys(oddsData).forEach(function(team){var g=oddsData[team];if(!g)return;if(!g.eventId)return;if(!eventMap[g.eventId]){eventMap[g.eventId]=g;}});return Object.values(eventMap).filter(function(g:any){return g.spread!==null||g.total!==null;}).sort(function(a:any,b:any){if(a.total===null&&b.total===null)return 0;if(a.total===null)return 1;if(b.total===null)return-1;return b.total-a.total;}).map(function(g:any){return{home:g.homeTeam,away:g.awayTeam,spread:g.spread,total:g.total,eventId:g.eventId};});})():[];
         var hasData=games.length>0;
         var TEAM_FULL:{[k:string]:string}={"ARI":"Cardinals","ATL":"Falcons","BAL":"Ravens","BUF":"Bills","CAR":"Panthers","CHI":"Bears","CIN":"Bengals","CLE":"Browns","DAL":"Cowboys","DEN":"Broncos","DET":"Lions","GB":"Packers","HOU":"Texans","IND":"Colts","JAX":"Jaguars","KC":"Chiefs","LAC":"Chargers","LAR":"Rams","LV":"Raiders","MIA":"Dolphins","MIN":"Vikings","NE":"Patriots","NO":"Saints","NYG":"Giants","NYJ":"Jets","PHI":"Eagles","PIT":"Steelers","SF":"49ers","SEA":"Seahawks","TB":"Buccaneers","TEN":"Titans","WAS":"Commanders"};
         var sbTier=function(i:number){return i<4?"#22c55e":i<10?"#4ade80":i<17?"#94a3b8":i<24?"#fb923c":"#f87171";};
@@ -8124,12 +8584,12 @@ export default function App(){
               React.createElement("div",{style:{fontSize:48,marginBottom:12}},"📅"),
               React.createElement("div",{style:{fontWeight:800,fontSize:18,color:T.text,marginBottom:8}},"No Current NFL Lines"),
               React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.7,maxWidth:340,margin:"0 auto",marginBottom:16}},"Odds are posted Thursday–Monday during the NFL season (September–January). Tap below to load this week's lines!"),
-              React.createElement("button",{onClick:function(){setOddsChecking(true);setOddsChecked(false);fetchOdds(true).then(function(d){setOddsChecking(false);setOddsChecked(true);if(Object.keys(d.odds).length>0){setOddsData(d.odds);setOddsSource(d.source);setOddsFetchedAt(d.fetchedAt);setOddsStale(d.stale);}}).catch(function(){setOddsChecking(false);setOddsChecked(true);setOddsData({});setOddsSource("unavailable");setOddsFetchedAt("");setOddsStale(false);});},disabled:oddsChecking,style:{padding:"12px 28px",borderRadius:12,border:"none",background:oddsChecking?"#6b7280":"linear-gradient(135deg,#059669,#047857)",color:"#fff",fontWeight:700,fontSize:13,cursor:oddsChecking?"wait":"pointer",boxShadow:"0 4px 12px rgba(5,150,105,0.3)",opacity:oddsChecking?0.7:1}},oddsChecking?"Checking...":"↻ Check for Lines"),
+              React.createElement("button",{onClick:function(){setOddsChecking(true);setOddsChecked(false);fetchOdds().then(function(d){setOddsChecking(false);setOddsChecked(true);if(Object.keys(d.odds).length>0){setOddsData(d.odds);setOddsSource(d.source);setOddsFetchedAt(d.fetchedAt);setOddsStale(d.stale);}}).catch(function(){setOddsChecking(false);setOddsChecked(true);var hc=buildHardcodedOdds();if(Object.keys(hc).length>0){setOddsData(hc);setOddsSource("manual");setOddsFetchedAt("");setOddsStale(false);}});},disabled:oddsChecking,style:{padding:"12px 28px",borderRadius:12,border:"none",background:oddsChecking?"#6b7280":"linear-gradient(135deg,#059669,#047857)",color:"#fff",fontWeight:700,fontSize:13,cursor:oddsChecking?"wait":"pointer",boxShadow:"0 4px 12px rgba(5,150,105,0.3)",opacity:oddsChecking?0.7:1}},oddsChecking?"Checking...":"↻ Check for Lines"),
               oddsChecked&&!hasData&&React.createElement("div",{style:{marginTop:12,padding:"10px 16px",background:darkMode?"#1e293b":"#fef3c7",border:"1px solid "+(darkMode?"#475569":"#fcd34d"),borderRadius:12,fontSize:12,color:darkMode?"#fbbf24":"#92400e",fontWeight:600,textAlign:"center"}},"No lines available right now. NFL game lines are typically posted during the regular season (Sep–Jan).")
             ),
             hasData&&React.createElement("div",{style:{marginBottom:12}},
               React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:12,flexWrap:"wrap"}},
-                React.createElement("div",{style:{fontSize:10,fontWeight:800,color:"#059669",letterSpacing:1}},oddsSource==="api"||oddsSource==="cache"?"THIS WEEK'S GAMES":oddsSource==="manual"?"SCHEDULE (Lines Unavailable)":"LINES UNAVAILABLE"),
+                React.createElement("div",{style:{fontSize:10,fontWeight:800,color:"#059669",letterSpacing:1}},oddsSource==="api"||oddsSource==="cache"?"THIS WEEK'S GAMES":"ARCHIVED LINES"),
                 React.createElement("div",{style:{background:"#059669",color:"#fff",borderRadius:10,padding:"2px 8px",fontSize:10,fontWeight:800}},games.length),
                 oddsStale&&(oddsSource==="api"||oddsSource==="cache")&&React.createElement("div",{style:{fontSize:9,color:"#f59e0b",fontWeight:600}},"Updating lines\u2026"),
                 !oddsStale&&oddsFetchedAt&&(oddsSource==="api"||oddsSource==="cache")&&React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:500}},"Fetched "+new Date(oddsFetchedAt).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})),
@@ -8141,7 +8601,7 @@ export default function App(){
                 var totalNote=g.total>=50?"Shootout":g.total<=41?"Low Scoring":"";
                 var totalIcon=g.total>=50?"\uD83D\uDD25":g.total<=41?"\uD83D\uDEE1\uFE0F":"";
                 var rKey=g.home+"-"+g.away;
-                var result=null;// Results now from canonical data
+                var result=WEEKLY_RESULTS[rKey]||null;
                 var homeScore=result?result[0]:null;
                 var awayScore=result?result[1]:null;
                 var isFinal=result!==null;
@@ -8176,12 +8636,12 @@ export default function App(){
                     React.createElement("div",{style:{display:"flex",gap:8,marginBottom:10}},
                       React.createElement("div",{style:{flex:1,background:T.bgInput,borderRadius:12,padding:"10px 12px",textAlign:"center"}},
                         React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:700,letterSpacing:0.5,marginBottom:4}},"SPREAD"),
-                        React.createElement("div",{style:{fontWeight:900,fontSize:18,color:T.text}},g.spread===null?"Line Unavailable":(g.spread>0?"+":"")+g.spread),
+                        React.createElement("div",{style:{fontWeight:900,fontSize:18,color:T.text}},(g.spread>0?"+":"")+g.spread),
                         isFinal&&React.createElement("div",{style:{fontSize:10,fontWeight:800,color:spreadColor,marginTop:4}},spreadCover)
                       ),
                       React.createElement("div",{style:{flex:1,background:T.bgInput,borderRadius:12,padding:"10px 12px",textAlign:"center"}},
                         React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:700,letterSpacing:0.5,marginBottom:4}},"O/U TOTAL"),
-                        React.createElement("div",{style:{fontWeight:900,fontSize:18,color:T.text}},g.total===null?"Unavailable":g.total),
+                        React.createElement("div",{style:{fontWeight:900,fontSize:18,color:T.text}},g.total),
                         isFinal&&React.createElement("div",{style:{fontSize:10,fontWeight:800,color:ouColor,marginTop:4}},ouResult+" ("+actualTotal+")")
                       )
                     ),
@@ -8189,12 +8649,12 @@ export default function App(){
                       gsAway&&React.createElement("div",{style:{background:gsAway.color+"10",border:"1px solid "+gsAway.color+"28",borderRadius:12,padding:"10px 12px"}},
                         React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:3,fontWeight:600}},g.away),
                         React.createElement("div",{style:{fontWeight:800,fontSize:13,color:gsAway.color}},gsAway.script),
-                        React.createElement("div",{style:{fontSize:10,color:T.textDim,marginTop:2}},"Spread: "+(gsAway.spread===null?"Unavailable":(gsAway.spread>0?"+":"")+gsAway.spread))
+                        React.createElement("div",{style:{fontSize:10,color:T.textDim,marginTop:2}},"Spread: "+(gsAway.spread>0?"+":"")+gsAway.spread)
                       ),
                       gsHome&&React.createElement("div",{style:{background:gsHome.color+"10",border:"1px solid "+gsHome.color+"28",borderRadius:12,padding:"10px 12px"}},
                         React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:3,fontWeight:600}},g.home),
                         React.createElement("div",{style:{fontWeight:800,fontSize:13,color:gsHome.color}},gsHome.script),
-                        React.createElement("div",{style:{fontSize:10,color:T.textDim,marginTop:2}},"Spread: "+(gsHome.spread===null?"Unavailable":(gsHome.spread>0?"+":"")+gsHome.spread))
+                        React.createElement("div",{style:{fontSize:10,color:T.textDim,marginTop:2}},"Spread: "+(gsHome.spread>0?"+":"")+gsHome.spread)
                       )
                     )
                   )
@@ -8488,7 +8948,7 @@ export default function App(){
           vegasSubTab==="history"&&React.createElement("div",null,
             React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4}},"Prior Weeks Results"),
             React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:14}},"Game lines, scores, and ATS results from completed weeks"),
-            getPriorWeeks(getCurrentNFLWeek().week).slice().reverse().map(function(week){var pw={week:week.week,label:"Week "+week.week+" · "+new Date(week.startDate).toLocaleDateString("en-US",{month:"short",day:"numeric"})+"–"+new Date(week.endDate).toLocaleDateString("en-US",{month:"short",day:"numeric"}),lines:week.games.map(function(g){return[g.home,g.away,null,null]}),results:week.games.reduce(function(acc,g){if(g.status==="final"&&g.homeScore!==null&&g.awayScore!==null){acc[g.home+"-"+g.away]=[g.homeScore,g.awayScore];}return acc;},{})};
+            PAST_WEEKS.slice().reverse().map(function(pw){
               var pwGames=pw.lines.map(function(g){
                 var home=g[0],away=g[1],spread=g[2],total=g[3];
                 var rKey=home+"-"+away;
@@ -8608,7 +9068,7 @@ export default function App(){
                 })()
               );
             }),
-            getPriorWeeks(getCurrentNFLWeek().week).length===0&&React.createElement("div",{style:{textAlign:"center",padding:40,color:T.textDim,fontSize:13}},"No prior weeks yet — check back after Week 2!")
+            PAST_WEEKS.length===0&&React.createElement("div",{style:{textAlign:"center",padding:40,color:T.textDim,fontSize:13}},"No prior weeks yet — check back after Week 2!")
           )
         );
       })(),
@@ -10092,6 +10552,7 @@ export default function App(){
         )
       ),
       // VALUE TUNER sub-tab
+      adminSubTab==="analytics"&&React.createElement(AnalyticsDashboard,{T:T,data:analyticsData,loading:analyticsLoading,onLoad:loadAnalytics}),
       adminSubTab==="valuetuner"&&React.createElement("div",{style:{padding:"16px"}},
         React.createElement("div",{style:{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:10,marginBottom:12}},
           React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10}},
@@ -10511,11 +10972,10 @@ export default function App(){
         })
       ),
       React.createElement("div",{style:{fontSize:11,color:T.textDim}},"© 2026 Fantasy Draft Pros · Not affiliated with Sleeper, ESPN, or Yahoo · For entertainment only")
-      ),
+    ),
 
-      // END MAIN CONTENT WRAPPER
-      )
-    ), // END RIGHT COLUMN WRAPPER
+    // END MAIN CONTENT WRAPPER
+    ),
 
     // FLOATING CHAT BUTTON
     React.createElement("button",{onClick:function(){setTab("reports");setReportSubTab("contact");},style:{position:"fixed",bottom:isDesktop?20:72,right:20,width:52,height:52,borderRadius:"50%",background:"#3b82f6",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 16px rgba(59,130,246,0.5)",zIndex:200,fontSize:22,color:"#fff"}},"\uD83D\uDCAC")
