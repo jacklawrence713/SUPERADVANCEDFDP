@@ -2720,6 +2720,70 @@ function AnalyticsDashboard({T,data,loading,onLoad}:{T:any,data:any,loading:bool
           })
     ),
 
+    // Unique visitors section
+    data.uniqueVisitors && React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"14px 12px",marginBottom:16}},
+      React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text,marginBottom:10}},"Unique Daily Visitors"),
+      (data.uniqueVisitors||[]).length>0 ? React.createElement("table",{style:{width:"100%",fontSize:11,borderCollapse:"collapse"}},
+        React.createElement("thead",null,React.createElement("tr",{style:{borderBottom:"1px solid "+T.border}},
+          React.createElement("th",{style:{textAlign:"left",padding:"8px 0",color:T.textSub,fontWeight:600}},"Date"),
+          React.createElement("th",{style:{textAlign:"right",padding:"8px 0",color:T.textSub,fontWeight:600}},"Unique"),
+          React.createElement("th",{style:{textAlign:"right",padding:"8px 0",color:T.textSub,fontWeight:600}},"Events")
+        )),
+        React.createElement("tbody",null,(data.uniqueVisitors||[]).slice(0,14).map(function(v:any,i:number){
+          return React.createElement("tr",{key:i,style:{borderBottom:i<13?"1px solid "+T.border:"none"}},
+            React.createElement("td",{style:{padding:"8px 0",color:T.text}},v.visitor_date),
+            React.createElement("td",{style:{textAlign:"right",padding:"8px 0",color:T.purple,fontWeight:600}},v.unique_count),
+            React.createElement("td",{style:{textAlign:"right",padding:"8px 0",color:T.textSub}},v.total_events)
+          );
+        }))
+      ) : React.createElement("div",{style:{textAlign:"center",padding:"20px 0",fontSize:12,color:T.textSub}},"No visitor data")
+    ),
+
+    // Prior weeks Vegas lines
+    data.week6Odds && React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"14px 12px",marginBottom:16}},
+      React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text,marginBottom:10}},"Week 6 Vegas Lines"),
+      (data.week6Odds||[]).length>0 ? React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8,fontSize:11}},
+        (data.week6Odds||[]).map(function(g:any,i:number){
+          return React.createElement("div",{key:i,style:{background:T.bgInput,borderRadius:8,padding:"8px",borderLeft:"3px solid "+T.purple}},
+            React.createElement("div",{style:{fontWeight:600,color:T.text}},g.home_team+" @ "+g.away_team),
+            React.createElement("div",{style:{fontSize:10,color:T.textSub,marginTop:2}},(g.home_spread>0?"+":"")+g.home_spread+" / "+g.total)
+          );
+        })
+      ) : React.createElement("div",{style:{textAlign:"center",padding:"20px 0",fontSize:12,color:T.textSub}},"No Week 6 odds")
+    ),
+
+    // Unique visitors section
+    data.uniqueVisitors && React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"14px 12px",marginBottom:16}},
+      React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text,marginBottom:10}},"Unique Daily Visitors"),
+      (data.uniqueVisitors||[]).length>0 ? React.createElement("table",{style:{width:"100%",fontSize:11,borderCollapse:"collapse"}},
+        React.createElement("thead",null,React.createElement("tr",{style:{borderBottom:"1px solid "+T.border}},
+          React.createElement("th",{style:{textAlign:"left",padding:"8px 0",color:T.textSub,fontWeight:600}},"Date"),
+          React.createElement("th",{style:{textAlign:"right",padding:"8px 0",color:T.textSub,fontWeight:600}},"Unique"),
+          React.createElement("th",{style:{textAlign:"right",padding:"8px 0",color:T.textSub,fontWeight:600}},"Events")
+        )),
+        React.createElement("tbody",null,(data.uniqueVisitors||[]).slice(0,14).map(function(v:any,i:number){
+          return React.createElement("tr",{key:i,style:{borderBottom:i<13?"1px solid "+T.border:"none"}},
+            React.createElement("td",{style:{padding:"8px 0",color:T.text}},v.visitor_date),
+            React.createElement("td",{style:{textAlign:"right",padding:"8px 0",color:T.purple,fontWeight:600}},v.unique_count),
+            React.createElement("td",{style:{textAlign:"right",padding:"8px 0",color:T.textSub}},v.total_events)
+          );
+        }))
+      ) : React.createElement("div",{style:{textAlign:"center",padding:"20px 0",fontSize:12,color:T.textSub}},"No visitor data")
+    ),
+
+    // Prior weeks Vegas lines
+    data.week6Odds && React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"14px 12px",marginBottom:16}},
+      React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text,marginBottom:10}},"Week 6 Vegas Lines"),
+      (data.week6Odds||[]).length>0 ? React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8,fontSize:11}},
+        (data.week6Odds||[]).map(function(g:any,i:number){
+          return React.createElement("div",{key:i,style:{background:T.bgInput,borderRadius:8,padding:"8px",borderLeft:"3px solid "+T.purple}},
+            React.createElement("div",{style:{fontWeight:600,color:T.text}},g.home_team+" @ "+g.away_team),
+            React.createElement("div",{style:{fontSize:10,color:T.textSub,marginTop:2}},(g.home_spread>0?"+":"")+g.home_spread+" / "+g.total)
+          );
+        })
+      ) : React.createElement("div",{style:{textAlign:"center",padding:"20px 0",fontSize:12,color:T.textSub}},"No Week 6 odds")
+    ),
+
     // Refresh button
     React.createElement("button",{onClick:onLoad,style:{width:"100%",padding:"12px",borderRadius:12,border:"1px solid "+T.border,background:"transparent",color:T.textSub,cursor:"pointer",fontWeight:600,fontSize:13}},"↻ Refresh")
   );
