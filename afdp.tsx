@@ -8660,6 +8660,12 @@ export default function App(){
               oddsChecked&&!hasData&&React.createElement("div",{style:{marginTop:12,padding:"10px 16px",background:darkMode?"#1e293b":"#fef3c7",border:"1px solid "+(darkMode?"#475569":"#fcd34d"),borderRadius:12,fontSize:12,color:darkMode?"#fbbf24":"#92400e",fontWeight:600,textAlign:"center"}},"No lines available right now. NFL game lines are typically posted during the regular season (Sep–Jan).")
             ),
             hasData&&React.createElement("div",{style:{marginBottom:12}},
+              React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:16,flexWrap:"wrap"}},
+                React.createElement("label",{style:{fontSize:12,fontWeight:700,color:T.textSub}},"Week:"),
+                React.createElement("select",{value:selectedVegasWeek,onChange:function(e){setSelectedVegasWeek(+e.target.value);},style:{padding:"6px 12px",borderRadius:8,border:"1px solid "+T.border,background:T.bgInput,color:T.text,fontWeight:600,fontSize:12,cursor:"pointer"}},
+                  [1,2,3,4,5,6,7].map(function(w){return React.createElement("option",{key:w,value:w},"Week "+w);})
+                )
+              ),
               React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:12,flexWrap:"wrap"}},
                 React.createElement("div",{style:{fontSize:10,fontWeight:800,color:"#059669",letterSpacing:1}},oddsSource==="api"||oddsSource==="cache"?"THIS WEEK'S GAMES":"ARCHIVED LINES"),
                 React.createElement("div",{style:{background:"#059669",color:"#fff",borderRadius:10,padding:"2px 8px",fontSize:10,fontWeight:800}},games.length),
