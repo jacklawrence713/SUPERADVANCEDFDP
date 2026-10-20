@@ -339,6 +339,21 @@ propResults:{
 "Rashee Rice|Any TD":"YES","Dalton Kincaid|Any TD":"NO"
 } as {[k:string]:number|string}
 }
+,
+{week:6,label:"Week 6 · Oct 13–17",
+lines:[
+["KC","DEN",-7.5,43.5],["TB","ATL",-3.5,45.0],
+["BAL","CIN",-3.0,48.5],["BUF","NYJ",-5.5,40.5],["DAL","PHI",4.5,50.5],["DET","TB",-6.0,47.5],
+["GB","MIN",-2.5,46.0],["LAR","ARI",-4.0,46.5],["NE","JAX",2.0,40.5],["NO","CAR",-7.5,42.0],
+["SF","LAC",-3.5,48.5],["WAS","IND",-1.5,44.0],
+["HOU","TEN",-6.0,45.5],["LV","CLE",3.0,42.0],
+["MIA","CHI",-4.5,47.0],
+["NYG","SEA",3.5,47.5]
+] as [string,string,number,number][],
+results:{}  as {[k:string]:[number,number]},
+props:[] as {name:string,pos:string,team:string,stat:string,ou:number,opp:string,odds?:string}[],
+propResults:{}  as {[k:string]:number|string}
+}
 ];
 // Current week's lines (Week 7, Oct 20-21, 2026) — fetched from live API
 // If API unavailable, these are accurate fallback lines
