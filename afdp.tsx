@@ -8844,171 +8844,869 @@ if(item[0]==="admin"){var adminEmails=["jlawrence@cmgfi.com","admin@fantasydraft
 
       // VEGAS LINES
       rankSubTab==="vegas"&&!canAccessVegas(user)&&PaywallCard("vegas"),
-rankSubTab==="vegas"&&canAccessVegas(user)&&(function(){
-  // Week selector state (default 7)
-  if(typeof selectedVegasWeek==="undefined") selectedVegasWeek=7;
-
-  // Get data for selected week
-  var getWeekData=function(){
-    if(selectedVegasWeek<7){
-      return PAST_WEEKS.find(function(w){return w.week===selectedVegasWeek;});
-    }
-    return {week:7,label:"Week 7 · Oct 20-21",lines:[],results:{},props:[],propResults:{}};
-  };
-
-  var weekData=getWeekData();
-  var tabIcon={lines:"🏈",futures:"🏆",wintotals:"📊",awards:"⭐",props:"🎯",divisions:"🗺️",history:"📅"};
-
-  return React.createElement("div",{style:{padding:"16px"}},
-    // Header
-    React.createElement("div",{style:{background:"linear-gradient(135deg,#065f46,#047857,#059669)",borderRadius:16,padding:"20px 18px",marginBottom:16}},
-      React.createElement("div",{style:{fontWeight:900,fontSize:22,color:"#fff"}},"Vegas Lines & Futures"),
-      React.createElement("div",{style:{fontSize:12,color:"rgba(255,255,255,0.7)",marginTop:4}},"Updated odds, props, and predictions")
-    ),
-
-    // Sub-tabs
-    React.createElement("div",{style:{display:"flex",gap:6,flexWrap:"wrap",marginBottom:16}},
-      ["lines","futures","divisions","wintotals","awards","props","history"].map(function(tab){
-        var labels={lines:"Game Lines",futures:"Super Bowl",wintotals:"Win Totals",awards:"Awards",props:"Player Props",divisions:"Divisions",history:"Prior Weeks"};
-        var active=vegasSubTab===tab;
-        return React.createElement("button",{key:tab,onClick:function(){setVegasSubTab(tab);},style:{padding:"8px 14px",borderRadius:20,border:"1px solid "+(active?"#059669":T.border),background:active?"#05966633":"transparent",color:active?"#059669":T.text,fontWeight:700,fontSize:11,cursor:"pointer"}},
-          React.createElement("span",{style:{marginRight:4}},tabIcon[tab]),labels[tab]);
-      })
-    ),
-
-    // ════ GAME LINES ════
-    vegasSubTab==="lines"&&React.createElement("div",null,
-      React.createElement("div",{style:{display:"flex",gap:8,marginBottom:16,alignItems:"center"}},
-        React.createElement("label",{style:{fontWeight:700}},"Week:"),
-        React.createElement("select",{value:selectedVegasWeek,onChange:function(e){setSelectedVegasWeek(Number(e.target.value));},style:{padding:"6px 12px",borderRadius:8,border:"1px solid "+T.border,background:T.bgInput,color:T.text,fontWeight:600,fontSize:12}},
-          [1,2,3,4,5,6,7].map(function(w){return React.createElement("option",{key:w,value:w},"Week "+w);})
-        )
-      ),
-      selectedVegasWeek===7?
-        React.createElement("div",null,
-          React.createElement("div",{style:{fontSize:10,fontWeight:800,color:"#059669",marginBottom:8}},"WEEK 7 - LIVE"),
-          React.createElement("button",{onClick:function(){setOddsLoading(true);fetchVegasOdds(user?.token,true).then(function(r){setOddsResponse(r);setOddsLoading(false);if(r.error)setOddsError(r.error);}).catch(function(e){setOddsLoading(false);setOddsError(String(e));});},disabled:oddsLoading,style:{marginBottom:12,padding:"10px 20px",borderRadius:10,border:"1px solid #059669",background:"transparent",color:"#059669",fontWeight:700,cursor:"pointer"}},
-            oddsLoading?"Refreshing...":"Load Live Odds"
-          ),
-          Object.keys(oddsResponse.odds||{}).length>0?
-            React.createElement("div",null,"Live odds loaded")
-            :React.createElement("div",{style:{color:T.textSub}},"Click to load live Week 7 odds")
-        )
-        :React.createElement("div",null,
-          React.createElement("div",{style:{fontSize:10,fontWeight:800,color:"#059669",marginBottom:8}},"WEEK "+selectedVegasWeek+" - FINAL RESULTS"),
-          (weekData?.lines||[]).map(function(line){
-            var away=line[0],home=line[1],spread=line[2],total=line[3];
-            var key=away+"-"+home;
-            var result=weekData.results[key];
-            var awayScore=result?result[0]:null;
-            var homeScore=result?result[1]:null;
-            return React.createElement("div",{key:key,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:12,marginBottom:8}},
-              React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}},
-                React.createElement("div",{style:{fontWeight:700}},away+" @ "+home),
-                React.createElement("div",{style:{color:"#059669",fontWeight:600,fontSize:12}},(spread>0?"+":"")+spread+" | "+total)
+      rankSubTab==="vegas"&&canAccessVegas(user)&&(function(){
+        var games=oddsData?(function(){var eventMap:any={};Object.keys(oddsData).forEach(function(team){var g=oddsData[team];if(!g)return;if(!g.eventId)return;if(!eventMap[g.eventId]){eventMap[g.eventId]=g;}});return Object.values(eventMap).filter(function(g:any){return g.spread!==null||g.total!==null;}).sort(function(a:any,b:any){if(a.total===null&&b.total===null)return 0;if(a.total===null)return 1;if(b.total===null)return-1;return b.total-a.total;}).map(function(g:any){return{home:g.homeTeam,away:g.awayTeam,spread:g.spread,total:g.total,eventId:g.eventId};});})():[];
+        var hasData=games.length>0;
+        var TEAM_FULL:{[k:string]:string}={"ARI":"Cardinals","ATL":"Falcons","BAL":"Ravens","BUF":"Bills","CAR":"Panthers","CHI":"Bears","CIN":"Bengals","CLE":"Browns","DAL":"Cowboys","DEN":"Broncos","DET":"Lions","GB":"Packers","HOU":"Texans","IND":"Colts","JAX":"Jaguars","KC":"Chiefs","LAC":"Chargers","LAR":"Rams","LV":"Raiders","MIA":"Dolphins","MIN":"Vikings","NE":"Patriots","NO":"Saints","NYG":"Giants","NYJ":"Jets","PHI":"Eagles","PIT":"Steelers","SF":"49ers","SEA":"Seahawks","TB":"Buccaneers","TEN":"Titans","WAS":"Commanders"};
+        var sbTier=function(i:number){return i<4?"#22c55e":i<10?"#4ade80":i<17?"#94a3b8":i<24?"#fb923c":"#f87171";};
+        var tabIcon:{[k:string]:string}={"lines":"\uD83C\uDFC8","futures":"\uD83C\uDFC6","wintotals":"\uD83D\uDCCA","awards":"\u2B50","props":"\uD83C\uDFAF","divisions":"\uD83D\uDDFA\uFE0F","history":"\uD83D\uDCC5"};
+        return React.createElement("div",{style:{padding:"16px"}},
+          // Header with gradient
+          React.createElement("div",{style:{background:"linear-gradient(135deg,#065f46,#047857,#059669)",borderRadius:16,padding:"20px 18px",marginBottom:16,position:"relative",overflow:"hidden"}},
+            React.createElement("div",{style:{position:"absolute",right:-20,top:-20,width:100,height:100,borderRadius:"50%",background:"rgba(255,255,255,0.06)"}}),
+            React.createElement("div",{style:{position:"absolute",right:30,bottom:-30,width:80,height:80,borderRadius:"50%",background:"rgba(255,255,255,0.04)"}}),
+            React.createElement("div",{style:{position:"relative",display:"flex",alignItems:"center",gap:14}},
+              React.createElement("div",{style:{width:48,height:48,borderRadius:14,background:"rgba(255,255,255,0.15)",backdropFilter:"blur(8px)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}},
+                React.createElement("span",{style:{fontSize:24}},"$")
               ),
-              result?React.createElement("div",{style:{display:"flex",gap:16,fontSize:14,fontWeight:700}},
-                React.createElement("div",null,away+": ",React.createElement("span",{style:{color:awayScore>homeScore?"#22c55e":T.textDim}},awayScore)),
-                React.createElement("div",null,home+": ",React.createElement("span",{style:{color:homeScore>awayScore?"#22c55e":T.textDim}},homeScore))
-              ):React.createElement("div",{style:{color:T.textSub,fontSize:12}})
-            );
-          })
+              React.createElement("div",null,
+                React.createElement("div",{style:{fontWeight:900,fontSize:22,color:"#fff",letterSpacing:-0.5}},"Vegas Lines & Futures"),
+                React.createElement("div",{style:{fontSize:12,color:"rgba(255,255,255,0.7)",marginTop:2}},"NFL odds, futures, props & division winners")
+              )
+            )
+          ),
+          // Sub-tabs with icons
+          React.createElement("div",{style:{display:"flex",gap:6,flexWrap:"wrap",marginBottom:16}},
+            ["lines","futures","divisions","wintotals","awards","props","history"].map(function(tab){
+              var labels:{[k:string]:string}={"lines":"Game Lines","futures":"Super Bowl","wintotals":"Win Totals","awards":"Awards","props":"Player Props","divisions":"Divisions","history":"Prior Weeks"};
+              var active=vegasSubTab===tab;
+              return React.createElement("button",{key:tab,onClick:function(){setVegasSubTab(tab);},style:{padding:"8px 14px",borderRadius:22,border:"1px solid "+(active?"#059669":T.border),background:active?"linear-gradient(135deg,#059669,#047857)":"transparent",color:active?"#fff":T.textSub,fontWeight:700,fontSize:11,cursor:"pointer",display:"flex",alignItems:"center",gap:5,transition:"all 0.2s"}},
+                React.createElement("span",{style:{fontSize:12}},tabIcon[tab]||""),labels[tab]);
+            })
+          ),
+          // ── GAME LINES TAB ──
+                    vegasSubTab==="lines"&&React.createElement("div",null,
+            // Current week schedule (Week 7, Oct 20-21, 2026)
+            (function(){
+              var scheduleGames=[
+                {away:"DEN",home:"KC",kickoff:"2026-10-21T20:15:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
+                {away:"ATL",home:"TB",kickoff:"2026-10-21T20:15:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
+                {away:"CIN",home:"BAL",kickoff:"2026-10-21T12:00:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
+                {away:"NYJ",home:"BUF",kickoff:"2026-10-21T12:00:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
+                {away:"PHI",home:"DAL",kickoff:"2026-10-21T12:00:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
+                {away:"TB",home:"DET",kickoff:"2026-10-21T12:00:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
+                {away:"MIN",home:"GB",kickoff:"2026-10-21T12:00:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
+                {away:"ARI",home:"LAR",kickoff:"2026-10-21T12:00:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
+                {away:"JAX",home:"NE",kickoff:"2026-10-21T12:00:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
+                {away:"CAR",home:"NO",kickoff:"2026-10-21T12:00:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
+                {away:"LAC",home:"SF",kickoff:"2026-10-21T12:00:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
+                {away:"IND",home:"WAS",kickoff:"2026-10-21T12:00:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
+                {away:"TEN",home:"HOU",kickoff:"2026-10-21T15:30:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
+                {away:"CLE",home:"LV",kickoff:"2026-10-21T15:30:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
+                {away:"CHI",home:"MIA",kickoff:"2026-10-21T19:20:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
+                {away:"SEA",home:"NYG",kickoff:"2026-10-22T20:15:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false}
+              ];
+              var mergedGames=mergeScheduleWithOdds(scheduleGames,oddsResponse);
+              return React.createElement("div",null,
+                Object.keys(oddsResponse.odds).length===0?React.createElement("div",{style:{background:"linear-gradient(135deg,"+(darkMode?"#1a1a2e":"#f0fdf4")+","+(darkMode?"#16213e":"#ecfdf5")+")",border:"1px solid "+(darkMode?"#065f4633":"#bbf7d0"),borderRadius:16,padding:32,textAlign:"center",marginBottom:16}},
+                  React.createElement("div",{style:{fontSize:48,marginBottom:12}},"📊"),
+                  React.createElement("div",{style:{fontWeight:800,fontSize:18,color:T.text,marginBottom:8}},"No Lines Loaded"),
+                  React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.7,maxWidth:340,margin:"0 auto",marginBottom:16}},"Tap below to load this week's betting lines from our API."),
+                  React.createElement("button",{onClick:function(){setOddsLoading(true);fetchVegasOdds(user?.token,true).then(function(response){setOddsResponse(response);setOddsLoading(false);if(response.error)setOddsError(response.error);}).catch(function(err){setOddsLoading(false);setOddsError(String(err));});},disabled:oddsLoading,style:{padding:"12px 28px",borderRadius:12,border:"none",background:oddsLoading?"#6b7280":"linear-gradient(135deg,#059669,#047857)",color:"#fff",fontWeight:700,fontSize:13,cursor:oddsLoading?"wait":"pointer",boxShadow:"0 4px 12px rgba(5,150,105,0.3)",opacity:oddsLoading?0.7:1}},oddsLoading?"Loading...":"Load Lines"),
+                  oddsError&&React.createElement("div",{style:{marginTop:12,padding:"10px 16px",background:darkMode?"#1e293b":"#fef3c7",border:"1px solid "+(darkMode?"#475569":"#fcd34d"),borderRadius:12,fontSize:12,color:darkMode?"#fbbf24":"#92400e",fontWeight:600,textAlign:"center"}},oddsError)
+                ):React.createElement("div",null,
+                  React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:12,flexWrap:"wrap"}},
+                    React.createElement("div",{style:{fontSize:10,fontWeight:800,color:"#059669",letterSpacing:1}},"WEEK 7"),
+                    React.createElement("div",{style:{background:"#059669",color:"#fff",borderRadius:10,padding:"2px 8px",fontSize:10,fontWeight:800}},mergedGames.length),
+                    oddsResponse.source&&React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:500}},"Source: "+oddsResponse.source),
+                    oddsResponse.fetchedAt&&React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:500}},"Fetched "+new Date(oddsResponse.fetchedAt).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"}))
+                  ),
+                  React.createElement("button",{onClick:function(){setOddsLoading(true);fetchVegasOdds(user?.token,true).then(function(response){setOddsResponse(response);setOddsLoading(false);if(response.error)setOddsError(response.error);}).catch(function(err){setOddsLoading(false);setOddsError(String(err));});},disabled:oddsLoading,style:{marginBottom:16,padding:"10px 20px",borderRadius:10,border:"1px solid #059669",background:"transparent",color:"#059669",fontWeight:700,fontSize:12,cursor:oddsLoading?"wait":"pointer"}},oddsLoading?"Refreshing...":"Refresh"),
+                  mergedGames.map(function(g){
+                    var gsHome=getGameScript(g.home,oddsResponse.odds);
+                    var gsAway=getGameScript(g.away,oddsResponse.odds);
+                    var totalNote=g.total&&g.total>=50?"Shootout":g.total&&g.total<=41?"Low Scoring":"";
+                    var totalIcon=g.total&&g.total>=50?"🔥":g.total&&g.total<=41?"🛡️":"";
+                    var rKey=g.home+"-"+g.away;
+                    var result=WEEKLY_RESULTS[rKey]||null;
+                    var homeScore=result?result[0]:null;
+                    var awayScore=result?result[1]:null;
+                    var isFinal=result!==null;
+                    var actualTotal=isFinal?(homeScore as number)+(awayScore as number):0;
+                    var actualMargin=isFinal?(homeScore as number)-(awayScore as number):0;
+                    var spreadCover=isFinal?(actualMargin+g.spread>0?"HOME COVERS":actualMargin+g.spread<0?"AWAY COVERS":"PUSH"):"";
+                    var ouResult=isFinal?(actualTotal>g.total?"OVER":actualTotal<g.total?"UNDER":"PUSH"):"";
+                    var spreadColor=spreadCover==="HOME COVERS"?"#22c55e":spreadCover==="AWAY COVERS"?"#f87171":"#94a3b8";
+                    var ouColor=ouResult==="OVER"?"#f59e0b":ouResult==="UNDER"?"#60a5fa":"#94a3b8";
+                    return React.createElement("div",{key:g.home+g.away,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,padding:0,marginBottom:10,overflow:"hidden"}},
+                      React.createElement("div",{style:{background:darkMode?"rgba(5,150,105,0.08)":"rgba(5,150,105,0.04)",padding:"12px 16px",borderBottom:"1px solid "+T.border,display:"flex",justifyContent:"space-between",alignItems:"center"}},
+                        React.createElement("div",{style:{fontWeight:800,fontSize:15,color:T.text}},g.away+" @ "+g.home),
+                        React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6}},
+                          isFinal&&React.createElement("div",{style:{fontSize:10,fontWeight:800,color:"#22c55e",background:"#22c55e18",padding:"3px 10px",borderRadius:10}},"FINAL"),
+                          !isFinal&&totalNote&&React.createElement("div",{style:{fontSize:10,fontWeight:700,color:g.total>=50?"#f59e0b":"#60a5fa",background:(g.total>=50?"#f59e0b":"#60a5fa")+"14",padding:"3px 10px",borderRadius:10}},totalIcon+" "+totalNote)
+                        )
+                      ),
+                      isFinal&&React.createElement("div",{style:{display:"flex",alignItems:"center",padding:"14px 16px",borderBottom:"1px solid "+T.border,background:darkMode?"rgba(34,197,94,0.04)":"rgba(34,197,94,0.02)"}},
+                        React.createElement("div",{style:{flex:1,display:"flex",alignItems:"center",gap:10}},
+                          React.createElement("div",{style:{fontWeight:900,fontSize:14,color:(awayScore as number)>(homeScore as number)?T.text:T.textDim,minWidth:32}},g.away),
+                          React.createElement("div",{style:{fontWeight:900,fontSize:28,color:(awayScore as number)>(homeScore as number)?"#22c55e":T.textDim}},awayScore)
+                        ),
+                        React.createElement("div",{style:{fontSize:11,fontWeight:800,color:T.textDim,padding:"0 12px"}},"FINAL"),
+                        React.createElement("div",{style:{flex:1,display:"flex",alignItems:"center",justifyContent:"flex-end",gap:10}},
+                          React.createElement("div",{style:{fontWeight:900,fontSize:28,color:(homeScore as number)>(awayScore as number)?"#22c55e":T.textDim}},homeScore),
+                          React.createElement("div",{style:{fontWeight:900,fontSize:14,color:(homeScore as number)>(awayScore as number)?T.text:T.textDim,minWidth:32,textAlign:"right"}},g.home)
+                        )
+                      ),
+                      React.createElement("div",{style:{padding:"12px 16px"}},
+                        React.createElement("div",{style:{display:"flex",gap:8,marginBottom:10}},
+                          React.createElement("div",{style:{flex:1,background:T.bgInput,borderRadius:12,padding:"10px 12px",textAlign:"center"}},
+                            React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:700,letterSpacing:0.5,marginBottom:4}},"SPREAD"),
+                            React.createElement("div",{style:{fontWeight:900,fontSize:18,color:T.text}},g.spreadLabel),
+                            isFinal&&React.createElement("div",{style:{fontSize:10,fontWeight:800,color:spreadColor,marginTop:4}},spreadCover)
+                          ),
+                          React.createElement("div",{style:{flex:1,background:T.bgInput,borderRadius:12,padding:"10px 12px",textAlign:"center"}},
+                            React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:700,letterSpacing:0.5,marginBottom:4}},"O/U"),
+                            React.createElement("div",{style:{fontWeight:900,fontSize:18,color:T.text}},g.totalLabel),
+                            isFinal&&React.createElement("div",{style:{fontSize:10,fontWeight:800,color:ouColor,marginTop:4}},ouResult+" ("+actualTotal+")")
+                          )
+                        ),
+                        React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}},
+                          gsAway&&React.createElement("div",{style:{background:gsAway.color+"10",border:"1px solid "+gsAway.color+"28",borderRadius:12,padding:"10px 12px"}},
+                            React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:3,fontWeight:600}},g.away),
+                            React.createElement("div",{style:{fontWeight:800,fontSize:13,color:gsAway.color}},gsAway.script),
+                            React.createElement("div",{style:{fontSize:10,color:T.textDim,marginTop:2}},"Spread: "+gsAway.spreadLabel)
+                          ),
+                          gsHome&&React.createElement("div",{style:{background:gsHome.color+"10",border:"1px solid "+gsHome.color+"28",borderRadius:12,padding:"10px 12px"}},
+                            React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:3,fontWeight:600}},g.home),
+                            React.createElement("div",{style:{fontWeight:800,fontSize:13,color:gsHome.color}},gsHome.script),
+                            React.createElement("div",{style:{fontSize:10,color:T.textDim,marginTop:2}},"Spread: "+gsHome.spreadLabel)
+                          )
+                        )
+                      )
+                    );
+                  })
+                )
+              );
+            })(),
+            React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,padding:16}},
+              React.createElement("div",{style:{fontWeight:800,fontSize:13,color:T.text,marginBottom:10,display:"flex",alignItems:"center",gap:6}},
+                React.createElement("span",{style:{fontSize:14}},"📖"),"Game Script Guide"
+              ),
+              [["Positive Script","Favored by 7+ pts — run-heavy, clock control. Boost RBs.","#22c55e"],["Slight Fav","Favored by 3–6 pts — balanced attack expected.","#4ade80"],["Neutral","Pick'em or within 2 pts — no clear script edge.","#94a3b8"],["Slight Dog","Underdog by 3–6 pts — pass volume increases.","#fb923c"],["Negative Script","Underdog by 7+ pts — pass-heavy game script. Boost WRs/TEs.","#f87171"]].map(function(row){
+                return React.createElement("div",{key:row[0],style:{display:"flex",alignItems:"center",gap:10,marginBottom:8}},
+                  React.createElement("div",{style:{width:10,height:10,borderRadius:"50%",background:row[2],flexShrink:0}}),
+                  React.createElement("div",null,
+                    React.createElement("span",{style:{fontWeight:700,fontSize:12,color:row[2]}},(row[0] as string)+": "),
+                    React.createElement("span",{style:{fontSize:12,color:T.textSub}},row[1])
+                  )
+                );
+              })
+            )
+          ),
+          // ── SUPER BOWL FUTURES TAB ──
+          vegasSubTab==="futures"&&React.createElement("div",null,
+            // Top 3 podium
+            React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}},
+              [1,0,2].map(function(idx){
+                var sb=SB_ODDS[idx];if(!sb)return null;
+                var heights=[140,170,120];var bgs=["linear-gradient(135deg,#c0c0c0,#e8e8e8)","linear-gradient(135deg,#ffd700,#ffed4a)","linear-gradient(135deg,#cd7f32,#e8a862)"];
+                var labels=["2ND","1ST","3RD"];var order=[1,0,2];
+                return React.createElement("div",{key:sb.team,style:{textAlign:"center",display:"flex",flexDirection:"column",justifyContent:"flex-end"}},
+                  React.createElement("div",{style:{fontWeight:900,fontSize:20,color:T.text,marginBottom:4}},sb.team),
+                  React.createElement("div",{style:{fontSize:11,color:T.textSub,marginBottom:4}},TEAM_FULL[sb.team]),
+                  React.createElement("div",{style:{fontWeight:800,fontSize:15,color:"#059669",marginBottom:6}},sb.odds),
+                  React.createElement("div",{style:{height:heights[order[idx]],background:bgs[order[idx]],borderRadius:"10px 10px 0 0",display:"flex",alignItems:"flex-end",justifyContent:"center",paddingBottom:8}},
+                    React.createElement("div",{style:{fontWeight:900,fontSize:12,color:idx===0?"#333":"#fff"}},labels[order[idx]])
+                  )
+                );
+              })
+            ),
+            React.createElement("div",{style:{fontSize:11,fontWeight:800,color:T.textDim,letterSpacing:1,marginBottom:8,marginTop:4}},"ALL 32 TEAMS"),
+            SB_ODDS.map(function(sb,i){
+              var barW=Math.max(4,sb.pct*5.5);
+              return React.createElement("div",{key:sb.team,style:{background:i<3?("linear-gradient(90deg,"+(darkMode?"#065f4622":"#ecfdf5")+","+(darkMode?T.bgCard:T.bgCard)+")"):"transparent",border:"1px solid "+(i<3?"#059669"+33:T.border),borderRadius:12,padding:"8px 14px",marginBottom:4,display:"flex",alignItems:"center",gap:10}},
+                React.createElement("div",{style:{fontWeight:900,fontSize:11,color:i<3?"#059669":T.textDim,width:20,textAlign:"right"}},i+1),
+                React.createElement("div",{style:{fontWeight:800,fontSize:14,color:T.text,width:38}},sb.team),
+                React.createElement("div",{style:{fontSize:11,color:T.textSub,width:80}},TEAM_FULL[sb.team]||""),
+                React.createElement("div",{style:{flex:1,position:"relative",height:16,background:T.bgInput,borderRadius:8,overflow:"hidden"}},
+                  React.createElement("div",{style:{position:"absolute",left:0,top:0,height:"100%",width:barW+"%",background:sbTier(i),borderRadius:8,transition:"width 0.3s"}})
+                ),
+                React.createElement("div",{style:{fontWeight:800,fontSize:13,color:sbTier(i),width:55,textAlign:"right"}},sb.odds),
+                React.createElement("div",{style:{fontSize:10,color:T.textSub,width:38,textAlign:"right"}},sb.pct+"%")
+              );
+            }),
+            React.createElement("div",{style:{fontSize:10,color:T.textDim,textAlign:"center",marginTop:10}},"Implied probability shown · Consensus sportsbooks · Updated Aug 2026")
+          ),
+          // ── DIVISION WINNERS TAB ──
+          vegasSubTab==="divisions"&&React.createElement("div",null,
+            React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4}},"\uD83D\uDDFA\uFE0F Division Winner Odds"),
+            React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:16}},"Bills & Ravens the only odds-on favorites to win their divisions"),
+            DIV_ODDS.map(function(d){
+              var isAFC=d.div.indexOf("AFC")>=0;
+              var divColor=isAFC?"#ef4444":"#3b82f6";
+              return React.createElement("div",{key:d.div,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:0,marginBottom:10,overflow:"hidden"}},
+                React.createElement("div",{style:{background:divColor+"14",borderBottom:"1px solid "+divColor+"22",padding:"10px 14px",display:"flex",alignItems:"center",gap:8}},
+                  React.createElement("div",{style:{width:8,height:8,borderRadius:"50%",background:divColor}}),
+                  React.createElement("div",{style:{fontWeight:800,fontSize:13,color:T.text}},d.div)
+                ),
+                React.createElement("div",{style:{padding:"8px 14px"}},
+                  d.teams.map(function(t,ti){
+                    var isFav=ti===0;
+                    var oddsVal=parseInt(t.odds.replace("+",""));
+                    var isNeg=t.odds.indexOf("-")===0;
+                    var pct=isNeg?Math.round(Math.abs(oddsVal)/(Math.abs(oddsVal)+100)*100):Math.round(100/(oddsVal+100)*100);
+                    var barW=Math.max(6,pct);
+                    return React.createElement("div",{key:t.team,style:{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:ti<d.teams.length-1?"1px solid "+T.border+"66":"none"}},
+                      React.createElement("div",{style:{fontWeight:800,fontSize:14,color:isFav?divColor:T.text,width:36}},t.team),
+                      React.createElement("div",{style:{fontSize:11,color:T.textSub,width:80}},TEAM_FULL[t.team]||""),
+                      React.createElement("div",{style:{flex:1,position:"relative",height:14,background:T.bgInput,borderRadius:7,overflow:"hidden"}},
+                        React.createElement("div",{style:{position:"absolute",left:0,top:0,height:"100%",width:barW+"%",background:isFav?divColor:T.textDim+"44",borderRadius:7}})
+                      ),
+                      React.createElement("div",{style:{fontWeight:800,fontSize:13,color:isFav?divColor:T.textSub,width:55,textAlign:"right"}},t.odds),
+                      React.createElement("div",{style:{fontSize:10,color:T.textDim,width:32,textAlign:"right"}},pct+"%")
+                    );
+                  })
+                )
+              );
+            }),
+            React.createElement("div",{style:{fontSize:10,color:T.textDim,textAlign:"center",marginTop:10}},"Consensus sportsbooks · Updated Aug 2026")
+          ),
+          // ── WIN TOTALS TAB ──
+          vegasSubTab==="wintotals"&&React.createElement("div",null,
+            React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4}},"2026 Team Win Totals"),
+            React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:14}},"Over/Under regular season wins · BAL & LAR lead at 11.5"),
+            // Tier headers inline
+            WIN_TOTALS.map(function(wt,wi){
+              var barW=Math.max(8,(wt.ou/13)*100);
+              var clr=wt.ou>=10.5?"#22c55e":wt.ou>=8.5?"#4ade80":wt.ou>=6.5?"#94a3b8":wt.ou>=5?"#fb923c":"#f87171";
+              var tierLabel2=wt.ou>=10.5?"Contender":wt.ou>=8.5?"Playoff Hopeful":wt.ou>=6.5?"Middle Pack":wt.ou>=5?"Underdog":"Rebuilder";
+              var prevOu=wi>0?WIN_TOTALS[wi-1].ou:99;
+              var showTier=wt.ou!==prevOu&&(wt.ou===10.5||wt.ou===8.5||wt.ou===6.5||wt.ou===5);
+              return React.createElement(React.Fragment,{key:wt.team},
+                showTier&&React.createElement("div",{style:{fontSize:9,fontWeight:800,color:clr,letterSpacing:1,marginTop:10,marginBottom:4,textTransform:"uppercase"}},tierLabel2),
+                React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"8px 14px",marginBottom:4,display:"flex",alignItems:"center",gap:10}},
+                  React.createElement("div",{style:{fontWeight:800,fontSize:14,color:T.text,width:38}},wt.team),
+                  React.createElement("div",{style:{fontSize:11,color:T.textSub,width:85}},TEAM_FULL[wt.team]||""),
+                  React.createElement("div",{style:{flex:1,position:"relative",height:16,background:T.bgInput,borderRadius:8,overflow:"hidden"}},
+                    React.createElement("div",{style:{position:"absolute",left:0,top:0,height:"100%",width:barW+"%",background:clr,borderRadius:8}})
+                  ),
+                  React.createElement("div",{style:{fontWeight:900,fontSize:16,color:clr,width:36,textAlign:"right"}},wt.ou)
+                )
+              );
+            }),
+            React.createElement("div",{style:{fontSize:10,color:T.textDim,textAlign:"center",marginTop:10}},"DraftKings consensus · Updated Aug 2026")
+          ),
+          // ── AWARDS TAB ──
+          vegasSubTab==="awards"&&React.createElement("div",null,
+            // MVP section
+            React.createElement("div",{style:{background:"linear-gradient(135deg,"+(darkMode?"#1a1035":"#fefce8")+","+(darkMode?"#0f172a":"#fff7ed")+")",border:"1px solid "+(darkMode?"#854d0e33":"#fde68a"),borderRadius:16,padding:16,marginBottom:16}},
+              React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:12}},
+                React.createElement("span",{style:{fontSize:20}},"\uD83C\uDFC6"),
+                React.createElement("div",null,
+                  React.createElement("div",{style:{fontWeight:900,fontSize:16,color:T.text}},"2026 NFL MVP"),
+                  React.createElement("div",{style:{fontSize:11,color:T.textSub}},"Josh Allen favored for his 2nd · Lamar closing the gap")
+                )
+              ),
+              MVP_ODDS.slice(0,5).map(function(p,i){
+                var medalColors=["#ffd700","#c0c0c0","#cd7f32","",""];
+                return React.createElement("div",{key:p.name+"mvp",style:{background:T.bgCard,border:"1px solid "+(i<3?medalColors[i]+"44":T.border),borderRadius:12,padding:"10px 14px",marginBottom:6,display:"flex",alignItems:"center",gap:10}},
+                  React.createElement("div",{style:{fontWeight:900,fontSize:13,color:i<3?medalColors[i]:T.textDim,width:20,textAlign:"right"}},i<3?["\uD83E\uDD47","\uD83E\uDD48","\uD83E\uDD49"][i]:""+(i+1)),
+                  React.createElement(Avatar,{name:p.name,pos:p.pos,size:32}),
+                  React.createElement("div",{style:{flex:1}},
+                    React.createElement("div",{style:{fontWeight:700,fontSize:14,color:T.text}},p.name),
+                    React.createElement("div",{style:{fontSize:10,color:T.textSub}},p.pos+" · "+p.team)
+                  ),
+                  React.createElement("div",{style:{fontWeight:800,fontSize:15,color:i<3?"#22c55e":"#4ade80"}},p.odds)
+                );
+              })
+            ),
+            // Remaining MVP
+            React.createElement("div",{style:{marginBottom:16}},
+              React.createElement("div",{style:{fontSize:10,fontWeight:800,color:T.textDim,letterSpacing:1,marginBottom:6}},"MORE MVP CONTENDERS"),
+              MVP_ODDS.slice(5).map(function(p,i){
+                return React.createElement("div",{key:p.name+"mvp2",style:{display:"flex",alignItems:"center",gap:10,padding:"6px 0",borderBottom:"1px solid "+T.border+"44"}},
+                  React.createElement("div",{style:{fontWeight:700,fontSize:11,color:T.textDim,width:20,textAlign:"right"}},i+6),
+                  React.createElement(Avatar,{name:p.name,pos:p.pos,size:24}),
+                  React.createElement("div",{style:{flex:1,fontWeight:600,fontSize:12,color:T.text}},p.name),
+                  React.createElement("div",{style:{fontSize:10,color:T.textSub,width:28}},p.pos),
+                  React.createElement("div",{style:{fontWeight:700,fontSize:12,color:T.textSub,width:55,textAlign:"right"}},p.odds)
+                );
+              })
+            ),
+            // OPOY section
+            React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:16,padding:16,marginBottom:16}},
+              React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:12}},
+                React.createElement("span",{style:{fontSize:18}},"\u26A1"),
+                React.createElement("div",null,
+                  React.createElement("div",{style:{fontWeight:900,fontSize:15,color:T.text}},"Offensive Player of the Year"),
+                  React.createElement("div",{style:{fontSize:11,color:T.textSub}},"Gibbs favored at +650 after Montgomery departure")
+                )
+              ),
+              OPOY_ODDS.map(function(p,i){
+                var pc=POS_COLORS[p.pos]||"#888";
+                return React.createElement("div",{key:p.name+"opoy",style:{display:"flex",alignItems:"center",gap:10,padding:"7px 0",borderBottom:i<OPOY_ODDS.length-1?"1px solid "+T.border+"44":"none"}},
+                  React.createElement("div",{style:{fontWeight:900,fontSize:11,color:T.textDim,width:18,textAlign:"right"}},i+1),
+                  React.createElement(Avatar,{name:p.name,pos:p.pos,size:26}),
+                  React.createElement("div",{style:{flex:1,minWidth:0}},
+                    React.createElement("div",{style:{fontWeight:700,fontSize:12,color:T.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
+                    React.createElement("div",{style:{fontSize:9,color:pc,fontWeight:700}},p.pos+" · "+p.team)
+                  ),
+                  React.createElement("div",{style:{fontWeight:800,fontSize:13,color:i<3?"#c084fc":"#94a3b8",flexShrink:0}},p.odds)
+                );
+              })
+            ),
+            // OROY section
+            React.createElement("div",{style:{background:T.bgCard,border:"1px solid #f59e0b33",borderRadius:16,padding:16}},
+              React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:12}},
+                React.createElement("span",{style:{fontSize:18}},"\uD83C\uDF1F"),
+                React.createElement("div",null,
+                  React.createElement("div",{style:{fontWeight:900,fontSize:15,color:T.text}},"Offensive Rookie of the Year"),
+                  React.createElement("div",{style:{fontSize:11,color:T.textSub}},"Love & Mendoza in a dead heat · Tate the top WR")
+                )
+              ),
+              OROY_ODDS.map(function(p,i){
+                var pc=POS_COLORS[p.pos]||"#888";
+                return React.createElement("div",{key:p.name+"oroy",style:{display:"flex",alignItems:"center",gap:10,padding:"7px 0",borderBottom:i<OROY_ODDS.length-1?"1px solid "+T.border+"44":"none"}},
+                  React.createElement("div",{style:{fontWeight:900,fontSize:11,color:T.textDim,width:18,textAlign:"right"}},i+1),
+                  React.createElement(Avatar,{name:p.name,pos:p.pos,size:26}),
+                  React.createElement("div",{style:{flex:1,minWidth:0}},
+                    React.createElement("div",{style:{fontWeight:700,fontSize:12,color:T.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
+                    React.createElement("div",{style:{fontSize:9,color:pc,fontWeight:700}},p.pos+" · "+p.team)
+                  ),
+                  React.createElement("div",{style:{fontWeight:800,fontSize:13,color:i<2?"#f59e0b":i<5?"#fbbf24":"#94a3b8",flexShrink:0}},p.odds)
+                );
+              })
+            ),
+            React.createElement("div",{style:{fontSize:10,color:T.textDim,textAlign:"center",marginTop:12}},"Consensus odds · Updated Aug 2026 · For entertainment only")
+          ),
+          // ── PLAYER PROPS TAB ──
+          vegasSubTab==="props"&&React.createElement("div",null,
+            // ── WEEKLY GAME PROPS ──
+            React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:16,flexWrap:"wrap"}},
+              React.createElement("label",{style:{fontSize:12,fontWeight:700,color:T.textSub}},"Week:"),
+              React.createElement("select",{value:selectedVegasWeek,onChange:function(e){setSelectedVegasWeek(+e.target.value);},style:{padding:"6px 12px",borderRadius:8,border:"1px solid "+T.border,background:T.bgInput,color:T.text,fontWeight:600,fontSize:12,cursor:"pointer"}},
+                [1,2,3,4,5,6,7].map(function(w){return React.createElement("option",{key:w,value:w},"Week "+w);})
+              )
+            ),
+            React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4}},"Week "+selectedVegasWeek+" Player Props"),
+            React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:14}},"Game-day O/U lines · Thu Sep 17 – Mon Sep 21"),
+            (function(){
+              var wcats=["Pass Yds","Pass TD","Rush Yds","Rec Yds","Receptions","Any TD"];
+              var wcatColors:{[k:string]:string}={"Pass Yds":"#818cf8","Pass TD":"#60a5fa","Rush Yds":"#34d399","Rec Yds":"#c084fc","Receptions":"#f59e0b","Any TD":"#f87171"};
+              var wcatIcons:{[k:string]:string}={"Pass Yds":"\uD83C\uDFC8","Pass TD":"\uD83C\uDFC8","Rush Yds":"\uD83C\uDFC3","Rec Yds":"\uD83D\uDC50","Receptions":"\uD83C\uDFAF","Any TD":"\uD83C\uDFC6"};
+              var wgrouped:{[k:string]:typeof WEEKLY_PROPS}={};
+              var weekProps=selectedVegasWeek<7?PAST_WEEKS.find(function(pw){return pw.week===selectedVegasWeek;})?.props||[]:WEEKLY_PROPS;
+              weekProps.forEach(function(p){if(!wgrouped[p.stat])wgrouped[p.stat]=[];wgrouped[p.stat].push(p);});
+              return wcats.filter(function(c){return wgrouped[c];}).map(function(cat){
+                var cc=wcatColors[cat]||T.text;
+                return React.createElement("div",{key:"wk"+cat,style:{marginBottom:16}},
+                  React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,marginBottom:8}},
+                    React.createElement("span",{style:{fontSize:13}},wcatIcons[cat]||""),
+                    React.createElement("div",{style:{fontWeight:800,fontSize:13,color:cc,letterSpacing:0.5,textTransform:"uppercase"}},cat)
+                  ),
+                  wgrouped[cat].map(function(p,pi){
+                    var isATD=cat==="Any TD";
+                    var displayVal=isATD?(p as any).odds||"":p.ou;
+                    var labelText=isATD?"ODDS":"O/U";
+                    var valColor=isATD?((p as any).odds&&(p as any).odds.charAt(0)==="-"?"#34d399":"#f59e0b"):cc;
+                    var rKey=p.name+"|"+p.stat;
+                    var pwp=selectedVegasWeek<7?PAST_WEEKS.find(function(pw){return pw.week===selectedVegasWeek;}):null;
+                    var actual=pwp?pwp.propResults[rKey]:PROP_RESULTS[rKey];
+                    var hasResult=actual!==undefined;
+                    var isDNP=actual==="DNP";
+                    var isATDResult=isATD&&hasResult;
+                    var hitProp=false;
+                    if(hasResult&&!isDNP){
+                      if(isATD){hitProp=actual==="YES";}
+                      else{hitProp=(actual as number)>p.ou;}
+                    }
+                    var resultColor=isDNP?"#6b7280":hitProp?"#22c55e":"#f87171";
+                    var resultLabel=isDNP?"DNP":isATD?(actual==="YES"?"SCORED":"NO TD"):(hitProp?"OVER":"UNDER");
+                    return React.createElement("div",{key:p.name+p.stat+"wk",style:{background:T.bgCard,border:"1px solid "+(hasResult?resultColor+"33":T.border),borderRadius:12,padding:"10px 14px",marginBottom:5,display:"flex",alignItems:"center",gap:10}},
+                      React.createElement("div",{style:{fontWeight:700,fontSize:10,color:T.textDim,width:16,textAlign:"right"}},pi+1),
+                      React.createElement(Avatar,{name:p.name,pos:p.pos,size:28}),
+                      React.createElement("div",{style:{flex:1,minWidth:0}},
+                        React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
+                        React.createElement("div",{style:{fontSize:10,color:T.textSub}},p.pos+" · "+p.team+" vs "+p.opp)
+                      ),
+                      React.createElement("div",{style:{textAlign:"right",flexShrink:0}},
+                        selectedVegasWeek===7&&React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:600,marginBottom:2}},labelText),
+                        React.createElement("div",{style:{fontWeight:900,fontSize:16,color:selectedVegasWeek===7?valColor:(hasResult?resultColor:T.textDim)}},selectedVegasWeek===7?displayVal:(hasResult&&!isDNP?actual:"—"))
+                      ),
+                      hasResult&&React.createElement("div",{style:{textAlign:"right",flexShrink:0,minWidth:52}},
+                        !isDNP&&!isATD&&React.createElement("div",{style:{fontWeight:900,fontSize:16,color:resultColor}},actual),
+                        React.createElement("div",{style:{fontSize:9,fontWeight:800,color:resultColor,marginTop:1,background:resultColor+"18",borderRadius:6,padding:"2px 6px",textAlign:"center"}},resultLabel)
+                      )
+                    );
+                  })
+                );
+              });
+            })(),
+            React.createElement("div",{style:{fontSize:10,color:T.textDim,textAlign:"center",marginTop:4,marginBottom:20}},"Week 2 props via DraftKings/FanDuel · Updated Sep 15 · For entertainment only"),
+            // ── SEASON-LONG PROPS ──
+            React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4}},"Season-Long Player Props"),
+            React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:14}},"Over/Under season stat totals · 2026-27 NFL season"),
+            (function(){
+              var cats=["Pass Yds","Pass TD","Rush Yds","Rush TD","Rec Yds","Rec TD"];
+              var catColors:{[k:string]:string}={"Pass Yds":"#818cf8","Pass TD":"#818cf8","Rush Yds":"#34d399","Rush TD":"#34d399","Rec Yds":"#c084fc","Rec TD":"#c084fc"};
+              var catIcons:{[k:string]:string}={"Pass Yds":"\uD83C\uDFC8","Pass TD":"\uD83C\uDFC8","Rush Yds":"\uD83C\uDFC3","Rush TD":"\uD83C\uDFC3","Rec Yds":"\uD83D\uDC50","Rec TD":"\uD83D\uDC50"};
+              var grouped:{[k:string]:typeof PLAYER_PROPS}={};
+              PLAYER_PROPS.forEach(function(p){if(!grouped[p.stat])grouped[p.stat]=[];grouped[p.stat].push(p);});
+              return cats.filter(function(c){return grouped[c];}).map(function(cat){
+                var cc=catColors[cat]||T.text;
+                return React.createElement("div",{key:cat,style:{marginBottom:16}},
+                  React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,marginBottom:8}},
+                    React.createElement("span",{style:{fontSize:13}},catIcons[cat]||""),
+                    React.createElement("div",{style:{fontWeight:800,fontSize:13,color:cc,letterSpacing:0.5,textTransform:"uppercase"}},cat)
+                  ),
+                  grouped[cat].map(function(p,pi){
+                    return React.createElement("div",{key:p.name+p.stat,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"10px 14px",marginBottom:5,display:"flex",alignItems:"center",gap:10}},
+                      React.createElement("div",{style:{fontWeight:700,fontSize:10,color:T.textDim,width:16,textAlign:"right"}},pi+1),
+                      React.createElement(Avatar,{name:p.name,pos:p.pos,size:28}),
+                      React.createElement("div",{style:{flex:1,minWidth:0}},
+                        React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
+                        React.createElement("div",{style:{fontSize:10,color:T.textSub}},p.pos+" · "+p.team)
+                      ),
+                      React.createElement("div",{style:{textAlign:"right",flexShrink:0}},
+                        React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:600,marginBottom:2}},"O/U"),
+                        React.createElement("div",{style:{fontWeight:900,fontSize:16,color:cc}},p.ou.toLocaleString())
+                      )
+                    );
+                  })
+                );
+              });
+            })(),
+            React.createElement("div",{style:{fontSize:10,color:T.textDim,textAlign:"center",marginTop:8}},"Consensus lines · Updated Aug 2026 · For entertainment only")
+          ),
+          // ── PRIOR WEEKS HISTORY TAB ──
+          vegasSubTab==="history"&&React.createElement("div",null,
+            React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:16,flexWrap:"wrap"}},
+              React.createElement("label",{style:{fontSize:12,fontWeight:700,color:T.textSub}},"Week:"),
+              React.createElement("select",{value:selectedVegasWeek,onChange:function(e){setSelectedVegasWeek(+e.target.value);},style:{padding:"6px 12px",borderRadius:8,border:"1px solid "+T.border,background:T.bgInput,color:T.text,fontWeight:600,fontSize:12,cursor:"pointer"}},
+                [1,2,3,4,5,6,7].map(function(w){return React.createElement("option",{key:w,value:w},"Week "+w);})
+              )
+            ),
+            React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4}},"Week "+selectedVegasWeek+" Results"),
+            React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:14}},"Game lines, scores, and ATS results"),
+            PAST_WEEKS.filter(function(pw){return pw.week===selectedVegasWeek;}).slice().reverse().map(function(pw){
+              var pwGames=pw.lines.map(function(g){
+                var home=g[0],away=g[1],spread=g[2],total=g[3];
+                var rKey=home+"-"+away;
+                var result=pw.results[rKey]||null;
+                var homeScore=result?result[0]:null;
+                var awayScore=result?result[1]:null;
+                var isFinal=result!==null;
+                var actualTotal=isFinal?(homeScore as number)+(awayScore as number):0;
+                var actualMargin=isFinal?(homeScore as number)-(awayScore as number):0;
+                var spreadCover=isFinal?(actualMargin+spread>0?"HOME":actualMargin+spread<0?"AWAY":"PUSH"):"";
+                var ouResult=isFinal?(actualTotal>total?"OVER":actualTotal<total?"UNDER":"PUSH"):"";
+                return{home,away,spread,total,homeScore,awayScore,isFinal,actualTotal,spreadCover,ouResult};
+              });
+              var totalGames=pwGames.length;
+              var favCovers=pwGames.filter(function(g){return g.isFinal&&((g.spread<=0&&g.spreadCover==="HOME")||(g.spread>0&&g.spreadCover==="AWAY"));}).length;
+              var dogCovers=pwGames.filter(function(g){return g.isFinal&&((g.spread<=0&&g.spreadCover==="AWAY")||(g.spread>0&&g.spreadCover==="HOME"));}).length;
+              var overs=pwGames.filter(function(g){return g.ouResult==="OVER";}).length;
+              var unders=pwGames.filter(function(g){return g.ouResult==="UNDER";}).length;
+              return React.createElement("div",{key:pw.week,style:{marginBottom:20}},
+                React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:10}},
+                  React.createElement("div",{style:{fontWeight:800,fontSize:14,color:"#059669"}},pw.label),
+                  React.createElement("div",{style:{background:"#059669",color:"#fff",borderRadius:10,padding:"2px 8px",fontSize:10,fontWeight:800}},totalGames+" games")
+                ),
+                // Summary row
+                React.createElement("div",{style:{display:"flex",gap:8,marginBottom:12}},
+                  React.createElement("div",{style:{flex:1,background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"10px 12px",textAlign:"center"}},
+                    React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:700,letterSpacing:0.5,marginBottom:3}},"FAVORITES"),
+                    React.createElement("div",{style:{fontWeight:900,fontSize:18,color:"#22c55e"}},favCovers+"-"+(totalGames-favCovers))
+                  ),
+                  React.createElement("div",{style:{flex:1,background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"10px 12px",textAlign:"center"}},
+                    React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:700,letterSpacing:0.5,marginBottom:3}},"DOGS"),
+                    React.createElement("div",{style:{fontWeight:900,fontSize:18,color:"#f87171"}},dogCovers+"-"+(totalGames-dogCovers))
+                  ),
+                  React.createElement("div",{style:{flex:1,background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"10px 12px",textAlign:"center"}},
+                    React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:700,letterSpacing:0.5,marginBottom:3}},"O/U"),
+                    React.createElement("div",{style:{fontWeight:900,fontSize:18,color:"#f59e0b"}},overs+"O / "+unders+"U")
+                  )
+                ),
+                // Game cards
+                pwGames.map(function(g){
+                  var favTeam=g.spread<=0?g.home:g.away;
+                  var dogTeam=g.spread<=0?g.away:g.home;
+                  var favSpread=g.spread<=0?g.spread:-g.spread;
+                  var favCovered=g.spreadCover===(g.spread<=0?"HOME":"AWAY");
+                  var spreadColor=favCovered?"#22c55e":"#f87171";
+                  var ouColor=g.ouResult==="OVER"?"#f59e0b":g.ouResult==="UNDER"?"#60a5fa":"#94a3b8";
+                  var homeWon=g.isFinal&&(g.homeScore as number)>(g.awayScore as number);
+                  var awayWon=g.isFinal&&(g.awayScore as number)>(g.homeScore as number);
+                  return React.createElement("div",{key:g.home+g.away,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"10px 14px",marginBottom:6,display:"flex",alignItems:"center",gap:8}},
+                    React.createElement("div",{style:{flex:1,minWidth:0}},
+                      React.createElement("div",{style:{fontWeight:awayWon?900:600,fontSize:13,color:awayWon?"#22c55e":T.text}},g.away+(g.isFinal?" "+g.awayScore:"")),
+                      React.createElement("div",{style:{fontWeight:homeWon?900:600,fontSize:13,color:homeWon?"#22c55e":T.text}},g.home+(g.isFinal?" "+g.homeScore:""))
+                    ),
+                    React.createElement("div",{style:{textAlign:"center",minWidth:52}},
+                      React.createElement("div",{style:{fontSize:12,fontWeight:800,color:T.text}},(favSpread>0?"+":"")+favSpread),
+                      g.isFinal&&React.createElement("div",{style:{fontSize:9,fontWeight:800,color:spreadColor,marginTop:2}},favCovered?favTeam+" covers":dogTeam+" covers")
+                    ),
+                    React.createElement("div",{style:{textAlign:"center",minWidth:52}},
+                      React.createElement("div",{style:{fontSize:12,fontWeight:800,color:T.text}},g.total),
+                      g.isFinal&&React.createElement("div",{style:{fontSize:9,fontWeight:800,color:ouColor,marginTop:2}},g.ouResult+" ("+g.actualTotal+")")
+                    )
+                  );
+                }),
+                // ── Player Props Results ──
+                pw.props&&pw.props.length>0&&(function(){
+                  var pCats=["Pass Yds","Rush Yds","Rec Yds","Any TD"];
+                  var pCatColors:{[k:string]:string}={"Pass Yds":"#818cf8","Rush Yds":"#34d399","Rec Yds":"#c084fc","Any TD":"#f87171"};
+                  var pCatIcons:{[k:string]:string}={"Pass Yds":"\uD83C\uDFC8","Rush Yds":"\uD83C\uDFC3","Rec Yds":"\uD83D\uDC50","Any TD":"\uD83C\uDFC6"};
+                  var pGrouped:{[k:string]:typeof pw.props}={};
+                  pw.props.forEach(function(p){if(!pGrouped[p.stat])pGrouped[p.stat]=[];pGrouped[p.stat].push(p);});
+                  var totalProps=pw.props.filter(function(p){return pw.propResults[p.name+"|"+p.stat]!==undefined;}).length;
+                  var hits=pw.props.filter(function(p){
+                    var a=pw.propResults[p.name+"|"+p.stat];
+                    if(a===undefined)return false;
+                    if(p.stat==="Any TD")return a==="YES";
+                    return(a as number)>p.ou;
+                  }).length;
+                  return React.createElement("div",{style:{marginTop:14}},
+                    React.createElement("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}},
+                      React.createElement("div",{style:{fontWeight:800,fontSize:13,color:"#c084fc"}},"Player Props Results"),
+                      totalProps>0&&React.createElement("div",{style:{fontSize:11,fontWeight:700,color:T.textSub}},"Overs: "+hits+"/"+totalProps+" ("+Math.round(hits/totalProps*100)+"%)")
+                    ),
+                    pCats.filter(function(c){return pGrouped[c];}).map(function(cat){
+                      var cc=pCatColors[cat]||T.text;
+                      return React.createElement("div",{key:"ph"+cat,style:{marginBottom:10}},
+                        React.createElement("div",{style:{display:"flex",alignItems:"center",gap:5,marginBottom:6}},
+                          React.createElement("span",{style:{fontSize:11}},pCatIcons[cat]||""),
+                          React.createElement("div",{style:{fontWeight:800,fontSize:11,color:cc,letterSpacing:0.5,textTransform:"uppercase"}},cat)
+                        ),
+                        pGrouped[cat].map(function(p){
+                          var isATD=cat==="Any TD";
+                          var rKey2=p.name+"|"+p.stat;
+                          var actual2=pw.propResults[rKey2];
+                          var hasR=actual2!==undefined;
+                          var hit2=false;
+                          if(hasR){hit2=isATD?actual2==="YES":(actual2 as number)>p.ou;}
+                          var rColor=hit2?"#22c55e":"#f87171";
+                          var rLabel=isATD?(actual2==="YES"?"SCORED":"NO TD"):(hit2?"OVER":"UNDER");
+                          var displayLine=isATD?((p as any).odds||""):p.ou;
+                          return React.createElement("div",{key:p.name+p.stat+"ph",style:{background:T.bgCard,border:"1px solid "+(hasR?rColor+"33":T.border),borderRadius:10,padding:"8px 12px",marginBottom:4,display:"flex",alignItems:"center",gap:8}},
+                            React.createElement("div",{style:{flex:1,minWidth:0}},
+                              React.createElement("div",{style:{fontWeight:700,fontSize:12,color:T.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
+                              React.createElement("div",{style:{fontSize:9,color:T.textSub}},p.team+" vs "+p.opp)
+                            ),
+                            React.createElement("div",{style:{textAlign:"center",minWidth:40}},
+                              React.createElement("div",{style:{fontSize:11,fontWeight:800,color:cc}},displayLine)
+                            ),
+                            hasR&&React.createElement("div",{style:{textAlign:"right",minWidth:48}},
+                              !isATD&&React.createElement("div",{style:{fontWeight:900,fontSize:13,color:rColor}},actual2),
+                              React.createElement("div",{style:{fontSize:8,fontWeight:800,color:rColor,background:rColor+"18",borderRadius:5,padding:"1px 5px",textAlign:"center",marginTop:1}},rLabel)
+                            )
+                          );
+                        })
+                      );
+                    })
+                  );
+                })()
+              );
+            }),
+            PAST_WEEKS.length===0&&React.createElement("div",{style:{textAlign:"center",padding:40,color:T.textDim,fontSize:13}},"No prior weeks yet — check back after Week 2!")
+          )
+        );
+      })(),
+
+      // TRENDING (image 3)
+      rankSubTab==="trending"&&React.createElement("div",{style:{padding:"16px"}},
+        React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,padding:20}},
+          React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}},
+            React.createElement("div",null,
+              React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10,marginBottom:4}},
+                React.createElement("span",{style:{fontSize:20,color:T.green}},"~"),
+                React.createElement("div",{style:{fontWeight:900,fontSize:22}},"Trending Players")
+              ),
+              React.createElement("div",{style:{fontSize:12,color:T.textSub}},"Value movement and trends")
+            ),
+            React.createElement("button",{style:{width:36,height:36,borderRadius:10,border:"1px solid "+T.border,background:T.bgInput,cursor:"pointer",color:T.textSub,fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}},"o")
+          ),
+          React.createElement("div",{style:{display:"flex",gap:6,marginBottom:8,flexWrap:"wrap"}},
+            [["all","All"],["rising","Rising"],["falling","Falling"]].map(function(f){
+              var active=trendingFilter===f[0];
+              var fc=f[0]==="rising"?T.green:f[0]==="falling"?T.red:T.purple;
+              return React.createElement("button",{key:f[0],onClick:function(){setTrendingFilter(f[0]);},style:{padding:"7px 14px",borderRadius:20,border:"1px solid "+(active?fc:T.border),background:active?fc:"transparent",color:active?"#fff":T.textSub,fontWeight:700,fontSize:12,cursor:"pointer"}},f[1]);
+            })
+          ),
+          React.createElement("div",{style:{display:"flex",gap:5,marginBottom:12,flexWrap:"wrap"}},
+            ["All","QB","RB","WR","TE"].map(function(pos){
+              var active=trendingPosFilter===pos;
+              var pc=POS_COLORS[pos]||T.purple;
+              return React.createElement("button",{key:pos,onClick:function(){setTrendingPosFilter(pos);},style:{padding:"5px 12px",borderRadius:16,border:"1px solid "+(active?pc:T.border),background:active?pc+"22":"transparent",color:active?pc:T.textDim,fontWeight:700,fontSize:11,cursor:"pointer"}},pos);
+            })
+          ),
+          React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,marginBottom:16,fontSize:12,color:T.textSub}},
+            React.createElement("span",null,"o")," Values as of "+formatCalendarDate(VALUES_UPDATED_AT)
+          ),
+          React.createElement("div",{style:{background:darkMode?"#0f2a4a":"#dbeafe",border:"1px solid "+(darkMode?"#3b82f644":"#93c5fd"),borderRadius:10,padding:"12px 14px",marginBottom:24,display:"flex",alignItems:"flex-start",gap:10}},
+            React.createElement("span",{style:{color:"#60a5fa",fontSize:14,flexShrink:0,marginTop:1}},"i"),
+            React.createElement("div",{style:{fontSize:12,color:darkMode?"#93c5fd":"#1e40af",lineHeight:1.6}},"Trending signals are based on age, prime window, and position rank \u2014 not historical transaction data. They identify players whose dynasty profile suggests rising or declining value.")
+          ),
+          (function(){
+            var bl=getBaselines(teams,isSF);
+            var trendPlayers=rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].includes(p.pos);}).map(function(p){
+              var ab=dynastyBonus(p.pos,p.age);
+              var lo=PRIME[p.pos]?PRIME[p.pos][0]:25;
+              var hi=PRIME[p.pos]?PRIME[p.pos][1]:30;
+              var entering=p.age>=lo-1&&p.age<=lo+1;
+              var leaving=p.age>=hi-1&&p.age<=hi+1;
+              var youngStar=p.age<lo&&p.posRank<=8;
+              var agingElite=p.age>hi&&p.posRank<=6;
+              var breakout=p.posRank<=12&&p.age<=lo+1&&ab>1;
+              var signal=entering?"Entering Prime":leaving?"Leaving Prime":youngStar?"Young Star":agingElite?"Aging Elite":breakout?"Breakout":"Stable";
+              var dir=entering||youngStar||breakout?"rising":leaving||agingElite?"falling":"stable";
+              return {p:p,signal:signal,dir:dir,score:entering?5:youngStar?4:breakout?3:leaving?2:agingElite?1:0};
+            }).filter(function(x){return x.score>0;}).sort(function(a,b){return b.score-a.score;});
+            if(trendingFilter!=="all") trendPlayers=trendPlayers.filter(function(x){return x.dir===trendingFilter;});
+            if(trendingPosFilter!=="All") trendPlayers=trendPlayers.filter(function(x){return x.p.pos===trendingPosFilter;});
+            return trendPlayers.length===0?React.createElement("div",{style:{textAlign:"center",padding:"32px 0"}},
+              React.createElement("div",{style:{fontSize:32,color:T.textDim,marginBottom:12}},"~"),
+              React.createElement("div",{style:{fontWeight:700,fontSize:16,color:T.textSub,marginBottom:6}},"No trending players for this filter"),
+              React.createElement("div",{style:{fontSize:13,color:T.textDim}},"Try a different filter")
+            ):React.createElement("div",null,trendPlayers.slice(0,12).map(function(x){
+              var dirColor=x.dir==="rising"?T.green:x.dir==="falling"?T.red:"#818cf8";
+              var arrow=x.dir==="rising"?"▲":x.dir==="falling"?"▼":"●";
+              return React.createElement("div",{key:x.p.name,style:{display:"flex",alignItems:"center",gap:12,padding:"10px 0",borderBottom:"1px solid "+T.border}},
+                React.createElement(Avatar,{name:x.p.name,pos:x.p.pos,size:36}),
+                React.createElement("div",{style:{flex:1,minWidth:0}},
+                  React.createElement("div",{style:{fontWeight:700,fontSize:14,color:T.text}},x.p.name),
+                  React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,fontSize:11,color:T.textSub}},
+                    React.createElement(PBadge,{pos:x.p.pos}),
+                    React.createElement("span",null,"· "+x.p.team+" · Age "+x.p.age)
+                  )
+                ),
+                React.createElement("div",{style:{textAlign:"right",flexShrink:0,display:"flex",flexDirection:"column",alignItems:"flex-end",gap:2}},
+                  React.createElement("div",{style:{fontWeight:800,fontSize:14,color:T.text}},x.p.tradeVal.toLocaleString()),
+                  React.createElement("div",{style:{fontSize:11,fontWeight:700,color:dirColor,display:"flex",alignItems:"center",gap:3}},arrow," ",x.signal),
+                  React.createElement("button",{onClick:function(){addToTrade(x.p);},style:{fontSize:9,fontWeight:700,color:T.purple,background:"none",border:"1px solid "+T.purple+"66",borderRadius:4,padding:"2px 6px",cursor:"pointer",marginTop:2}},"Trade →")
+                )
+              );
+            }));
+          })()
         )
-    ),
-
-    // ════ SUPER BOWL ════
-    vegasSubTab==="futures"&&React.createElement("div",null,
-      React.createElement("div",{style:{fontSize:12,fontWeight:700,marginBottom:12}},"Super Bowl LVII Favorites"),
-      (SB_ODDS||[]).slice(0,10).map(function(team){
-        return React.createElement("div",{key:team.team,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:10,padding:10,marginBottom:6,display:"flex",justifyContent:"space-between",alignItems:"center"}},
-          React.createElement("div",{style:{fontWeight:600}},team.team),
-          React.createElement("div",{style:{color:"#059669",fontWeight:700}},team.odds)
-        );
-      })
-    ),
-
-    // ════ WIN TOTALS ════
-    vegasSubTab==="wintotals"&&React.createElement("div",null,
-      React.createElement("div",{style:{fontSize:12,fontWeight:700,marginBottom:12}},"Win Total Over/Under"),
-      (WIN_TOTALS||[]).map(function(team){
-        return React.createElement("div",{key:team.team,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:10,padding:10,marginBottom:6,display:"flex",justifyContent:"space-between"}},
-          React.createElement("div",{style:{fontWeight:600}},team.team),
-          React.createElement("div",{style:{color:"#059669",fontWeight:700,fontSize:14}},team.ou)
-        );
-      })
-    ),
-
-    // ════ AWARDS ════
-    vegasSubTab==="awards"&&React.createElement("div",null,
-      React.createElement("div",{style:{marginBottom:20}},
-        React.createElement("div",{style:{fontSize:11,fontWeight:800,color:"#059669",marginBottom:8}},".MVP"),
-        (MVP_ODDS||[]).slice(0,5).map(function(p){
-          return React.createElement("div",{key:p.name,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:10,padding:8,marginBottom:4,display:"flex",justifyContent:"space-between",fontSize:12}},
-            React.createElement("div",null,p.name+" ("+p.team+")"),
-            React.createElement("div",{style:{color:"#059669",fontWeight:700}},p.odds)
-          );
-        })
       ),
-      React.createElement("div",{style:{marginBottom:20}},
-        React.createElement("div",{style:{fontSize:11,fontWeight:800,color:"#059669",marginBottom:8}},"OPOY"),
-        (OPOY_ODDS||[]).slice(0,5).map(function(p){
-          return React.createElement("div",{key:p.name,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:10,padding:8,marginBottom:4,display:"flex",justifyContent:"space-between",fontSize:12}},
-            React.createElement("div",null,p.name+" ("+p.team+")"),
-            React.createElement("div",{style:{color:"#059669",fontWeight:700}},p.odds)
-          );
-        })
+
+      // MARKET — Dynasty Market Trends
+      rankSubTab==="market"&&React.createElement("div",{style:{paddingBottom:16}},
+        React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,margin:"16px",marginBottom:12,padding:20}},
+          React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}},
+            React.createElement("div",{style:{flex:1,marginRight:16}},
+              React.createElement("div",{style:{fontWeight:900,fontSize:26,lineHeight:1.15,marginBottom:8,color:T.text}},"Dynasty Market",React.createElement("br",null),"Trends"),
+              React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.5,marginBottom:10}},"Buy-low and sell-high opportunities based on value movement"),
+              React.createElement("div",{style:{fontSize:11,color:T.textDim}},"Values as of "+formatCalendarDate(VALUES_UPDATED_AT))
+            ),
+            React.createElement("button",{onClick:function(){var cur=marketFilter;setMarketFilter("");setTimeout(function(){setMarketFilter(cur);},50);},style:{padding:"10px 14px",borderRadius:10,border:"none",background:"#2563eb",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",gap:6,flexShrink:0,whiteSpace:"nowrap"}},"↻ Refresh")
+          )
+        ),
+        React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,margin:"0 16px 12px",overflow:"hidden"}},
+          React.createElement("div",{style:{display:"grid",gridTemplateColumns:isDesktop?"1fr 1fr 1fr 1fr":"1fr 1fr"}},
+            [["buylow","Buy Low","Aging or post-prime players to acquire","#22c55e"],["sellhigh","Sell High","Pre-prime players with peak trade value","#818cf8"],["rising","Rising","Young players approaching their prime","#60a5fa"],["falling","Falling","Players past their prime window","#9b96b8"]].map(function(cat){
+              var active=marketFilter===cat[0];
+              return React.createElement("div",{key:cat[0],onClick:function(){setMarketFilter(cat[0]);},style:{padding:"14px 10px",cursor:"pointer",borderLeft:"3px solid "+(active?cat[3]:"transparent"),background:active?cat[3]+"11":"transparent",borderBottom:"1px solid "+T.border}},
+                React.createElement("div",{style:{fontWeight:800,fontSize:12,color:active?cat[3]:T.textSub,marginBottom:4,lineHeight:1.2}},cat[1]),
+                React.createElement("div",{style:{fontSize:9,color:T.textDim,lineHeight:1.4}},cat[2])
+              );
+            })
+          )
+        ),
+        React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,margin:"0 16px 12px",padding:"12px 14px",display:"flex",alignItems:"center",gap:8}},
+          React.createElement("span",{style:{color:T.textDim,fontSize:14}},"V"),
+          React.createElement("select",{value:marketPos,onChange:function(e){setMarketPos(e.target.value);},style:{background:T.bgInput,color:T.text,border:"1px solid "+T.border,borderRadius:8,padding:"8px 12px",fontSize:13,outline:"none",flex:1,cursor:"pointer"}},
+            ["All Positions","QB","RB","WR","TE","DL","LB","DB"].map(function(p){return React.createElement("option",{key:p},p);})
+          ),
+          React.createElement("button",{style:{width:36,height:36,borderRadius:8,border:"1px solid "+T.border,background:T.bgInput,cursor:"pointer",color:T.textSub,fontSize:12,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}},"Q"),
+          (function(){
+            var ct=rankedPlayers.filter(function(p){
+              if(p.pos==="K"||p.pos==="DST")return false;
+              if(marketPos!=="All Positions"&&p.pos!==marketPos)return false;
+              var ab=dynastyBonus(p.pos,p.age);var lo=PRIME[p.pos]?PRIME[p.pos][0]:25;var hi=PRIME[p.pos]?PRIME[p.pos][1]:30;
+              if(marketFilter==="buylow")return (p.age>=hi-1&&p.posRank<=12&&p.tradeVal>=800)||(ab<0.9&&p.posRank<=10);
+              if(marketFilter==="sellhigh")return ab>1.02&&p.posRank<=6&&p.tradeVal>=2000;
+              if(marketFilter==="rising")return p.age<lo+1&&p.posRank<=12&&p.tradeVal>=1500;
+              return ab<0.85||p.age>hi+3;
+            }).length;
+            return React.createElement("span",{style:{fontSize:12,color:T.textSub,whiteSpace:"nowrap",flexShrink:0}},"Showing "+Math.min(ct,8)+" players");
+          })()
+        ),
+        (function(){
+          var catColor=marketFilter==="buylow"?"#22c55e":marketFilter==="sellhigh"?"#818cf8":marketFilter==="rising"?"#60a5fa":T.red;
+          var signalLabel=function(p){
+            var ab=dynastyBonus(p.pos,p.age);var lo=PRIME[p.pos]?PRIME[p.pos][0]:25;var hi=PRIME[p.pos]?PRIME[p.pos][1]:30;
+            if(marketFilter==="buylow")return ab<0.9?"Aging Discount":"Near Prime Exit";
+            if(marketFilter==="sellhigh")return p.age<lo?"Youth Premium":"Peak Value";
+            if(marketFilter==="rising")return p.age<lo?"Pre-Prime Upside":"Entering Prime";
+            return ab<0.85?"Post-Prime":"Declining Curve";
+          };
+          return rankedPlayers.filter(function(p){
+            if(p.pos==="K"||p.pos==="DST")return false;
+            if(marketPos!=="All Positions"&&p.pos!==marketPos)return false;
+            var ab=dynastyBonus(p.pos,p.age);var lo=PRIME[p.pos]?PRIME[p.pos][0]:25;var hi=PRIME[p.pos]?PRIME[p.pos][1]:30;
+            if(marketFilter==="buylow")return (p.age>=hi-1&&p.posRank<=12&&p.tradeVal>=800)||(ab<0.9&&p.posRank<=10);
+            if(marketFilter==="sellhigh")return ab>1.02&&p.posRank<=6&&p.tradeVal>=2000;
+            if(marketFilter==="rising")return p.age<lo+1&&p.posRank<=12&&p.tradeVal>=1500;
+            return ab<0.85||p.age>hi+3;
+          }).slice(0,8).map(function(p){
+            var pAb=dynastyBonus(p.pos,p.age);var pAg=ageGrade(p.pos,p.age);var pTier=tierLabel(p.posRank,p.pos);
+            return React.createElement("div",{key:p.name,style:{background:T.bgCard,border:"2px solid "+catColor+"33",borderRadius:16,padding:16,margin:"0 16px 10px"}},
+              React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}},
+                React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10}},
+                  React.createElement(Avatar,{name:p.name,pos:p.pos,size:40}),
+                  React.createElement("div",null,
+                    React.createElement("div",{style:{fontWeight:800,fontSize:17,color:T.text,marginBottom:4}},p.name),
+                    React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,fontSize:12,color:T.textSub}},
+                      React.createElement(PBadge,{pos:p.pos}),React.createElement("span",null,"·"),React.createElement("span",{style:{fontWeight:600}},p.team),React.createElement("span",null,"·"),React.createElement("span",null,"Age "+p.age)
+                    )
+                  )
+                ),
+                React.createElement("div",{style:{background:catColor+"22",color:catColor,fontWeight:800,fontSize:11,borderRadius:20,padding:"4px 10px",flexShrink:0,border:"1px solid "+catColor+"44"}},signalLabel(p))
+              ),
+              React.createElement("div",{style:{marginTop:10}},
+                React.createElement("div",{style:{fontSize:11,color:T.textSub,marginBottom:2}},"Trade Value"),
+                React.createElement("div",{style:{fontWeight:800,fontSize:22,color:T.purpleLight,marginBottom:10}},p.tradeVal.toLocaleString())
+              ),
+              React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(70px, 1fr))",gap:8,paddingTop:10,borderTop:"1px solid "+T.border}},
+                React.createElement("div",null,
+                  React.createElement("div",{style:{fontSize:11,color:T.textSub,marginBottom:3}},"Proj Pts"),
+                  React.createElement("div",{style:{fontWeight:700,fontSize:14,color:T.text}},p.pts.toFixed(1))
+                ),
+                React.createElement("div",null,
+                  React.createElement("div",{style:{fontSize:11,color:T.textSub,marginBottom:3}},"Pos Rank"),
+                  React.createElement("div",{style:{fontWeight:700,fontSize:14,color:T.text}},"#"+p.posRank)
+                ),
+                React.createElement("div",null,
+                  React.createElement("div",{style:{fontSize:11,color:T.textSub,marginBottom:3}},"Age Grade"),
+                  React.createElement("div",{style:{fontWeight:700,fontSize:14,color:pAg.c}},pAg.g)
+                ),
+                React.createElement("div",null,
+                  React.createElement("div",{style:{fontSize:11,color:T.textSub,marginBottom:3}},"Tier"),
+                  React.createElement("div",{style:{fontWeight:700,fontSize:14,color:pTier.c}},"T"+pTier.t)
+                )
+              ),
+              React.createElement("button",{onClick:function(){addToTrade(p);},style:{width:"100%",marginTop:10,padding:"8px 0",borderRadius:8,border:"1px solid "+T.purple,background:T.purple+"18",color:T.purple,fontWeight:700,fontSize:12,cursor:"pointer"}},"Analyze Trade →")
+            );
+          });
+        })()
       ),
-      React.createElement("div",null,
-        React.createElement("div",{style:{fontSize:11,fontWeight:800,color:"#059669",marginBottom:8}},"OROY"),
-        (OROY_ODDS||[]).slice(0,5).map(function(p){
-          return React.createElement("div",{key:p.name,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:10,padding:8,marginBottom:4,display:"flex",justifyContent:"space-between",fontSize:12}},
-            React.createElement("div",null,p.name+" ("+p.team+")"),
-            React.createElement("div",{style:{color:"#059669",fontWeight:700}},p.odds)
-          );
-        })
-      )
-    ),
 
-    // ════ PLAYER PROPS ════
-    vegasSubTab==="props"&&React.createElement("div",null,
-      React.createElement("div",{style:{fontSize:10,fontWeight:800,color:"#059669",marginBottom:12}},"WEEK "+selectedVegasWeek+" PROPS"),
-      (weekData?.props||[]).length>0?
-        (weekData.props||[]).slice(0,15).map(function(p){
-          return React.createElement("div",{key:p.name+p.stat,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:10,padding:8,marginBottom:4,fontSize:11}},
-            React.createElement("div",{style:{fontWeight:700}},p.name+" ("+p.team+")"),
-            React.createElement("div",{style:{fontSize:10,color:T.textSub,marginTop:2}},p.stat+" "+p.ou)
+      // VALUE TRENDS — Value Trend Tracker
+      rankSubTab==="valuetrends"&&React.createElement("div",{style:{padding:"16px"}},
+        React.createElement("div",{style:{display:"flex",alignItems:"center",gap:12,marginBottom:8}},
+          React.createElement("span",{style:{fontSize:28,color:"#3b82f6",fontWeight:900,lineHeight:1}},"^"),
+          React.createElement("div",{style:{fontWeight:900,fontSize:26,color:T.text}},"Player Value Browser")
+        ),
+        React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:16}},"Current FDP Values \u00B7 Values as of "+formatCalendarDate(VALUES_UPDATED_AT)),
+        React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:16,marginBottom:12}},
+          React.createElement("div",{style:{position:"relative",marginBottom:10}},
+            React.createElement("span",{style:{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",color:T.textDim,fontSize:13}},"Q"),
+            React.createElement("input",{value:valueTrendSearch,onChange:function(e){setValueTrendSearch(e.target.value);},placeholder:"Search tracked players...",style:Object.assign({},inpS,{paddingLeft:38})})
+          ),
+          React.createElement("button",{onClick:function(){setValueTrendSearch(" ");setTimeout(function(){setValueTrendSearch("");},50);},style:{width:"100%",padding:"13px",borderRadius:10,border:"none",background:"#2563eb",color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer"}},"Refresh Values")
+        ),
+        (function(){
+          var display=rankedPlayers.filter(function(p){
+            if(valueTrendSearch&&!p.name.toLowerCase().includes(valueTrendSearch.toLowerCase()))return false;
+            return ["QB","RB","WR","TE"].includes(p.pos);
+          }).slice(0,Math.min(valueTrendSearch?20:16,rankedPlayers.length));
+          return React.createElement("div",null,
+            display.map(function(p){
+              var vtAg=ageGrade(p.pos,p.age);var vtTier=tierLabel(p.posRank,p.pos);
+              var valPct=Math.min(100,Math.max(2,(p.tradeVal||0)/9999*100));
+              return React.createElement("div",{key:p.name,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"12px 14px",marginBottom:8}},
+                React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10,marginBottom:8}},
+                  React.createElement(Avatar,{name:p.name,pos:p.pos,size:36}),
+                  React.createElement("div",{style:{flex:1}},
+                    React.createElement("div",{style:{fontWeight:700,fontSize:13}},p.name),
+                    React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,fontSize:10,color:T.textSub}},
+                      React.createElement(PBadge,{pos:p.pos,rank:p.posRank}),
+                      React.createElement("span",null,p.team+" · Age "+p.age),
+                      React.createElement("span",{style:{color:vtAg.c,fontWeight:700}},vtAg.g),
+                      React.createElement("span",{style:{color:vtTier.c,fontWeight:700}},"T"+vtTier.t)
+                    )
+                  ),
+                  React.createElement("div",{style:{textAlign:"right",flexShrink:0,minWidth:52}},
+                    React.createElement("div",{style:{fontWeight:800,fontSize:13,color:T.purpleLight}},p.tradeVal.toLocaleString()),
+                    React.createElement("div",{style:{fontSize:10,color:T.textDim}},"#"+(p as unknown as {rank:number}).rank+" Overall")
+                  )
+                ),
+                React.createElement("div",{style:{height:6,background:T.bgInput,borderRadius:3,overflow:"hidden"}},
+                  React.createElement("div",{style:{height:"100%",width:valPct+"%",background:"linear-gradient(90deg,"+T.purple+","+T.purpleLight+")",borderRadius:3}})
+                )
+              );
+            })
           );
-        })
-        :React.createElement("div",{style:{color:T.textSub}},selectedVegasWeek===7?"Load live props":"Props data for this week")
-    ),
+        })()
+      ),
 
-    // ════ DIVISIONS ════
-    vegasSubTab==="divisions"&&React.createElement("div",null,
-      (DIV_ODDS||[]).map(function(div){
-        return React.createElement("div",{key:div.div,style:{marginBottom:16}},
-          React.createElement("div",{style:{fontSize:11,fontWeight:800,color:"#059669",marginBottom:6}},div.div),
-          (div.teams||[]).map(function(t){
-            return React.createElement("div",{key:t.team,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:10,padding:8,marginBottom:4,display:"flex",justifyContent:"space-between",fontSize:12}},
-              React.createElement("div",{style:{fontWeight:600}},t.team),
-              React.createElement("div",{style:{color:"#059669",fontWeight:700}},t.odds)
+      // PICK VALUE CALCULATOR
+      rankSubTab==="pickcalc"&&React.createElement("div",{style:{padding:"16px"}},
+        React.createElement("div",{style:{fontWeight:900,fontSize:22,marginBottom:4}},"Pick Value Calculator"),
+        React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:16}},"Compare draft picks to player values to find fair trades"),
+        React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:14,padding:"14px",marginBottom:14}},
+          React.createElement("div",{style:{fontWeight:700,fontSize:13,marginBottom:8}},"Search a Player"),
+          React.createElement("div",{style:{position:"relative"}},
+            React.createElement("input",{value:pickCalcSearch,onChange:function(e){setPickCalcSearch(e.target.value);if(!e.target.value)setPickCalcPlayer(null);},placeholder:"e.g. Ja'Marr Chase...",style:Object.assign({},inpS)}),
+            pickCalcSearch&&!pickCalcPlayer&&React.createElement("div",{style:{position:"absolute",top:"calc(100%+4px)",left:0,right:0,background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:10,zIndex:50,maxHeight:200,overflowY:"auto",marginTop:4}},
+              rankedPlayers.filter(function(p){return p.name.toLowerCase().includes(pickCalcSearch.toLowerCase());}).slice(0,8).map(function(p){
+                return React.createElement("div",{key:p.name,onClick:function(){setPickCalcPlayer(p);setPickCalcSearch(p.name);},style:{padding:"10px 14px",cursor:"pointer",borderBottom:"1px solid "+T.border,display:"flex",alignItems:"center",gap:8}},
+                  React.createElement(PBadge,{pos:p.pos}),
+                  React.createElement("span",{style:{flex:1,fontWeight:600,fontSize:13}},p.name),
+                  React.createElement("span",{style:{fontWeight:800,fontSize:13,color:T.purple}},p.tradeVal.toLocaleString())
+                );
+              })
+            )
+          )
+        ),
+        pickCalcPlayer&&React.createElement("div",null,
+          React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:14,padding:"16px",marginBottom:14}},
+            React.createElement("div",{style:{display:"flex",alignItems:"center",gap:12,marginBottom:14}},
+              React.createElement(Avatar,{name:pickCalcPlayer.name,pos:pickCalcPlayer.pos,size:52}),
+              React.createElement("div",{style:{flex:1}},
+                React.createElement("div",{style:{fontWeight:900,fontSize:18}},pickCalcPlayer.name),
+                React.createElement("div",{style:{fontSize:12,color:T.textSub}},pickCalcPlayer.team+" · #"+pickCalcPlayer.posRank+" "+pickCalcPlayer.pos+" · Age "+pickCalcPlayer.age)
+              ),
+              React.createElement("div",{style:{textAlign:"right"}},
+                React.createElement("div",{style:{fontWeight:900,fontSize:24,color:T.purple}},pickCalcPlayer.tradeVal.toLocaleString()),
+                React.createElement("div",{style:{fontSize:10,color:T.textSub}},"Trade Value")
+              )
+            ),
+            React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:10,fontWeight:600}},"EQUIVALENT PICK VALUES"),
+            DRAFT_PICKS.map(function(pk){
+              var diff=pk.est-pickCalcPlayer.tradeVal;
+              var pct=pickCalcPlayer.tradeVal>0?Math.abs(diff/pickCalcPlayer.tradeVal)*100:0;
+              var fair=pct<15;
+              var barW=Math.min(100,Math.max(5,100-pct));
+              var color=fair?T.green:diff>0?T.gold:T.red;
+              return React.createElement("div",{key:pk.id,style:{background:T.bgInput,borderRadius:10,padding:"10px 12px",marginBottom:6}},
+                React.createElement("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}},
+                  React.createElement("div",{style:{fontWeight:700,fontSize:13}},pk.name),
+                  React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8}},
+                    React.createElement("span",{style:{fontWeight:800,fontSize:13,color:T.textSub}},pk.est.toLocaleString()),
+                    React.createElement("span",{style:{fontSize:11,fontWeight:700,color:color,background:color+"18",borderRadius:6,padding:"2px 8px"}},fair?"≈ Fair":diff>0?"Pick Wins":"Player Wins")
+                  )
+                ),
+                React.createElement("div",{style:{background:T.border,borderRadius:99,height:5}},
+                  React.createElement("div",{style:{width:barW+"%",height:"100%",background:"linear-gradient(90deg,"+T.purple+","+color+")",borderRadius:99}})
+                )
+              );
+            })
+          ),
+          React.createElement("div",{style:{fontWeight:700,fontSize:14,marginBottom:10}},"Players With Similar Value"),
+          rankedPlayers.filter(function(p){
+            return p.name!==pickCalcPlayer.name&&Math.abs(p.tradeVal-pickCalcPlayer.tradeVal)<pickCalcPlayer.tradeVal*0.15;
+          }).slice(0,8).map(function(p){
+            return React.createElement("div",{key:p.name,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:10,padding:"10px 14px",marginBottom:6,display:"flex",alignItems:"center",gap:10}},
+              React.createElement(Avatar,{name:p.name,pos:p.pos,size:32}),
+              React.createElement(PBadge,{pos:p.pos,rank:p.posRank}),
+              React.createElement("div",{style:{flex:1}},
+                React.createElement("div",{style:{fontWeight:700,fontSize:13}},p.name),
+                React.createElement("div",{style:{fontSize:10,color:T.textSub}},p.team+" · Age "+p.age)
+              ),
+              React.createElement("div",{style:{fontWeight:800,fontSize:13,color:T.purpleLight}},p.tradeVal.toLocaleString())
             );
           })
-        );
-      })
-    ),
+        ),
+        !pickCalcPlayer&&React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"40px 20px",textAlign:"center"}},
+          React.createElement("div",{style:{fontSize:36,marginBottom:10}},"🏈"),
+          React.createElement("div",{style:{fontWeight:700,fontSize:16,marginBottom:6}},"Search Any Player"),
+          React.createElement("div",{style:{fontSize:12,color:T.textSub}},"See which picks match their dynasty value and find comparable players")
+        )
+      ),
 
-    // ════ HISTORY/PRIOR WEEKS ════
-    vegasSubTab==="history"&&React.createElement("div",null,
-      React.createElement("div",{style:{fontSize:12,fontWeight:700,marginBottom:12}},"Prior Weeks Results"),
-      (PAST_WEEKS||[]).map(function(w){
-        return React.createElement("div",{key:w.week,style:{marginBottom:16}},
-          React.createElement("div",{style:{fontSize:11,fontWeight:800,color:"#059669",marginBottom:8}},w.label),
-          React.createElement("div",{style:{fontSize:10,color:T.textSub}},(w.lines||[]).length+" games")
-        );
-      })
-    )
-  );
-})(),
       // DYNASTY NEWS
       rankSubTab==="news"&&React.createElement("div",{style:{padding:"16px",paddingBottom:32}},
         React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10,marginBottom:16}},
