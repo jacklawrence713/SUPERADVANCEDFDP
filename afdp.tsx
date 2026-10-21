@@ -563,7 +563,7 @@ function getGameScript(team:string,odds:{[t:string]:{spread:number,total:number,
 }
 
 const PLAYERS=[
-  {name:"Lamar Jackson",pos:"QB",age:28.4,team:"BAL",proj:{PPR:445,Half:445,Standard:445},adp:1.0,ktcVal:10400,note:"Week 7: 2,100 yds 19 TD (6-1 BAL) · MVP -150 favorite · dual-threat dominating, elite rushing upside"},
+  {name:"Lamar Jackson",pos:"QB",age:28.4,team:"BAL",proj:{PPR:445,Half:445,Standard:445},adp:1.0,ktcVal:9999,note:"Week 7: 2,100 yds 19 TD (6-1 BAL) · MVP -150 favorite · dual-threat dominating, elite rushing upside"},
   {name:"Josh Allen",pos:"QB",age:30.3,team:"BUF",proj:{PPR:432,Half:432,Standard:432},adp:1.3,ktcVal:9950,note:"Week 7: 2,000 yds 18 TD 450 rush (5-2 BUF) · MVP +200 · best all-around talent, playoff pedigree"},
   {name:"Jalen Hurts",pos:"QB",age:28.1,team:"PHI",proj:{PPR:418,Half:418,Standard:418},adp:1.6,ktcVal:9600,note:"Week 7: 1,900 yds 16 TD 300 rush (5-2 PHI) · MVP +400 · dual-threat star in elite system"},
   {name:"Patrick Mahomes",pos:"QB",age:30.9,team:"KC",proj:{PPR:425,Half:425,Standard:425},adp:2.1,ktcVal:8900,note:"Week 7: Shoulder sprain limits mobility (return W8) · 2,800 yds 24 TD pace · MVP frontrunner despite injury"},
@@ -582,8 +582,8 @@ const PLAYERS=[
   {name:"Cam Ward",pos:"QB",age:24.3,team:"TEN",proj:{PPR:335,Half:335,Standard:335},adp:10.6,ktcVal:6400,note:"Week 7: 256 yds 3 TD beats Raiders · OROY +180 · elite mobility + arm, Year 2 leap imminent"},
   {name:"Shedeur Sanders",pos:"QB",age:24.6,team:"CLE",proj:{PPR:318,Half:318,Standard:318},adp:13.0,ktcVal:4900,note:"Week 7: 200 yds 1 TD (3-4 CLE) · Year 2 development, Bryce Young competition · hold for 2027 upside"},
   {name:"Saquon Barkley",pos:"RB",age:29.5,team:"PHI",proj:{PPR:328,Half:302,Standard:276},adp:1.1,ktcVal:8200,note:"Week 7: 83 rush yds (Week 1, ramping) · 1,650 rush 13 TD pace · age 29 workhorse concern, 5.8 YPC elite efficiency, bell cow confirmed"},
-  {name:"Bijan Robinson",pos:"RB",age:24.6,team:"ATL",proj:{PPR:335,Half:310,Standard:285},adp:1.7,ktcVal:10200,note:"Week 7: Leading ATL backfield · 1,800 rush 14 TD 75 rec pace · elite talent entering prime age 24, system upgrades, committee over"},
-  {name:"Jahmyr Gibbs",pos:"RB",age:24.4,team:"DET",proj:{PPR:340,Half:314,Standard:288},adp:1.8,ktcVal:10100,note:"Week 7: 1,700 rush 14 TD 75 rec pace · Detroit bell cow confirmed, no Montgomery competition, age 24 prime years, elite system"},
+  {name:"Bijan Robinson",pos:"RB",age:24.6,team:"ATL",proj:{PPR:335,Half:335,Standard:335},adp:1.1,ktcVal:9999,note:"Week 7: Leading ATL backfield · 1,800 rush 14 TD 75 rec pace · elite talent entering prime age 24, system upgrades, committee over"},
+  {name:"Jahmyr Gibbs",pos:"RB",age:24.4,team:"DET",proj:{PPR:340,Half:340,Standard:340},adp:2.0,ktcVal:9999,note:"Week 7: 1,700 rush 14 TD 75 rec pace · Detroit bell cow confirmed, no Montgomery competition, age 24 prime years, elite system"},
   {name:"Ashton Jeanty",pos:"RB",age:22.7,team:"LV",proj:{PPR:315,Half:291,Standard:267},adp:2.9,ktcVal:8300,note:"Week 7: Sprained ankle (week-to-week) · 18 carries 89 yds when healthy · LV RB1 breakout trajectory, full feature back role, age 22"},
   {name:"De'Von Achane",pos:"RB",age:24.9,team:"MIA",proj:{PPR:308,Half:284,Standard:260},adp:3.6,ktcVal:8000,note:"Week 7: 36 rush yds (Week 1 slow, MIA lost to LV) · 1,350 rush 75 rec pace · elite speed, air raid system, age 24, playoff push"},
   {name:"Breece Hall",pos:"RB",age:25.2,team:"NYJ",proj:{PPR:295,Half:272,Standard:249},adp:4.2,ktcVal:6200,note:"Week 7: 102 rush yds (Week 1) · 1,500 rush 60 rec pace · NYJ elevated role, age 25 upside, carries increasing"},
@@ -594,7 +594,7 @@ const PLAYERS=[
   {name:"Derrick Henry",pos:"RB",age:32.6,team:"BAL",proj:{PPR:258,Half:241,Standard:224},adp:8.2,ktcVal:8300,note:"Week 7: 144 yds 3 TD (Week 1) · 1,600 rush 12 TD pace · age 32 decline risk but still productive, BAL system ideal, heavy load"},
   {name:"Josh Jacobs",pos:"RB",age:28.5,team:"GB",proj:{PPR:262,Half:241,Standard:220},adp:9.5,ktcVal:2200,note:"Week 7: Commissioners Exempt List · cannot play/practice, timeline undefined · hold contingency, expect release likely"},
   {name:"D'Andre Swift",pos:"RB",age:27.6,team:"CHI",proj:{PPR:235,Half:216,Standard:197},adp:13.5,ktcVal:5000,note:"Week 7: 124 rush yds (Week 1) · 750 rush 62 rec pace · committee back, limited upside, PPR value only, aging"},
-  {name:"Ja'Marr Chase",pos:"WR",age:26.5,team:"CIN",proj:{PPR:362,Half:336,Standard:310},adp:1.3,ktcVal:10400,note:"Week 7: Elite alpha WR · 128 rec 1,750 yds 16 TD pace · Burrow chemistry peak, dynasty WR1"},
+  {name:"Ja'Marr Chase",pos:"WR",age:26.5,team:"CIN",proj:{PPR:362,Half:362,Standard:362},adp:1.2,ktcVal:9999,note:"Week 7: Elite alpha WR · 128 rec 1,750 yds 16 TD pace · Burrow chemistry peak, dynasty WR1"},
   {name:"Justin Jefferson",pos:"WR",age:27.2,team:"MIN",proj:{PPR:345,Half:320,Standard:295},adp:1.7,ktcVal:9800,note:"Week 7: Returned from hamstring (limited snaps) · 120 rec 1,480 yds 12 TD pace · comeback trajectory"},
   {name:"CeeDee Lamb",pos:"WR",age:27.4,team:"DAL",proj:{PPR:332,Half:308,Standard:284},adp:2.4,ktcVal:9400,note:"Week 7: 44 rec yds (Week 1 underperformed) · 125 rec 1,560 yds 13 TD · DAL WR1, elite target share"},
   {name:"Amon-Ra St. Brown",pos:"WR",age:26.8,team:"DET",proj:{PPR:322,Half:298,Standard:274},adp:3.3,ktcVal:9600,note:"Week 7: 10/67/2 TD OT winner · 128 rec 1,360 yds 12 TD · DET system elite, consistent WR1"},
