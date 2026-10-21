@@ -2681,6 +2681,17 @@ function AnalyticsDashboard({T,data,loading,onLoad}:{T:any,data:any,loading:bool
   }).map(function(e:any){return e.visitor_id;})).size;
   var features=buildFeatureUsage(data.features);
 
+  // Calculate trades by time period
+  var todayTrades=(data.dailyEvents||[]).filter(function(e:any){
+    var d=new Date(e.created_at);return e.event_type==="trade_analyzed"&&(Date.now()-d.getTime())<86400000;
+  }).length;
+  var weekTrades=(data.dailyEvents||[]).filter(function(e:any){
+    var d=new Date(e.created_at);return e.event_type==="trade_analyzed"&&(Date.now()-d.getTime())<7*86400000;
+  }).length;
+  var twoWeekTrades=(data.dailyEvents||[]).filter(function(e:any){
+    var d=new Date(e.created_at);return e.event_type==="trade_analyzed"&&(Date.now()-d.getTime())<14*86400000;
+  }).length;
+
   // Enhanced metrics section
   var bounceRate = ((data.dailyEvents||[]).filter(function(e){return e.event_type==='page_view';}).length / (totalUnique||1) * 100).toFixed(1);
   var avgEventsPerVisitor = (((data.dailyEvents||[]).length / (totalUnique||1)) || 0).toFixed(1);
@@ -2721,7 +2732,7 @@ function AnalyticsDashboard({T,data,loading,onLoad}:{T:any,data:any,loading:bool
 
     // Summary cards
     React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(90px, 1fr))",gap:6,marginBottom:20}},
-      [["Today",todayVisitors,"📅"],["7d",weekVisitors,"📆"],["14d",totalUnique,"🗓️"],["All Time",data.totalVisitors,"👥"],["Trades",data.trades,"⚖️"]].map(function(s:any){
+      [["Today",todayVisitors,"📅"],["7d",weekVisitors,"📆"],["14d",totalUnique,"🗓️"],["All Time",data.totalVisitors,"👥"],["Trades Today",todayTrades,"⚖️"],["Trades 7d",weekTrades,"📊"],["Trades 14d",twoWeekTrades,"📈"],["Total Trades",data.trades,"🏆"]].map(function(s:any){
         return React.createElement("div",{key:s[0] as string,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"12px 8px",textAlign:"center"}},
           React.createElement("div",{style:{fontSize:20,marginBottom:4}},s[2]),
           React.createElement("div",{style:{fontWeight:900,fontSize:22,color:T.purple}},s[1]),
