@@ -245,6 +245,124 @@ var _sleeperNameMap:{[k:string]:string}={};
 function initSleeperNameMap(db:{[id:string]:{name?:string}}){_sleeperNameMap={};Object.keys(db).forEach(function(id){var p=db[id];if(p&&p.name)_sleeperNameMap[p.name]=id;});}
 function headshot(n:string){var id=SLEEPER_IDS[n]||_sleeperNameMap[n];return id?"https://sleepercdn.com/content/nfl/players/thumb/"+id+".jpg":null;}
 
+// ============================================================================
+// VEGAS TYPES - Clean Verified Data Structures
+// ============================================================================
+
+interface TeamOdds {
+  spread: number | null;
+  total: number | null;
+  opp: string;
+  homeTeam: string;
+  awayTeam: string;
+  commenceTime?: string;
+  eventId?: string;
+  spreadBookmakers?: number;
+  totalBookmakers?: number;
+}
+
+interface OddsResponse {
+  odds: { [team: string]: TeamOdds };
+  source: "api" | "cache" | "unavailable";
+  fetchedAt: string;
+  stale?: boolean;
+  error?: string;
+}
+
+interface VegasGame {
+  eventId?: string;
+  away: string;
+  home: string;
+  kickoff: string;
+  status: string;
+  spread: number | null;
+  spreadLabel: string;
+  total: number | null;
+  totalLabel: string;
+  oddsAvailable: boolean;
+  week: number;
+  finalScore?: { away: number; home: number };
+  isFinal?: boolean;
+}
+
+// ============================================================================
+// VEGAS MERGE FUNCTION - Pure, Testable Logic
+// ============================================================================
+
+function mergeScheduleWithOdds(scheduleGames: VegasGame[], oddsResponse: OddsResponse): VegasGame[] {
+  if (!oddsResponse || !oddsResponse.odds || Object.keys(oddsResponse.odds).length === 0) {
+    return scheduleGames.map(game => ({
+      ...game,
+      spread: null,
+      spreadLabel: "Line Unavailable",
+      total: null,
+      totalLabel: "Unavailable",
+      oddsAvailable: false,
+    }));
+  }
+
+  return scheduleGames.map(game => {
+    const homeOdds = oddsResponse.odds[game.home];
+    const awayOdds = oddsResponse.odds[game.away];
+    
+    if (!homeOdds && !awayOdds) {
+      return {
+        ...game,
+        spread: null,
+        spreadLabel: "Line Unavailable",
+        total: null,
+        totalLabel: "Unavailable",
+        oddsAvailable: false,
+      };
+    }
+
+    const odds = homeOdds || awayOdds;
+    const spread = odds.spread ?? null;
+    const total = odds.total ?? null;
+
+    return {
+      ...game,
+      spread,
+      spreadLabel: spread === null ? "Line Unavailable" : spread === 0 ? "EVEN" : `${spread > 0 ? '+' : ''}${spread}`,
+      total,
+      totalLabel: total === null ? "Unavailable" : `${total}`,
+      oddsAvailable: spread !== null || total !== null,
+    };
+  });
+}
+
+// ============================================================================
+// VEGAS FETCH FUNCTION - Single Unified Request
+// ============================================================================
+
+async function fetchVegasOdds(token: string | undefined, forceRefresh: boolean = false): Promise<OddsResponse> {
+  if (!token) {
+    return { odds: {}, source: "unavailable", fetchedAt: "", error: "Not authenticated" };
+  }
+
+  try {
+    const response = await fetch(EDGE_URL + "/fetch-odds", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ forceRefresh }),
+    });
+
+    if (!response.ok) {
+      return { odds: {}, source: "unavailable", fetchedAt: "", error: `HTTP ${response.status}` };
+    }
+
+    const data = await response.json() as OddsResponse;
+    return data;
+  } catch (err) {
+    console.error("Vegas fetch error:", err);
+    return { odds: {}, source: "unavailable", fetchedAt: "", error: String(err) };
+  }
+}
+
+function buildHardcodedOdds(): {[t:string]:{spread:number,total:number,opp:string}} {
+  return {};
+}
+
 // ── Vegas Lines / Game Script (via fetch-odds Edge Function) ─────────────────
 // ── PAST WEEKS ARCHIVE ──
 var PAST_WEEKS=[
@@ -421,29 +539,15 @@ propResults:{}  as {[k:string]:number|string}
 }
 ];
 // Current week's lines (Week 7, Oct 20-21, 2026) — fetched from live API
-// If API unavailable, these are accurate fallback lines
-var WEEKLY_LINES:[string,string,number,number][]=[
-  // [home, away, homeSpread, total]  — Week 7 lines (Oct 20-21, 2026)
-  ["KC","DEN",-8.5,44.5],["PIT","BAL",-3,44],
-  ["BUF","NYJ",-7.5,43.5],["PHI","WAS",-12,45],
-  ["GB","CHI",-5,41.5],["MIN","DET",2.5,49],["TB","ATL",-4.5,46],
-  ["CIN","LV",-6,47.5],["SEA","ARI",-4,46],["LAR","SF",-3,48.5],
-  ["DAL","LAC",-2.5,50],["MIA","NE",-7,43.5],["NE","MIA",7,43.5],
-  ["HOU","IND",-7,44.5],["JAX","TEN",-1.5,43],["NO","CAR",-8,42]
-];
+// (Vegas odds now fetched via fetchVegasOdds)
+
 // Note: Live API (fetch-odds) fetches current week from The Odds API
 // Archive system (odds_archive table) stores all historical odds for replay analysis
 // Current week's results — add scores as games finish
 var WEEKLY_RESULTS:{[k:string]:[number,number]}={
 "SEA-NE":[13,10],"LAR-SF":[7,27],"CIN-TB":[33,27],"DET-NO":[31,30],"TEN-NYJ":[10,23],"IND-BAL":[23,41],"PIT-ATL":[20,13],"CAR-CHI":[37,59],"JAX-CLE":[34,10],"HOU-BUF":[31,36],"LV-MIA":[27,13],"MIN-GB":[39,22],"PHI-WAS":[24,22],"LAC-ARI":[14,26],"NYG-DAL":[28,20],"KC-DEN":[31,10]
 };
-function buildHardcodedOdds():{[t:string]:{spread:number,total:number,opp:string}}{
-  var r:{[t:string]:{spread:number,total:number,opp:string}}={};
-  WEEKLY_LINES.forEach(function(g){r[g[0]]={spread:g[2],total:g[3],opp:g[1]};r[g[1]]={spread:-g[2],total:g[3],opp:g[0]};});
-  return r;
-}
-// fetchOdds calls the server-side fetch-odds Edge Function (never the provider directly).
-// Returns {odds, source} — source distinguishes "api" / "cache" / "manual" / "unavailable".
+
 function getGameScript(team:string,odds:{[t:string]:{spread:number,total:number,opp:string}}|null):{spread:number,total:number,script:string,label:string,color:string,opp:string}|null{
   if(!odds)return null;
   var g=odds[team];if(!g)return null;
@@ -3240,9 +3344,13 @@ export default function App(){
   var [sitS1,setSitS1]=useState("");
   var [sitS2,setSitS2]=useState("");
   var [sitFormat,setSitFormat]=useState("PPR");
-  var [oddsData,setOddsData]=useState<{[t:string]:{spread:number,total:number,opp:string,eventId?:string,homeTeam?:string,awayTeam?:string,commenceTime?:string,spreadBookmakers?:number,totalBookmakers?:number}}|null>(null);
-  var [oddsSource,setOddsSource]=useState<string>("none");
-  var [oddsFetchedAt,setOddsFetchedAt]=useState<string>("");
+  var [oddsResponse,setOddsResponse]=useState<OddsResponse>({odds:{},source:"unavailable",fetchedAt:""});
+  var [oddsLoading,setOddsLoading]=useState(false);
+  var [oddsError,setOddsError]=useState<string|null>(null);
+  // Temporary state for Vegas UI backward compatibility
+  var [oddsData,setOddsData]=useState({});
+  var [oddsSource,setOddsSource]=useState("unavailable");
+  var [oddsFetchedAt,setOddsFetchedAt]=useState("");
   var [oddsStale,setOddsStale]=useState(false);
   var [oddsChecking,setOddsChecking]=useState(false);
   var [oddsChecked,setOddsChecked]=useState(false);
@@ -3316,6 +3424,16 @@ export default function App(){
   var [tfTargetSearch,setTfTargetSearch]=useState("");
 
   useEffect(function(){if(onboardStep===0){var t=setTimeout(function(){setOnboardStep(1);},1500);return function(){clearTimeout(t);};}},[]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(function(){
+    if(!user?.token)return;
+    setOddsLoading(true);
+    fetchVegasOdds(user.token,false).then(function(response){
+      setOddsResponse(response);
+      setOddsLoading(false);
+      if(response.error)setOddsError(response.error);
+    });
+  },[user?.token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   var T=darkMode?DARK:LIGHT;
   var isPro = user && (user.plan === "pro" || user.plan === "elite");
@@ -3435,10 +3553,9 @@ export default function App(){
     }
   },[]);// eslint-disable-line react-hooks/exhaustive-deps
 
-  // Track page view on mount (once per session) + load public stats
+  // Track page view on mount (once per session)
   useEffect(function(){
     try{var key="fdp_tracked_"+new Date().toDateString();if(!sessionStorage.getItem(key)){sessionStorage.setItem(key,"1");trackEvent("page_view",{referrer:document.referrer||"direct",path:window.location.pathname});}}catch(e){trackEvent("page_view",{referrer:document.referrer||"direct",path:window.location.pathname});}
-    fetchOdds().then(function(d){if(Object.keys(d.odds).length>0){setOddsData(d.odds);setOddsSource(d.source);setOddsFetchedAt(d.fetchedAt);setOddsStale(d.stale);}else{var hc=buildHardcodedOdds();if(Object.keys(hc).length>0){setOddsData(hc);setOddsSource("manual");setOddsFetchedAt("");setOddsStale(false);}}});
   },[]);
 
   function doEspnImport(){
@@ -8739,108 +8856,112 @@ export default function App(){
             })
           ),
           // ── GAME LINES TAB ──
-          vegasSubTab==="lines"&&React.createElement("div",null,
-            !hasData&&React.createElement("div",{style:{background:"linear-gradient(135deg,"+(darkMode?"#1a1a2e":"#f0fdf4")+","+(darkMode?"#16213e":"#ecfdf5")+")",border:"1px solid "+(darkMode?"#065f4633":"#bbf7d0"),borderRadius:16,padding:32,textAlign:"center",marginBottom:16}},
-              React.createElement("div",{style:{fontSize:48,marginBottom:12}},"📅"),
-              React.createElement("div",{style:{fontWeight:800,fontSize:18,color:T.text,marginBottom:8}},"No Current NFL Lines"),
-              React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.7,maxWidth:340,margin:"0 auto",marginBottom:16}},"Odds are posted Thursday–Monday during the NFL season (September–January). Tap below to load this week's lines!"),
-              React.createElement("button",{onClick:function(){setOddsChecking(true);setOddsChecked(false);fetchOdds().then(function(d){setOddsChecking(false);setOddsChecked(true);if(Object.keys(d.odds).length>0){setOddsData(d.odds);setOddsSource(d.source);setOddsFetchedAt(d.fetchedAt);setOddsStale(d.stale);}}).catch(function(){setOddsChecking(false);setOddsChecked(true);var hc=buildHardcodedOdds();if(Object.keys(hc).length>0){setOddsData(hc);setOddsSource("manual");setOddsFetchedAt("");setOddsStale(false);}});},disabled:oddsChecking,style:{padding:"12px 28px",borderRadius:12,border:"none",background:oddsChecking?"#6b7280":"linear-gradient(135deg,#059669,#047857)",color:"#fff",fontWeight:700,fontSize:13,cursor:oddsChecking?"wait":"pointer",boxShadow:"0 4px 12px rgba(5,150,105,0.3)",opacity:oddsChecking?0.7:1}},oddsChecking?"Checking...":"↻ Check for Lines"),
-              oddsChecked&&!hasData&&React.createElement("div",{style:{marginTop:12,padding:"10px 16px",background:darkMode?"#1e293b":"#fef3c7",border:"1px solid "+(darkMode?"#475569":"#fcd34d"),borderRadius:12,fontSize:12,color:darkMode?"#fbbf24":"#92400e",fontWeight:600,textAlign:"center"}},"No lines available right now. NFL game lines are typically posted during the regular season (Sep–Jan).")
-            ),
-            hasData&&React.createElement("div",{style:{marginBottom:12}},
-              React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:16,flexWrap:"wrap"}},
-                React.createElement("label",{style:{fontSize:12,fontWeight:700,color:T.textSub}},"Week:"),
-                React.createElement("select",{value:selectedVegasWeek,onChange:function(e){setSelectedVegasWeek(+e.target.value);},style:{padding:"6px 12px",borderRadius:8,border:"1px solid "+T.border,background:T.bgInput,color:T.text,fontWeight:600,fontSize:12,cursor:"pointer"}},
-                  [1,2,3,4,5,6,7].map(function(w){return React.createElement("option",{key:w,value:w},"Week "+w);})
+                    vegasSubTab==="lines"&&React.createElement("div",null,
+            // Current week schedule (Week 7, Oct 20-21, 2026)
+            (function(){
+              var scheduleGames=[
+                {away:"DEN",home:"KC",kickoff:"2026-10-21T20:15:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
+                {away:"ATL",home:"TB",kickoff:"2026-10-21T20:15:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
+                {away:"CIN",home:"BAL",kickoff:"2026-10-21T12:00:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
+                {away:"NYJ",home:"BUF",kickoff:"2026-10-21T12:00:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
+                {away:"PHI",home:"DAL",kickoff:"2026-10-21T12:00:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
+                {away:"TB",home:"DET",kickoff:"2026-10-21T12:00:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
+                {away:"MIN",home:"GB",kickoff:"2026-10-21T12:00:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
+                {away:"ARI",home:"LAR",kickoff:"2026-10-21T12:00:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
+                {away:"JAX",home:"NE",kickoff:"2026-10-21T12:00:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
+                {away:"CAR",home:"NO",kickoff:"2026-10-21T12:00:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
+                {away:"LAC",home:"SF",kickoff:"2026-10-21T12:00:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
+                {away:"IND",home:"WAS",kickoff:"2026-10-21T12:00:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
+                {away:"TEN",home:"HOU",kickoff:"2026-10-21T15:30:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
+                {away:"CLE",home:"LV",kickoff:"2026-10-21T15:30:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
+                {away:"CHI",home:"MIA",kickoff:"2026-10-21T19:20:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
+                {away:"SEA",home:"NYG",kickoff:"2026-10-22T20:15:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false}
+              ];
+              var mergedGames=mergeScheduleWithOdds(scheduleGames,oddsResponse);
+              return React.createElement("div",null,
+                Object.keys(oddsResponse.odds).length===0?React.createElement("div",{style:{background:"linear-gradient(135deg,"+(darkMode?"#1a1a2e":"#f0fdf4")+","+(darkMode?"#16213e":"#ecfdf5")+")",border:"1px solid "+(darkMode?"#065f4633":"#bbf7d0"),borderRadius:16,padding:32,textAlign:"center",marginBottom:16}},
+                  React.createElement("div",{style:{fontSize:48,marginBottom:12}},"📊"),
+                  React.createElement("div",{style:{fontWeight:800,fontSize:18,color:T.text,marginBottom:8}},"No Lines Loaded"),
+                  React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.7,maxWidth:340,margin:"0 auto",marginBottom:16}},"Tap below to load this week's betting lines from our API."),
+                  React.createElement("button",{onClick:function(){setOddsLoading(true);fetchVegasOdds(user?.token,true).then(function(response){setOddsResponse(response);setOddsLoading(false);if(response.error)setOddsError(response.error);}).catch(function(err){setOddsLoading(false);setOddsError(String(err));});},disabled:oddsLoading,style:{padding:"12px 28px",borderRadius:12,border:"none",background:oddsLoading?"#6b7280":"linear-gradient(135deg,#059669,#047857)",color:"#fff",fontWeight:700,fontSize:13,cursor:oddsLoading?"wait":"pointer",boxShadow:"0 4px 12px rgba(5,150,105,0.3)",opacity:oddsLoading?0.7:1}},oddsLoading?"Loading...":"Load Lines"),
+                  oddsError&&React.createElement("div",{style:{marginTop:12,padding:"10px 16px",background:darkMode?"#1e293b":"#fef3c7",border:"1px solid "+(darkMode?"#475569":"#fcd34d"),borderRadius:12,fontSize:12,color:darkMode?"#fbbf24":"#92400e",fontWeight:600,textAlign:"center"}},oddsError)
+                ):React.createElement("div",null,
+                  React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:12,flexWrap:"wrap"}},
+                    React.createElement("div",{style:{fontSize:10,fontWeight:800,color:"#059669",letterSpacing:1}},"WEEK 7"),
+                    React.createElement("div",{style:{background:"#059669",color:"#fff",borderRadius:10,padding:"2px 8px",fontSize:10,fontWeight:800}},mergedGames.length),
+                    oddsResponse.source&&React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:500}},"Source: "+oddsResponse.source),
+                    oddsResponse.fetchedAt&&React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:500}},"Fetched "+new Date(oddsResponse.fetchedAt).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"}))
+                  ),
+                  React.createElement("button",{onClick:function(){setOddsLoading(true);fetchVegasOdds(user?.token,true).then(function(response){setOddsResponse(response);setOddsLoading(false);if(response.error)setOddsError(response.error);}).catch(function(err){setOddsLoading(false);setOddsError(String(err));});},disabled:oddsLoading,style:{marginBottom:16,padding:"10px 20px",borderRadius:10,border:"1px solid #059669",background:"transparent",color:"#059669",fontWeight:700,fontSize:12,cursor:oddsLoading?"wait":"pointer"}},oddsLoading?"Refreshing...":"Refresh"),
+                  mergedGames.map(function(g){
+                    var gsHome=getGameScript(g.home,oddsResponse.odds);
+                    var gsAway=getGameScript(g.away,oddsResponse.odds);
+                    var totalNote=g.total&&g.total>=50?"Shootout":g.total&&g.total<=41?"Low Scoring":"";
+                    var totalIcon=g.total&&g.total>=50?"🔥":g.total&&g.total<=41?"🛡️":"";
+                    var rKey=g.home+"-"+g.away;
+                    var result=WEEKLY_RESULTS[rKey]||null;
+                    var homeScore=result?result[0]:null;
+                    var awayScore=result?result[1]:null;
+                    var isFinal=result!==null;
+                    var actualTotal=isFinal?(homeScore as number)+(awayScore as number):0;
+                    var actualMargin=isFinal?(homeScore as number)-(awayScore as number):0;
+                    var spreadCover=isFinal?(actualMargin+g.spread>0?"HOME COVERS":actualMargin+g.spread<0?"AWAY COVERS":"PUSH"):"";
+                    var ouResult=isFinal?(actualTotal>g.total?"OVER":actualTotal<g.total?"UNDER":"PUSH"):"";
+                    var spreadColor=spreadCover==="HOME COVERS"?"#22c55e":spreadCover==="AWAY COVERS"?"#f87171":"#94a3b8";
+                    var ouColor=ouResult==="OVER"?"#f59e0b":ouResult==="UNDER"?"#60a5fa":"#94a3b8";
+                    return React.createElement("div",{key:g.home+g.away,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,padding:0,marginBottom:10,overflow:"hidden"}},
+                      React.createElement("div",{style:{background:darkMode?"rgba(5,150,105,0.08)":"rgba(5,150,105,0.04)",padding:"12px 16px",borderBottom:"1px solid "+T.border,display:"flex",justifyContent:"space-between",alignItems:"center"}},
+                        React.createElement("div",{style:{fontWeight:800,fontSize:15,color:T.text}},g.away+" @ "+g.home),
+                        React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6}},
+                          isFinal&&React.createElement("div",{style:{fontSize:10,fontWeight:800,color:"#22c55e",background:"#22c55e18",padding:"3px 10px",borderRadius:10}},"FINAL"),
+                          !isFinal&&totalNote&&React.createElement("div",{style:{fontSize:10,fontWeight:700,color:g.total>=50?"#f59e0b":"#60a5fa",background:(g.total>=50?"#f59e0b":"#60a5fa")+"14",padding:"3px 10px",borderRadius:10}},totalIcon+" "+totalNote)
+                        )
+                      ),
+                      isFinal&&React.createElement("div",{style:{display:"flex",alignItems:"center",padding:"14px 16px",borderBottom:"1px solid "+T.border,background:darkMode?"rgba(34,197,94,0.04)":"rgba(34,197,94,0.02)"}},
+                        React.createElement("div",{style:{flex:1,display:"flex",alignItems:"center",gap:10}},
+                          React.createElement("div",{style:{fontWeight:900,fontSize:14,color:(awayScore as number)>(homeScore as number)?T.text:T.textDim,minWidth:32}},g.away),
+                          React.createElement("div",{style:{fontWeight:900,fontSize:28,color:(awayScore as number)>(homeScore as number)?"#22c55e":T.textDim}},awayScore)
+                        ),
+                        React.createElement("div",{style:{fontSize:11,fontWeight:800,color:T.textDim,padding:"0 12px"}},"FINAL"),
+                        React.createElement("div",{style:{flex:1,display:"flex",alignItems:"center",justifyContent:"flex-end",gap:10}},
+                          React.createElement("div",{style:{fontWeight:900,fontSize:28,color:(homeScore as number)>(awayScore as number)?"#22c55e":T.textDim}},homeScore),
+                          React.createElement("div",{style:{fontWeight:900,fontSize:14,color:(homeScore as number)>(awayScore as number)?T.text:T.textDim,minWidth:32,textAlign:"right"}},g.home)
+                        )
+                      ),
+                      React.createElement("div",{style:{padding:"12px 16px"}},
+                        React.createElement("div",{style:{display:"flex",gap:8,marginBottom:10}},
+                          React.createElement("div",{style:{flex:1,background:T.bgInput,borderRadius:12,padding:"10px 12px",textAlign:"center"}},
+                            React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:700,letterSpacing:0.5,marginBottom:4}},"SPREAD"),
+                            React.createElement("div",{style:{fontWeight:900,fontSize:18,color:T.text}},g.spreadLabel),
+                            isFinal&&React.createElement("div",{style:{fontSize:10,fontWeight:800,color:spreadColor,marginTop:4}},spreadCover)
+                          ),
+                          React.createElement("div",{style:{flex:1,background:T.bgInput,borderRadius:12,padding:"10px 12px",textAlign:"center"}},
+                            React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:700,letterSpacing:0.5,marginBottom:4}},"O/U"),
+                            React.createElement("div",{style:{fontWeight:900,fontSize:18,color:T.text}},g.totalLabel),
+                            isFinal&&React.createElement("div",{style:{fontSize:10,fontWeight:800,color:ouColor,marginTop:4}},ouResult+" ("+actualTotal+")")
+                          )
+                        ),
+                        React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}},
+                          gsAway&&React.createElement("div",{style:{background:gsAway.color+"10",border:"1px solid "+gsAway.color+"28",borderRadius:12,padding:"10px 12px"}},
+                            React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:3,fontWeight:600}},g.away),
+                            React.createElement("div",{style:{fontWeight:800,fontSize:13,color:gsAway.color}},gsAway.script),
+                            React.createElement("div",{style:{fontSize:10,color:T.textDim,marginTop:2}},"Spread: "+gsAway.spreadLabel)
+                          ),
+                          gsHome&&React.createElement("div",{style:{background:gsHome.color+"10",border:"1px solid "+gsHome.color+"28",borderRadius:12,padding:"10px 12px"}},
+                            React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:3,fontWeight:600}},g.home),
+                            React.createElement("div",{style:{fontWeight:800,fontSize:13,color:gsHome.color}},gsHome.script),
+                            React.createElement("div",{style:{fontSize:10,color:T.textDim,marginTop:2}},"Spread: "+gsHome.spreadLabel)
+                          )
+                        )
+                      )
+                    );
+                  })
                 )
-              ),
-              React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:12,flexWrap:"wrap"}},
-                React.createElement("div",{style:{fontSize:10,fontWeight:800,color:"#059669",letterSpacing:1}},oddsSource==="api"||oddsSource==="cache"?"THIS WEEK'S GAMES":"ARCHIVED LINES"),
-                React.createElement("div",{style:{background:"#059669",color:"#fff",borderRadius:10,padding:"2px 8px",fontSize:10,fontWeight:800}},games.length),
-                oddsStale&&(oddsSource==="api"||oddsSource==="cache")&&React.createElement("div",{style:{fontSize:9,color:"#f59e0b",fontWeight:600}},"Updating lines\u2026"),
-                !oddsStale&&oddsFetchedAt&&(oddsSource==="api"||oddsSource==="cache")&&React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:500}},"Fetched "+new Date(oddsFetchedAt).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})),
-                oddsSource!=="api"&&oddsSource!=="cache"&&React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:600}},"Showing manual lines \u2014 may not reflect current week")
-              ),
-              (function(){
-                if(selectedVegasWeek<7){
-                  var pw=PAST_WEEKS.find(function(pw){return pw.week===selectedVegasWeek;});
-                  if(pw){
-                    var wgames=pw.lines.map(function(line){return{home:line[0],away:line[1],spread:line[2],total:line[3],eventId:null};});
-                    var wresults=pw.results;
-                  }
-                }
-                return(wgames||games);
-              })().map(function(g){
-                var gsHome=getGameScript(g.home,oddsData);
-                var gsAway=getGameScript(g.away,oddsData);
-                var totalNote=g.total>=50?"Shootout":g.total<=41?"Low Scoring":"";
-                var totalIcon=g.total>=50?"\uD83D\uDD25":g.total<=41?"\uD83D\uDEE1\uFE0F":"";
-                var rKey=g.home+"-"+g.away;
-                var selectedWeekResults=selectedVegasWeek<7?(function(){var pw=PAST_WEEKS.find(function(pw){return pw.week===selectedVegasWeek;});return pw?pw.results:WEEKLY_RESULTS;})():WEEKLY_RESULTS;
-                var result=selectedWeekResults[rKey]||null;
-                var homeScore=result?result[0]:null;
-                var awayScore=result?result[1]:null;
-                var isFinal=result!==null;
-                var actualTotal=isFinal?(homeScore as number)+(awayScore as number):0;
-                var actualMargin=isFinal?(homeScore as number)-(awayScore as number):0;
-                var spreadCover=isFinal?(actualMargin+g.spread>0?"HOME COVERS":actualMargin+g.spread<0?"AWAY COVERS":"PUSH"):"";
-                var ouResult=isFinal?(actualTotal>g.total?"OVER":actualTotal<g.total?"UNDER":"PUSH"):"";
-                var spreadColor=spreadCover==="HOME COVERS"?"#22c55e":spreadCover==="AWAY COVERS"?"#f87171":"#94a3b8";
-                var ouColor=ouResult==="OVER"?"#f59e0b":ouResult==="UNDER"?"#60a5fa":"#94a3b8";
-                return React.createElement("div",{key:g.home+g.away,style:{background:T.bgCard,border:"1px solid "+(isFinal?T.border:T.border),borderRadius:16,padding:0,marginBottom:10,overflow:"hidden"}},
-                  // Game header
-                  React.createElement("div",{style:{background:darkMode?"rgba(5,150,105,0.08)":"rgba(5,150,105,0.04)",padding:"12px 16px",borderBottom:"1px solid "+T.border,display:"flex",justifyContent:"space-between",alignItems:"center"}},
-                    React.createElement("div",{style:{fontWeight:800,fontSize:15,color:T.text}},g.away+" @ "+g.home),
-                    React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6}},
-                      isFinal&&React.createElement("div",{style:{fontSize:10,fontWeight:800,color:"#22c55e",background:"#22c55e18",padding:"3px 10px",borderRadius:10}},"FINAL"),
-                      !isFinal&&totalNote&&React.createElement("div",{style:{fontSize:10,fontWeight:700,color:g.total>=50?"#f59e0b":"#60a5fa",background:(g.total>=50?"#f59e0b":"#60a5fa")+"14",padding:"3px 10px",borderRadius:10}},totalIcon+" "+totalNote)
-                    )
-                  ),
-                  // Score bar (only if final)
-                  isFinal&&React.createElement("div",{style:{display:"flex",alignItems:"center",padding:"14px 16px",borderBottom:"1px solid "+T.border,background:darkMode?"rgba(34,197,94,0.04)":"rgba(34,197,94,0.02)"}},
-                    React.createElement("div",{style:{flex:1,display:"flex",alignItems:"center",gap:10}},
-                      React.createElement("div",{style:{fontWeight:900,fontSize:14,color:(awayScore as number)>(homeScore as number)?T.text:T.textDim,minWidth:32}},g.away),
-                      React.createElement("div",{style:{fontWeight:900,fontSize:28,color:(awayScore as number)>(homeScore as number)?"#22c55e":T.textDim}},awayScore)
-                    ),
-                    React.createElement("div",{style:{fontSize:11,fontWeight:800,color:T.textDim,padding:"0 12px"}},"FINAL"),
-                    React.createElement("div",{style:{flex:1,display:"flex",alignItems:"center",justifyContent:"flex-end",gap:10}},
-                      React.createElement("div",{style:{fontWeight:900,fontSize:28,color:(homeScore as number)>(awayScore as number)?"#22c55e":T.textDim}},homeScore),
-                      React.createElement("div",{style:{fontWeight:900,fontSize:14,color:(homeScore as number)>(awayScore as number)?T.text:T.textDim,minWidth:32,textAlign:"right"}},g.home)
-                    )
-                  ),
-                  React.createElement("div",{style:{padding:"12px 16px"}},
-                    React.createElement("div",{style:{display:"flex",gap:8,marginBottom:10}},
-                      React.createElement("div",{style:{flex:1,background:T.bgInput,borderRadius:12,padding:"10px 12px",textAlign:"center"}},
-                        React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:700,letterSpacing:0.5,marginBottom:4}},"SPREAD"),
-                        React.createElement("div",{style:{fontWeight:900,fontSize:18,color:T.text}},(g.spread>0?"+":"")+g.spread),
-                        isFinal&&React.createElement("div",{style:{fontSize:10,fontWeight:800,color:spreadColor,marginTop:4}},spreadCover)
-                      ),
-                      React.createElement("div",{style:{flex:1,background:T.bgInput,borderRadius:12,padding:"10px 12px",textAlign:"center"}},
-                        React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:700,letterSpacing:0.5,marginBottom:4}},"O/U TOTAL"),
-                        React.createElement("div",{style:{fontWeight:900,fontSize:18,color:T.text}},g.total),
-                        isFinal&&React.createElement("div",{style:{fontSize:10,fontWeight:800,color:ouColor,marginTop:4}},ouResult+" ("+actualTotal+")")
-                      )
-                    ),
-                    React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}},
-                      gsAway&&React.createElement("div",{style:{background:gsAway.color+"10",border:"1px solid "+gsAway.color+"28",borderRadius:12,padding:"10px 12px"}},
-                        React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:3,fontWeight:600}},g.away),
-                        React.createElement("div",{style:{fontWeight:800,fontSize:13,color:gsAway.color}},gsAway.script),
-                        React.createElement("div",{style:{fontSize:10,color:T.textDim,marginTop:2}},"Spread: "+(gsAway.spread>0?"+":"")+gsAway.spread)
-                      ),
-                      gsHome&&React.createElement("div",{style:{background:gsHome.color+"10",border:"1px solid "+gsHome.color+"28",borderRadius:12,padding:"10px 12px"}},
-                        React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:3,fontWeight:600}},g.home),
-                        React.createElement("div",{style:{fontWeight:800,fontSize:13,color:gsHome.color}},gsHome.script),
-                        React.createElement("div",{style:{fontSize:10,color:T.textDim,marginTop:2}},"Spread: "+(gsHome.spread>0?"+":"")+gsHome.spread)
-                      )
-                    )
-                  )
-                );
-              })
-            ),
-            // Game Script Guide
+              );
+            })(),
             React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,padding:16}},
               React.createElement("div",{style:{fontWeight:800,fontSize:13,color:T.text,marginBottom:10,display:"flex",alignItems:"center",gap:6}},
-                React.createElement("span",{style:{fontSize:14}},"\uD83D\uDCD6"),"Game Script Guide"
+                React.createElement("span",{style:{fontSize:14}},"📖"),"Game Script Guide"
               ),
               [["Positive Script","Favored by 7+ pts — run-heavy, clock control. Boost RBs.","#22c55e"],["Slight Fav","Favored by 3–6 pts — balanced attack expected.","#4ade80"],["Neutral","Pick'em or within 2 pts — no clear script edge.","#94a3b8"],["Slight Dog","Underdog by 3–6 pts — pass volume increases.","#fb923c"],["Negative Script","Underdog by 7+ pts — pass-heavy game script. Boost WRs/TEs.","#f87171"]].map(function(row){
                 return React.createElement("div",{key:row[0],style:{display:"flex",alignItems:"center",gap:10,marginBottom:8}},
