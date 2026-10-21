@@ -8883,28 +8883,14 @@ if(item[0]==="admin"){var adminEmails=["jlawrence@cmgfi.com","admin@fantasydraft
           // ── GAME LINES TAB ──
                     vegasSubTab==="lines"&&React.createElement("div",null,
             // Current week schedule (Week 7, Oct 20-21, 2026)
+            React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:16,flexWrap:"wrap"}},
+              React.createElement("label",{style:{fontSize:12,fontWeight:700,color:T.textSub}},"Week:"),
+              React.createElement("select",{value:selectedVegasWeek,onChange:function(e){setSelectedVegasWeek(+e.target.value);},style:{padding:"6px 12px",borderRadius:8,border:"1px solid "+T.border,background:T.bgInput,color:T.text,fontWeight:600,fontSize:12,cursor:"pointer"}},
+                [1,2,3,4,5,6,7].map(function(w){return React.createElement("option",{key:w,value:w},"Week "+w);})
+              )
+            ),
             (function(){
-              var scheduleGames=[
-                {away:"DEN",home:"KC",kickoff:"2026-10-21T20:15:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
-                {away:"ATL",home:"TB",kickoff:"2026-10-21T20:15:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
-                {away:"CIN",home:"BAL",kickoff:"2026-10-21T12:00:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
-                {away:"NYJ",home:"BUF",kickoff:"2026-10-21T12:00:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
-                {away:"PHI",home:"DAL",kickoff:"2026-10-21T12:00:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
-                {away:"TB",home:"DET",kickoff:"2026-10-21T12:00:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
-                {away:"MIN",home:"GB",kickoff:"2026-10-21T12:00:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
-                {away:"ARI",home:"LAR",kickoff:"2026-10-21T12:00:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
-                {away:"JAX",home:"NE",kickoff:"2026-10-21T12:00:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
-                {away:"CAR",home:"NO",kickoff:"2026-10-21T12:00:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
-                {away:"LAC",home:"SF",kickoff:"2026-10-21T12:00:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
-                {away:"IND",home:"WAS",kickoff:"2026-10-21T12:00:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
-                {away:"TEN",home:"HOU",kickoff:"2026-10-21T15:30:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
-                {away:"CLE",home:"LV",kickoff:"2026-10-21T15:30:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
-                {away:"CHI",home:"MIA",kickoff:"2026-10-21T19:20:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},
-                {away:"SEA",home:"NYG",kickoff:"2026-10-22T20:15:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false}
-              ];
-              var mergedGames=mergeScheduleWithOdds(scheduleGames,oddsResponse);
-              return React.createElement("div",null,
-                Object.keys(oddsResponse.odds).length===0?React.createElement("div",{style:{background:"linear-gradient(135deg,"+(darkMode?"#1a1a2e":"#f0fdf4")+","+(darkMode?"#16213e":"#ecfdf5")+")",border:"1px solid "+(darkMode?"#065f4633":"#bbf7d0"),borderRadius:16,padding:32,textAlign:"center",marginBottom:16}},
+var pastWeekData=selectedVegasWeek<7?PAST_WEEKS.find(function(pw){return pw.week===selectedVegasWeek;}):null;var scheduleGames=selectedVegasWeek<7&&pastWeekData?pastWeekData.lines.map(function(line){return {away:line[0],home:line[1],kickoff:"",status:"final",week:selectedVegasWeek,spread:line[2],spreadLabel:(line[2]>0?"+":"")+line[2],total:line[3],totalLabel:line[3]+"",oddsAvailable:true};}):[{away:"DEN",home:"KC",kickoff:"2026-10-21T20:15:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},{away:"ATL",home:"TB",kickoff:"2026-10-21T20:15:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},{away:"CIN",home:"BAL",kickoff:"2026-10-21T12:00:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},{away:"NYJ",home:"BUF",kickoff:"2026-10-21T12:00:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},{away:"PHI",home:"DAL",kickoff:"2026-10-21T12:00:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},{away:"TB",home:"DET",kickoff:"2026-10-21T12:00:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},{away:"MIN",home:"GB",kickoff:"2026-10-21T12:00:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},{away:"ARI",home:"LAR",kickoff:"2026-10-21T12:00:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},{away:"JAX",home:"NE",kickoff:"2026-10-21T12:00:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},{away:"CAR",home:"NO",kickoff:"2026-10-21T12:00:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},{away:"LAC",home:"SF",kickoff:"2026-10-21T12:00:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},{away:"IND",home:"WAS",kickoff:"2026-10-21T12:00:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},{away:"TEN",home:"HOU",kickoff:"2026-10-21T15:30:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},{away:"CLE",home:"LV",kickoff:"2026-10-21T15:30:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},{away:"CHI",home:"MIA",kickoff:"2026-10-21T19:20:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false},{away:"SEA",home:"NYG",kickoff:"2026-10-22T20:15:00Z",status:"scheduled",week:7,spread:null,spreadLabel:"",total:null,totalLabel:"",oddsAvailable:false}];var mergedGames=selectedVegasWeek<7?scheduleGames:mergeScheduleWithOdds(scheduleGames,oddsResponse);var weekResults=selectedVegasWeek<7?pastWeekData?.results||{}:WEEKLY_RESULTS;
                   React.createElement("div",{style:{fontSize:48,marginBottom:12}},"📊"),
                   React.createElement("div",{style:{fontWeight:800,fontSize:18,color:T.text,marginBottom:8}},"No Lines Loaded"),
                   React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.7,maxWidth:340,margin:"0 auto",marginBottom:16}},"Tap below to load this week's betting lines from our API."),
@@ -8924,7 +8910,7 @@ if(item[0]==="admin"){var adminEmails=["jlawrence@cmgfi.com","admin@fantasydraft
                     var totalNote=g.total&&g.total>=50?"Shootout":g.total&&g.total<=41?"Low Scoring":"";
                     var totalIcon=g.total&&g.total>=50?"🔥":g.total&&g.total<=41?"🛡️":"";
                     var rKey=g.home+"-"+g.away;
-                    var result=WEEKLY_RESULTS[rKey]||null;
+                    var result=weekResults[rKey]||null;
                     var homeScore=result?result[0]:null;
                     var awayScore=result?result[1]:null;
                     var isFinal=result!==null;
