@@ -1,9 +1,27 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 import { getSupabaseUrl, getSupabaseSecretKey } from "../_shared/supabase-keys.ts";
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Content-Type": "application/json"
+};
+
 Deno.serve(async (req) => {
+  // Handle CORS preflight
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
+      status: 204,
+      headers: corsHeaders
+    });
+  }
+
   if (req.method !== "POST") {
-    return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405 });
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: corsHeaders
+    });
   }
 
   try {
@@ -15,7 +33,10 @@ Deno.serve(async (req) => {
     // Get authorization header
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: corsHeaders
+      });
     }
 
     const token = authHeader.substring(7);
@@ -23,7 +44,10 @@ Deno.serve(async (req) => {
     // Verify user and check admin status
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
-      return new Response(JSON.stringify({ error: "Invalid token" }), { status: 401 });
+      return new Response(JSON.stringify({ error: "Invalid token" }), {
+        status: 401,
+        headers: corsHeaders
+      });
     }
 
     // Check admin status - if users table fails, allow through with email check
@@ -43,7 +67,10 @@ Deno.serve(async (req) => {
     }
 
     if (!isAdmin) {
-      return new Response(JSON.stringify({ error: "Admin access required" }), { status: 403 });
+      return new Response(JSON.stringify({ error: "Admin access required" }), {
+        status: 403,
+        headers: corsHeaders
+      });
     }
 
     // Build 14-day date range
@@ -62,12 +89,15 @@ Deno.serve(async (req) => {
     if (eventsError) {
       console.error("Analytics events query error:", eventsError);
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           error: "Failed to fetch analytics events",
           code: eventsError.code,
           details: eventsError.message
-        }), 
-        { status: 400 }
+        }),
+        {
+          status: 400,
+          headers: corsHeaders
+        }
       );
     }
 
@@ -114,29 +144,19 @@ Deno.serve(async (req) => {
         success: true
       }),
       {
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization"
-        }
+        headers: corsHeaders
       }
     );
   } catch (err) {
     console.error("Admin analytics error:", err);
     return new Response(
-      JSON.stringify({ 
-        error: "Internal server error", 
+      JSON.stringify({
+        error: "Internal server error",
         details: String(err)
       }),
-      { 
+      {
         status: 500,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization"
-        }
+        headers: corsHeaders
       }
     );
   }
