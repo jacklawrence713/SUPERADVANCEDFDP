@@ -15,6 +15,7 @@ const EDGE_URL = (import.meta as any).env?.VITE_EDGE_FUNCTIONS_URL || (SUPA_URL 
 // Auth + data client
 const authClient = SUPA_URL && SUPA_KEY ? createClient(SUPA_URL, SUPA_KEY) : null;
 // Analytics write client — separate instance so it always uses anon key, never inherits user session
+const analyticsClient = SUPA_URL && SUPA_KEY ? createClient(SUPA_URL, SUPA_KEY) : null;
 
 // ── Edge Function helpers ─────────────────────────────────────────────────────
 async function callEdgeFn(fn: string, body: any, userToken?: string) {

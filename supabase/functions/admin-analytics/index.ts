@@ -114,7 +114,12 @@ Deno.serve(async (req) => {
         success: true
       }),
       {
-        headers: { "Content-Type": "application/json" }
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Authorization"
+        }
       }
     );
   } catch (err) {
@@ -124,7 +129,15 @@ Deno.serve(async (req) => {
         error: "Internal server error", 
         details: String(err)
       }),
-      { status: 500 }
+      { 
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Authorization"
+        }
+      }
     );
   }
 });
