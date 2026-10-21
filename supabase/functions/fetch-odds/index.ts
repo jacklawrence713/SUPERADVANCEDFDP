@@ -302,10 +302,11 @@ async function fetchFromProvider(apiKey: string, supabase: ReturnType<typeof cre
     console.log(`[fetch-odds] ODDS EXTRACTION - Total teams: ${Object.keys(odds).length}, WithSpread: ${spreadCount}, WithTotal: ${totalCount}`);
 
     const fetchedAt = new Date().toISOString();
-    const response: OddsResponse = {
+    const response: EnhancedOddsResponse = {
       odds,
       source: "api",
       fetchedAt,
+      vegasData: getVegasData(),
     };
 
     _memCache = { data: response, ts: Date.now() };
@@ -317,6 +318,63 @@ async function fetchFromProvider(apiKey: string, supabase: ReturnType<typeof cre
     return { odds: {}, source: "unavailable", fetchedAt: "" };
   }
 }
+
+
+// ===== VEGAS DATA STRUCTURES (2026) =====
+const BYE_WEEKS_2026: {[week: number]: string[]} = {
+  6: ["NE", "NO"],
+  7: ["BUF", "GB", "MIN", "JAX", "CIN"],
+};
+
+const SUPER_BOWL_ODDS: Array<{team: string; odds: number}> = [
+  {team: "KC", odds: 650}, {team: "BUF", odds: 800}, {team: "SF", odds: 900},
+  {team: "DET", odds: 1100}, {team: "DAL", odds: 1400}, {team: "PHI", odds: 1600},
+];
+
+const DIVISION_ODDS: Array<{division: string; odds: Array<{team: string; odds: number}>}> = [
+  {division: "AFC East", odds: [{team: "BUF", odds: 115}, {team: "MIA", odds: 200}, {team: "NYJ", odds: 600}, {team: "NE", odds: 1200}]},
+  {division: "AFC West", odds: [{team: "KC", odds: 110}, {team: "LAC", odds: 250}, {team: "LV", odds: 800}, {team: "DEN", odds: 1200}]},
+  {division: "NFC East", odds: [{team: "PHI", odds: 130}, {team: "DAL", odds: 200}, {team: "WAS", odds: 400}, {team: "NYG", odds: 600}]},
+  {division: "NFC West", odds: [{team: "SF", odds: 140}, {team: "LA", odds: 200}, {team: "SEA", odds: 400}, {team: "ARI", odds: 600}]},
+];
+
+const WIN_TOTALS: Array<{team: string; over: number; under: number}> = [
+  {team: "KC", over: 11.5, under: -140}, {team: "BUF", over: 11.5, under: -140},
+  {team: "SF", over: 11.5, under: -140}, {team: "DET", over: 10.5, under: -140},
+];
+
+const AWARDS_ODDS: Array<{award: string; odds: Array<{player: string; odds: number}>}> = [
+  {award: "MVP", odds: [
+    {player: "Josh Allen", odds: 700}, {player: "Jalen Hurts", odds: 900},
+    {player: "Patrick Mahomes", odds: 1000}, {player: "Bijan Robinson", odds: 1200},
+  ]},
+  {award: "DPOY", odds: [
+    {player: "TJ Watt", odds: 500}, {player: "Danielle Hunter", odds: 700},
+  ]},
+];
+
+interface VegasData {
+  superBowl: Array<{team: string; odds: number}>;
+  divisions: Array<{division: string; odds: Array<{team: string; odds: number}>}>;
+  winTotals: Array<{team: string; over: number; under: number}>;
+  awards: Array<{award: string; odds: Array<{player: string; odds: number}>}>;
+  byeWeeks: {[week: number]: string[]};
+}
+
+interface EnhancedOddsResponse extends OddsResponse {
+  vegasData?: VegasData;
+}
+
+function getVegasData(): VegasData {
+  return {
+    superBowl: SUPER_BOWL_ODDS,
+    divisions: DIVISION_ODDS,
+    winTotals: WIN_TOTALS,
+    awards: AWARDS_ODDS,
+    byeWeeks: BYE_WEEKS_2026,
+  };
+}
+
 
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);

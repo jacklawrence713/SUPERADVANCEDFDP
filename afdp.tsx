@@ -262,12 +262,21 @@ interface TeamOdds {
   totalBookmakers?: number;
 }
 
+interface VegasData {
+  superBowl: Array<{team: string; odds: number}>;
+  divisions: Array<{division: string; odds: Array<{team: string; odds: number}>}>;
+  winTotals: Array<{team: string; over: number; under: number}>;
+  awards: Array<{award: string; odds: Array<{player: string; odds: number}>}>;
+  byeWeeks: {[week: number]: string[]};
+}
+
 interface OddsResponse {
   odds: { [team: string]: TeamOdds };
   source: "api" | "cache" | "unavailable";
   fetchedAt: string;
   stale?: boolean;
   error?: string;
+  vegasData?: VegasData;
 }
 
 interface VegasGame {
