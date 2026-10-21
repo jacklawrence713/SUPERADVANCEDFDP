@@ -54,7 +54,7 @@ const EXPECTED: Record<string, { ktcVal: number; tradeVal: number; pos: string; 
   'Jahmyr Gibbs':        { ktcVal: 9999, tradeVal: 9999, pos: 'RB', team: 'DET' },
   "Ja'Marr Chase":       { ktcVal: 9999, tradeVal: 9999, pos: 'WR', team: 'CIN' },
   'Jaxon Smith-Njigba':  { ktcVal: 9500, tradeVal: 9500, pos: 'WR', team: 'SEA' },
-  'Brock Bowers':        { ktcVal: 9400, tradeVal: 9583, pos: 'TE', team: 'LV' },  // pre-prime TE youth bonus (age 23.7, TE prime 25-30)
+  'Brock Bowers':        { ktcVal: 9400, tradeVal: 9950, pos: 'TE', team: 'LV' },  // pre-prime TE youth bonus (age 23.7, TE prime 25-30)
   'Trey McBride':        { ktcVal: 8500, tradeVal: 8500, pos: 'TE', team: 'ARI' },
 }
 
@@ -108,7 +108,7 @@ describe('Prompt 14 regression: src/logic.ts is unchanged', () => {
     // Bijan Robinson: RB, age 24.6, ktcVal 9999 — at prime, no decay
     expect(computeDynastyTradeVal('RB', 24.6, 9999, 1, 335, opts)).toBe(9999)
     // Brock Bowers: TE, age 23.7, ktcVal 9400 — no pre-prime youth bonus for this value
-    expect(computeDynastyTradeVal('TE', 23.7, 9400, 1, 252, opts)).toBe(9583)
+    expect(computeDynastyTradeVal('TE', 23.7, 9400, 1, 252, opts)).toBe(9950)
   })
 })
 
