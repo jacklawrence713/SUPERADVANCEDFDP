@@ -9,8 +9,11 @@ const corsHeaders = {
 };
 
 Deno.serve(async (req) => {
+  console.log("admin-analytics called:", req.method);
+
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
+    console.log("Handling preflight");
     return new Response(null, {
       status: 204,
       headers: corsHeaders
@@ -18,6 +21,7 @@ Deno.serve(async (req) => {
   }
 
   if (req.method !== "POST") {
+    console.log("Invalid method:", req.method);
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
       status: 405,
       headers: corsHeaders
@@ -25,6 +29,7 @@ Deno.serve(async (req) => {
   }
 
   try {
+    console.log("Creating Supabase client with service role");
     // Use service role credentials for admin operations
     const supabase = createClient(getSupabaseUrl(), getSupabaseSecretKey(), {
       auth: { persistSession: false }
@@ -33,6 +38,7 @@ Deno.serve(async (req) => {
     // Get authorization header
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
+      console.log("No auth header");
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: corsHeaders
@@ -40,15 +46,19 @@ Deno.serve(async (req) => {
     }
 
     const token = authHeader.substring(7);
+    console.log("Verifying user token");
 
     // Verify user and check admin status
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
+      console.log("Auth error:", authError);
       return new Response(JSON.stringify({ error: "Invalid token" }), {
         status: 401,
         headers: corsHeaders
       });
     }
+
+    console.log("User verified:", user.email);
 
     // Check admin status - if users table fails, allow through with email check
     let isAdmin = false;
@@ -60,13 +70,16 @@ Deno.serve(async (req) => {
 
     if (!userError && userData?.is_admin) {
       isAdmin = true;
+      console.log("User is admin via flag");
     } else if (userError) {
       // If query fails, fall back to email check
       const adminEmails = ["admin@fantasydraftpros.com", "jlawrence@cmgfi.com"];
       isAdmin = adminEmails.includes((user.email || "").toLowerCase());
+      console.log("User is admin via email:", isAdmin);
     }
 
     if (!isAdmin) {
+      console.log("Admin access denied");
       return new Response(JSON.stringify({ error: "Admin access required" }), {
         status: 403,
         headers: corsHeaders
@@ -76,6 +89,8 @@ Deno.serve(async (req) => {
     // Build 14-day date range
     const endDate = new Date();
     const startDate = new Date(endDate.getTime() - 14 * 24 * 60 * 60 * 1000);
+
+    console.log("Fetching analytics events from", startDate.toISOString());
 
     // Fetch all analytics events for the period (limit to prevent timeout)
     const { data: allEvents, error: eventsError } = await supabase
@@ -101,6 +116,8 @@ Deno.serve(async (req) => {
       );
     }
 
+    console.log("Fetched", allEvents?.length || 0, "events");
+
     // Count all-time trades
     const { data: tradeEvents, error: tradeError } = await supabase
       .from("analytics_events")
@@ -108,6 +125,7 @@ Deno.serve(async (req) => {
       .eq("event_type", "trade_analyzed");
 
     const totalTrades = tradeError ? 0 : (tradeEvents?.length || 0);
+    console.log("Total trades:", totalTrades);
 
     // Get unique visitors from all events
     const visitorSet = new Set<string>();
@@ -132,6 +150,7 @@ Deno.serve(async (req) => {
       .map(([event_type, count]) => [event_type, count] as [string, number])
       .sort((a, b) => b[1] - a[1]);
 
+    console.log("Returning success response");
     return new Response(
       JSON.stringify({
         daily: daily || [],
