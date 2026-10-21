@@ -78,6 +78,14 @@ verify_jwt = false
 [functions.send-email]
 verify_jwt = true
 
+# admin-analytics: verify_jwt=true — Gateway validates user JWT.
+#                 Handler verifies user token + admin status via email/flag.
+#                 Returns analytics data (14-day summary, unique visitors, etc).
+#                 Browser always supplies authenticated user JWT.
+#                 CORS: origin-checked.
+[functions.admin-analytics]
+verify_jwt = true
+
 # fetch-odds:     verify_jwt=true — Gateway validates user JWT before handler.
 #                 Handler retains manual plan check (Pro/Elite only).
 #                 THE_ODDS_API_KEY stored server-side only.
