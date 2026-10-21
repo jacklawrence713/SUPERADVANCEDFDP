@@ -3248,7 +3248,20 @@ export default function App(){
   var [showAdmin,setShowAdmin]=useState(false);
   var [analyticsData,setAnalyticsData]=useState<any>(null);
   var [analyticsLoading,setAnalyticsLoading]=useState(false);
-  async function loadAnalytics(){setAnalyticsLoading(true);try{var result=await callEdgeFn("admin-analytics",{},user?.token);setAnalyticsData(result);}catch(e:any){setAnalyticsData({error:e.message});}finally{setAnalyticsLoading(false);}}
+  async function loadAnalytics(){
+    setAnalyticsLoading(true);
+    try{
+      console.log("Analytics: Loading...");
+      var result=await callEdgeFn("admin-analytics",{},user?.token);
+      console.log("Analytics: Loaded",result);
+      setAnalyticsData(result);
+    }catch(e:any){
+      console.error("Analytics: Error",e);
+      setAnalyticsData({error:"Failed: "+String(e.message)});
+    }finally{
+      setAnalyticsLoading(false);
+    }
+  }
   var [darkMode,setDarkMode]=useState(function(){try{var s=localStorage.getItem('fdp_dark_v1');return s?JSON.parse(s):true;}catch(e){return true;}});
   function toggleDarkMode(){setDarkMode(function(d){var next=!d;try{localStorage.setItem('fdp_dark_v1',JSON.stringify(next));}catch(e){}return next;});}
   // League
@@ -5092,7 +5105,7 @@ export default function App(){
         var active=tab===item[0];
         return React.createElement("button",{key:item[0],onClick:function(){
           if ((item[0]==="league"||item[0]==="reports")&&!canAccessLeagueFeatures(user)){setAuthMode("signup");setShowAuth(true);return;}
-          if(item[0]==="admin"){if(!user||!user.isAdmin){return;}setTab("admin");trackEvent("tab_change",{tab:"admin"});return;}
+if(item[0]==="admin"){var adminEmails=["jlawrence@cmgfi.com","admin@fantasydraftpros.com"];var isEmailAdmin=user&&adminEmails.includes((user.email||"").toLowerCase());if(!user||(!user.isAdmin&&!isEmailAdmin)){console.log("Admin access denied",{isAdmin:user?.isAdmin,email:user?.email,isEmailAdmin});return;}setTab("admin");trackEvent("tab_change",{tab:"admin"});return;}
           setTab(item[0]);trackEvent("tab_change",{tab:item[0]});
         },style:{display:"flex",alignItems:"center",gap:12,padding:"11px 16px",margin:"2px 8px",borderRadius:10,border:"none",background:active?T.purple:"transparent",color:active?"#fff":T.textSub,fontWeight:700,fontSize:13,cursor:"pointer",textAlign:"left",width:"calc(100% - 16px)"}},
           React.createElement("span",{style:{fontSize:16}},item[2]),
@@ -5118,7 +5131,7 @@ export default function App(){
         var active=tab===item[0];
         return React.createElement("button",{key:item[0],onClick:function(){
           if ((item[0]==="league"||item[0]==="reports")&&!canAccessLeagueFeatures(user)){setAuthMode("signup");setShowAuth(true);return;}
-          if(item[0]==="admin"){if(!user||!user.isAdmin){return;}setTab("admin");trackEvent("tab_change",{tab:"admin"});return;}
+if(item[0]==="admin"){var adminEmails=["jlawrence@cmgfi.com","admin@fantasydraftpros.com"];var isEmailAdmin=user&&adminEmails.includes((user.email||"").toLowerCase());if(!user||(!user.isAdmin&&!isEmailAdmin)){return;}setTab("admin");trackEvent("tab_change",{tab:"admin"});return;}
           setTab(item[0]);trackEvent("tab_change",{tab:item[0]});
         },style:{flex:1,padding:"8px 4px 8px",minHeight:56,background:active?T.purple+"12":"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2,WebkitTapHighlightColor:"transparent"}},
           React.createElement("span",{style:{fontSize:18,lineHeight:1}},item[2]),
