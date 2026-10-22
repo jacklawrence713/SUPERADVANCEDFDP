@@ -419,12 +419,7 @@ Deno.serve(async (req) => {
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({
-        error: "unauthorized",
-        odds: {},
-        source: "unavailable",
-        fetchedAt: "",
-      }), {
+      return new Response(JSON.stringify({ error: "unauthorized", odds: {}, source: "unavailable", fetchedAt: "", vegasData: getVegasData() }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -434,12 +429,7 @@ Deno.serve(async (req) => {
 
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
-      return new Response(JSON.stringify({
-        error: "invalid_token",
-        odds: {},
-        source: "unavailable",
-        fetchedAt: "",
-      }), {
+      return new Response(JSON.stringify({ error: "invalid_token", odds: {}, source: "unavailable", fetchedAt: "", vegasData: getVegasData() }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -452,12 +442,7 @@ Deno.serve(async (req) => {
       .single();
 
     if (profileError || !profile) {
-      return new Response(JSON.stringify({
-        error: "profile_not_found",
-        odds: {},
-        source: "unavailable",
-        fetchedAt: "",
-      }), {
+      return new Response(JSON.stringify({ error: "profile_not_found", odds: {}, source: "unavailable", fetchedAt: "", vegasData: getVegasData() }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -468,12 +453,7 @@ Deno.serve(async (req) => {
     const hasPaidPlan = userPlan === "pro" || userPlan === "elite";
 
     if (!isAdmin && !hasPaidPlan) {
-      return new Response(JSON.stringify({
-        error: "insufficient_entitlement",
-        odds: {},
-        source: "unavailable",
-        fetchedAt: "",
-      }), {
+      return new Response(JSON.stringify({ error: "insufficient_entitlement", odds: {}, source: "unavailable", fetchedAt: "", vegasData: getVegasData() }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -533,8 +513,8 @@ Deno.serve(async (req) => {
     if (!apiKey) {
       console.error("[fetch-odds] THE_ODDS_API not set");
       return new Response(JSON.stringify({
-        odds: {}, source: "unavailable", fetchedAt: "",
-      } satisfies OddsResponse), {
+        odds: {}, source: "unavailable", fetchedAt: "", vegasData: getVegasData(),
+      } satisfies EnhancedOddsResponse), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -560,16 +540,16 @@ Deno.serve(async (req) => {
     }
 
     return new Response(JSON.stringify({
-      odds: {}, source: "unavailable", fetchedAt: "",
-    } satisfies OddsResponse), {
+      odds: {}, source: "unavailable", fetchedAt: "", vegasData: getVegasData(),
+    } satisfies EnhancedOddsResponse), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
 
   } catch {
     console.error("[fetch-odds] unexpected_error");
     return new Response(JSON.stringify({
-      odds: {}, source: "unavailable", fetchedAt: "",
-    } satisfies OddsResponse), {
+      odds: {}, source: "unavailable", fetchedAt: "", vegasData: getVegasData(),
+    } satisfies EnhancedOddsResponse), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
