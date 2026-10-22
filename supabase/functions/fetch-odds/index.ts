@@ -145,13 +145,13 @@ async function fetchFromProvider(apiKey: string, supabase: ReturnType<typeof cre
 
     if (!apiRes.ok) {
       console.error(`[fetch-odds] provider_http_error ${apiRes.status}`);
-      return { odds: {}, source: "unavailable", fetchedAt: "" };
+      return { odds: {}, source: "unavailable", fetchedAt: "", vegasData: getVegasData() };
     }
 
     const games = await apiRes.json();
     if (!Array.isArray(games) || games.length === 0) {
       console.log("[fetch-odds] provider returned empty game list");
-      return { odds: {}, source: "unavailable", fetchedAt: "" };
+      return { odds: {}, source: "unavailable", fetchedAt: "", vegasData: getVegasData() };
     }
 
     const now = Date.now();
@@ -315,7 +315,7 @@ async function fetchFromProvider(apiKey: string, supabase: ReturnType<typeof cre
 
   } catch {
     console.error("[fetch-odds] provider_fetch_failed");
-    return { odds: {}, source: "unavailable", fetchedAt: "" };
+    return { odds: {}, source: "unavailable", fetchedAt: "", vegasData: getVegasData() };
   }
 }
 
