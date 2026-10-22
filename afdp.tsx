@@ -2580,20 +2580,24 @@ function AnalyticsDashboard({T,data,loading,onLoad}:{T:any,data:any,loading:bool
 
     // Daily bar chart
     React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"14px 12px",marginBottom:16}},
-      React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text,marginBottom:12}},"Daily Unique Visitors"),
-      React.createElement("div",{style:{display:"flex",alignItems:"flex-end",gap:3,height:80}},
+      React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}},
+        React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text}},"Daily Unique Visitors"),
+        React.createElement("div",{style:{fontSize:10,color:T.textSub}},daily.length+" days tracked")
+      ),
+      React.createElement("div",{style:{display:"flex",alignItems:"flex-end",gap:6,height:120,paddingBottom:4}},
         daily.map(function(d:any){
-          var h=Math.max(4,Math.round((d.count/maxDay)*76));
+          var h=Math.max(8,Math.round((d.count/maxDay)*104));
           var isToday=d.day===todayKey;
-          return React.createElement("div",{key:d.day,style:{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:2}},
-            d.count>0&&React.createElement("div",{style:{fontSize:8,color:T.textSub,lineHeight:1}},d.count),
-            React.createElement("div",{title:d.day+" · "+d.count+" visitors",style:{width:"100%",height:h,borderRadius:3,background:isToday?T.purple:T.purple+"55",transition:"height 0.3s"}})
+          return React.createElement("div",{key:d.day,style:{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}},
+            d.count>0&&React.createElement("div",{style:{fontSize:11,fontWeight:600,color:isToday?T.purple:T.text,lineHeight:1}},d.count),
+            React.createElement("div",{title:d.day+" · "+d.count+" visitors",style:{width:"100%",height:h,borderRadius:4,background:isToday?T.purple:T.purple+"40",border:isToday?"2px solid "+T.purple:"none",transition:"all 0.3s",cursor:"default",boxShadow:isToday?"0 0 8px "+T.purple+"30":"none"}}),
+            isToday&&React.createElement("div",{style:{fontSize:8,fontWeight:700,color:T.purple,marginTop:1}},isToday?"🔷 TODAY":"")
           );
         })
       ),
-      React.createElement("div",{style:{display:"flex",justifyContent:"space-between",marginTop:6}},
-        React.createElement("div",{style:{fontSize:9,color:T.textDim}},daily[0]?.day?.slice(5)),
-        React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:700}},"Today")
+      React.createElement("div",{style:{display:"flex",justifyContent:"space-between",fontSize:9,color:T.textDim,marginTop:8}},
+        React.createElement("div",null,daily[0]?.day),
+        React.createElement("div",{style:{fontWeight:600}},daily[daily.length-1]?.day+" →")
       )
     ),
 
