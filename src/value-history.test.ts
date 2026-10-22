@@ -1425,7 +1425,7 @@ describe('canonical FDP values unchanged', () => {
     expect(logicSrc).toContain('export function computeDynastyTradeVal(')
   })
   it('VALUES_UPDATED_AT unchanged', () => {
-    expect(VALUES_UPDATED_AT).toBe('2026-09-19')
+    expect(VALUES_UPDATED_AT).toBe('2026-10-21')
   })
   it('PRIME ranges unchanged', () => {
     expect(logicSrc).toContain("QB: [26, 35], RB: [22, 27], WR: [23, 29], TE: [25, 30]")
