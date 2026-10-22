@@ -320,6 +320,48 @@ async function fetchFromProvider(apiKey: string, supabase: ReturnType<typeof cre
 }
 
 
+
+// ===== ENHANCED VEGAS FUNCTIONS (Real-time Futures + Player Props) =====
+
+// Note: Real-time futures and player props require verified API support
+// Current implementation includes infrastructure with graceful fallback to hardcoded data
+
+async function fetchRealTimeFutures(apiKey: string): Promise<Partial<VegasData> | null> {
+  try {
+    // Future enhancement: Call The Odds API for:
+    // - super_bowl_winner market
+    // - division_winner market for each division
+    // - season_win_totals market
+    // - award markets (MVP, DPOY, etc.)
+    //
+    // For now, returns null to use hardcoded data
+    // To enable: implement calls to The Odds API futures endpoints
+    return null;
+  } catch (e) {
+    console.log("[fetch-odds] realtime futures fetch failed, using hardcoded");
+    return null;
+  }
+}
+
+async function fetchPlayerPropsForEvents(
+  apiKey: string,
+  eventIds: string[]
+): Promise<PlayerProp[] | null> {
+  try {
+    // Future enhancement: For each eventId, call The Odds API player props endpoint
+    // Market keys: player_pass_yds, player_rec_yds, player_rush_yds, player_receptions, etc.
+    // Normalize across bookmakers using median consensus
+    // 
+    // For now, returns null (no props data)
+    // To enable: verify The Odds API tier supports player props markets
+    return null;
+  } catch (e) {
+    console.log("[fetch-odds] player props fetch failed");
+    return null;
+  }
+}
+
+
 // VEGAS FUTURES INFRASTRUCTURE (Ready for real-time fetch upgrade)
 // Current implementation uses hardcoded data with automatic fallback
 // To enable real-time futures:
@@ -392,6 +434,25 @@ interface VegasData {
   winTotals: Array<{team: string; over: number; under: number}>;
   awards: Array<{award: string; odds: Array<{player: string; odds: number}>}>;
   byeWeeks: {[week: number]: string[]};
+}
+
+
+interface PlayerProp {
+  eventId: string;
+  game: string;
+  player: string;
+  team: string;
+  position?: string;
+  opponent: string;
+  market: string;
+  line: number;
+  overPrice?: number;
+  underPrice?: number;
+  bookmakers: number;
+}
+
+interface EnhancedVegasData extends VegasData {
+  playerProps?: PlayerProp[];
 }
 
 interface EnhancedOddsResponse extends OddsResponse {
@@ -563,3 +624,92 @@ Deno.serve(async (req) => {
     });
   }
 });
+
+
+// ===== PROP PERSISTENCE & GRADING =====
+
+async function persistPlayerProps(
+  supabase: ReturnType<typeof createClient>,
+  props: any[],
+  week: number,
+  season: number
+): Promise<void> {
+  if (!props || props.length === 0) return;
+  
+  try {
+    const rows = props.map((p: any) => ({
+      week,
+      season,
+      event_id: p.eventId,
+      player_name: p.player,
+      team: p.team,
+      opponent: p.opponent,
+      position: p.position,
+      market_key: p.market,
+      market_display: p.marketDisplay,
+      line: p.line,
+      over_price: p.overPrice,
+      under_price: p.underPrice,
+      bookmaker: p.bookmaker || "consensus",
+      captured_at: new Date().toISOString(),
+    }));
+    
+    await supabase
+      .from("historical_player_props")
+      .upsert(rows, { onConflict: "event_id, player_name, market_key, bookmaker, week" });
+    
+    console.log(`[fetch-odds] Persisted ${rows.length} player props to history`);
+  } catch (e) {
+    console.error("[fetch-odds] prop persistence failed:", e);
+  }
+}
+
+function gradePropAgainstActual(
+  line: number,
+  actualValue: number | null,
+  playerParticipated: boolean,
+  gameStatus: string
+): { grade: string; logic: string } {
+  if (gameStatus !== "final") {
+    return { grade: "RESULT_UNAVAILABLE", logic: "game_not_final" };
+  }
+  
+  if (!playerParticipated) {
+    return { grade: "DNP", logic: "did_not_play" };
+  }
+  
+  if (actualValue === null || actualValue === undefined) {
+    return { grade: "RESULT_UNAVAILABLE", logic: "no_stat_data" };
+  }
+  
+  const tolerance = 0.01;
+  if (Math.abs(actualValue - line) < tolerance) {
+    return { grade: "PUSH", logic: `actual (${actualValue}) ~= line (${line})` };
+  }
+  
+  if (actualValue > line) {
+    return { grade: "OVER", logic: `actual (${actualValue}) > line (${line})` };
+  }
+  
+  return { grade: "UNDER", logic: `actual (${actualValue}) < line (${line})` };
+}
+
+async function gradeHistoricalProps(
+  supabase: ReturnType<typeof createClient>,
+  week: number,
+  season: number
+): Promise<void> {
+  // This function will be called post-game to grade all props
+  // Requires actual player stats from external source (NFL API, ESPN API, etc.)
+  // Implementation: Fetch actual stats, match to props, calculate grades
+  // For now: placeholder for future implementation
+  
+  console.log(`[fetch-odds] Ready to grade Week ${week} props when stats available`);
+  
+  // TODO: Implement when player stats source is identified
+  // Steps:
+  // 1. Query historical_player_props WHERE week = ? AND season = ?
+  // 2. For each prop, fetch actual player stat
+  // 3. Call gradePropAgainstActual()
+  // 4. INSERT INTO historical_prop_results with grade
+}
