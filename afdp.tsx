@@ -2930,7 +2930,7 @@ export default function App(){
       return {odds:{},source:"unavailable",fetchedAt:"",stale:false};
     }
   }
-  var [pendingRequestRef]=useState({requestId:null,payloadKey:null});
+  var pendingRequestRef=useRef({requestId:null,payloadKey:null});
   var [impTab,setImpTab]=useState("sleeper");
   var [slUser,setSlUser]=useState("");
   var [impStatus,setImpStatus]=useState(null);
