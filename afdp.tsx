@@ -10574,3 +10574,4 @@ rankSubTab==="vegaslines"&&(function(){if(typeof selectedVegasWeek==="undefined"
   );
 }
 // Deployment: Tue, Oct 20, 2026  3:47:52 PM},/    \!isDesktop\&\&React.createElement("div",{style:{overflow:"hidden",background:darkMode?"#0a0818":"#f8f7ff",borderBottom:"1px solid "+T.border,padding:"6px 0",flexShrink:0}},}
+// Final deployment trigger
