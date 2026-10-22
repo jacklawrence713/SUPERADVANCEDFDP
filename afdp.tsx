@@ -3160,7 +3160,27 @@ export default function App(){
   var [sitS1,setSitS1]=useState("");
   var [sitS2,setSitS2]=useState("");
   var [sitFormat,setSitFormat]=useState("PPR");
-  var [oddsResponse,setOddsResponse]=useState<OddsResponse>({odds:{},source:"unavailable",fetchedAt:""});
+  var [oddsResponse,setOddsResponse]=useState<OddsResponse>({
+    odds: {},
+    source: "unavailable",
+    fetchedAt: "",
+    vegasData: {
+      superBowl: [{team: "KC", odds: 550}, {team: "BUF", odds: 750}, {team: "DET", odds: 950}, {team: "SF", odds: 1050}, {team: "PHI", odds: 1100}, {team: "DAL", odds: 1400}, {team: "CIN", odds: 1600}, {team: "BAL", odds: 1800}],
+      divisions: [
+        {division: "AFC East", odds: [{team: "BUF", odds: 105}, {team: "MIA", odds: 180}, {team: "NYJ", odds: 550}, {team: "NE", odds: 1100}]},
+        {division: "AFC South", odds: [{team: "HOU", odds: 120}, {team: "TEN", odds: 280}, {team: "IND", odds: 600}, {team: "JAX", odds: 800}]},
+        {division: "AFC West", odds: [{team: "KC", odds: 95}, {team: "LAC", odds: 300}, {team: "LV", odds: 750}, {team: "DEN", odds: 1200}]},
+        {division: "AFC North", odds: [{team: "BAL", odds: 140}, {team: "PIT", odds: 220}, {team: "CIN", odds: 350}, {team: "CLE", odds: 450}]},
+        {division: "NFC East", odds: [{team: "PHI", odds: 115}, {team: "DAL", odds: 180}, {team: "WAS", odds: 500}, {team: "NYG", odds: 750}]},
+        {division: "NFC South", odds: [{team: "ATL", odds: 140}, {team: "NO", odds: 250}, {team: "TB", odds: 350}, {team: "CAR", odds: 900}]},
+        {division: "NFC West", odds: [{team: "SF", odds: 130}, {team: "LA", odds: 220}, {team: "SEA", odds: 450}, {team: "ARI", odds: 700}]},
+        {division: "NFC North", odds: [{team: "DET", odds: 125}, {team: "GB", odds: 200}, {team: "MIN", odds: 400}, {team: "CHI", odds: 800}]},
+      ],
+      winTotals: [{team: "KC", over: 12.5, under: -140}, {team: "BUF", over: 11.5, under: -140}, {team: "DET", over: 11.5, under: -140}, {team: "SF", over: 11.5, under: -140}, {team: "PHI", over: 11.5, under: -140}, {team: "BAL", over: 10.5, under: -140}, {team: "ATL", over: 10.5, under: -140}, {team: "CIN", over: 10.5, under: -140}],
+      awards: [{award: "MVP", odds: [{player: "Josh Allen", odds: 600}, {player: "Jalen Hurts", odds: 750}, {player: "Patrick Mahomes", odds: 850}, {player: "Bijan Robinson", odds: 1100}, {player: "Ja'Marr Chase", odds: 1200}]}, {award: "DPOY", odds: [{player: "TJ Watt", odds: 400}, {player: "Danielle Hunter", odds: 550}, {player: "Micah Parsons", odds: 700}]}, {award: "OROY", odds: [{player: "Caleb Williams", odds: 250}, {player: "Will Levis", odds: 450}]}],
+      byeWeeks: {6: ["NE", "NO"], 7: ["BUF", "GB", "MIN", "JAX", "CIN"]},
+    }
+  });
   var [oddsLoading,setOddsLoading]=useState(false);
   var [oddsError,setOddsError]=useState<string|null>(null);
   // Temporary state for Vegas UI backward compatibility
