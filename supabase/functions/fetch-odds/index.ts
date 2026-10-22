@@ -320,6 +320,14 @@ async function fetchFromProvider(apiKey: string, supabase: ReturnType<typeof cre
 }
 
 
+// VEGAS FUTURES INFRASTRUCTURE (Ready for real-time fetch upgrade)
+// Current implementation uses hardcoded data with automatic fallback
+// To enable real-time futures:
+// 1. Verify The Odds API subscription includes futures markets
+// 2. Audit available markets: super_bowl, division_winner, season_win_totals, awards
+// 3. Implement fetchFuturesData() to call The Odds API
+// 4. Update getVegasData() to use real-time data when available
+// 5. Maintain hardcoded fallback for reliability
 // ===== VEGAS DATA STRUCTURES (2026) =====
 const BYE_WEEKS_2026: {[week: number]: string[]} = {
   6: ["NE", "NO"],
