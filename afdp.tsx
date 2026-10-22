@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { computeDynastyTradeVal, computeRedraftTradeVal, REDRAFT_TV_MULT, VALUES_UPDATED_AT, PRODUCT_STATS, formatContextLabel, explainFdpValue, generateTradeCandidates, computeTeamPosValues, computeTeamNeeds, computePosRanksForTeams, computeValueChange, isSnapshotContextSupported, normalizeSnapshotContext, HISTORY_PAGE_SIZE, findComparisonSnapshots, explainValueMovement, formatCalendarDate, formatRelativeTime, leagueFetchedAtKey, deriveProvider, freshnessFetchVerb } from "./src/logic";
 import type { FdpSnapshot } from "./src/logic";
@@ -2584,14 +2584,13 @@ function AnalyticsDashboard({T,data,loading,onLoad}:{T:any,data:any,loading:bool
         React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text}},"Daily Unique Visitors"),
         React.createElement("div",{style:{fontSize:10,color:T.textSub}},daily.length+" days tracked")
       ),
-      React.createElement("div",{style:{display:"flex",alignItems:"flex-end",gap:6,height:140,paddingBottom:4}},
+      React.createElement("div",{style:{display:"flex",alignItems:"flex-end",gap:6,height:120,paddingBottom:4}},
         daily.map(function(d:any){
-          var h=Math.max(8,Math.round((d.count/maxDay)*128));
+          var h=Math.max(8,Math.round((d.count/maxDay)*104));
           var isToday=d.day===todayKey;
-          var barColor=isToday?T.purple:(darkMode?(T.purple+"70"):(T.purple+"85"));
           return React.createElement("div",{key:d.day,style:{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}},
             d.count>0&&React.createElement("div",{style:{fontSize:11,fontWeight:600,color:isToday?T.purple:T.text,lineHeight:1}},d.count),
-            React.createElement("div",{title:d.day+" · "+d.count+" visitors",style:{width:"100%",height:h,borderRadius:4,background:barColor,border:isToday?"2px solid "+T.purple:"1px solid "+T.border,transition:"all 0.3s",cursor:"default",boxShadow:isToday?"0 0 8px "+T.purple+"30":"none"}}),
+            React.createElement("div",{title:d.day+" · "+d.count+" visitors",style:{width:"100%",height:h,borderRadius:4,background:isToday?T.purple:T.purple+"40",border:isToday?"2px solid "+T.purple:"none",transition:"all 0.3s",cursor:"default",boxShadow:isToday?"0 0 8px "+T.purple+"30":"none"}}),
             isToday&&React.createElement("div",{style:{fontSize:8,fontWeight:700,color:T.purple,marginTop:1}},isToday?"🔷 TODAY":"")
           );
         })
@@ -2931,7 +2930,7 @@ export default function App(){
       return {odds:{},source:"unavailable",fetchedAt:"",stale:false};
     }
   }
-  var pendingRequestRef=useRef({requestId:null,payloadKey:null});
+  var [pendingRequestRef]=useState({requestId:null,payloadKey:null});
   var [impTab,setImpTab]=useState("sleeper");
   var [slUser,setSlUser]=useState("");
   var [impStatus,setImpStatus]=useState(null);
