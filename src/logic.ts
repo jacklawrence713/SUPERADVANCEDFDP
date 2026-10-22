@@ -8,8 +8,8 @@ export const PRIME: Record<string, [number, number]> = {
 
 export const FREE_RANK_LIMIT = 20;
 export const FREE_TRADE_LIMIT = 3;
-export const VALUES_UPDATED_AT = "2026-09-19";
-export const VALUES_VERSION = "2026-09-19.1"; // date.revision — incremented on each canonical value release
+export const VALUES_UPDATED_AT = "2026-10-21";
+export const VALUES_VERSION = "2026-10-21.1"; // date.revision — incremented on each canonical value release
 
 export const ADMIN_EMAILS = [
   "jacklawrence713@gmail.com", "modgy28@hotmail.com",
