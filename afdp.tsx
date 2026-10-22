@@ -2582,20 +2582,20 @@ function AnalyticsDashboard({T,data,loading,onLoad}:{T:any,data:any,loading:bool
     React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"14px 12px",marginBottom:16}},
       React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}},
         React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text}},"Daily Unique Visitors"),
-        React.createElement("div",{style:{fontSize:10,color:T.textSub}},daily.length+" days tracked · "+maxDay+" peak")
+        React.createElement("div",{style:{fontSize:10,color:T.textSub}},daily.length+" days tracked")
       ),
-      (function(){var dynamicHeight=Math.min(200,Math.max(120,maxDay*2));return React.createElement("div",{style:{display:"flex",alignItems:"flex-end",gap:6,height:dynamicHeight,paddingBottom:4}},
+      React.createElement("div",{style:{display:"flex",alignItems:"flex-end",gap:6,height:140,paddingBottom:4}},
         daily.map(function(d:any){
-          var h=Math.max(6,Math.round((d.count/maxDay)*(dynamicHeight-16)));
+          var h=Math.max(8,Math.round((d.count/maxDay)*128));
           var isToday=d.day===todayKey;
-          var pastDayColor=darkMode?(T.purple+"60"):(T.purple+"80");
+          var barColor=isToday?T.purple:(darkMode?(T.purple+"70"):(T.purple+"85"));
           return React.createElement("div",{key:d.day,style:{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}},
             d.count>0&&React.createElement("div",{style:{fontSize:11,fontWeight:600,color:isToday?T.purple:T.text,lineHeight:1}},d.count),
-            React.createElement("div",{title:d.day+" · "+d.count+" visitors",style:{width:"100%",height:h,borderRadius:4,background:isToday?T.purple:pastDayColor,border:isToday?"2px solid "+T.purple:"1px solid "+T.border,transition:"all 0.3s",cursor:"default",boxShadow:isToday?"0 0 8px "+T.purple+"30":"none"}}),
+            React.createElement("div",{title:d.day+" · "+d.count+" visitors",style:{width:"100%",height:h,borderRadius:4,background:barColor,border:isToday?"2px solid "+T.purple:"1px solid "+T.border,transition:"all 0.3s",cursor:"default",boxShadow:isToday?"0 0 8px "+T.purple+"30":"none"}}),
             isToday&&React.createElement("div",{style:{fontSize:8,fontWeight:700,color:T.purple,marginTop:1}},isToday?"🔷 TODAY":"")
           );
         })
-      )})(),
+      ),
       React.createElement("div",{style:{display:"flex",justifyContent:"space-between",fontSize:9,color:T.textDim,marginTop:8}},
         React.createElement("div",null,daily[0]?.day),
         React.createElement("div",{style:{fontWeight:600}},daily[daily.length-1]?.day+" →")
