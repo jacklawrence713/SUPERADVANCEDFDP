@@ -3067,7 +3067,8 @@ export default function App(){
     }
   }
   var [darkMode,setDarkMode]=useState(function(){try{var s=localStorage.getItem('fdp_dark_v1');return s?JSON.parse(s):true;}catch(e){return true;}});
-  function toggleDarkMode(){setDarkMode(function(d){var next=!d;try{localStorage.setItem('fdp_dark_v1',JSON.stringify(next));}catch(e){}return next;});}
+  useEffect(function(){try{document.documentElement.setAttribute('data-theme',darkMode?'dark':'light');}catch(e){}},[ darkMode]);
+    function toggleDarkMode(){setDarkMode(function(d){var next=!d;try{localStorage.setItem('fdp_dark_v1',JSON.stringify(next));}catch(e){}return next;});}
   // League
   var [leagueSubTab,setLeagueSubTab]=useState(function(){try{return localStorage.getItem('fdp_leagueSubTab')||"power";}catch(e){return"power";}});
   var _setLeagueSubTab=setLeagueSubTab;setLeagueSubTab=function(v){_setLeagueSubTab(v);try{localStorage.setItem('fdp_leagueSubTab',v);}catch(e){}};
