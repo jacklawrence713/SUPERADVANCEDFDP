@@ -843,3 +843,228 @@ input, textarea, select {
     display: none;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RANKINGS PAGE ENHANCEMENTS
+   Modern table/card presentation for player rankings
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Improve ranking rows */
+[style*="display: flex"][style*="justifyContent: space-between"][style*="alignItems: center"][style*="padding:"] {
+  border-radius: var(--radius-lg) !important;
+  border: 1px solid var(--border) !important;
+  transition: all var(--transition-normal) !important;
+  margin-bottom: var(--space-sm) !important;
+}
+
+[style*="display: flex"][style*="justifyContent: space-between"]:hover {
+  background: var(--surface-elevated) !important;
+  border-color: var(--accent-primary) !important;
+  transform: translateX(2px) !important;
+}
+
+/* Rank number styling */
+span[style*="fontWeight: 900"][style*="fontSize: 18"] {
+  background: var(--accent-primary-dim);
+  border-radius: var(--radius-full);
+  padding: var(--space-xs) var(--space-md) !important;
+  min-width: 50px;
+  text-align: center;
+}
+
+/* Player name emphasis */
+div[style*="fontWeight: 700"] {
+  color: var(--text-primary) !important;
+  letter-spacing: -0.3px;
+}
+
+/* Value badge styling */
+span[style*="background: #22c55e"], 
+span[style*="background: #ef4444"],
+span[style*="background: #f59e0b"] {
+  border-radius: var(--radius-full) !important;
+  padding: var(--space-xs) var(--space-md) !important;
+  font-weight: var(--font-weight-bold) !important;
+}
+
+/* Trade Analyzer section improvements */
+[style*="display: grid"][style*="gridTemplateColumns: 1fr 1fr"] {
+  gap: var(--space-lg) !important;
+  margin: var(--space-lg) 0 !important;
+}
+
+@media (min-width: 1024px) {
+  [style*="display: grid"][style*="gridTemplateColumns: 1fr 1fr"] {
+    gap: var(--space-xl) !important;
+  }
+}
+
+/* Improve filter controls */
+div[style*="display: flex"][style*="gap: 8"] {
+  flex-wrap: wrap;
+  gap: var(--space-md) !important;
+}
+
+@media (min-width: 768px) {
+  div[style*="display: flex"][style*="gap: 8"] {
+    gap: var(--space-base) !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   VEGAS LINES PAGE ENHANCEMENTS
+   Better game card presentation and layout
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Game cards */
+div[style*="borderRadius: 14"][style*="padding: 16"][style*="marginBottom:"] {
+  transition: all var(--transition-normal) !important;
+  border-radius: var(--radius-xl) !important;
+}
+
+div[style*="borderRadius: 14"][style*="padding: 16"]:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Odds display */
+span[style*="fontSize: 18"][style*="fontWeight: 800"] {
+  font-family: 'Courier New', monospace !important;
+  letter-spacing: 0.5px !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TRADE ANALYZER ENHANCEMENTS
+   Premium layout for trade analysis
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Team section styling */
+div[style*="flex: 1"][style*="display: flex"][style*="flexDirection: column"] {
+  gap: var(--space-md) !important;
+}
+
+/* Trade result cards */
+div[style*="background: #22c55e"][style*="border"],
+div[style*="background: #ef4444"][style*="border"] {
+  border-radius: var(--radius-xl) !important;
+  padding: var(--space-lg) !important;
+  gap: var(--space-base) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ADMIN DASHBOARD ENHANCEMENTS
+   Professional operations dashboard styling
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Metric cards */
+div[style*="display: grid"][style*="gridTemplateColumns:"]  {
+  gap: var(--space-lg) !important;
+}
+
+@media (min-width: 1024px) {
+  div[style*="display: grid"][style*="gridTemplateColumns:"] {
+    gap: var(--space-xl) !important;
+  }
+}
+
+/* Alert sections */
+div[style*="background: #2d1a00"],
+div[style*="background: #1e3a5f"],
+div[style*="background: #14532d"] {
+  border-radius: var(--radius-lg) !important;
+  border-left: 4px solid !important;
+  gap: var(--space-base) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOBILE OPTIMIZATIONS
+   Better touch targets and spacing on smaller screens
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 640px) {
+  [style*="display: grid"][style*="gridTemplateColumns"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  [style*="display: flex"][style*="flexDirection: row"] {
+    flex-direction: column !important;
+  }
+
+  button, input, select, textarea {
+    font-size: 16px !important; /* Prevents zoom on iOS */
+    min-height: 48px !important;
+  }
+
+  div[style*="padding: 16"] {
+    padding: var(--space-base) !important;
+  }
+
+  div[style*="padding: 20"] {
+    padding: var(--space-lg) !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DARK MODE REFINEMENTS
+   Enhanced contrast and readability
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Improve text contrast in dark mode */
+span[style*="color: #5c5880"] {
+  color: var(--text-secondary) !important;
+}
+
+span[style*="color: #9b96b8"] {
+  color: var(--text-secondary) !important;
+}
+
+/* Improve border subtlety */
+[style*="border: 1px solid #2e2a4a"] {
+  border-color: var(--border) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ACCESSIBILITY IMPROVEMENTS
+   Better keyboard navigation and screen reader support
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+button:focus,
+input:focus,
+textarea:focus,
+select:focus {
+  outline-width: 2px !important;
+  outline-offset: 2px !important;
+}
+
+/* Visible focus indicator */
+:focus-visible {
+  outline: 2px solid var(--accent-primary) !important;
+  outline-offset: 2px !important;
+}
+
+/* Skip to content link */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--accent-primary);
+  color: white;
+  padding: var(--space-md);
+  text-decoration: none;
+  border-radius: 0 0 var(--radius-lg) 0;
+  z-index: var(--z-tooltip);
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
