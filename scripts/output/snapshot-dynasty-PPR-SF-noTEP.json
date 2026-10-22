@@ -1,0 +1,7933 @@
+{
+  "values_version": "2026-09-19.1",
+  "effective_at": "2026-09-19",
+  "context": {
+    "league_type": "dynasty",
+    "scoring": "PPR",
+    "superflex": true,
+    "te_premium": false,
+    "idp": false
+  },
+  "snapshots": [
+    {
+      "player_slug": "a-j-brown",
+      "player_name": "A.J. Brown",
+      "pos": "WR",
+      "value": 4738
+    },
+    {
+      "player_slug": "a-j-epenesa",
+      "player_name": "A.J. Epenesa",
+      "pos": "DL",
+      "value": 1854
+    },
+    {
+      "player_slug": "a-j-haulcy",
+      "player_name": "A.J. Haulcy",
+      "pos": "DB",
+      "value": 1783
+    },
+    {
+      "player_slug": "a-j-terrell",
+      "player_name": "A.J. Terrell",
+      "pos": "DB",
+      "value": 3605
+    },
+    {
+      "player_slug": "aaron-donald",
+      "player_name": "Aaron Donald",
+      "pos": "DL",
+      "value": 487
+    },
+    {
+      "player_slug": "aaron-jones",
+      "player_name": "Aaron Jones",
+      "pos": "RB",
+      "value": 2059
+    },
+    {
+      "player_slug": "aaron-parker",
+      "player_name": "Aaron Parker",
+      "pos": "WR",
+      "value": 206
+    },
+    {
+      "player_slug": "aaron-rodgers",
+      "player_name": "Aaron Rodgers",
+      "pos": "QB",
+      "value": 1027
+    },
+    {
+      "player_slug": "abdul-carter",
+      "player_name": "Abdul Carter",
+      "pos": "DL",
+      "value": 5741
+    },
+    {
+      "player_slug": "abram-smith",
+      "player_name": "Abram Smith",
+      "pos": "RB",
+      "value": 515
+    },
+    {
+      "player_slug": "adam-randall",
+      "player_name": "Adam Randall",
+      "pos": "RB",
+      "value": 1339
+    },
+    {
+      "player_slug": "adam-thielen",
+      "player_name": "Adam Thielen",
+      "pos": "WR",
+      "value": 100
+    },
+    {
+      "player_slug": "adam-trautman",
+      "player_name": "Adam Trautman",
+      "pos": "TE",
+      "value": 412
+    },
+    {
+      "player_slug": "adonai-mitchell",
+      "player_name": "Adonai Mitchell",
+      "pos": "WR",
+      "value": 3605
+    },
+    {
+      "player_slug": "adoree-jackson",
+      "player_name": "Adoree' Jackson",
+      "pos": "DB",
+      "value": 1083
+    },
+    {
+      "player_slug": "adrian-amos",
+      "player_name": "Adrian Amos",
+      "pos": "DB",
+      "value": 371
+    },
+    {
+      "player_slug": "adrian-phillips",
+      "player_name": "Adrian Phillips",
+      "pos": "DB",
+      "value": 535
+    },
+    {
+      "player_slug": "aidan-hutchinson",
+      "player_name": "Aidan Hutchinson",
+      "pos": "DL",
+      "value": 5150
+    },
+    {
+      "player_slug": "aidan-o-connell",
+      "player_name": "Aidan O'Connell",
+      "pos": "QB",
+      "value": 1030
+    },
+    {
+      "player_slug": "ainias-smith",
+      "player_name": "Ainias Smith",
+      "pos": "WR",
+      "value": 721
+    },
+    {
+      "player_slug": "aj-barner",
+      "player_name": "AJ Barner",
+      "pos": "TE",
+      "value": 3729
+    },
+    {
+      "player_slug": "aj-dillon",
+      "player_name": "AJ Dillon",
+      "pos": "RB",
+      "value": 750
+    },
+    {
+      "player_slug": "akeem-davis-gaither",
+      "player_name": "Akeem Davis-Gaither",
+      "pos": "LB",
+      "value": 927
+    },
+    {
+      "player_slug": "akheem-mesidor",
+      "player_name": "Akheem Mesidor",
+      "pos": "DL",
+      "value": 3914
+    },
+    {
+      "player_slug": "al-woods",
+      "player_name": "Al Woods",
+      "pos": "DL",
+      "value": 93
+    },
+    {
+      "player_slug": "albert-okwuosa",
+      "player_name": "Albert Okwuosa",
+      "pos": "WR",
+      "value": 309
+    },
+    {
+      "player_slug": "alec-ogletree",
+      "player_name": "Alec Ogletree",
+      "pos": "LB",
+      "value": 190
+    },
+    {
+      "player_slug": "alec-pierce",
+      "player_name": "Alec Pierce",
+      "pos": "WR",
+      "value": 5157
+    },
+    {
+      "player_slug": "alex-anzalone",
+      "player_name": "Alex Anzalone",
+      "pos": "LB",
+      "value": 669
+    },
+    {
+      "player_slug": "alex-erickson",
+      "player_name": "Alex Erickson",
+      "pos": "WR",
+      "value": 71
+    },
+    {
+      "player_slug": "alex-mattison",
+      "player_name": "Alex Mattison",
+      "pos": "RB",
+      "value": 1017
+    },
+    {
+      "player_slug": "alim-mcneill",
+      "player_name": "Alim McNeill",
+      "pos": "DL",
+      "value": 2060
+    },
+    {
+      "player_slug": "allen-lazard",
+      "player_name": "Allen Lazard",
+      "pos": "WR",
+      "value": 183
+    },
+    {
+      "player_slug": "allen-robinson-ii",
+      "player_name": "Allen Robinson II",
+      "pos": "WR",
+      "value": 152
+    },
+    {
+      "player_slug": "alohi-gilman",
+      "player_name": "Alohi Gilman",
+      "pos": "DB",
+      "value": 1030
+    },
+    {
+      "player_slug": "alvin-kamara",
+      "player_name": "Alvin Kamara",
+      "pos": "RB",
+      "value": 2086
+    },
+    {
+      "player_slug": "amari-cooper",
+      "player_name": "Amari Cooper",
+      "pos": "WR",
+      "value": 326
+    },
+    {
+      "player_slug": "ambry-thomas",
+      "player_name": "Ambry Thomas",
+      "pos": "DB",
+      "value": 1030
+    },
+    {
+      "player_slug": "amon-ra-st-brown",
+      "player_name": "Amon-Ra St. Brown",
+      "pos": "WR",
+      "value": 8100
+    },
+    {
+      "player_slug": "amorion-walker",
+      "player_name": "Amorion Walker",
+      "pos": "WR",
+      "value": 2060
+    },
+    {
+      "player_slug": "andrei-iosivas",
+      "player_name": "Andrei Iosivas",
+      "pos": "WR",
+      "value": 2020
+    },
+    {
+      "player_slug": "andrew-adams",
+      "player_name": "Andrew Adams",
+      "pos": "DB",
+      "value": 213
+    },
+    {
+      "player_slug": "andrew-beck",
+      "player_name": "Andrew Beck",
+      "pos": "TE",
+      "value": 206
+    },
+    {
+      "player_slug": "andrew-sendejo",
+      "player_name": "Andrew Sendejo",
+      "pos": "DB",
+      "value": 93
+    },
+    {
+      "player_slug": "andrew-van-ginkel",
+      "player_name": "Andrew Van Ginkel",
+      "pos": "LB",
+      "value": 1059
+    },
+    {
+      "player_slug": "andrew-wingard",
+      "player_name": "Andrew Wingard",
+      "pos": "DB",
+      "value": 688
+    },
+    {
+      "player_slug": "andy-isabella",
+      "player_name": "Andy Isabella",
+      "pos": "WR",
+      "value": 147
+    },
+    {
+      "player_slug": "anthony-barr",
+      "player_name": "Anthony Barr",
+      "pos": "LB",
+      "value": 100
+    },
+    {
+      "player_slug": "anthony-firkser",
+      "player_name": "Anthony Firkser",
+      "pos": "TE",
+      "value": 199
+    },
+    {
+      "player_slug": "anthony-hill-jr",
+      "player_name": "Anthony Hill Jr.",
+      "pos": "LB",
+      "value": 3518
+    },
+    {
+      "player_slug": "anthony-mcfarland-jr",
+      "player_name": "Anthony McFarland Jr.",
+      "pos": "RB",
+      "value": 618
+    },
+    {
+      "player_slug": "anthony-miller",
+      "player_name": "Anthony Miller",
+      "pos": "WR",
+      "value": 167
+    },
+    {
+      "player_slug": "anthony-richardson",
+      "player_name": "Anthony Richardson",
+      "pos": "QB",
+      "value": 2975
+    },
+    {
+      "player_slug": "anthony-schwartz",
+      "player_name": "Anthony Schwartz",
+      "pos": "WR",
+      "value": 309
+    },
+    {
+      "player_slug": "anthony-smith",
+      "player_name": "Anthony Smith",
+      "pos": "WR",
+      "value": 1030
+    },
+    {
+      "player_slug": "anthony-walker-jr",
+      "player_name": "Anthony Walker Jr.",
+      "pos": "LB",
+      "value": 623
+    },
+    {
+      "player_slug": "antoine-winfield-jr",
+      "player_name": "Antoine Winfield Jr.",
+      "pos": "DB",
+      "value": 5665
+    },
+    {
+      "player_slug": "antonio-gibson",
+      "player_name": "Antonio Gibson",
+      "pos": "RB",
+      "value": 610
+    },
+    {
+      "player_slug": "antonio-williams",
+      "player_name": "Antonio Williams",
+      "pos": "WR",
+      "value": 3005
+    },
+    {
+      "player_slug": "antony-auclair",
+      "player_name": "Antony Auclair",
+      "pos": "TE",
+      "value": 132
+    },
+    {
+      "player_slug": "arden-key",
+      "player_name": "Arden Key",
+      "pos": "DL",
+      "value": 849
+    },
+    {
+      "player_slug": "arian-smith",
+      "player_name": "Arian Smith",
+      "pos": "WR",
+      "value": 2163
+    },
+    {
+      "player_slug": "arik-armstead",
+      "player_name": "Arik Armstead",
+      "pos": "DL",
+      "value": 620
+    },
+    {
+      "player_slug": "arizona-cardinals-dst",
+      "player_name": "Arizona Cardinals DST",
+      "pos": "DST",
+      "value": 309
+    },
+    {
+      "player_slug": "arvell-reese",
+      "player_name": "Arvell Reese",
+      "pos": "LB",
+      "value": 5389
+    },
+    {
+      "player_slug": "asante-samuel-jr",
+      "player_name": "Asante Samuel Jr.",
+      "pos": "DB",
+      "value": 2575
+    },
+    {
+      "player_slug": "ashton-jeanty",
+      "player_name": "Ashton Jeanty",
+      "pos": "RB",
+      "value": 8100
+    },
+    {
+      "player_slug": "athan-kaliakmanis",
+      "player_name": "Athan Kaliakmanis",
+      "pos": "QB",
+      "value": 1638
+    },
+    {
+      "player_slug": "atlanta-falcons-dst",
+      "player_name": "Atlanta Falcons DST",
+      "pos": "DST",
+      "value": 391
+    },
+    {
+      "player_slug": "audric-estime",
+      "player_name": "Audric Estime",
+      "pos": "RB",
+      "value": 3090
+    },
+    {
+      "player_slug": "austin-ekeler",
+      "player_name": "Austin Ekeler",
+      "pos": "RB",
+      "value": 647
+    },
+    {
+      "player_slug": "austin-hooper",
+      "player_name": "Austin Hooper",
+      "pos": "TE",
+      "value": 293
+    },
+    {
+      "player_slug": "avieon-terrell",
+      "player_name": "Avieon Terrell",
+      "pos": "DB",
+      "value": 2737
+    },
+    {
+      "player_slug": "azeez-al-shaair",
+      "player_name": "Azeez Al-Shaair",
+      "pos": "LB",
+      "value": 2251
+    },
+    {
+      "player_slug": "azeez-ojulari",
+      "player_name": "Azeez Ojulari",
+      "pos": "DL",
+      "value": 3605
+    },
+    {
+      "player_slug": "azur-kamara",
+      "player_name": "Azur Kamara",
+      "pos": "LB",
+      "value": 515
+    },
+    {
+      "player_slug": "bailey-zappe",
+      "player_name": "Bailey Zappe",
+      "pos": "QB",
+      "value": 515
+    },
+    {
+      "player_slug": "baker-mayfield",
+      "player_name": "Baker Mayfield",
+      "pos": "QB",
+      "value": 5168
+    },
+    {
+      "player_slug": "baltimore-ravens-dst",
+      "player_name": "Baltimore Ravens DST",
+      "pos": "DST",
+      "value": 659
+    },
+    {
+      "player_slug": "barion-brown",
+      "player_name": "Barion Brown",
+      "pos": "WR",
+      "value": 1879
+    },
+    {
+      "player_slug": "ben-sinnott",
+      "player_name": "Ben Sinnott",
+      "pos": "TE",
+      "value": 2668
+    },
+    {
+      "player_slug": "bhayshul-tuten",
+      "player_name": "Bhayshul Tuten",
+      "pos": "RB",
+      "value": 5800
+    },
+    {
+      "player_slug": "bijan-robinson",
+      "player_name": "Bijan Robinson",
+      "pos": "RB",
+      "value": 9999
+    },
+    {
+      "player_slug": "bilal-nichols",
+      "player_name": "Bilal Nichols",
+      "pos": "DL",
+      "value": 674
+    },
+    {
+      "player_slug": "bj-ojulari",
+      "player_name": "BJ Ojulari",
+      "pos": "DL",
+      "value": 2884
+    },
+    {
+      "player_slug": "blake-bell",
+      "player_name": "Blake Bell",
+      "pos": "TE",
+      "value": 114
+    },
+    {
+      "player_slug": "blake-corum",
+      "player_name": "Blake Corum",
+      "pos": "RB",
+      "value": 4096
+    },
+    {
+      "player_slug": "blake-martinez",
+      "player_name": "Blake Martinez",
+      "pos": "LB",
+      "value": 473
+    },
+    {
+      "player_slug": "bo-melton",
+      "player_name": "Bo Melton",
+      "pos": "WR",
+      "value": 412
+    },
+    {
+      "player_slug": "bo-nix",
+      "player_name": "Bo Nix",
+      "pos": "QB",
+      "value": 6291
+    },
+    {
+      "player_slug": "bobby-wagner",
+      "player_name": "Bobby Wagner",
+      "pos": "LB",
+      "value": 329
+    },
+    {
+      "player_slug": "boogie-basham",
+      "player_name": "Boogie Basham",
+      "pos": "DL",
+      "value": 824
+    },
+    {
+      "player_slug": "boston-scott",
+      "player_name": "Boston Scott",
+      "pos": "RB",
+      "value": 100
+    },
+    {
+      "player_slug": "braden-fiske",
+      "player_name": "Braden Fiske",
+      "pos": "DL",
+      "value": 3090
+    },
+    {
+      "player_slug": "brady-cook",
+      "player_name": "Brady Cook",
+      "pos": "QB",
+      "value": 789
+    },
+    {
+      "player_slug": "braelon-allen",
+      "player_name": "Braelon Allen",
+      "pos": "RB",
+      "value": 4635
+    },
+    {
+      "player_slug": "brandin-cooks",
+      "player_name": "Brandin Cooks",
+      "pos": "WR",
+      "value": 154
+    },
+    {
+      "player_slug": "brandon-aiyuk",
+      "player_name": "Brandon Aiyuk",
+      "pos": "WR",
+      "value": 3280
+    },
+    {
+      "player_slug": "brandon-aubrey",
+      "player_name": "Brandon Aubrey",
+      "pos": "K",
+      "value": 567
+    },
+    {
+      "player_slug": "brandon-cisse",
+      "player_name": "Brandon Cisse",
+      "pos": "DB",
+      "value": 2672
+    },
+    {
+      "player_slug": "brandon-copeland",
+      "player_name": "Brandon Copeland",
+      "pos": "LB",
+      "value": 123
+    },
+    {
+      "player_slug": "brandon-graham",
+      "player_name": "Brandon Graham",
+      "pos": "DL",
+      "value": 185
+    },
+    {
+      "player_slug": "brandon-jordan",
+      "player_name": "Brandon Jordan",
+      "pos": "DL",
+      "value": 1236
+    },
+    {
+      "player_slug": "brandon-williams",
+      "player_name": "Brandon Williams",
+      "pos": "DL",
+      "value": 93
+    },
+    {
+      "player_slug": "brashard-smith",
+      "player_name": "Brashard Smith",
+      "pos": "RB",
+      "value": 2525
+    },
+    {
+      "player_slug": "braxton-berrios",
+      "player_name": "Braxton Berrios",
+      "pos": "WR",
+      "value": 181
+    },
+    {
+      "player_slug": "brayden-willis",
+      "player_name": "Brayden Willis",
+      "pos": "TE",
+      "value": 515
+    },
+    {
+      "player_slug": "breece-hall",
+      "player_name": "Breece Hall",
+      "pos": "RB",
+      "value": 5800
+    },
+    {
+      "player_slug": "brendan-sorsby",
+      "player_name": "Brendan Sorsby",
+      "pos": "QB",
+      "value": 525
+    },
+    {
+      "player_slug": "brenen-thompson",
+      "player_name": "Brenen Thompson",
+      "pos": "WR",
+      "value": 2060
+    },
+    {
+      "player_slug": "brenton-cox-jr",
+      "player_name": "Brenton Cox Jr.",
+      "pos": "DL",
+      "value": 1545
+    },
+    {
+      "player_slug": "brenton-strange",
+      "player_name": "Brenton Strange",
+      "pos": "TE",
+      "value": 3796
+    },
+    {
+      "player_slug": "breshad-perriman",
+      "player_name": "Breshad Perriman",
+      "pos": "WR",
+      "value": 115
+    },
+    {
+      "player_slug": "brett-rypien",
+      "player_name": "Brett Rypien",
+      "pos": "QB",
+      "value": 386
+    },
+    {
+      "player_slug": "brevin-jordan",
+      "player_name": "Brevin Jordan",
+      "pos": "TE",
+      "value": 1236
+    },
+    {
+      "player_slug": "brian-branch",
+      "player_name": "Brian Branch",
+      "pos": "DB",
+      "value": 3605
+    },
+    {
+      "player_slug": "brian-burns",
+      "player_name": "Brian Burns",
+      "pos": "DL",
+      "value": 3605
+    },
+    {
+      "player_slug": "brian-hoyer",
+      "player_name": "Brian Hoyer",
+      "pos": "QB",
+      "value": 58
+    },
+    {
+      "player_slug": "brian-robinson-jr",
+      "player_name": "Brian Robinson Jr.",
+      "pos": "RB",
+      "value": 3008
+    },
+    {
+      "player_slug": "brian-thomas-jr",
+      "player_name": "Brian Thomas Jr.",
+      "pos": "WR",
+      "value": 6300
+    },
+    {
+      "player_slug": "brock-bowers",
+      "player_name": "Brock Bowers",
+      "pos": "TE",
+      "value": 8838
+    },
+    {
+      "player_slug": "brock-purdy",
+      "player_name": "Brock Purdy",
+      "pos": "QB",
+      "value": 6375
+    },
+    {
+      "player_slug": "brock-wright",
+      "player_name": "Brock Wright",
+      "pos": "TE",
+      "value": 1854
+    },
+    {
+      "player_slug": "bryan-bresee",
+      "player_name": "Bryan Bresee",
+      "pos": "DL",
+      "value": 2575
+    },
+    {
+      "player_slug": "bryce-boettcher",
+      "player_name": "Bryce Boettcher",
+      "pos": "LB",
+      "value": 1133
+    },
+    {
+      "player_slug": "bryce-ford-wheaton",
+      "player_name": "Bryce Ford-Wheaton",
+      "pos": "WR",
+      "value": 721
+    },
+    {
+      "player_slug": "bryce-hall",
+      "player_name": "Bryce Hall",
+      "pos": "DB",
+      "value": 824
+    },
+    {
+      "player_slug": "bryce-huff",
+      "player_name": "Bryce Huff",
+      "pos": "DL",
+      "value": 1854
+    },
+    {
+      "player_slug": "bryce-lance",
+      "player_name": "Bryce Lance",
+      "pos": "WR",
+      "value": 1133
+    },
+    {
+      "player_slug": "bryce-young",
+      "player_name": "Bryce Young",
+      "pos": "QB",
+      "value": 4327
+    },
+    {
+      "player_slug": "brycen-hopkins",
+      "player_name": "Brycen Hopkins",
+      "pos": "TE",
+      "value": 412
+    },
+    {
+      "player_slug": "bub-means",
+      "player_name": "Bub Means",
+      "pos": "WR",
+      "value": 721
+    },
+    {
+      "player_slug": "bucky-irving",
+      "player_name": "Bucky Irving",
+      "pos": "RB",
+      "value": 5800
+    },
+    {
+      "player_slug": "bud-clark",
+      "player_name": "Bud Clark",
+      "pos": "DB",
+      "value": 2060
+    },
+    {
+      "player_slug": "budda-baker",
+      "player_name": "Budda Baker",
+      "pos": "DB",
+      "value": 2307
+    },
+    {
+      "player_slug": "buffalo-bills-dst",
+      "player_name": "Buffalo Bills DST",
+      "pos": "DST",
+      "value": 639
+    },
+    {
+      "player_slug": "byron-young",
+      "player_name": "Byron Young",
+      "pos": "DL",
+      "value": 2266
+    },
+    {
+      "player_slug": "c-j-gardner-johnson",
+      "player_name": "C.J. Gardner-Johnson",
+      "pos": "DB",
+      "value": 2575
+    },
+    {
+      "player_slug": "c-j-ham",
+      "player_name": "C.J. Ham",
+      "pos": "RB",
+      "value": 138
+    },
+    {
+      "player_slug": "c-j-henderson-jr",
+      "player_name": "C.J. Henderson Jr.",
+      "pos": "DB",
+      "value": 1236
+    },
+    {
+      "player_slug": "c-j-stroud",
+      "player_name": "C.J. Stroud",
+      "pos": "QB",
+      "value": 6643
+    },
+    {
+      "player_slug": "c-j-williams",
+      "player_name": "C.J. Williams",
+      "pos": "WR",
+      "value": 1663
+    },
+    {
+      "player_slug": "cade-johnson",
+      "player_name": "Cade Johnson",
+      "pos": "WR",
+      "value": 206
+    },
+    {
+      "player_slug": "cade-klubnik",
+      "player_name": "Cade Klubnik",
+      "pos": "QB",
+      "value": 3008
+    },
+    {
+      "player_slug": "cade-mcdonald",
+      "player_name": "Cade McDonald",
+      "pos": "TE",
+      "value": 721
+    },
+    {
+      "player_slug": "cade-otton",
+      "player_name": "Cade Otton",
+      "pos": "TE",
+      "value": 2884
+    },
+    {
+      "player_slug": "caden-sterns",
+      "player_name": "Caden Sterns",
+      "pos": "DB",
+      "value": 1442
+    },
+    {
+      "player_slug": "cairo-santos",
+      "player_name": "Cairo Santos",
+      "pos": "K",
+      "value": 433
+    },
+    {
+      "player_slug": "calais-campbell",
+      "player_name": "Calais Campbell",
+      "pos": "DL",
+      "value": 139
+    },
+    {
+      "player_slug": "caleb-banks",
+      "player_name": "Caleb Banks",
+      "pos": "DL",
+      "value": 3914
+    },
+    {
+      "player_slug": "caleb-douglas",
+      "player_name": "Caleb Douglas",
+      "pos": "WR",
+      "value": 1854
+    },
+    {
+      "player_slug": "caleb-downs",
+      "player_name": "Caleb Downs",
+      "pos": "DB",
+      "value": 5451
+    },
+    {
+      "player_slug": "caleb-williams",
+      "player_name": "Caleb Williams",
+      "pos": "QB",
+      "value": 9216
+    },
+    {
+      "player_slug": "calen-bullock",
+      "player_name": "Calen Bullock",
+      "pos": "DB",
+      "value": 2472
+    },
+    {
+      "player_slug": "calvin-austin-iii",
+      "player_name": "Calvin Austin III",
+      "pos": "WR",
+      "value": 1931
+    },
+    {
+      "player_slug": "calvin-ridley",
+      "player_name": "Calvin Ridley",
+      "pos": "WR",
+      "value": 1896
+    },
+    {
+      "player_slug": "cam-akers",
+      "player_name": "Cam Akers",
+      "pos": "RB",
+      "value": 412
+    },
+    {
+      "player_slug": "cam-curl",
+      "player_name": "Cam Curl",
+      "pos": "LB",
+      "value": 2266
+    },
+    {
+      "player_slug": "cam-skattebo",
+      "player_name": "Cam Skattebo",
+      "pos": "RB",
+      "value": 6000
+    },
+    {
+      "player_slug": "cam-smith",
+      "player_name": "Cam Smith",
+      "pos": "DB",
+      "value": 2266
+    },
+    {
+      "player_slug": "cam-ward",
+      "player_name": "Cam Ward",
+      "pos": "QB",
+      "value": 5918
+    },
+    {
+      "player_slug": "cameron-heyward",
+      "player_name": "Cameron Heyward",
+      "pos": "DL",
+      "value": 332
+    },
+    {
+      "player_slug": "cameron-jordan",
+      "player_name": "Cameron Jordan",
+      "pos": "DL",
+      "value": 390
+    },
+    {
+      "player_slug": "carl-granderson",
+      "player_name": "Carl Granderson",
+      "pos": "DL",
+      "value": 1180
+    },
+    {
+      "player_slug": "carl-lawson",
+      "player_name": "Carl Lawson",
+      "pos": "DL",
+      "value": 1324
+    },
+    {
+      "player_slug": "carl-nassib",
+      "player_name": "Carl Nassib",
+      "pos": "DL",
+      "value": 294
+    },
+    {
+      "player_slug": "carlton-davis-iii",
+      "player_name": "Carlton Davis III",
+      "pos": "DB",
+      "value": 2163
+    },
+    {
+      "player_slug": "carnell-tate",
+      "player_name": "Carnell Tate",
+      "pos": "WR",
+      "value": 7027
+    },
+    {
+      "player_slug": "carolina-panthers-dst",
+      "player_name": "Carolina Panthers DST",
+      "pos": "DST",
+      "value": 247
+    },
+    {
+      "player_slug": "carson-beck",
+      "player_name": "Carson Beck",
+      "pos": "QB",
+      "value": 4705
+    },
+    {
+      "player_slug": "carson-schwesinger",
+      "player_name": "Carson Schwesinger",
+      "pos": "LB",
+      "value": 4378
+    },
+    {
+      "player_slug": "carson-wentz",
+      "player_name": "Carson Wentz",
+      "pos": "QB",
+      "value": 458
+    },
+    {
+      "player_slug": "case-keenum",
+      "player_name": "Case Keenum",
+      "pos": "QB",
+      "value": 112
+    },
+    {
+      "player_slug": "cashius-howell",
+      "player_name": "Cashius Howell",
+      "pos": "DL",
+      "value": 3090
+    },
+    {
+      "player_slug": "caullin-lacy",
+      "player_name": "Caullin Lacy",
+      "pos": "WR",
+      "value": 412
+    },
+    {
+      "player_slug": "cedric-gray",
+      "player_name": "Cedric Gray",
+      "pos": "LB",
+      "value": 2060
+    },
+    {
+      "player_slug": "cedric-tillman",
+      "player_name": "Cedric Tillman",
+      "pos": "WR",
+      "value": 2618
+    },
+    {
+      "player_slug": "ceedee-lamb",
+      "player_name": "CeeDee Lamb",
+      "pos": "WR",
+      "value": 7200
+    },
+    {
+      "player_slug": "chamarri-conner",
+      "player_name": "Chamarri Conner",
+      "pos": "DB",
+      "value": 2060
+    },
+    {
+      "player_slug": "charbel-dabire",
+      "player_name": "Charbel Dabire",
+      "pos": "RB",
+      "value": 1236
+    },
+    {
+      "player_slug": "charles-harris",
+      "player_name": "Charles Harris",
+      "pos": "DL",
+      "value": 776
+    },
+    {
+      "player_slug": "charles-omenihu",
+      "player_name": "Charles Omenihu",
+      "pos": "DL",
+      "value": 1236
+    },
+    {
+      "player_slug": "charles-snowden",
+      "player_name": "Charles Snowden",
+      "pos": "LB",
+      "value": 721
+    },
+    {
+      "player_slug": "charlie-jones",
+      "player_name": "Charlie Jones",
+      "pos": "WR",
+      "value": 515
+    },
+    {
+      "player_slug": "charlie-kolar",
+      "player_name": "Charlie Kolar",
+      "pos": "TE",
+      "value": 721
+    },
+    {
+      "player_slug": "charvarius-ward",
+      "player_name": "Charvarius Ward",
+      "pos": "DB",
+      "value": 2357
+    },
+    {
+      "player_slug": "chase-brown",
+      "player_name": "Chase Brown",
+      "pos": "RB",
+      "value": 6355
+    },
+    {
+      "player_slug": "chase-claypool",
+      "player_name": "Chase Claypool",
+      "pos": "WR",
+      "value": 309
+    },
+    {
+      "player_slug": "chase-edmonds",
+      "player_name": "Chase Edmonds",
+      "pos": "RB",
+      "value": 261
+    },
+    {
+      "player_slug": "chase-young",
+      "player_name": "Chase Young",
+      "pos": "DL",
+      "value": 2884
+    },
+    {
+      "player_slug": "chazz-surratt",
+      "player_name": "Chazz Surratt",
+      "pos": "LB",
+      "value": 797
+    },
+    {
+      "player_slug": "chicago-bears-dst",
+      "player_name": "Chicago Bears DST",
+      "pos": "DST",
+      "value": 443
+    },
+    {
+      "player_slug": "chidobe-awuzie",
+      "player_name": "Chidobe Awuzie",
+      "pos": "DB",
+      "value": 876
+    },
+    {
+      "player_slug": "chig-okonkwo",
+      "player_name": "Chig Okonkwo",
+      "pos": "TE",
+      "value": 3452
+    },
+    {
+      "player_slug": "chimere-dike",
+      "player_name": "Chimere Dike",
+      "pos": "WR",
+      "value": 3254
+    },
+    {
+      "player_slug": "chop-robinson",
+      "player_name": "Chop Robinson",
+      "pos": "DL",
+      "value": 3090
+    },
+    {
+      "player_slug": "chosen-anderson",
+      "player_name": "Chosen Anderson",
+      "pos": "WR",
+      "value": 193
+    },
+    {
+      "player_slug": "chris-banjo",
+      "player_name": "Chris Banjo",
+      "pos": "DB",
+      "value": 106
+    },
+    {
+      "player_slug": "chris-bell",
+      "player_name": "Chris Bell",
+      "pos": "WR",
+      "value": 3790
+    },
+    {
+      "player_slug": "chris-board",
+      "player_name": "Chris Board",
+      "pos": "LB",
+      "value": 534
+    },
+    {
+      "player_slug": "chris-boswell",
+      "player_name": "Chris Boswell",
+      "pos": "K",
+      "value": 453
+    },
+    {
+      "player_slug": "chris-brazzell-ii",
+      "player_name": "Chris Brazzell II",
+      "pos": "WR",
+      "value": 3234
+    },
+    {
+      "player_slug": "chris-brooks",
+      "player_name": "Chris Brooks",
+      "pos": "RB",
+      "value": 1030
+    },
+    {
+      "player_slug": "chris-godwin",
+      "player_name": "Chris Godwin",
+      "pos": "WR",
+      "value": 3308
+    },
+    {
+      "player_slug": "chris-johnson",
+      "player_name": "Chris Johnson",
+      "pos": "DB",
+      "value": 3474
+    },
+    {
+      "player_slug": "chris-jones",
+      "player_name": "Chris Jones",
+      "pos": "DL",
+      "value": 3136
+    },
+    {
+      "player_slug": "chris-mcclellan",
+      "player_name": "Chris McClellan",
+      "pos": "DL",
+      "value": 1751
+    },
+    {
+      "player_slug": "chris-moore",
+      "player_name": "Chris Moore",
+      "pos": "WR",
+      "value": 150
+    },
+    {
+      "player_slug": "chris-olave",
+      "player_name": "Chris Olave",
+      "pos": "WR",
+      "value": 6800
+    },
+    {
+      "player_slug": "chris-rodriguez-jr",
+      "player_name": "Chris Rodriguez Jr.",
+      "pos": "RB",
+      "value": 2562
+    },
+    {
+      "player_slug": "chris-streveler",
+      "player_name": "Chris Streveler",
+      "pos": "QB",
+      "value": 258
+    },
+    {
+      "player_slug": "christen-miller",
+      "player_name": "Christen Miller",
+      "pos": "DL",
+      "value": 3001
+    },
+    {
+      "player_slug": "christian-barmore",
+      "player_name": "Christian Barmore",
+      "pos": "DL",
+      "value": 2266
+    },
+    {
+      "player_slug": "christian-gonzalez",
+      "player_name": "Christian Gonzalez",
+      "pos": "DB",
+      "value": 4635
+    },
+    {
+      "player_slug": "christian-harris",
+      "player_name": "Christian Harris",
+      "pos": "LB",
+      "value": 2884
+    },
+    {
+      "player_slug": "christian-kirk",
+      "player_name": "Christian Kirk",
+      "pos": "WR",
+      "value": 586
+    },
+    {
+      "player_slug": "christian-kirksey",
+      "player_name": "Christian Kirksey",
+      "pos": "LB",
+      "value": 278
+    },
+    {
+      "player_slug": "christian-mccaffrey",
+      "player_name": "Christian McCaffrey",
+      "pos": "RB",
+      "value": 4885
+    },
+    {
+      "player_slug": "christian-watson",
+      "player_name": "Christian Watson",
+      "pos": "WR",
+      "value": 4736
+    },
+    {
+      "player_slug": "chuba-hubbard",
+      "player_name": "Chuba Hubbard",
+      "pos": "RB",
+      "value": 4364
+    },
+    {
+      "player_slug": "cincinnati-bengals-dst",
+      "player_name": "Cincinnati Bengals DST",
+      "pos": "DST",
+      "value": 381
+    },
+    {
+      "player_slug": "cj-allen",
+      "player_name": "CJ Allen",
+      "pos": "LB",
+      "value": 3848
+    },
+    {
+      "player_slug": "cj-uzomah",
+      "player_name": "CJ Uzomah",
+      "pos": "TE",
+      "value": 257
+    },
+    {
+      "player_slug": "clayton-tune",
+      "player_name": "Clayton Tune",
+      "pos": "QB",
+      "value": 515
+    },
+    {
+      "player_slug": "clelin-ferrell",
+      "player_name": "Clelin Ferrell",
+      "pos": "DL",
+      "value": 505
+    },
+    {
+      "player_slug": "cleveland-browns-dst",
+      "player_name": "Cleveland Browns DST",
+      "pos": "DST",
+      "value": 577
+    },
+    {
+      "player_slug": "clyde-edwards-helaire",
+      "player_name": "Clyde Edwards-Helaire",
+      "pos": "RB",
+      "value": 618
+    },
+    {
+      "player_slug": "coby-bryant",
+      "player_name": "Coby Bryant",
+      "pos": "DB",
+      "value": 824
+    },
+    {
+      "player_slug": "cody-barton",
+      "player_name": "Cody Barton",
+      "pos": "LB",
+      "value": 976
+    },
+    {
+      "player_slug": "cody-latimer",
+      "player_name": "Cody Latimer",
+      "pos": "WR",
+      "value": 70
+    },
+    {
+      "player_slug": "cody-schrader",
+      "player_name": "Cody Schrader",
+      "pos": "RB",
+      "value": 927
+    },
+    {
+      "player_slug": "cody-thompson",
+      "player_name": "Cody Thompson",
+      "pos": "WR",
+      "value": 139
+    },
+    {
+      "player_slug": "colbie-young",
+      "player_name": "Colbie Young",
+      "pos": "WR",
+      "value": 1236
+    },
+    {
+      "player_slug": "colby-parkinson",
+      "player_name": "Colby Parkinson",
+      "pos": "TE",
+      "value": 2426
+    },
+    {
+      "player_slug": "cole-kmet",
+      "player_name": "Cole Kmet",
+      "pos": "TE",
+      "value": 2884
+    },
+    {
+      "player_slug": "cole-payton",
+      "player_name": "Cole Payton",
+      "pos": "QB",
+      "value": 2016
+    },
+    {
+      "player_slug": "cole-turner",
+      "player_name": "Cole Turner",
+      "pos": "TE",
+      "value": 515
+    },
+    {
+      "player_slug": "colston-loveland",
+      "player_name": "Colston Loveland",
+      "pos": "TE",
+      "value": 7261
+    },
+    {
+      "player_slug": "colton-hood",
+      "player_name": "Colton Hood",
+      "pos": "DB",
+      "value": 3079
+    },
+    {
+      "player_slug": "connor-heyward",
+      "player_name": "Connor Heyward",
+      "pos": "TE",
+      "value": 309
+    },
+    {
+      "player_slug": "cooper-kupp",
+      "player_name": "Cooper Kupp",
+      "pos": "WR",
+      "value": 1498
+    },
+    {
+      "player_slug": "cordarrelle-patterson",
+      "player_name": "Cordarrelle Patterson",
+      "pos": "RB",
+      "value": 53
+    },
+    {
+      "player_slug": "corey-davis",
+      "player_name": "Corey Davis",
+      "pos": "WR",
+      "value": 171
+    },
+    {
+      "player_slug": "corey-peters",
+      "player_name": "Corey Peters",
+      "pos": "DL",
+      "value": 93
+    },
+    {
+      "player_slug": "cory-littleton",
+      "player_name": "Cory Littleton",
+      "pos": "LB",
+      "value": 620
+    },
+    {
+      "player_slug": "courtland-sutton",
+      "player_name": "Courtland Sutton",
+      "pos": "WR",
+      "value": 3578
+    },
+    {
+      "player_slug": "craig-reynolds",
+      "player_name": "Craig Reynolds",
+      "pos": "RB",
+      "value": 353
+    },
+    {
+      "player_slug": "curtis-bolton",
+      "player_name": "Curtis Bolton",
+      "pos": "LB",
+      "value": 550
+    },
+    {
+      "player_slug": "cyrus-allen",
+      "player_name": "Cyrus Allen",
+      "pos": "WR",
+      "value": 1236
+    },
+    {
+      "player_slug": "d-andre-swift",
+      "player_name": "D'Andre Swift",
+      "pos": "RB",
+      "value": 5000
+    },
+    {
+      "player_slug": "d-angelo-ponds",
+      "player_name": "D'Angelo Ponds",
+      "pos": "DB",
+      "value": 2628
+    },
+    {
+      "player_slug": "d-j-moore",
+      "player_name": "D.J. Moore",
+      "pos": "WR",
+      "value": 4798
+    },
+    {
+      "player_slug": "d-onta-foreman",
+      "player_name": "D'Onta Foreman",
+      "pos": "RB",
+      "value": 175
+    },
+    {
+      "player_slug": "dadrion-taylor-demerson",
+      "player_name": "Dadrion Taylor-Demerson",
+      "pos": "DB",
+      "value": 2060
+    },
+    {
+      "player_slug": "daiyan-henley",
+      "player_name": "Daiyan Henley",
+      "pos": "LB",
+      "value": 1854
+    },
+    {
+      "player_slug": "dak-prescott",
+      "player_name": "Dak Prescott",
+      "pos": "QB",
+      "value": 5260
+    },
+    {
+      "player_slug": "dakota-allen",
+      "player_name": "Dakota Allen",
+      "pos": "LB",
+      "value": 637
+    },
+    {
+      "player_slug": "dallas-cowboys-dst",
+      "player_name": "Dallas Cowboys DST",
+      "pos": "DST",
+      "value": 700
+    },
+    {
+      "player_slug": "dallas-goedert",
+      "player_name": "Dallas Goedert",
+      "pos": "TE",
+      "value": 3627
+    },
+    {
+      "player_slug": "dallas-turner",
+      "player_name": "Dallas Turner",
+      "pos": "DL",
+      "value": 3914
+    },
+    {
+      "player_slug": "dalton-kincaid",
+      "player_name": "Dalton Kincaid",
+      "pos": "TE",
+      "value": 5100
+    },
+    {
+      "player_slug": "dalton-schultz",
+      "player_name": "Dalton Schultz",
+      "pos": "TE",
+      "value": 2706
+    },
+    {
+      "player_slug": "dalvin-cook",
+      "player_name": "Dalvin Cook",
+      "pos": "RB",
+      "value": 164
+    },
+    {
+      "player_slug": "dalvin-tomlinson",
+      "player_name": "Dalvin Tomlinson",
+      "pos": "DL",
+      "value": 637
+    },
+    {
+      "player_slug": "damar-hamlin",
+      "player_name": "Damar Hamlin",
+      "pos": "DB",
+      "value": 1545
+    },
+    {
+      "player_slug": "damarea-crockett",
+      "player_name": "Damarea Crockett",
+      "pos": "RB",
+      "value": 295
+    },
+    {
+      "player_slug": "dameon-pierce",
+      "player_name": "Dameon Pierce",
+      "pos": "RB",
+      "value": 2060
+    },
+    {
+      "player_slug": "damien-martinez",
+      "player_name": "Damien Martinez",
+      "pos": "RB",
+      "value": 2575
+    },
+    {
+      "player_slug": "damien-wilson",
+      "player_name": "Damien Wilson",
+      "pos": "LB",
+      "value": 297
+    },
+    {
+      "player_slug": "damiere-byrd",
+      "player_name": "Damiere Byrd",
+      "pos": "WR",
+      "value": 109
+    },
+    {
+      "player_slug": "damon-hazelton",
+      "player_name": "Damon Hazelton",
+      "pos": "WR",
+      "value": 199
+    },
+    {
+      "player_slug": "damontae-kazee",
+      "player_name": "Damontae Kazee",
+      "pos": "DB",
+      "value": 300
+    },
+    {
+      "player_slug": "dane-jackson",
+      "player_name": "Dane Jackson",
+      "pos": "DB",
+      "value": 688
+    },
+    {
+      "player_slug": "dani-dennis-sutton",
+      "player_name": "Dani Dennis-Sutton",
+      "pos": "DL",
+      "value": 2923
+    },
+    {
+      "player_slug": "daniel-bellinger",
+      "player_name": "Daniel Bellinger",
+      "pos": "TE",
+      "value": 1913
+    },
+    {
+      "player_slug": "daniel-carlson",
+      "player_name": "Daniel Carlson",
+      "pos": "K",
+      "value": 474
+    },
+    {
+      "player_slug": "daniel-jones",
+      "player_name": "Daniel Jones",
+      "pos": "QB",
+      "value": 5401
+    },
+    {
+      "player_slug": "danielle-hunter",
+      "player_name": "Danielle Hunter",
+      "pos": "DL",
+      "value": 1854
+    },
+    {
+      "player_slug": "danny-gray",
+      "player_name": "Danny Gray",
+      "pos": "WR",
+      "value": 412
+    },
+    {
+      "player_slug": "danny-striggow",
+      "player_name": "Danny Striggow",
+      "pos": "LB",
+      "value": 618
+    },
+    {
+      "player_slug": "dare-ogunbowale",
+      "player_name": "Dare Ogunbowale",
+      "pos": "RB",
+      "value": 223
+    },
+    {
+      "player_slug": "darious-williams",
+      "player_name": "Darious Williams",
+      "pos": "DB",
+      "value": 510
+    },
+    {
+      "player_slug": "darius-alexander",
+      "player_name": "Darius Alexander",
+      "pos": "DL",
+      "value": 1854
+    },
+    {
+      "player_slug": "darius-leonard",
+      "player_name": "Darius Leonard",
+      "pos": "LB",
+      "value": 100
+    },
+    {
+      "player_slug": "darius-phillips",
+      "player_name": "Darius Phillips",
+      "pos": "DB",
+      "value": 353
+    },
+    {
+      "player_slug": "darius-philon",
+      "player_name": "Darius Philon",
+      "pos": "DL",
+      "value": 316
+    },
+    {
+      "player_slug": "darius-robinson",
+      "player_name": "Darius Robinson",
+      "pos": "DL",
+      "value": 2678
+    },
+    {
+      "player_slug": "darius-slay",
+      "player_name": "Darius Slay",
+      "pos": "DB",
+      "value": 581
+    },
+    {
+      "player_slug": "darius-slayton",
+      "player_name": "Darius Slayton",
+      "pos": "WR",
+      "value": 594
+    },
+    {
+      "player_slug": "darnell-mooney",
+      "player_name": "Darnell Mooney",
+      "pos": "WR",
+      "value": 2629
+    },
+    {
+      "player_slug": "darnell-savage",
+      "player_name": "Darnell Savage",
+      "pos": "DB",
+      "value": 1535
+    },
+    {
+      "player_slug": "darnell-washington",
+      "player_name": "Darnell Washington",
+      "pos": "TE",
+      "value": 3090
+    },
+    {
+      "player_slug": "daron-payne",
+      "player_name": "Daron Payne",
+      "pos": "DL",
+      "value": 2020
+    },
+    {
+      "player_slug": "darren-waller",
+      "player_name": "Darren Waller",
+      "pos": "TE",
+      "value": 580
+    },
+    {
+      "player_slug": "darrynton-evans",
+      "player_name": "Darrynton Evans",
+      "pos": "RB",
+      "value": 409
+    },
+    {
+      "player_slug": "daurice-fountain",
+      "player_name": "Daurice Fountain",
+      "pos": "WR",
+      "value": 183
+    },
+    {
+      "player_slug": "davante-adams",
+      "player_name": "Davante Adams",
+      "pos": "WR",
+      "value": 3061
+    },
+    {
+      "player_slug": "david-bailey",
+      "player_name": "David Bailey",
+      "pos": "DL",
+      "value": 5150
+    },
+    {
+      "player_slug": "david-bell",
+      "player_name": "David Bell",
+      "pos": "WR",
+      "value": 515
+    },
+    {
+      "player_slug": "david-long-jr",
+      "player_name": "David Long Jr.",
+      "pos": "LB",
+      "value": 970
+    },
+    {
+      "player_slug": "david-montgomery",
+      "player_name": "David Montgomery",
+      "pos": "RB",
+      "value": 4010
+    },
+    {
+      "player_slug": "david-moore",
+      "player_name": "David Moore",
+      "pos": "WR",
+      "value": 309
+    },
+    {
+      "player_slug": "david-njoku",
+      "player_name": "David Njoku",
+      "pos": "TE",
+      "value": 3100
+    },
+    {
+      "player_slug": "david-ojabo",
+      "player_name": "David Ojabo",
+      "pos": "DL",
+      "value": 1854
+    },
+    {
+      "player_slug": "david-onyemata",
+      "player_name": "David Onyemata",
+      "pos": "DL",
+      "value": 496
+    },
+    {
+      "player_slug": "davion-davis",
+      "player_name": "Davion Davis",
+      "pos": "WR",
+      "value": 195
+    },
+    {
+      "player_slug": "davion-taylor",
+      "player_name": "Davion Taylor",
+      "pos": "LB",
+      "value": 824
+    },
+    {
+      "player_slug": "davis-allen",
+      "player_name": "Davis Allen",
+      "pos": "TE",
+      "value": 1236
+    },
+    {
+      "player_slug": "davis-mills",
+      "player_name": "Davis Mills",
+      "pos": "QB",
+      "value": 386
+    },
+    {
+      "player_slug": "davis-webb",
+      "player_name": "Davis Webb",
+      "pos": "QB",
+      "value": 386
+    },
+    {
+      "player_slug": "davison-igbinosun",
+      "player_name": "Davison Igbinosun",
+      "pos": "DB",
+      "value": 2116
+    },
+    {
+      "player_slug": "davon-hamilton",
+      "player_name": "DaVon Hamilton",
+      "pos": "DL",
+      "value": 1188
+    },
+    {
+      "player_slug": "dawson-knox",
+      "player_name": "Dawson Knox",
+      "pos": "TE",
+      "value": 2219
+    },
+    {
+      "player_slug": "dax-hill",
+      "player_name": "Dax Hill",
+      "pos": "DB",
+      "value": 2060
+    },
+    {
+      "player_slug": "dax-milne",
+      "player_name": "Dax Milne",
+      "pos": "WR",
+      "value": 309
+    },
+    {
+      "player_slug": "daylen-baldwin",
+      "player_name": "Daylen Baldwin",
+      "pos": "WR",
+      "value": 206
+    },
+    {
+      "player_slug": "daylen-everette",
+      "player_name": "Daylen Everette",
+      "pos": "DB",
+      "value": 1594
+    },
+    {
+      "player_slug": "dayo-odeyingbo",
+      "player_name": "Dayo Odeyingbo",
+      "pos": "DL",
+      "value": 2266
+    },
+    {
+      "player_slug": "dazz-newsome",
+      "player_name": "Dazz Newsome",
+      "pos": "WR",
+      "value": 206
+    },
+    {
+      "player_slug": "de-von-achane",
+      "player_name": "De'Von Achane",
+      "pos": "RB",
+      "value": 7200
+    },
+    {
+      "player_slug": "de-vondre-campbell",
+      "player_name": "De'Vondre Campbell",
+      "pos": "LB",
+      "value": 899
+    },
+    {
+      "player_slug": "de-zhaun-stribling",
+      "player_name": "De'Zhaun Stribling",
+      "pos": "WR",
+      "value": 3800
+    },
+    {
+      "player_slug": "dean-lowry",
+      "player_name": "Dean Lowry",
+      "pos": "DL",
+      "value": 489
+    },
+    {
+      "player_slug": "dean-marlowe",
+      "player_name": "Dean Marlowe",
+      "pos": "DB",
+      "value": 275
+    },
+    {
+      "player_slug": "deandre-carter",
+      "player_name": "DeAndre Carter",
+      "pos": "WR",
+      "value": 147
+    },
+    {
+      "player_slug": "deandre-hopkins",
+      "player_name": "DeAndre Hopkins",
+      "pos": "WR",
+      "value": 273
+    },
+    {
+      "player_slug": "dee-eskridge",
+      "player_name": "Dee Eskridge",
+      "pos": "WR",
+      "value": 100
+    },
+    {
+      "player_slug": "deebo-samuel",
+      "player_name": "Deebo Samuel",
+      "pos": "WR",
+      "value": 2867
+    },
+    {
+      "player_slug": "deforest-buckner",
+      "player_name": "DeForest Buckner",
+      "pos": "DL",
+      "value": 1444
+    },
+    {
+      "player_slug": "deion-burks",
+      "player_name": "Deion Burks",
+      "pos": "WR",
+      "value": 1545
+    },
+    {
+      "player_slug": "deion-jones",
+      "player_name": "Deion Jones",
+      "pos": "LB",
+      "value": 674
+    },
+    {
+      "player_slug": "deionte-thompson",
+      "player_name": "Deionte Thompson",
+      "pos": "DB",
+      "value": 698
+    },
+    {
+      "player_slug": "demarcus-robinson",
+      "player_name": "Demarcus Robinson",
+      "pos": "WR",
+      "value": 334
+    },
+    {
+      "player_slug": "demarcus-walker",
+      "player_name": "DeMarcus Walker",
+      "pos": "DL",
+      "value": 418
+    },
+    {
+      "player_slug": "demario-davis",
+      "player_name": "Demario Davis",
+      "pos": "LB",
+      "value": 464
+    },
+    {
+      "player_slug": "demario-douglas",
+      "player_name": "Demario Douglas",
+      "pos": "WR",
+      "value": 2604
+    },
+    {
+      "player_slug": "demarvin-leal",
+      "player_name": "Demarvin Leal",
+      "pos": "DB",
+      "value": 1236
+    },
+    {
+      "player_slug": "demond-claiborne",
+      "player_name": "Demond Claiborne",
+      "pos": "RB",
+      "value": 1880
+    },
+    {
+      "player_slug": "dennis-houston",
+      "player_name": "Dennis Houston",
+      "pos": "WR",
+      "value": 206
+    },
+    {
+      "player_slug": "denver-broncos-dst",
+      "player_name": "Denver Broncos DST",
+      "pos": "DST",
+      "value": 402
+    },
+    {
+      "player_slug": "denzel-boston",
+      "player_name": "Denzel Boston",
+      "pos": "WR",
+      "value": 4572
+    },
+    {
+      "player_slug": "denzel-perryman",
+      "player_name": "Denzel Perryman",
+      "pos": "LB",
+      "value": 501
+    },
+    {
+      "player_slug": "denzel-ward",
+      "player_name": "Denzel Ward",
+      "pos": "DB",
+      "value": 2525
+    },
+    {
+      "player_slug": "deommodore-lenoir",
+      "player_name": "Deommodore Lenoir",
+      "pos": "DB",
+      "value": 2266
+    },
+    {
+      "player_slug": "deon-jackson",
+      "player_name": "Deon Jackson",
+      "pos": "RB",
+      "value": 515
+    },
+    {
+      "player_slug": "derek-rivers",
+      "player_name": "Derek Rivers",
+      "pos": "DL",
+      "value": 324
+    },
+    {
+      "player_slug": "derek-stingley-jr",
+      "player_name": "Derek Stingley Jr.",
+      "pos": "DB",
+      "value": 3605
+    },
+    {
+      "player_slug": "derrick-brown",
+      "player_name": "Derrick Brown",
+      "pos": "DL",
+      "value": 2060
+    },
+    {
+      "player_slug": "derrick-gore",
+      "player_name": "Derrick Gore",
+      "pos": "RB",
+      "value": 156
+    },
+    {
+      "player_slug": "derrick-harmon",
+      "player_name": "Derrick Harmon",
+      "pos": "DL",
+      "value": 2266
+    },
+    {
+      "player_slug": "derrick-henry",
+      "player_name": "Derrick Henry",
+      "pos": "RB",
+      "value": 3505
+    },
+    {
+      "player_slug": "derrick-moore",
+      "player_name": "Derrick Moore",
+      "pos": "DL",
+      "value": 2884
+    },
+    {
+      "player_slug": "derwin-james",
+      "player_name": "Derwin James",
+      "pos": "DB",
+      "value": 4017
+    },
+    {
+      "player_slug": "deshaun-watson",
+      "player_name": "Deshaun Watson",
+      "pos": "QB",
+      "value": 1030
+    },
+    {
+      "player_slug": "desmond-reid",
+      "player_name": "Desmond Reid",
+      "pos": "RB",
+      "value": 515
+    },
+    {
+      "player_slug": "detroit-lions-dst",
+      "player_name": "Detroit Lions DST",
+      "pos": "DST",
+      "value": 412
+    },
+    {
+      "player_slug": "devaughn-vele",
+      "player_name": "Devaughn Vele",
+      "pos": "WR",
+      "value": 2053
+    },
+    {
+      "player_slug": "deven-thompkins",
+      "player_name": "Deven Thompkins",
+      "pos": "WR",
+      "value": 309
+    },
+    {
+      "player_slug": "devin-asiasi",
+      "player_name": "Devin Asiasi",
+      "pos": "TE",
+      "value": 618
+    },
+    {
+      "player_slug": "devin-duvernay",
+      "player_name": "Devin Duvernay",
+      "pos": "WR",
+      "value": 309
+    },
+    {
+      "player_slug": "devin-lloyd",
+      "player_name": "Devin Lloyd",
+      "pos": "LB",
+      "value": 2266
+    },
+    {
+      "player_slug": "devin-mccourty",
+      "player_name": "Devin McCourty",
+      "pos": "DB",
+      "value": 100
+    },
+    {
+      "player_slug": "devin-neal",
+      "player_name": "Devin Neal",
+      "pos": "RB",
+      "value": 2060
+    },
+    {
+      "player_slug": "devin-singletary",
+      "player_name": "Devin Singletary",
+      "pos": "RB",
+      "value": 1724
+    },
+    {
+      "player_slug": "devin-white",
+      "player_name": "Devin White",
+      "pos": "LB",
+      "value": 1545
+    },
+    {
+      "player_slug": "devion-cunningham",
+      "player_name": "Devion Cunningham",
+      "pos": "LB",
+      "value": 721
+    },
+    {
+      "player_slug": "devon-witherspoon",
+      "player_name": "Devon Witherspoon",
+      "pos": "DB",
+      "value": 5665
+    },
+    {
+      "player_slug": "devonta-smith",
+      "player_name": "DeVonta Smith",
+      "pos": "WR",
+      "value": 6200
+    },
+    {
+      "player_slug": "devontae-booker",
+      "player_name": "Devontae Booker",
+      "pos": "RB",
+      "value": 122
+    },
+    {
+      "player_slug": "devontez-walker",
+      "player_name": "Devontez Walker",
+      "pos": "WR",
+      "value": 2060
+    },
+    {
+      "player_slug": "dewayne-mcbride",
+      "player_name": "DeWayne McBride",
+      "pos": "RB",
+      "value": 1236
+    },
+    {
+      "player_slug": "dexter-lawrence",
+      "player_name": "Dexter Lawrence",
+      "pos": "DL",
+      "value": 2884
+    },
+    {
+      "player_slug": "dez-fitzpatrick",
+      "player_name": "Dez Fitzpatrick",
+      "pos": "WR",
+      "value": 309
+    },
+    {
+      "player_slug": "diego-pavia",
+      "player_name": "Diego Pavia",
+      "pos": "QB",
+      "value": 1061
+    },
+    {
+      "player_slug": "dillon-gabriel",
+      "player_name": "Dillon Gabriel",
+      "pos": "QB",
+      "value": 3238
+    },
+    {
+      "player_slug": "dillon-thieneman",
+      "player_name": "Dillon Thieneman",
+      "pos": "DB",
+      "value": 4073
+    },
+    {
+      "player_slug": "diontae-johnson",
+      "player_name": "Diontae Johnson",
+      "pos": "WR",
+      "value": 765
+    },
+    {
+      "player_slug": "diontae-spencer",
+      "player_name": "Diontae Spencer",
+      "pos": "DB",
+      "value": 201
+    },
+    {
+      "player_slug": "divine-deablo",
+      "player_name": "Divine Deablo",
+      "pos": "DB",
+      "value": 1030
+    },
+    {
+      "player_slug": "dj-chark",
+      "player_name": "DJ Chark",
+      "pos": "WR",
+      "value": 100
+    },
+    {
+      "player_slug": "dj-giddens",
+      "player_name": "DJ Giddens",
+      "pos": "RB",
+      "value": 2678
+    },
+    {
+      "player_slug": "dj-reed",
+      "player_name": "DJ Reed",
+      "pos": "DB",
+      "value": 2148
+    },
+    {
+      "player_slug": "dk-metcalf",
+      "player_name": "DK Metcalf",
+      "pos": "WR",
+      "value": 4633
+    },
+    {
+      "player_slug": "dominique-hampton",
+      "player_name": "Dominique Hampton",
+      "pos": "DB",
+      "value": 1236
+    },
+    {
+      "player_slug": "donald-parham-jr",
+      "player_name": "Donald Parham Jr.",
+      "pos": "TE",
+      "value": 515
+    },
+    {
+      "player_slug": "donovan-edwards",
+      "player_name": "Donovan Edwards",
+      "pos": "RB",
+      "value": 3296
+    },
+    {
+      "player_slug": "donovan-peoples-jones",
+      "player_name": "Donovan Peoples-Jones",
+      "pos": "WR",
+      "value": 412
+    },
+    {
+      "player_slug": "dont-a-hightower",
+      "player_name": "Dont'a Hightower",
+      "pos": "LB",
+      "value": 211
+    },
+    {
+      "player_slug": "dont-e-thornton-jr",
+      "player_name": "Dont'e Thornton Jr.",
+      "pos": "WR",
+      "value": 1545
+    },
+    {
+      "player_slug": "dontay-demus-jr",
+      "player_name": "Dontay Demus Jr.",
+      "pos": "WR",
+      "value": 515
+    },
+    {
+      "player_slug": "dontayvion-wicks",
+      "player_name": "Dontayvion Wicks",
+      "pos": "WR",
+      "value": 3298
+    },
+    {
+      "player_slug": "donte-jackson",
+      "player_name": "Donte Jackson",
+      "pos": "DB",
+      "value": 1091
+    },
+    {
+      "player_slug": "dontrell-hilliard",
+      "player_name": "Dontrell Hilliard",
+      "pos": "RB",
+      "value": 239
+    },
+    {
+      "player_slug": "dorian-singer",
+      "player_name": "Dorian Singer",
+      "pos": "WR",
+      "value": 618
+    },
+    {
+      "player_slug": "dorian-thompson-robinson",
+      "player_name": "Dorian Thompson-Robinson",
+      "pos": "QB",
+      "value": 1030
+    },
+    {
+      "player_slug": "drake-london",
+      "player_name": "Drake London",
+      "pos": "WR",
+      "value": 6900
+    },
+    {
+      "player_slug": "drake-maye",
+      "player_name": "Drake Maye",
+      "pos": "QB",
+      "value": 9750
+    },
+    {
+      "player_slug": "dre-greenlaw",
+      "player_name": "Dre Greenlaw",
+      "pos": "LB",
+      "value": 2222
+    },
+    {
+      "player_slug": "dre-mont-jones",
+      "player_name": "Dre'Mont Jones",
+      "pos": "DL",
+      "value": 1188
+    },
+    {
+      "player_slug": "drew-allar",
+      "player_name": "Drew Allar",
+      "pos": "QB",
+      "value": 4684
+    },
+    {
+      "player_slug": "drew-sample",
+      "player_name": "Drew Sample",
+      "pos": "TE",
+      "value": 412
+    },
+    {
+      "player_slug": "drew-sanders",
+      "player_name": "Drew Sanders",
+      "pos": "LB",
+      "value": 2060
+    },
+    {
+      "player_slug": "durham-smythe",
+      "player_name": "Durham Smythe",
+      "pos": "TE",
+      "value": 307
+    },
+    {
+      "player_slug": "duron-harmon",
+      "player_name": "Duron Harmon",
+      "pos": "DB",
+      "value": 176
+    },
+    {
+      "player_slug": "dustin-hopkins",
+      "player_name": "Dustin Hopkins",
+      "pos": "K",
+      "value": 391
+    },
+    {
+      "player_slug": "dwayne-washington",
+      "player_name": "Dwayne Washington",
+      "pos": "RB",
+      "value": 148
+    },
+    {
+      "player_slug": "dwight-mcglothern",
+      "player_name": "Dwight McGlothern",
+      "pos": "DB",
+      "value": 1854
+    },
+    {
+      "player_slug": "dylan-cole",
+      "player_name": "Dylan Cole",
+      "pos": "LB",
+      "value": 405
+    },
+    {
+      "player_slug": "dylan-laube",
+      "player_name": "Dylan Laube",
+      "pos": "RB",
+      "value": 1030
+    },
+    {
+      "player_slug": "dylan-moses",
+      "player_name": "Dylan Moses",
+      "pos": "LB",
+      "value": 824
+    },
+    {
+      "player_slug": "dylan-sampson",
+      "player_name": "Dylan Sampson",
+      "pos": "RB",
+      "value": 3605
+    },
+    {
+      "player_slug": "easton-stick",
+      "player_name": "Easton Stick",
+      "pos": "QB",
+      "value": 386
+    },
+    {
+      "player_slug": "eddie-jackson",
+      "player_name": "Eddie Jackson",
+      "pos": "DB",
+      "value": 782
+    },
+    {
+      "player_slug": "edefuan-ulofoshio",
+      "player_name": "Edefuan Ulofoshio",
+      "pos": "LB",
+      "value": 2266
+    },
+    {
+      "player_slug": "edgerrin-cooper",
+      "player_name": "Edgerrin Cooper",
+      "pos": "LB",
+      "value": 3296
+    },
+    {
+      "player_slug": "elandon-roberts",
+      "player_name": "Elandon Roberts",
+      "pos": "LB",
+      "value": 642
+    },
+    {
+      "player_slug": "eli-apple",
+      "player_name": "Eli Apple",
+      "pos": "DB",
+      "value": 623
+    },
+    {
+      "player_slug": "eli-raridon",
+      "player_name": "Eli Raridon",
+      "pos": "TE",
+      "value": 1604
+    },
+    {
+      "player_slug": "eli-stowers",
+      "player_name": "Eli Stowers",
+      "pos": "TE",
+      "value": 4749
+    },
+    {
+      "player_slug": "elic-ayomanor",
+      "player_name": "Elic Ayomanor",
+      "pos": "WR",
+      "value": 3490
+    },
+    {
+      "player_slug": "elijah-arroyo",
+      "player_name": "Elijah Arroyo",
+      "pos": "TE",
+      "value": 3345
+    },
+    {
+      "player_slug": "elijah-higgins",
+      "player_name": "Elijah Higgins",
+      "pos": "WR",
+      "value": 412
+    },
+    {
+      "player_slug": "elijah-holyfield",
+      "player_name": "Elijah Holyfield",
+      "pos": "RB",
+      "value": 197
+    },
+    {
+      "player_slug": "elijah-mitchell",
+      "player_name": "Elijah Mitchell",
+      "pos": "RB",
+      "value": 707
+    },
+    {
+      "player_slug": "elijah-molden",
+      "player_name": "Elijah Molden",
+      "pos": "DB",
+      "value": 1545
+    },
+    {
+      "player_slug": "elijah-moore",
+      "player_name": "Elijah Moore",
+      "pos": "WR",
+      "value": 1030
+    },
+    {
+      "player_slug": "elijah-riley",
+      "player_name": "Elijah Riley",
+      "pos": "DB",
+      "value": 515
+    },
+    {
+      "player_slug": "elijah-sarratt",
+      "player_name": "Elijah Sarratt",
+      "pos": "WR",
+      "value": 3393
+    },
+    {
+      "player_slug": "elijah-sullivan",
+      "player_name": "Elijah Sullivan",
+      "pos": "LB",
+      "value": 505
+    },
+    {
+      "player_slug": "elijah-young",
+      "player_name": "Elijah Young",
+      "pos": "RB",
+      "value": 1545
+    },
+    {
+      "player_slug": "emanuel-wilson",
+      "player_name": "Emanuel Wilson",
+      "pos": "RB",
+      "value": 2591
+    },
+    {
+      "player_slug": "emari-demercado",
+      "player_name": "Emari Demercado",
+      "pos": "RB",
+      "value": 515
+    },
+    {
+      "player_slug": "emeka-egbuka",
+      "player_name": "Emeka Egbuka",
+      "pos": "WR",
+      "value": 6930
+    },
+    {
+      "player_slug": "emmanuel-forbes",
+      "player_name": "Emmanuel Forbes",
+      "pos": "DB",
+      "value": 3605
+    },
+    {
+      "player_slug": "emmanuel-mcneil-warren",
+      "player_name": "Emmanuel McNeil-Warren",
+      "pos": "DB",
+      "value": 2307
+    },
+    {
+      "player_slug": "emmanuel-ogbah",
+      "player_name": "Emmanuel Ogbah",
+      "pos": "DL",
+      "value": 620
+    },
+    {
+      "player_slug": "emmanuel-sanders",
+      "player_name": "Emmanuel Sanders",
+      "pos": "WR",
+      "value": 46
+    },
+    {
+      "player_slug": "emmett-johnson",
+      "player_name": "Emmett Johnson",
+      "pos": "RB",
+      "value": 3132
+    },
+    {
+      "player_slug": "eno-benjamin",
+      "player_name": "Eno Benjamin",
+      "pos": "RB",
+      "value": 618
+    },
+    {
+      "player_slug": "equanimeous-st-brown",
+      "player_name": "Equanimeous St. Brown",
+      "pos": "WR",
+      "value": 97
+    },
+    {
+      "player_slug": "eric-ebron",
+      "player_name": "Eric Ebron",
+      "pos": "TE",
+      "value": 174
+    },
+    {
+      "player_slug": "eric-gray",
+      "player_name": "Eric Gray",
+      "pos": "RB",
+      "value": 824
+    },
+    {
+      "player_slug": "eric-kendricks",
+      "player_name": "Eric Kendricks",
+      "pos": "LB",
+      "value": 662
+    },
+    {
+      "player_slug": "eric-saubert",
+      "player_name": "Eric Saubert",
+      "pos": "TE",
+      "value": 189
+    },
+    {
+      "player_slug": "eric-stokes",
+      "player_name": "Eric Stokes",
+      "pos": "DB",
+      "value": 1030
+    },
+    {
+      "player_slug": "eric-wilson",
+      "player_name": "Eric Wilson",
+      "pos": "LB",
+      "value": 585
+    },
+    {
+      "player_slug": "erick-all",
+      "player_name": "Erick All",
+      "pos": "TE",
+      "value": 1751
+    },
+    {
+      "player_slug": "ernest-jones",
+      "player_name": "Ernest Jones",
+      "pos": "LB",
+      "value": 2060
+    },
+    {
+      "player_slug": "evan-engram",
+      "player_name": "Evan Engram",
+      "pos": "TE",
+      "value": 2079
+    },
+    {
+      "player_slug": "evan-hull",
+      "player_name": "Evan Hull",
+      "pos": "RB",
+      "value": 824
+    },
+    {
+      "player_slug": "evan-mcpherson",
+      "player_name": "Evan McPherson",
+      "pos": "K",
+      "value": 515
+    },
+    {
+      "player_slug": "evan-williams",
+      "player_name": "Evan Williams",
+      "pos": "DB",
+      "value": 2575
+    },
+    {
+      "player_slug": "ezekiel-elliott",
+      "player_name": "Ezekiel Elliott",
+      "pos": "RB",
+      "value": 82
+    },
+    {
+      "player_slug": "fernando-mendoza",
+      "player_name": "Fernando Mendoza",
+      "pos": "QB",
+      "value": 6290
+    },
+    {
+      "player_slug": "foley-fatukasi",
+      "player_name": "Foley Fatukasi",
+      "pos": "DL",
+      "value": 896
+    },
+    {
+      "player_slug": "foster-moreau",
+      "player_name": "Foster Moreau",
+      "pos": "TE",
+      "value": 515
+    },
+    {
+      "player_slug": "foyesade-oluokun",
+      "player_name": "Foyesade Oluokun",
+      "pos": "LB",
+      "value": 1957
+    },
+    {
+      "player_slug": "frank-gore",
+      "player_name": "Frank Gore",
+      "pos": "RB",
+      "value": 1648
+    },
+    {
+      "player_slug": "frankie-luvu",
+      "player_name": "Frankie Luvu",
+      "pos": "LB",
+      "value": 873
+    },
+    {
+      "player_slug": "fred-warner",
+      "player_name": "Fred Warner",
+      "pos": "LB",
+      "value": 3710
+    },
+    {
+      "player_slug": "gabe-davis",
+      "player_name": "Gabe Davis",
+      "pos": "WR",
+      "value": 824
+    },
+    {
+      "player_slug": "gabe-jacas",
+      "player_name": "Gabe Jacas",
+      "pos": "DL",
+      "value": 2337
+    },
+    {
+      "player_slug": "gardner-minshew",
+      "player_name": "Gardner Minshew",
+      "pos": "QB",
+      "value": 773
+    },
+    {
+      "player_slug": "garrett-nussmeier",
+      "player_name": "Garrett Nussmeier",
+      "pos": "QB",
+      "value": 2647
+    },
+    {
+      "player_slug": "garrett-wilson",
+      "player_name": "Garrett Wilson",
+      "pos": "WR",
+      "value": 6200
+    },
+    {
+      "player_slug": "geno-smith",
+      "player_name": "Geno Smith",
+      "pos": "QB",
+      "value": 1974
+    },
+    {
+      "player_slug": "geoff-swaim",
+      "player_name": "Geoff Swaim",
+      "pos": "TE",
+      "value": 181
+    },
+    {
+      "player_slug": "george-karlaftis",
+      "player_name": "George Karlaftis",
+      "pos": "DL",
+      "value": 3914
+    },
+    {
+      "player_slug": "george-kittle",
+      "player_name": "George Kittle",
+      "pos": "TE",
+      "value": 3733
+    },
+    {
+      "player_slug": "george-pickens",
+      "player_name": "George Pickens",
+      "pos": "WR",
+      "value": 6650
+    },
+    {
+      "player_slug": "gerald-everett",
+      "player_name": "Gerald Everett",
+      "pos": "TE",
+      "value": 190
+    },
+    {
+      "player_slug": "germaine-pratt",
+      "player_name": "Germaine Pratt",
+      "pos": "LB",
+      "value": 1886
+    },
+    {
+      "player_slug": "germie-bernard",
+      "player_name": "Germie Bernard",
+      "pos": "WR",
+      "value": 3531
+    },
+    {
+      "player_slug": "gerrid-doaks",
+      "player_name": "Gerrid Doaks",
+      "pos": "RB",
+      "value": 305
+    },
+    {
+      "player_slug": "giovani-bernard",
+      "player_name": "Giovani Bernard",
+      "pos": "RB",
+      "value": 86
+    },
+    {
+      "player_slug": "godwin-igwebuike",
+      "player_name": "Godwin Igwebuike",
+      "pos": "RB",
+      "value": 229
+    },
+    {
+      "player_slug": "gracen-halton",
+      "player_name": "Gracen Halton",
+      "pos": "DL",
+      "value": 1573
+    },
+    {
+      "player_slug": "grady-jarrett",
+      "player_name": "Grady Jarrett",
+      "pos": "DL",
+      "value": 1336
+    },
+    {
+      "player_slug": "graham-gano",
+      "player_name": "Graham Gano",
+      "pos": "K",
+      "value": 361
+    },
+    {
+      "player_slug": "green-bay-packers-dst",
+      "player_name": "Green Bay Packers DST",
+      "pos": "DST",
+      "value": 536
+    },
+    {
+      "player_slug": "greg-dortch",
+      "player_name": "Greg Dortch",
+      "pos": "WR",
+      "value": 515
+    },
+    {
+      "player_slug": "greg-dulcich",
+      "player_name": "Greg Dulcich",
+      "pos": "TE",
+      "value": 2028
+    },
+    {
+      "player_slug": "greg-joseph",
+      "player_name": "Greg Joseph",
+      "pos": "K",
+      "value": 391
+    },
+    {
+      "player_slug": "greg-ward",
+      "player_name": "Greg Ward",
+      "pos": "WR",
+      "value": 134
+    },
+    {
+      "player_slug": "greg-zuerlein",
+      "player_name": "Greg Zuerlein",
+      "pos": "K",
+      "value": 361
+    },
+    {
+      "player_slug": "gregory-rousseau",
+      "player_name": "Gregory Rousseau",
+      "pos": "DL",
+      "value": 3605
+    },
+    {
+      "player_slug": "grover-stewart",
+      "player_name": "Grover Stewart",
+      "pos": "DL",
+      "value": 538
+    },
+    {
+      "player_slug": "gunnar-helm",
+      "player_name": "Gunnar Helm",
+      "pos": "TE",
+      "value": 3552
+    },
+    {
+      "player_slug": "gus-edwards",
+      "player_name": "Gus Edwards",
+      "pos": "RB",
+      "value": 241
+    },
+    {
+      "player_slug": "ha-ha-clinton-dix",
+      "player_name": "Ha Ha Clinton-Dix",
+      "pos": "DB",
+      "value": 215
+    },
+    {
+      "player_slug": "haason-reddick",
+      "player_name": "Haason Reddick",
+      "pos": "DL",
+      "value": 502
+    },
+    {
+      "player_slug": "habakkuk-baldonado",
+      "player_name": "Habakkuk Baldonado",
+      "pos": "DL",
+      "value": 100
+    },
+    {
+      "player_slug": "harold-fannin-jr",
+      "player_name": "Harold Fannin Jr.",
+      "pos": "TE",
+      "value": 6670
+    },
+    {
+      "player_slug": "harold-landry-iii",
+      "player_name": "Harold Landry III",
+      "pos": "DL",
+      "value": 950
+    },
+    {
+      "player_slug": "harold-perkins-jr",
+      "player_name": "Harold Perkins Jr.",
+      "pos": "LB",
+      "value": 4090
+    },
+    {
+      "player_slug": "harrison-butker",
+      "player_name": "Harrison Butker",
+      "pos": "K",
+      "value": 567
+    },
+    {
+      "player_slug": "harrison-smith",
+      "player_name": "Harrison Smith",
+      "pos": "DB",
+      "value": 464
+    },
+    {
+      "player_slug": "hassan-hall",
+      "player_name": "Hassan Hall",
+      "pos": "RB",
+      "value": 824
+    },
+    {
+      "player_slug": "hassan-haskins",
+      "player_name": "Hassan Haskins",
+      "pos": "RB",
+      "value": 515
+    },
+    {
+      "player_slug": "hayden-hurst",
+      "player_name": "Hayden Hurst",
+      "pos": "TE",
+      "value": 100
+    },
+    {
+      "player_slug": "haynes-king",
+      "player_name": "Haynes King",
+      "pos": "QB",
+      "value": 649
+    },
+    {
+      "player_slug": "hendon-hooker",
+      "player_name": "Hendon Hooker",
+      "pos": "QB",
+      "value": 1931
+    },
+    {
+      "player_slug": "holton-ahlers",
+      "player_name": "Holton Ahlers",
+      "pos": "QB",
+      "value": 386
+    },
+    {
+      "player_slug": "houston-texans-dst",
+      "player_name": "Houston Texans DST",
+      "pos": "DST",
+      "value": 567
+    },
+    {
+      "player_slug": "hunter-henry",
+      "player_name": "Hunter Henry",
+      "pos": "TE",
+      "value": 2679
+    },
+    {
+      "player_slug": "hunter-long",
+      "player_name": "Hunter Long",
+      "pos": "TE",
+      "value": 412
+    },
+    {
+      "player_slug": "ian-thomas",
+      "player_name": "Ian Thomas",
+      "pos": "TE",
+      "value": 412
+    },
+    {
+      "player_slug": "ifeatu-melifonwu",
+      "player_name": "Ifeatu Melifonwu",
+      "pos": "DB",
+      "value": 927
+    },
+    {
+      "player_slug": "ihmir-smith-marsette",
+      "player_name": "Ihmir Smith-Marsette",
+      "pos": "WR",
+      "value": 412
+    },
+    {
+      "player_slug": "indianapolis-colts-dst",
+      "player_name": "Indianapolis Colts DST",
+      "pos": "DST",
+      "value": 505
+    },
+    {
+      "player_slug": "irv-smith-jr",
+      "player_name": "Irv Smith Jr.",
+      "pos": "TE",
+      "value": 206
+    },
+    {
+      "player_slug": "isaac-guerendo",
+      "player_name": "Isaac Guerendo",
+      "pos": "RB",
+      "value": 3296
+    },
+    {
+      "player_slug": "isaac-teslaa",
+      "player_name": "Isaac TeSlaa",
+      "pos": "WR",
+      "value": 3547
+    },
+    {
+      "player_slug": "isaiah-bond",
+      "player_name": "Isaiah Bond",
+      "pos": "WR",
+      "value": 2717
+    },
+    {
+      "player_slug": "isaiah-buggs",
+      "player_name": "Isaiah Buggs",
+      "pos": "DL",
+      "value": 674
+    },
+    {
+      "player_slug": "isaiah-davis",
+      "player_name": "Isaiah Davis",
+      "pos": "RB",
+      "value": 2692
+    },
+    {
+      "player_slug": "isaiah-foskey",
+      "player_name": "Isaiah Foskey",
+      "pos": "DL",
+      "value": 2884
+    },
+    {
+      "player_slug": "isaiah-hodgins",
+      "player_name": "Isaiah Hodgins",
+      "pos": "WR",
+      "value": 515
+    },
+    {
+      "player_slug": "isaiah-likely",
+      "player_name": "Isaiah Likely",
+      "pos": "TE",
+      "value": 4271
+    },
+    {
+      "player_slug": "isaiah-mcduffie",
+      "player_name": "Isaiah McDuffie",
+      "pos": "LB",
+      "value": 721
+    },
+    {
+      "player_slug": "isaiah-mcguire",
+      "player_name": "Isaiah McGuire",
+      "pos": "DL",
+      "value": 1030
+    },
+    {
+      "player_slug": "isaiah-mckenzie",
+      "player_name": "Isaiah McKenzie",
+      "pos": "WR",
+      "value": 87
+    },
+    {
+      "player_slug": "isaiah-simmons",
+      "player_name": "Isaiah Simmons",
+      "pos": "LB",
+      "value": 1854
+    },
+    {
+      "player_slug": "isaiah-spiller",
+      "player_name": "Isaiah Spiller",
+      "pos": "RB",
+      "value": 824
+    },
+    {
+      "player_slug": "isaiah-thomas",
+      "player_name": "Isaiah Thomas",
+      "pos": "DL",
+      "value": 1854
+    },
+    {
+      "player_slug": "isiah-pacheco",
+      "player_name": "Isiah Pacheco",
+      "pos": "RB",
+      "value": 3914
+    },
+    {
+      "player_slug": "israel-mukuamu",
+      "player_name": "Israel Mukuamu",
+      "pos": "DB",
+      "value": 515
+    },
+    {
+      "player_slug": "ito-smith",
+      "player_name": "Ito Smith",
+      "pos": "RB",
+      "value": 166
+    },
+    {
+      "player_slug": "ivan-pace-jr",
+      "player_name": "Ivan Pace Jr.",
+      "pos": "LB",
+      "value": 2575
+    },
+    {
+      "player_slug": "j-j-mccarthy",
+      "player_name": "J.J. McCarthy",
+      "pos": "QB",
+      "value": 3392
+    },
+    {
+      "player_slug": "j-k-dobbins",
+      "player_name": "J.K. Dobbins",
+      "pos": "RB",
+      "value": 3881
+    },
+    {
+      "player_slug": "ja-kobi-lane",
+      "player_name": "Ja'Kobi Lane",
+      "pos": "WR",
+      "value": 2905
+    },
+    {
+      "player_slug": "ja-lynn-polk",
+      "player_name": "Ja'Lynn Polk",
+      "pos": "WR",
+      "value": 2884
+    },
+    {
+      "player_slug": "ja-marr-chase",
+      "player_name": "Ja'Marr Chase",
+      "pos": "WR",
+      "value": 9980
+    },
+    {
+      "player_slug": "ja-tavion-sanders",
+      "player_name": "Ja'Tavion Sanders",
+      "pos": "TE",
+      "value": 3312
+    },
+    {
+      "player_slug": "ja-whaun-bentley",
+      "player_name": "Ja'Whaun Bentley",
+      "pos": "LB",
+      "value": 1156
+    },
+    {
+      "player_slug": "jabrill-peppers",
+      "player_name": "Jabrill Peppers",
+      "pos": "DB",
+      "value": 1354
+    },
+    {
+      "player_slug": "jack-bech",
+      "player_name": "Jack Bech",
+      "pos": "WR",
+      "value": 3145
+    },
+    {
+      "player_slug": "jack-campbell",
+      "player_name": "Jack Campbell",
+      "pos": "LB",
+      "value": 2884
+    },
+    {
+      "player_slug": "jack-endries",
+      "player_name": "Jack Endries",
+      "pos": "TE",
+      "value": 1035
+    },
+    {
+      "player_slug": "jack-sanborn",
+      "player_name": "Jack Sanborn",
+      "pos": "LB",
+      "value": 1545
+    },
+    {
+      "player_slug": "jack-stoll",
+      "player_name": "Jack Stoll",
+      "pos": "TE",
+      "value": 412
+    },
+    {
+      "player_slug": "jacksonville-jaguars-dst",
+      "player_name": "Jacksonville Jaguars DST",
+      "pos": "DST",
+      "value": 361
+    },
+    {
+      "player_slug": "jacob-phillips",
+      "player_name": "Jacob Phillips",
+      "pos": "LB",
+      "value": 824
+    },
+    {
+      "player_slug": "jacob-rodriguez",
+      "player_name": "Jacob Rodriguez",
+      "pos": "LB",
+      "value": 2884
+    },
+    {
+      "player_slug": "jacoby-brissett",
+      "player_name": "Jacoby Brissett",
+      "pos": "QB",
+      "value": 2835
+    },
+    {
+      "player_slug": "jacory-croskey-merritt",
+      "player_name": "Jacory Croskey-Merritt",
+      "pos": "RB",
+      "value": 3715
+    },
+    {
+      "player_slug": "jadarian-price",
+      "player_name": "Jadarian Price",
+      "pos": "RB",
+      "value": 5826
+    },
+    {
+      "player_slug": "jaelan-phillips",
+      "player_name": "Jaelan Phillips",
+      "pos": "DL",
+      "value": 2575
+    },
+    {
+      "player_slug": "jaelon-darden",
+      "player_name": "Jaelon Darden",
+      "pos": "WR",
+      "value": 309
+    },
+    {
+      "player_slug": "jahan-dotson",
+      "player_name": "Jahan Dotson",
+      "pos": "WR",
+      "value": 2266
+    },
+    {
+      "player_slug": "jahmyr-gibbs",
+      "player_name": "Jahmyr Gibbs",
+      "pos": "RB",
+      "value": 9964
+    },
+    {
+      "player_slug": "jaire-alexander",
+      "player_name": "Jaire Alexander",
+      "pos": "DB",
+      "value": 2790
+    },
+    {
+      "player_slug": "jaishawn-barham",
+      "player_name": "Jaishawn Barham",
+      "pos": "DL",
+      "value": 1468
+    },
+    {
+      "player_slug": "jake-browning",
+      "player_name": "Jake Browning",
+      "pos": "QB",
+      "value": 580
+    },
+    {
+      "player_slug": "jake-ferguson",
+      "player_name": "Jake Ferguson",
+      "pos": "TE",
+      "value": 4062
+    },
+    {
+      "player_slug": "jake-golday",
+      "player_name": "Jake Golday",
+      "pos": "LB",
+      "value": 2472
+    },
+    {
+      "player_slug": "jake-haener",
+      "player_name": "Jake Haener",
+      "pos": "QB",
+      "value": 515
+    },
+    {
+      "player_slug": "jake-moody",
+      "player_name": "Jake Moody",
+      "pos": "K",
+      "value": 515
+    },
+    {
+      "player_slug": "jake-tonges",
+      "player_name": "Jake Tonges",
+      "pos": "TE",
+      "value": 2854
+    },
+    {
+      "player_slug": "jakeem-grant-jr",
+      "player_name": "Jakeem Grant Jr.",
+      "pos": "WR",
+      "value": 142
+    },
+    {
+      "player_slug": "jakob-johnson",
+      "player_name": "Jakob Johnson",
+      "pos": "RB",
+      "value": 118
+    },
+    {
+      "player_slug": "jakobi-meyers",
+      "player_name": "Jakobi Meyers",
+      "pos": "WR",
+      "value": 3945
+    },
+    {
+      "player_slug": "jaleel-mclaughlin",
+      "player_name": "Jaleel McLaughlin",
+      "pos": "RB",
+      "value": 824
+    },
+    {
+      "player_slug": "jalen-berger",
+      "player_name": "Jalen Berger",
+      "pos": "TE",
+      "value": 1010
+    },
+    {
+      "player_slug": "jalen-camp",
+      "player_name": "Jalen Camp",
+      "pos": "WR",
+      "value": 309
+    },
+    {
+      "player_slug": "jalen-carter",
+      "player_name": "Jalen Carter",
+      "pos": "DL",
+      "value": 4635
+    },
+    {
+      "player_slug": "jalen-catalon",
+      "player_name": "Jalen Catalon",
+      "pos": "DB",
+      "value": 1854
+    },
+    {
+      "player_slug": "jalen-coker",
+      "player_name": "Jalen Coker",
+      "pos": "WR",
+      "value": 4021
+    },
+    {
+      "player_slug": "jalen-elliott",
+      "player_name": "Jalen Elliott",
+      "pos": "DB",
+      "value": 721
+    },
+    {
+      "player_slug": "jalen-hurts",
+      "player_name": "Jalen Hurts",
+      "pos": "QB",
+      "value": 7625
+    },
+    {
+      "player_slug": "jalen-mcmillan",
+      "player_name": "Jalen McMillan",
+      "pos": "WR",
+      "value": 3900
+    },
+    {
+      "player_slug": "jalen-milroe",
+      "player_name": "Jalen Milroe",
+      "pos": "QB",
+      "value": 4310
+    },
+    {
+      "player_slug": "jalen-nailor",
+      "player_name": "Jalen Nailor",
+      "pos": "WR",
+      "value": 721
+    },
+    {
+      "player_slug": "jalen-pitre",
+      "player_name": "Jalen Pitre",
+      "pos": "DB",
+      "value": 2884
+    },
+    {
+      "player_slug": "jalen-ramsey",
+      "player_name": "Jalen Ramsey",
+      "pos": "DB",
+      "value": 1264
+    },
+    {
+      "player_slug": "jalen-reagor",
+      "player_name": "Jalen Reagor",
+      "pos": "WR",
+      "value": 309
+    },
+    {
+      "player_slug": "jalen-reeves-maybin",
+      "player_name": "Jalen Reeves-Maybin",
+      "pos": "LB",
+      "value": 599
+    },
+    {
+      "player_slug": "jalen-royals",
+      "player_name": "Jalen Royals",
+      "pos": "WR",
+      "value": 2254
+    },
+    {
+      "player_slug": "jalen-thompson",
+      "player_name": "Jalen Thompson",
+      "pos": "DB",
+      "value": 1236
+    },
+    {
+      "player_slug": "jalen-tolbert",
+      "player_name": "Jalen Tolbert",
+      "pos": "WR",
+      "value": 2308
+    },
+    {
+      "player_slug": "jalen-virgil",
+      "player_name": "Jalen Virgil",
+      "pos": "WR",
+      "value": 206
+    },
+    {
+      "player_slug": "jalin-hyatt",
+      "player_name": "Jalin Hyatt",
+      "pos": "WR",
+      "value": 1854
+    },
+    {
+      "player_slug": "jalon-walker",
+      "player_name": "Jalon Walker",
+      "pos": "LB",
+      "value": 3686
+    },
+    {
+      "player_slug": "jamaal-williams",
+      "player_name": "Jamaal Williams",
+      "pos": "RB",
+      "value": 80
+    },
+    {
+      "player_slug": "jamal-agnew",
+      "player_name": "Jamal Agnew",
+      "pos": "WR",
+      "value": 174
+    },
+    {
+      "player_slug": "jamari-thrash",
+      "player_name": "Jamari Thrash",
+      "pos": "WR",
+      "value": 618
+    },
+    {
+      "player_slug": "jameis-winston",
+      "player_name": "Jameis Winston",
+      "pos": "QB",
+      "value": 434
+    },
+    {
+      "player_slug": "jamel-dean",
+      "player_name": "Jamel Dean",
+      "pos": "DB",
+      "value": 1455
+    },
+    {
+      "player_slug": "james-conner",
+      "player_name": "James Conner",
+      "pos": "RB",
+      "value": 809
+    },
+    {
+      "player_slug": "james-cook",
+      "player_name": "James Cook",
+      "pos": "RB",
+      "value": 6400
+    },
+    {
+      "player_slug": "james-pearce-jr",
+      "player_name": "James Pearce Jr.",
+      "pos": "DL",
+      "value": 3932
+    },
+    {
+      "player_slug": "james-proche",
+      "player_name": "James Proche",
+      "pos": "WR",
+      "value": 194
+    },
+    {
+      "player_slug": "jameson-williams",
+      "player_name": "Jameson Williams",
+      "pos": "WR",
+      "value": 5900
+    },
+    {
+      "player_slug": "jamien-sherwood",
+      "player_name": "Jamien Sherwood",
+      "pos": "DB",
+      "value": 1854
+    },
+    {
+      "player_slug": "jammie-robinson",
+      "player_name": "Jammie Robinson",
+      "pos": "DB",
+      "value": 824
+    },
+    {
+      "player_slug": "jamycal-hasty",
+      "player_name": "JaMycal Hasty",
+      "pos": "RB",
+      "value": 358
+    },
+    {
+      "player_slug": "janarius-robinson",
+      "player_name": "Janarius Robinson",
+      "pos": "DL",
+      "value": 927
+    },
+    {
+      "player_slug": "jaquan-brisker",
+      "player_name": "Jaquan Brisker",
+      "pos": "DB",
+      "value": 2884
+    },
+    {
+      "player_slug": "jaquarii-roberson",
+      "player_name": "Jaquarii Roberson",
+      "pos": "WR",
+      "value": 206
+    },
+    {
+      "player_slug": "jaquiski-tartt",
+      "player_name": "Jaquiski Tartt",
+      "pos": "DB",
+      "value": 265
+    },
+    {
+      "player_slug": "jared-goff",
+      "player_name": "Jared Goff",
+      "pos": "QB",
+      "value": 5065
+    },
+    {
+      "player_slug": "jared-verse",
+      "player_name": "Jared Verse",
+      "pos": "DL",
+      "value": 4635
+    },
+    {
+      "player_slug": "jaret-patterson",
+      "player_name": "Jaret Patterson",
+      "pos": "RB",
+      "value": 515
+    },
+    {
+      "player_slug": "jarquez-hunter",
+      "player_name": "Jarquez Hunter",
+      "pos": "RB",
+      "value": 2884
+    },
+    {
+      "player_slug": "jashaun-corbin",
+      "player_name": "Jashaun Corbin",
+      "pos": "RB",
+      "value": 618
+    },
+    {
+      "player_slug": "jason-sanders",
+      "player_name": "Jason Sanders",
+      "pos": "K",
+      "value": 453
+    },
+    {
+      "player_slug": "jauan-jennings",
+      "player_name": "Jauan Jennings",
+      "pos": "WR",
+      "value": 3013
+    },
+    {
+      "player_slug": "javion-cohen",
+      "player_name": "Javion Cohen",
+      "pos": "RB",
+      "value": 1545
+    },
+    {
+      "player_slug": "javon-baker",
+      "player_name": "Javon Baker",
+      "pos": "WR",
+      "value": 1366
+    },
+    {
+      "player_slug": "javon-bullard",
+      "player_name": "Javon Bullard",
+      "pos": "DB",
+      "value": 2575
+    },
+    {
+      "player_slug": "javon-hargrave",
+      "player_name": "Javon Hargrave",
+      "pos": "DL",
+      "value": 1083
+    },
+    {
+      "player_slug": "javon-kinlaw",
+      "player_name": "Javon Kinlaw",
+      "pos": "DL",
+      "value": 1030
+    },
+    {
+      "player_slug": "javon-wims",
+      "player_name": "Javon Wims",
+      "pos": "WR",
+      "value": 166
+    },
+    {
+      "player_slug": "javonte-williams",
+      "player_name": "Javonte Williams",
+      "pos": "RB",
+      "value": 5395
+    },
+    {
+      "player_slug": "jawhar-jordan",
+      "player_name": "Jawhar Jordan",
+      "pos": "RB",
+      "value": 1854
+    },
+    {
+      "player_slug": "jaxon-smith-njigba",
+      "player_name": "Jaxon Smith-Njigba",
+      "pos": "WR",
+      "value": 9400
+    },
+    {
+      "player_slug": "jaxson-dart",
+      "player_name": "Jaxson Dart",
+      "pos": "QB",
+      "value": 7905
+    },
+    {
+      "player_slug": "jaycee-horn",
+      "player_name": "Jaycee Horn",
+      "pos": "DB",
+      "value": 3296
+    },
+    {
+      "player_slug": "jayden-daniels",
+      "player_name": "Jayden Daniels",
+      "pos": "QB",
+      "value": 8928
+    },
+    {
+      "player_slug": "jayden-higgins",
+      "player_name": "Jayden Higgins",
+      "pos": "WR",
+      "value": 2575
+    },
+    {
+      "player_slug": "jayden-reed",
+      "player_name": "Jayden Reed",
+      "pos": "WR",
+      "value": 4497
+    },
+    {
+      "player_slug": "jaydon-blue",
+      "player_name": "Jaydon Blue",
+      "pos": "RB",
+      "value": 2602
+    },
+    {
+      "player_slug": "jaylen-waddle",
+      "player_name": "Jaylen Waddle",
+      "pos": "WR",
+      "value": 5665
+    },
+    {
+      "player_slug": "jaylen-warren",
+      "player_name": "Jaylen Warren",
+      "pos": "RB",
+      "value": 4124
+    },
+    {
+      "player_slug": "jaylen-watson",
+      "player_name": "Jaylen Watson",
+      "pos": "DB",
+      "value": 1648
+    },
+    {
+      "player_slug": "jaylen-wright",
+      "player_name": "Jaylen Wright",
+      "pos": "RB",
+      "value": 3296
+    },
+    {
+      "player_slug": "jaylin-lane",
+      "player_name": "Jaylin Lane",
+      "pos": "WR",
+      "value": 1854
+    },
+    {
+      "player_slug": "jaylin-noel",
+      "player_name": "Jaylin Noel",
+      "pos": "WR",
+      "value": 3567
+    },
+    {
+      "player_slug": "jaylon-johnson",
+      "player_name": "Jaylon Johnson",
+      "pos": "DB",
+      "value": 4120
+    },
+    {
+      "player_slug": "jayon-brown",
+      "player_name": "Jayon Brown",
+      "pos": "LB",
+      "value": 690
+    },
+    {
+      "player_slug": "jeff-wilson-jr",
+      "player_name": "Jeff Wilson Jr.",
+      "pos": "RB",
+      "value": 169
+    },
+    {
+      "player_slug": "jeffery-simmons",
+      "player_name": "Jeffery Simmons",
+      "pos": "DL",
+      "value": 2251
+    },
+    {
+      "player_slug": "jelani-woods",
+      "player_name": "Jelani Woods",
+      "pos": "TE",
+      "value": 824
+    },
+    {
+      "player_slug": "jeremiah-owusu-koramoah",
+      "player_name": "Jeremiah Owusu-Koramoah",
+      "pos": "DL",
+      "value": 2266
+    },
+    {
+      "player_slug": "jeremiah-trotter-jr",
+      "player_name": "Jeremiah Trotter Jr.",
+      "pos": "LB",
+      "value": 2060
+    },
+    {
+      "player_slug": "jeremiyah-love",
+      "player_name": "Jeremiyah Love",
+      "pos": "RB",
+      "value": 8152
+    },
+    {
+      "player_slug": "jeremy-chinn",
+      "player_name": "Jeremy Chinn",
+      "pos": "DB",
+      "value": 1545
+    },
+    {
+      "player_slug": "jeremy-mcnichols",
+      "player_name": "Jeremy McNichols",
+      "pos": "RB",
+      "value": 170
+    },
+    {
+      "player_slug": "jeremy-reaves",
+      "player_name": "Jeremy Reaves",
+      "pos": "DB",
+      "value": 674
+    },
+    {
+      "player_slug": "jeremy-ruckert",
+      "player_name": "Jeremy Ruckert",
+      "pos": "TE",
+      "value": 618
+    },
+    {
+      "player_slug": "jermod-mccoy",
+      "player_name": "Jermod McCoy",
+      "pos": "DB",
+      "value": 1796
+    },
+    {
+      "player_slug": "jerome-baker",
+      "player_name": "Jerome Baker",
+      "pos": "LB",
+      "value": 1180
+    },
+    {
+      "player_slug": "jerome-ford",
+      "player_name": "Jerome Ford",
+      "pos": "RB",
+      "value": 1950
+    },
+    {
+      "player_slug": "jerry-hughes",
+      "player_name": "Jerry Hughes",
+      "pos": "DL",
+      "value": 93
+    },
+    {
+      "player_slug": "jerry-jeudy",
+      "player_name": "Jerry Jeudy",
+      "pos": "WR",
+      "value": 3605
+    },
+    {
+      "player_slug": "jessie-bates-iii",
+      "player_name": "Jessie Bates III",
+      "pos": "DB",
+      "value": 3189
+    },
+    {
+      "player_slug": "jevon-holland",
+      "player_name": "Jevon Holland",
+      "pos": "DB",
+      "value": 3090
+    },
+    {
+      "player_slug": "jihaad-campbell",
+      "player_name": "Jihaad Campbell",
+      "pos": "LB",
+      "value": 3686
+    },
+    {
+      "player_slug": "jimmy-rolder",
+      "player_name": "Jimmy Rolder",
+      "pos": "LB",
+      "value": 1474
+    },
+    {
+      "player_slug": "jl-skinner",
+      "player_name": "JL Skinner",
+      "pos": "DB",
+      "value": 1854
+    },
+    {
+      "player_slug": "jody-fortson",
+      "player_name": "Jody Fortson",
+      "pos": "TE",
+      "value": 515
+    },
+    {
+      "player_slug": "joe-burrow",
+      "player_name": "Joe Burrow",
+      "pos": "QB",
+      "value": 9999
+    },
+    {
+      "player_slug": "joe-flacco",
+      "player_name": "Joe Flacco",
+      "pos": "QB",
+      "value": 174
+    },
+    {
+      "player_slug": "joe-milton",
+      "player_name": "Joe Milton",
+      "pos": "QB",
+      "value": 1931
+    },
+    {
+      "player_slug": "joe-mixon",
+      "player_name": "Joe Mixon",
+      "pos": "RB",
+      "value": 1334
+    },
+    {
+      "player_slug": "joel-heath",
+      "player_name": "Joel Heath",
+      "pos": "LB",
+      "value": 374
+    },
+    {
+      "player_slug": "joey-aguilar",
+      "player_name": "Joey Aguilar",
+      "pos": "QB",
+      "value": 523
+    },
+    {
+      "player_slug": "joey-porter-jr",
+      "player_name": "Joey Porter Jr.",
+      "pos": "DB",
+      "value": 2266
+    },
+    {
+      "player_slug": "john-johnson-iii",
+      "player_name": "John Johnson III",
+      "pos": "DB",
+      "value": 733
+    },
+    {
+      "player_slug": "john-metchie-iii",
+      "player_name": "John Metchie III",
+      "pos": "WR",
+      "value": 1895
+    },
+    {
+      "player_slug": "johnathan-abram",
+      "player_name": "Johnathan Abram",
+      "pos": "DB",
+      "value": 684
+    },
+    {
+      "player_slug": "johnny-newton",
+      "player_name": "Johnny Newton",
+      "pos": "DL",
+      "value": 3337
+    },
+    {
+      "player_slug": "jonah-coleman",
+      "player_name": "Jonah Coleman",
+      "pos": "RB",
+      "value": 3849
+    },
+    {
+      "player_slug": "jonah-williams",
+      "player_name": "Jonah Williams",
+      "pos": "DL",
+      "value": 1236
+    },
+    {
+      "player_slug": "jonas-griffith",
+      "player_name": "Jonas Griffith",
+      "pos": "LB",
+      "value": 792
+    },
+    {
+      "player_slug": "jonathan-allen",
+      "player_name": "Jonathan Allen",
+      "pos": "DL",
+      "value": 1883
+    },
+    {
+      "player_slug": "jonathan-greenard",
+      "player_name": "Jonathan Greenard",
+      "pos": "DL",
+      "value": 3232
+    },
+    {
+      "player_slug": "jonathan-mingo",
+      "player_name": "Jonathan Mingo",
+      "pos": "WR",
+      "value": 1854
+    },
+    {
+      "player_slug": "jonathan-taylor",
+      "player_name": "Jonathan Taylor",
+      "pos": "RB",
+      "value": 6600
+    },
+    {
+      "player_slug": "jonathon-brooks",
+      "player_name": "Jonathon Brooks",
+      "pos": "RB",
+      "value": 5000
+    },
+    {
+      "player_slug": "jonnu-smith",
+      "player_name": "Jonnu Smith",
+      "pos": "TE",
+      "value": 1497
+    },
+    {
+      "player_slug": "jordan-addison",
+      "player_name": "Jordan Addison",
+      "pos": "WR",
+      "value": 5001
+    },
+    {
+      "player_slug": "jordan-akins",
+      "player_name": "Jordan Akins",
+      "pos": "TE",
+      "value": 241
+    },
+    {
+      "player_slug": "jordan-battle",
+      "player_name": "Jordan Battle",
+      "pos": "DB",
+      "value": 1854
+    },
+    {
+      "player_slug": "jordan-davis",
+      "player_name": "Jordan Davis",
+      "pos": "DL",
+      "value": 1854
+    },
+    {
+      "player_slug": "jordan-franks",
+      "player_name": "Jordan Franks",
+      "pos": "TE",
+      "value": 155
+    },
+    {
+      "player_slug": "jordan-fuller",
+      "player_name": "Jordan Fuller",
+      "pos": "DB",
+      "value": 1030
+    },
+    {
+      "player_slug": "jordan-love",
+      "player_name": "Jordan Love",
+      "pos": "QB",
+      "value": 5921
+    },
+    {
+      "player_slug": "jordan-mason",
+      "player_name": "Jordan Mason",
+      "pos": "RB",
+      "value": 3459
+    },
+    {
+      "player_slug": "jordan-poyer",
+      "player_name": "Jordan Poyer",
+      "pos": "DB",
+      "value": 487
+    },
+    {
+      "player_slug": "jordan-whittington",
+      "player_name": "Jordan Whittington",
+      "pos": "WR",
+      "value": 1854
+    },
+    {
+      "player_slug": "jordan-wilkins",
+      "player_name": "Jordan Wilkins",
+      "pos": "RB",
+      "value": 151
+    },
+    {
+      "player_slug": "jordyn-brooks",
+      "player_name": "Jordyn Brooks",
+      "pos": "LB",
+      "value": 2060
+    },
+    {
+      "player_slug": "jordyn-tyson",
+      "player_name": "Jordyn Tyson",
+      "pos": "WR",
+      "value": 6531
+    },
+    {
+      "player_slug": "joseph-ossai",
+      "player_name": "Joseph Ossai",
+      "pos": "DL",
+      "value": 2060
+    },
+    {
+      "player_slug": "josey-jewell",
+      "player_name": "Josey Jewell",
+      "pos": "LB",
+      "value": 1274
+    },
+    {
+      "player_slug": "josh-allen",
+      "player_name": "Josh Allen",
+      "pos": "QB",
+      "value": 9999
+    },
+    {
+      "player_slug": "josh-blackwell",
+      "player_name": "Josh Blackwell",
+      "pos": "DB",
+      "value": 515
+    },
+    {
+      "player_slug": "josh-dobbs",
+      "player_name": "Josh Dobbs",
+      "pos": "QB",
+      "value": 515
+    },
+    {
+      "player_slug": "josh-doctson",
+      "player_name": "Josh Doctson",
+      "pos": "WR",
+      "value": 72
+    },
+    {
+      "player_slug": "josh-downs",
+      "player_name": "Josh Downs",
+      "pos": "WR",
+      "value": 4519
+    },
+    {
+      "player_slug": "josh-jacobs",
+      "player_name": "Josh Jacobs",
+      "pos": "RB",
+      "value": 4904
+    },
+    {
+      "player_slug": "josh-jobe",
+      "player_name": "Josh Jobe",
+      "pos": "DB",
+      "value": 824
+    },
+    {
+      "player_slug": "josh-jones",
+      "player_name": "Josh Jones",
+      "pos": "DB",
+      "value": 813
+    },
+    {
+      "player_slug": "josh-kelly",
+      "player_name": "Josh Kelly",
+      "pos": "RB",
+      "value": 412
+    },
+    {
+      "player_slug": "josh-malone",
+      "player_name": "Josh Malone",
+      "pos": "WR",
+      "value": 141
+    },
+    {
+      "player_slug": "josh-metellus",
+      "player_name": "Josh Metellus",
+      "pos": "DB",
+      "value": 1030
+    },
+    {
+      "player_slug": "josh-reynolds",
+      "player_name": "Josh Reynolds",
+      "pos": "WR",
+      "value": 259
+    },
+    {
+      "player_slug": "josh-ross",
+      "player_name": "Josh Ross",
+      "pos": "LB",
+      "value": 1854
+    },
+    {
+      "player_slug": "josh-simmons",
+      "player_name": "Josh Simmons",
+      "pos": "DL",
+      "value": 515
+    },
+    {
+      "player_slug": "josh-sweat",
+      "player_name": "Josh Sweat",
+      "pos": "DL",
+      "value": 1806
+    },
+    {
+      "player_slug": "josh-uche",
+      "player_name": "Josh Uche",
+      "pos": "DL",
+      "value": 1442
+    },
+    {
+      "player_slug": "joshua-kelley",
+      "player_name": "Joshua Kelley",
+      "pos": "RB",
+      "value": 391
+    },
+    {
+      "player_slug": "joshua-palmer",
+      "player_name": "Joshua Palmer",
+      "pos": "WR",
+      "value": 1984
+    },
+    {
+      "player_slug": "josiah-deguara",
+      "player_name": "Josiah Deguara",
+      "pos": "TE",
+      "value": 309
+    },
+    {
+      "player_slug": "josiah-trotter",
+      "player_name": "Josiah Trotter",
+      "pos": "LB",
+      "value": 2871
+    },
+    {
+      "player_slug": "jourdan-lewis",
+      "player_name": "Jourdan Lewis",
+      "pos": "DB",
+      "value": 627
+    },
+    {
+      "player_slug": "juan-thornhill",
+      "player_name": "Juan Thornhill",
+      "pos": "DB",
+      "value": 542
+    },
+    {
+      "player_slug": "juju-smith-schuster",
+      "player_name": "JuJu Smith-Schuster",
+      "pos": "WR",
+      "value": 195
+    },
+    {
+      "player_slug": "junior-colson",
+      "player_name": "Junior Colson",
+      "pos": "LB",
+      "value": 3090
+    },
+    {
+      "player_slug": "justice-hill",
+      "player_name": "Justice Hill",
+      "pos": "RB",
+      "value": 1622
+    },
+    {
+      "player_slug": "justin-fields",
+      "player_name": "Justin Fields",
+      "pos": "QB",
+      "value": 2839
+    },
+    {
+      "player_slug": "justin-herbert",
+      "player_name": "Justin Herbert",
+      "pos": "QB",
+      "value": 7005
+    },
+    {
+      "player_slug": "justin-jackson",
+      "player_name": "Justin Jackson",
+      "pos": "RB",
+      "value": 350
+    },
+    {
+      "player_slug": "justin-jefferson",
+      "player_name": "Justin Jefferson",
+      "pos": "WR",
+      "value": 8032
+    },
+    {
+      "player_slug": "justin-joly",
+      "player_name": "Justin Joly",
+      "pos": "TE",
+      "value": 2020
+    },
+    {
+      "player_slug": "justin-madubuike",
+      "player_name": "Justin Madubuike",
+      "pos": "DL",
+      "value": 2266
+    },
+    {
+      "player_slug": "justin-simmons",
+      "player_name": "Justin Simmons",
+      "pos": "DB",
+      "value": 100
+    },
+    {
+      "player_slug": "justin-tucker",
+      "player_name": "Justin Tucker",
+      "pos": "K",
+      "value": 515
+    },
+    {
+      "player_slug": "justin-watson",
+      "player_name": "Justin Watson",
+      "pos": "WR",
+      "value": 187
+    },
+    {
+      "player_slug": "juston-burris",
+      "player_name": "Juston Burris",
+      "pos": "DB",
+      "value": 453
+    },
+    {
+      "player_slug": "justyn-ross",
+      "player_name": "Justyn Ross",
+      "pos": "WR",
+      "value": 412
+    },
+    {
+      "player_slug": "juwan-johnson",
+      "player_name": "Juwan Johnson",
+      "pos": "TE",
+      "value": 3000
+    },
+    {
+      "player_slug": "juwann-winfree",
+      "player_name": "Juwann Winfree",
+      "pos": "WR",
+      "value": 193
+    },
+    {
+      "player_slug": "k-lavon-chaisson",
+      "player_name": "K'Lavon Chaisson",
+      "pos": "DL",
+      "value": 1030
+    },
+    {
+      "player_slug": "ka-imi-fairbairn",
+      "player_name": "Ka'imi Fairbairn",
+      "pos": "K",
+      "value": 453
+    },
+    {
+      "player_slug": "kadarius-toney",
+      "player_name": "Kadarius Toney",
+      "pos": "WR",
+      "value": 100
+    },
+    {
+      "player_slug": "kaden-elliss",
+      "player_name": "Kaden Elliss",
+      "pos": "LB",
+      "value": 1334
+    },
+    {
+      "player_slug": "kaden-wetjen",
+      "player_name": "Kaden Wetjen",
+      "pos": "WR",
+      "value": 1339
+    },
+    {
+      "player_slug": "kader-kohou",
+      "player_name": "Kader Kohou",
+      "pos": "DB",
+      "value": 927
+    },
+    {
+      "player_slug": "kaelon-black",
+      "player_name": "Kaelon Black",
+      "pos": "RB",
+      "value": 2266
+    },
+    {
+      "player_slug": "kaiir-elam",
+      "player_name": "Kaiir Elam",
+      "pos": "DB",
+      "value": 2060
+    },
+    {
+      "player_slug": "kaleb-johnson",
+      "player_name": "Kaleb Johnson",
+      "pos": "RB",
+      "value": 3193
+    },
+    {
+      "player_slug": "kalel-mullings",
+      "player_name": "Kalel Mullings",
+      "pos": "RB",
+      "value": 2575
+    },
+    {
+      "player_slug": "kalif-raymond",
+      "player_name": "Kalif Raymond",
+      "pos": "WR",
+      "value": 247
+    },
+    {
+      "player_slug": "kalil-pimpleton",
+      "player_name": "Kalil Pimpleton",
+      "pos": "WR",
+      "value": 309
+    },
+    {
+      "player_slug": "kam-curl",
+      "player_name": "Kam Curl",
+      "pos": "DB",
+      "value": 3914
+    },
+    {
+      "player_slug": "kamari-lassiter",
+      "player_name": "Kamari Lassiter",
+      "pos": "DB",
+      "value": 3296
+    },
+    {
+      "player_slug": "kamren-kinchens",
+      "player_name": "Kamren Kinchens",
+      "pos": "DB",
+      "value": 2884
+    },
+    {
+      "player_slug": "kamu-grugier-hill",
+      "player_name": "Kamu Grugier-Hill",
+      "pos": "LB",
+      "value": 566
+    },
+    {
+      "player_slug": "kansas-city-chiefs-dst",
+      "player_name": "Kansas City Chiefs DST",
+      "pos": "DST",
+      "value": 556
+    },
+    {
+      "player_slug": "kareem-hunt",
+      "player_name": "Kareem Hunt",
+      "pos": "RB",
+      "value": 1283
+    },
+    {
+      "player_slug": "kareem-jackson",
+      "player_name": "Kareem Jackson",
+      "pos": "DB",
+      "value": 100
+    },
+    {
+      "player_slug": "kary-vincent-jr",
+      "player_name": "Kary Vincent Jr.",
+      "pos": "DB",
+      "value": 721
+    },
+    {
+      "player_slug": "kawaan-baker",
+      "player_name": "Kawaan Baker",
+      "pos": "WR",
+      "value": 206
+    },
+    {
+      "player_slug": "kayden-mcdonald",
+      "player_name": "Kayden McDonald",
+      "pos": "DL",
+      "value": 3299
+    },
+    {
+      "player_slug": "kayshon-boutte",
+      "player_name": "Kayshon Boutte",
+      "pos": "WR",
+      "value": 3605
+    },
+    {
+      "player_slug": "kaytron-allen",
+      "player_name": "Kaytron Allen",
+      "pos": "RB",
+      "value": 2931
+    },
+    {
+      "player_slug": "kayvon-thibodeaux",
+      "player_name": "Kayvon Thibodeaux",
+      "pos": "DL",
+      "value": 3914
+    },
+    {
+      "player_slug": "kc-concepcion",
+      "player_name": "KC Concepcion",
+      "pos": "WR",
+      "value": 5508
+    },
+    {
+      "player_slug": "ke-shawn-vaughn",
+      "player_name": "Ke'Shawn Vaughn",
+      "pos": "RB",
+      "value": 377
+    },
+    {
+      "player_slug": "keandre-lambert-smith",
+      "player_name": "KeAndre Lambert-Smith",
+      "pos": "WR",
+      "value": 2884
+    },
+    {
+      "player_slug": "keanu-neal",
+      "player_name": "Keanu Neal",
+      "pos": "DB",
+      "value": 623
+    },
+    {
+      "player_slug": "keaontay-ingram",
+      "player_name": "Keaontay Ingram",
+      "pos": "RB",
+      "value": 515
+    },
+    {
+      "player_slug": "keaton-mitchell",
+      "player_name": "Keaton Mitchell",
+      "pos": "RB",
+      "value": 3002
+    },
+    {
+      "player_slug": "keeanu-benton",
+      "player_name": "Keeanu Benton",
+      "pos": "DL",
+      "value": 2060
+    },
+    {
+      "player_slug": "keelan-cole",
+      "player_name": "Keelan Cole",
+      "pos": "WR",
+      "value": 111
+    },
+    {
+      "player_slug": "keenan-allen",
+      "player_name": "Keenan Allen",
+      "pos": "WR",
+      "value": 1388
+    },
+    {
+      "player_slug": "keenan-isaac",
+      "player_name": "Keenan Isaac",
+      "pos": "DB",
+      "value": 824
+    },
+    {
+      "player_slug": "keith-smith",
+      "player_name": "Keith Smith",
+      "pos": "RB",
+      "value": 91
+    },
+    {
+      "player_slug": "keldric-faulk",
+      "player_name": "Keldric Faulk",
+      "pos": "DL",
+      "value": 4305
+    },
+    {
+      "player_slug": "kelee-ringo",
+      "player_name": "Kelee Ringo",
+      "pos": "DB",
+      "value": 2060
+    },
+    {
+      "player_slug": "kendal-daniels",
+      "player_name": "Kendal Daniels",
+      "pos": "LB",
+      "value": 2884
+    },
+    {
+      "player_slug": "kendall-fuller",
+      "player_name": "Kendall Fuller",
+      "pos": "DB",
+      "value": 431
+    },
+    {
+      "player_slug": "kendall-hinton",
+      "player_name": "Kendall Hinton",
+      "pos": "WR",
+      "value": 199
+    },
+    {
+      "player_slug": "kendall-sheffield",
+      "player_name": "Kendall Sheffield",
+      "pos": "DB",
+      "value": 475
+    },
+    {
+      "player_slug": "kendre-miller",
+      "player_name": "Kendre Miller",
+      "pos": "RB",
+      "value": 2950
+    },
+    {
+      "player_slug": "kendric-pryor",
+      "player_name": "Kendric Pryor",
+      "pos": "WR",
+      "value": 206
+    },
+    {
+      "player_slug": "kendrick-bourne",
+      "player_name": "Kendrick Bourne",
+      "pos": "WR",
+      "value": 623
+    },
+    {
+      "player_slug": "kendrick-law",
+      "player_name": "Kendrick Law",
+      "pos": "WR",
+      "value": 1236
+    },
+    {
+      "player_slug": "kene-nwangwu",
+      "player_name": "Kene Nwangwu",
+      "pos": "RB",
+      "value": 399
+    },
+    {
+      "player_slug": "kenneth-gainwell",
+      "player_name": "Kenneth Gainwell",
+      "pos": "RB",
+      "value": 3562
+    },
+    {
+      "player_slug": "kenneth-grant",
+      "player_name": "Kenneth Grant",
+      "pos": "DL",
+      "value": 2910
+    },
+    {
+      "player_slug": "kenneth-walker-iii",
+      "player_name": "Kenneth Walker III",
+      "pos": "RB",
+      "value": 6800
+    },
+    {
+      "player_slug": "kenny-clark",
+      "player_name": "Kenny Clark",
+      "pos": "DL",
+      "value": 1625
+    },
+    {
+      "player_slug": "kenny-pickett",
+      "player_name": "Kenny Pickett",
+      "pos": "QB",
+      "value": 1931
+    },
+    {
+      "player_slug": "kenyan-drake",
+      "player_name": "Kenyan Drake",
+      "pos": "RB",
+      "value": 109
+    },
+    {
+      "player_slug": "kenyon-sadiq",
+      "player_name": "Kenyon Sadiq",
+      "pos": "TE",
+      "value": 5667
+    },
+    {
+      "player_slug": "keon-coleman",
+      "player_name": "Keon Coleman",
+      "pos": "WR",
+      "value": 3230
+    },
+    {
+      "player_slug": "kerby-joseph",
+      "player_name": "Kerby Joseph",
+      "pos": "DB",
+      "value": 3296
+    },
+    {
+      "player_slug": "keshawn-vaughn",
+      "player_name": "Keshawn Vaughn",
+      "pos": "RB",
+      "value": 309
+    },
+    {
+      "player_slug": "kevin-byard",
+      "player_name": "Kevin Byard",
+      "pos": "DB",
+      "value": 610
+    },
+    {
+      "player_slug": "kevin-coleman-jr",
+      "player_name": "Kevin Coleman Jr.",
+      "pos": "WR",
+      "value": 2060
+    },
+    {
+      "player_slug": "kevin-jennings",
+      "player_name": "Kevin Jennings",
+      "pos": "QB",
+      "value": 1092
+    },
+    {
+      "player_slug": "kevontae-turpin",
+      "player_name": "Kevontae Turpin",
+      "pos": "WR",
+      "value": 309
+    },
+    {
+      "player_slug": "keyron-crawford",
+      "player_name": "Keyron Crawford",
+      "pos": "DL",
+      "value": 2069
+    },
+    {
+      "player_slug": "khaleke-hudson",
+      "player_name": "Khaleke Hudson",
+      "pos": "DB",
+      "value": 824
+    },
+    {
+      "player_slug": "khalil-herbert",
+      "player_name": "Khalil Herbert",
+      "pos": "RB",
+      "value": 1003
+    },
+    {
+      "player_slug": "khalil-mack",
+      "player_name": "Khalil Mack",
+      "pos": "DL",
+      "value": 714
+    },
+    {
+      "player_slug": "khalil-shakir",
+      "player_name": "Khalil Shakir",
+      "pos": "WR",
+      "value": 4120
+    },
+    {
+      "player_slug": "kimani-vidal",
+      "player_name": "Kimani Vidal",
+      "pos": "RB",
+      "value": 2898
+    },
+    {
+      "player_slug": "kirk-cousins",
+      "player_name": "Kirk Cousins",
+      "pos": "QB",
+      "value": 1422
+    },
+    {
+      "player_slug": "kj-hamler",
+      "player_name": "KJ Hamler",
+      "pos": "WR",
+      "value": 412
+    },
+    {
+      "player_slug": "kj-osborn",
+      "player_name": "KJ Osborn",
+      "pos": "WR",
+      "value": 407
+    },
+    {
+      "player_slug": "ko-kieft",
+      "player_name": "Ko Kieft",
+      "pos": "TE",
+      "value": 412
+    },
+    {
+      "player_slug": "kobie-turner",
+      "player_name": "Kobie Turner",
+      "pos": "DL",
+      "value": 1545
+    },
+    {
+      "player_slug": "konata-mumpfield",
+      "player_name": "Konata Mumpfield",
+      "pos": "WR",
+      "value": 1843
+    },
+    {
+      "player_slug": "kool-aid-mckinstry",
+      "player_name": "Kool-Aid McKinstry",
+      "pos": "DB",
+      "value": 4120
+    },
+    {
+      "player_slug": "kris-jenkins-jr",
+      "player_name": "Kris Jenkins Jr.",
+      "pos": "DL",
+      "value": 2266
+    },
+    {
+      "player_slug": "krys-barnes",
+      "player_name": "Krys Barnes",
+      "pos": "LB",
+      "value": 1236
+    },
+    {
+      "player_slug": "kwon-alexander",
+      "player_name": "Kwon Alexander",
+      "pos": "LB",
+      "value": 493
+    },
+    {
+      "player_slug": "kyle-allen",
+      "player_name": "Kyle Allen",
+      "pos": "QB",
+      "value": 386
+    },
+    {
+      "player_slug": "kyle-hamilton",
+      "player_name": "Kyle Hamilton",
+      "pos": "DB",
+      "value": 8240
+    },
+    {
+      "player_slug": "kyle-monangai",
+      "player_name": "Kyle Monangai",
+      "pos": "RB",
+      "value": 4766
+    },
+    {
+      "player_slug": "kyle-philips",
+      "player_name": "Kyle Philips",
+      "pos": "WR",
+      "value": 206
+    },
+    {
+      "player_slug": "kyle-pitts",
+      "player_name": "Kyle Pitts",
+      "pos": "TE",
+      "value": 5218
+    },
+    {
+      "player_slug": "kyle-trask",
+      "player_name": "Kyle Trask",
+      "pos": "QB",
+      "value": 258
+    },
+    {
+      "player_slug": "kyle-williams",
+      "player_name": "Kyle Williams",
+      "pos": "WR",
+      "value": 3565
+    },
+    {
+      "player_slug": "kylen-granson",
+      "player_name": "Kylen Granson",
+      "pos": "TE",
+      "value": 515
+    },
+    {
+      "player_slug": "kyler-murray",
+      "player_name": "Kyler Murray",
+      "pos": "QB",
+      "value": 4750
+    },
+    {
+      "player_slug": "kyren-williams",
+      "player_name": "Kyren Williams",
+      "pos": "RB",
+      "value": 5500
+    },
+    {
+      "player_slug": "l-jarius-sneed",
+      "player_name": "L'Jarius Sneed",
+      "pos": "DB",
+      "value": 3167
+    },
+    {
+      "player_slug": "ladd-mcconkey",
+      "player_name": "Ladd McConkey",
+      "pos": "WR",
+      "value": 6600
+    },
+    {
+      "player_slug": "laiatu-latu",
+      "player_name": "Laiatu Latu",
+      "pos": "DL",
+      "value": 3605
+    },
+    {
+      "player_slug": "lamar-jackson",
+      "player_name": "Lamar Jackson",
+      "pos": "QB",
+      "value": 9750
+    },
+    {
+      "player_slug": "landen-king",
+      "player_name": "Landen King",
+      "pos": "TE",
+      "value": 1403
+    },
+    {
+      "player_slug": "landon-collins",
+      "player_name": "Landon Collins",
+      "pos": "DB",
+      "value": 394
+    },
+    {
+      "player_slug": "landon-jackson",
+      "player_name": "Landon Jackson",
+      "pos": "DL",
+      "value": 1854
+    },
+    {
+      "player_slug": "laquon-treadwell",
+      "player_name": "Laquon Treadwell",
+      "pos": "WR",
+      "value": 177
+    },
+    {
+      "player_slug": "larry-ogunjobi",
+      "player_name": "Larry Ogunjobi",
+      "pos": "DL",
+      "value": 1224
+    },
+    {
+      "player_slug": "larry-rountree-iii",
+      "player_name": "Larry Rountree III",
+      "pos": "RB",
+      "value": 515
+    },
+    {
+      "player_slug": "las-vegas-raiders-dst",
+      "player_name": "Las Vegas Raiders DST",
+      "pos": "DST",
+      "value": 288
+    },
+    {
+      "player_slug": "latavius-murray",
+      "player_name": "Latavius Murray",
+      "pos": "RB",
+      "value": 100
+    },
+    {
+      "player_slug": "lavonte-david",
+      "player_name": "Lavonte David",
+      "pos": "LB",
+      "value": 417
+    },
+    {
+      "player_slug": "lee-hunter",
+      "player_name": "Lee Hunter",
+      "pos": "DL",
+      "value": 2575
+    },
+    {
+      "player_slug": "leighton-vander-esch",
+      "player_name": "Leighton Vander Esch",
+      "pos": "LB",
+      "value": 100
+    },
+    {
+      "player_slug": "leonard-williams",
+      "player_name": "Leonard Williams",
+      "pos": "DL",
+      "value": 816
+    },
+    {
+      "player_slug": "lequint-allen",
+      "player_name": "LeQuint Allen",
+      "pos": "RB",
+      "value": 2725
+    },
+    {
+      "player_slug": "lil-jordan-humphrey",
+      "player_name": "Lil'Jordan Humphrey",
+      "pos": "WR",
+      "value": 412
+    },
+    {
+      "player_slug": "linval-joseph",
+      "player_name": "Linval Joseph",
+      "pos": "DL",
+      "value": 93
+    },
+    {
+      "player_slug": "lonnie-johnson-jr",
+      "player_name": "Lonnie Johnson Jr.",
+      "pos": "DB",
+      "value": 728
+    },
+    {
+      "player_slug": "los-angeles-chargers-dst",
+      "player_name": "Los Angeles Chargers DST",
+      "pos": "DST",
+      "value": 422
+    },
+    {
+      "player_slug": "los-angeles-rams-dst",
+      "player_name": "Los Angeles Rams DST",
+      "pos": "DST",
+      "value": 515
+    },
+    {
+      "player_slug": "lt-overton",
+      "player_name": "LT Overton",
+      "pos": "DL",
+      "value": 1189
+    },
+    {
+      "player_slug": "lucky-jackson",
+      "player_name": "Lucky Jackson",
+      "pos": "WR",
+      "value": 2266
+    },
+    {
+      "player_slug": "lukas-van-ness",
+      "player_name": "Lukas Van Ness",
+      "pos": "DL",
+      "value": 2884
+    },
+    {
+      "player_slug": "luke-altmyer",
+      "player_name": "Luke Altmyer",
+      "pos": "QB",
+      "value": 538
+    },
+    {
+      "player_slug": "luke-farrell",
+      "player_name": "Luke Farrell",
+      "pos": "TE",
+      "value": 412
+    },
+    {
+      "player_slug": "luke-laufenberg",
+      "player_name": "Luke Laufenberg",
+      "pos": "QB",
+      "value": 386
+    },
+    {
+      "player_slug": "luke-mccaffrey",
+      "player_name": "Luke McCaffrey",
+      "pos": "WR",
+      "value": 2575
+    },
+    {
+      "player_slug": "luke-musgrave",
+      "player_name": "Luke Musgrave",
+      "pos": "TE",
+      "value": 2575
+    },
+    {
+      "player_slug": "luke-schoonmaker",
+      "player_name": "Luke Schoonmaker",
+      "pos": "TE",
+      "value": 1490
+    },
+    {
+      "player_slug": "luther-burden-iii",
+      "player_name": "Luther Burden III",
+      "pos": "WR",
+      "value": 6081
+    },
+    {
+      "player_slug": "lynn-bowden-jr",
+      "player_name": "Lynn Bowden Jr.",
+      "pos": "WR",
+      "value": 206
+    },
+    {
+      "player_slug": "maason-smith",
+      "player_name": "Maason Smith",
+      "pos": "DL",
+      "value": 1545
+    },
+    {
+      "player_slug": "mac-jones",
+      "player_name": "Mac Jones",
+      "pos": "QB",
+      "value": 2901
+    },
+    {
+      "player_slug": "mack-hollins",
+      "player_name": "Mack Hollins",
+      "pos": "WR",
+      "value": 154
+    },
+    {
+      "player_slug": "mack-wilson-sr",
+      "player_name": "Mack Wilson Sr.",
+      "pos": "LB",
+      "value": 721
+    },
+    {
+      "player_slug": "makai-lemon",
+      "player_name": "Makai Lemon",
+      "pos": "WR",
+      "value": 6119
+    },
+    {
+      "player_slug": "malachi-corley",
+      "player_name": "Malachi Corley",
+      "pos": "WR",
+      "value": 2884
+    },
+    {
+      "player_slug": "malachi-fields",
+      "player_name": "Malachi Fields",
+      "pos": "WR",
+      "value": 3181
+    },
+    {
+      "player_slug": "malachi-lawrence",
+      "player_name": "Malachi Lawrence",
+      "pos": "DL",
+      "value": 3605
+    },
+    {
+      "player_slug": "malaki-starks",
+      "player_name": "Malaki Starks",
+      "pos": "DB",
+      "value": 3637
+    },
+    {
+      "player_slug": "malcolm-brown",
+      "player_name": "Malcolm Brown",
+      "pos": "RB",
+      "value": 135
+    },
+    {
+      "player_slug": "malcolm-jenkins",
+      "player_name": "Malcolm Jenkins",
+      "pos": "DB",
+      "value": 100
+    },
+    {
+      "player_slug": "maliek-collins",
+      "player_name": "Maliek Collins",
+      "pos": "DL",
+      "value": 695
+    },
+    {
+      "player_slug": "malik-davis",
+      "player_name": "Malik Davis",
+      "pos": "RB",
+      "value": 824
+    },
+    {
+      "player_slug": "malik-harrison",
+      "player_name": "Malik Harrison",
+      "pos": "LB",
+      "value": 1236
+    },
+    {
+      "player_slug": "malik-heath",
+      "player_name": "Malik Heath",
+      "pos": "WR",
+      "value": 309
+    },
+    {
+      "player_slug": "malik-nabers",
+      "player_name": "Malik Nabers",
+      "pos": "WR",
+      "value": 8145
+    },
+    {
+      "player_slug": "malik-reed",
+      "player_name": "Malik Reed",
+      "pos": "DL",
+      "value": 669
+    },
+    {
+      "player_slug": "malik-washington",
+      "player_name": "Malik Washington",
+      "pos": "WR",
+      "value": 3168
+    },
+    {
+      "player_slug": "malik-willis",
+      "player_name": "Malik Willis",
+      "pos": "QB",
+      "value": 4609
+    },
+    {
+      "player_slug": "mansoor-delane",
+      "player_name": "Mansoor Delane",
+      "pos": "DB",
+      "value": 4176
+    },
+    {
+      "player_slug": "marcedes-lewis",
+      "player_name": "Marcedes Lewis",
+      "pos": "TE",
+      "value": 93
+    },
+    {
+      "player_slug": "marcus-davenport",
+      "player_name": "Marcus Davenport",
+      "pos": "DL",
+      "value": 770
+    },
+    {
+      "player_slug": "marcus-epps",
+      "player_name": "Marcus Epps",
+      "pos": "DB",
+      "value": 923
+    },
+    {
+      "player_slug": "marcus-mariota",
+      "player_name": "Marcus Mariota",
+      "pos": "QB",
+      "value": 1898
+    },
+    {
+      "player_slug": "marcus-peters",
+      "player_name": "Marcus Peters",
+      "pos": "DB",
+      "value": 289
+    },
+    {
+      "player_slug": "marcus-williams",
+      "player_name": "Marcus Williams",
+      "pos": "DB",
+      "value": 1445
+    },
+    {
+      "player_slug": "mark-andrews",
+      "player_name": "Mark Andrews",
+      "pos": "TE",
+      "value": 3461
+    },
+    {
+      "player_slug": "markquese-bell",
+      "player_name": "Markquese Bell",
+      "pos": "DB",
+      "value": 1030
+    },
+    {
+      "player_slug": "marlin-klein",
+      "player_name": "Marlin Klein",
+      "pos": "TE",
+      "value": 2811
+    },
+    {
+      "player_slug": "marlon-humphrey",
+      "player_name": "Marlon Humphrey",
+      "pos": "DB",
+      "value": 2869
+    },
+    {
+      "player_slug": "marlon-mack",
+      "player_name": "Marlon Mack",
+      "pos": "RB",
+      "value": 173
+    },
+    {
+      "player_slug": "marquez-valdes-scantling",
+      "player_name": "Marquez Valdes-Scantling",
+      "pos": "WR",
+      "value": 251
+    },
+    {
+      "player_slug": "marquise-brown",
+      "player_name": "Marquise Brown",
+      "pos": "WR",
+      "value": 1017
+    },
+    {
+      "player_slug": "marshawn-lloyd",
+      "player_name": "MarShawn Lloyd",
+      "pos": "RB",
+      "value": 3400
+    },
+    {
+      "player_slug": "marshon-lattimore",
+      "player_name": "Marshon Lattimore",
+      "pos": "DB",
+      "value": 1697
+    },
+    {
+      "player_slug": "marvin-harrison-jr",
+      "player_name": "Marvin Harrison Jr.",
+      "pos": "WR",
+      "value": 5200
+    },
+    {
+      "player_slug": "marvin-jones-jr",
+      "player_name": "Marvin Jones Jr.",
+      "pos": "WR",
+      "value": 53
+    },
+    {
+      "player_slug": "marvin-mims-jr",
+      "player_name": "Marvin Mims Jr.",
+      "pos": "WR",
+      "value": 3090
+    },
+    {
+      "player_slug": "mason-graham",
+      "player_name": "Mason Graham",
+      "pos": "DL",
+      "value": 4326
+    },
+    {
+      "player_slug": "mason-taylor",
+      "player_name": "Mason Taylor",
+      "pos": "TE",
+      "value": 3222
+    },
+    {
+      "player_slug": "master-teague",
+      "player_name": "Master Teague",
+      "pos": "RB",
+      "value": 309
+    },
+    {
+      "player_slug": "mataeo-durant",
+      "player_name": "Mataeo Durant",
+      "pos": "RB",
+      "value": 927
+    },
+    {
+      "player_slug": "matt-ammendola",
+      "player_name": "Matt Ammendola",
+      "pos": "K",
+      "value": 309
+    },
+    {
+      "player_slug": "matt-breida",
+      "player_name": "Matt Breida",
+      "pos": "RB",
+      "value": 159
+    },
+    {
+      "player_slug": "matt-bushman",
+      "player_name": "Matt Bushman",
+      "pos": "TE",
+      "value": 155
+    },
+    {
+      "player_slug": "matt-gay",
+      "player_name": "Matt Gay",
+      "pos": "K",
+      "value": 453
+    },
+    {
+      "player_slug": "matt-milano",
+      "player_name": "Matt Milano",
+      "pos": "LB",
+      "value": 1234
+    },
+    {
+      "player_slug": "matthew-golden",
+      "player_name": "Matthew Golden",
+      "pos": "WR",
+      "value": 4692
+    },
+    {
+      "player_slug": "matthew-hibner",
+      "player_name": "Matthew Hibner",
+      "pos": "TE",
+      "value": 1347
+    },
+    {
+      "player_slug": "matthew-judon",
+      "player_name": "Matthew Judon",
+      "pos": "DL",
+      "value": 834
+    },
+    {
+      "player_slug": "matthew-stafford",
+      "player_name": "Matthew Stafford",
+      "pos": "QB",
+      "value": 2427
+    },
+    {
+      "player_slug": "max-bredeson",
+      "player_name": "Max Bredeson",
+      "pos": "TE",
+      "value": 1081
+    },
+    {
+      "player_slug": "max-brosmer",
+      "player_name": "Max Brosmer",
+      "pos": "QB",
+      "value": 1824
+    },
+    {
+      "player_slug": "max-klare",
+      "player_name": "Max Klare",
+      "pos": "TE",
+      "value": 3578
+    },
+    {
+      "player_slug": "maxx-crosby",
+      "player_name": "Maxx Crosby",
+      "pos": "DL",
+      "value": 4944
+    },
+    {
+      "player_slug": "mecole-hardman-jr",
+      "player_name": "Mecole Hardman Jr.",
+      "pos": "WR",
+      "value": 309
+    },
+    {
+      "player_slug": "mekale-mckay",
+      "player_name": "Mekale McKay",
+      "pos": "WR",
+      "value": 76
+    },
+    {
+      "player_slug": "miami-dolphins-dst",
+      "player_name": "Miami Dolphins DST",
+      "pos": "DST",
+      "value": 474
+    },
+    {
+      "player_slug": "micah-hyde",
+      "player_name": "Micah Hyde",
+      "pos": "DB",
+      "value": 291
+    },
+    {
+      "player_slug": "micah-kiser",
+      "player_name": "Micah Kiser",
+      "pos": "LB",
+      "value": 514
+    },
+    {
+      "player_slug": "micah-mcfadden",
+      "player_name": "Micah McFadden",
+      "pos": "LB",
+      "value": 1854
+    },
+    {
+      "player_slug": "micah-parsons",
+      "player_name": "Micah Parsons",
+      "pos": "DL",
+      "value": 8034
+    },
+    {
+      "player_slug": "michael-bandy",
+      "player_name": "Michael Bandy",
+      "pos": "WR",
+      "value": 309
+    },
+    {
+      "player_slug": "michael-carter",
+      "player_name": "Michael Carter",
+      "pos": "RB",
+      "value": 721
+    },
+    {
+      "player_slug": "michael-gallup",
+      "player_name": "Michael Gallup",
+      "pos": "WR",
+      "value": 93
+    },
+    {
+      "player_slug": "michael-hoecht",
+      "player_name": "Michael Hoecht",
+      "pos": "DL",
+      "value": 927
+    },
+    {
+      "player_slug": "michael-mayer",
+      "player_name": "Michael Mayer",
+      "pos": "TE",
+      "value": 2611
+    },
+    {
+      "player_slug": "michael-penix-jr",
+      "player_name": "Michael Penix Jr.",
+      "pos": "QB",
+      "value": 3703
+    },
+    {
+      "player_slug": "michael-pittman-jr",
+      "player_name": "Michael Pittman Jr.",
+      "pos": "WR",
+      "value": 4307
+    },
+    {
+      "player_slug": "michael-pratt",
+      "player_name": "Michael Pratt",
+      "pos": "QB",
+      "value": 658
+    },
+    {
+      "player_slug": "michael-thomas",
+      "player_name": "Michael Thomas",
+      "pos": "WR",
+      "value": 291
+    },
+    {
+      "player_slug": "michael-trigg",
+      "player_name": "Michael Trigg",
+      "pos": "TE",
+      "value": 2064
+    },
+    {
+      "player_slug": "michael-wilson",
+      "player_name": "Michael Wilson",
+      "pos": "WR",
+      "value": 4639
+    },
+    {
+      "player_slug": "michael-woods-ii",
+      "player_name": "Michael Woods II",
+      "pos": "WR",
+      "value": 412
+    },
+    {
+      "player_slug": "mike-boone",
+      "player_name": "Mike Boone",
+      "pos": "RB",
+      "value": 245
+    },
+    {
+      "player_slug": "mike-evans",
+      "player_name": "Mike Evans",
+      "pos": "WR",
+      "value": 3136
+    },
+    {
+      "player_slug": "mike-gesicki",
+      "player_name": "Mike Gesicki",
+      "pos": "TE",
+      "value": 1708
+    },
+    {
+      "player_slug": "mike-green",
+      "player_name": "Mike Green",
+      "pos": "DL",
+      "value": 3914
+    },
+    {
+      "player_slug": "mike-hilton",
+      "player_name": "Mike Hilton",
+      "pos": "DB",
+      "value": 955
+    },
+    {
+      "player_slug": "mike-washington-jr",
+      "player_name": "Mike Washington Jr.",
+      "pos": "RB",
+      "value": 3117
+    },
+    {
+      "player_slug": "mike-williams",
+      "player_name": "Mike Williams",
+      "pos": "WR",
+      "value": 100
+    },
+    {
+      "player_slug": "miles-sanders",
+      "player_name": "Miles Sanders",
+      "pos": "RB",
+      "value": 189
+    },
+    {
+      "player_slug": "miller-moss",
+      "player_name": "Miller Moss",
+      "pos": "QB",
+      "value": 797
+    },
+    {
+      "player_slug": "minkah-fitzpatrick",
+      "player_name": "Minkah Fitzpatrick",
+      "pos": "DB",
+      "value": 4101
+    },
+    {
+      "player_slug": "minnesota-vikings-dst",
+      "player_name": "Minnesota Vikings DST",
+      "pos": "DST",
+      "value": 597
+    },
+    {
+      "player_slug": "mitch-tinsley",
+      "player_name": "Mitch Tinsley",
+      "pos": "WR",
+      "value": 927
+    },
+    {
+      "player_slug": "mitchell-trubisky",
+      "player_name": "Mitchell Trubisky",
+      "pos": "QB",
+      "value": 323
+    },
+    {
+      "player_slug": "mo-alie-cox",
+      "player_name": "Mo Alie-Cox",
+      "pos": "TE",
+      "value": 271
+    },
+    {
+      "player_slug": "montez-sweat",
+      "player_name": "Montez Sweat",
+      "pos": "DL",
+      "value": 3082
+    },
+    {
+      "player_slug": "montrell-washington",
+      "player_name": "Montrell Washington",
+      "pos": "WR",
+      "value": 412
+    },
+    {
+      "player_slug": "monty-rice",
+      "player_name": "Monty Rice",
+      "pos": "LB",
+      "value": 1236
+    },
+    {
+      "player_slug": "mustapha-mara",
+      "player_name": "Mustapha Mara",
+      "pos": "TE",
+      "value": 412
+    },
+    {
+      "player_slug": "mycole-pruitt",
+      "player_name": "MyCole Pruitt",
+      "pos": "TE",
+      "value": 160
+    },
+    {
+      "player_slug": "myjai-sanders",
+      "player_name": "Myjai Sanders",
+      "pos": "LB",
+      "value": 2060
+    },
+    {
+      "player_slug": "mykal-walker",
+      "player_name": "Mykal Walker",
+      "pos": "LB",
+      "value": 927
+    },
+    {
+      "player_slug": "mykel-williams",
+      "player_name": "Mykel Williams",
+      "pos": "DL",
+      "value": 3735
+    },
+    {
+      "player_slug": "myles-bryant",
+      "player_name": "Myles Bryant",
+      "pos": "DB",
+      "value": 824
+    },
+    {
+      "player_slug": "myles-garrett",
+      "player_name": "Myles Garrett",
+      "pos": "DL",
+      "value": 7788
+    },
+    {
+      "player_slug": "myles-jack",
+      "player_name": "Myles Jack",
+      "pos": "LB",
+      "value": 717
+    },
+    {
+      "player_slug": "n-keal-harry",
+      "player_name": "N'Keal Harry",
+      "pos": "WR",
+      "value": 100
+    },
+    {
+      "player_slug": "najee-harris",
+      "player_name": "Najee Harris",
+      "pos": "RB",
+      "value": 2192
+    },
+    {
+      "player_slug": "nate-boerkircher",
+      "player_name": "Nate Boerkircher",
+      "pos": "TE",
+      "value": 2884
+    },
+    {
+      "player_slug": "nate-hairston",
+      "player_name": "Nate Hairston",
+      "pos": "DB",
+      "value": 326
+    },
+    {
+      "player_slug": "nate-hobbs",
+      "player_name": "Nate Hobbs",
+      "pos": "DB",
+      "value": 1236
+    },
+    {
+      "player_slug": "nate-landman",
+      "player_name": "Nate Landman",
+      "pos": "LB",
+      "value": 1545
+    },
+    {
+      "player_slug": "nate-sudfeld",
+      "player_name": "Nate Sudfeld",
+      "pos": "QB",
+      "value": 182
+    },
+    {
+      "player_slug": "nate-wieting",
+      "player_name": "Nate Wieting",
+      "pos": "TE",
+      "value": 309
+    },
+    {
+      "player_slug": "nathan-carter",
+      "player_name": "Nathan Carter",
+      "pos": "RB",
+      "value": 2678
+    },
+    {
+      "player_slug": "nathan-rourke",
+      "player_name": "Nathan Rourke",
+      "pos": "QB",
+      "value": 100
+    },
+    {
+      "player_slug": "nelson-agholor",
+      "player_name": "Nelson Agholor",
+      "pos": "WR",
+      "value": 74
+    },
+    {
+      "player_slug": "neville-hewitt",
+      "player_name": "Neville Hewitt",
+      "pos": "LB",
+      "value": 294
+    },
+    {
+      "player_slug": "new-england-patriots-dst",
+      "player_name": "New England Patriots DST",
+      "pos": "DST",
+      "value": 453
+    },
+    {
+      "player_slug": "new-orleans-saints-dst",
+      "player_name": "New Orleans Saints DST",
+      "pos": "DST",
+      "value": 371
+    },
+    {
+      "player_slug": "new-york-giants-dst",
+      "player_name": "New York Giants DST",
+      "pos": "DST",
+      "value": 330
+    },
+    {
+      "player_slug": "new-york-jets-dst",
+      "player_name": "New York Jets DST",
+      "pos": "DST",
+      "value": 433
+    },
+    {
+      "player_slug": "nicholas-morrow",
+      "player_name": "Nicholas Morrow",
+      "pos": "LB",
+      "value": 623
+    },
+    {
+      "player_slug": "nicholas-singleton",
+      "player_name": "Nicholas Singleton",
+      "pos": "RB",
+      "value": 3639
+    },
+    {
+      "player_slug": "nick-bolton",
+      "player_name": "Nick Bolton",
+      "pos": "LB",
+      "value": 2266
+    },
+    {
+      "player_slug": "nick-bosa",
+      "player_name": "Nick Bosa",
+      "pos": "DL",
+      "value": 5150
+    },
+    {
+      "player_slug": "nick-chubb",
+      "player_name": "Nick Chubb",
+      "pos": "RB",
+      "value": 1274
+    },
+    {
+      "player_slug": "nick-cross",
+      "player_name": "Nick Cross",
+      "pos": "DB",
+      "value": 1648
+    },
+    {
+      "player_slug": "nick-folk",
+      "player_name": "Nick Folk",
+      "pos": "K",
+      "value": 361
+    },
+    {
+      "player_slug": "nick-jackson",
+      "player_name": "Nick Jackson",
+      "pos": "LB",
+      "value": 1030
+    },
+    {
+      "player_slug": "nick-kwiatkoski",
+      "player_name": "Nick Kwiatkoski",
+      "pos": "LB",
+      "value": 100
+    },
+    {
+      "player_slug": "nick-scott",
+      "player_name": "Nick Scott",
+      "pos": "DB",
+      "value": 701
+    },
+    {
+      "player_slug": "nick-vannett",
+      "player_name": "Nick Vannett",
+      "pos": "TE",
+      "value": 173
+    },
+    {
+      "player_slug": "nico-collins",
+      "player_name": "Nico Collins",
+      "pos": "WR",
+      "value": 6411
+    },
+    {
+      "player_slug": "nik-bonitto",
+      "player_name": "Nik Bonitto",
+      "pos": "LB",
+      "value": 3605
+    },
+    {
+      "player_slug": "nnamdi-madubuike",
+      "player_name": "Nnamdi Madubuike",
+      "pos": "DL",
+      "value": 2884
+    },
+    {
+      "player_slug": "noah-fant",
+      "player_name": "Noah Fant",
+      "pos": "TE",
+      "value": 1808
+    },
+    {
+      "player_slug": "noah-gray",
+      "player_name": "Noah Gray",
+      "pos": "TE",
+      "value": 1875
+    },
+    {
+      "player_slug": "nolan-smith-jr",
+      "player_name": "Nolan Smith Jr.",
+      "pos": "DL",
+      "value": 3296
+    },
+    {
+      "player_slug": "nsimba-webster",
+      "player_name": "Nsimba Webster",
+      "pos": "WR",
+      "value": 185
+    },
+    {
+      "player_slug": "odafe-oweh",
+      "player_name": "Odafe Oweh",
+      "pos": "DL",
+      "value": 2060
+    },
+    {
+      "player_slug": "odell-beckham-jr",
+      "player_name": "Odell Beckham Jr.",
+      "pos": "WR",
+      "value": 496
+    },
+    {
+      "player_slug": "olamide-zaccheaus",
+      "player_name": "Olamide Zaccheaus",
+      "pos": "WR",
+      "value": 716
+    },
+    {
+      "player_slug": "ollie-gordon-ii",
+      "player_name": "Ollie Gordon II",
+      "pos": "RB",
+      "value": 3335
+    },
+    {
+      "player_slug": "olumide-fashanu",
+      "player_name": "Olumide Fashanu",
+      "pos": "DL",
+      "value": 618
+    },
+    {
+      "player_slug": "omar-cooper-jr",
+      "player_name": "Omar Cooper Jr.",
+      "pos": "WR",
+      "value": 4939
+    },
+    {
+      "player_slug": "omar-khan",
+      "player_name": "Omar Khan",
+      "pos": "LB",
+      "value": 1648
+    },
+    {
+      "player_slug": "omar-speights",
+      "player_name": "Omar Speights",
+      "pos": "LB",
+      "value": 2060
+    },
+    {
+      "player_slug": "omarion-hampton",
+      "player_name": "Omarion Hampton",
+      "pos": "RB",
+      "value": 7800
+    },
+    {
+      "player_slug": "oren-burks",
+      "player_name": "Oren Burks",
+      "pos": "LB",
+      "value": 522
+    },
+    {
+      "player_slug": "oronde-gadsden-ii",
+      "player_name": "Oronde Gadsden II",
+      "pos": "TE",
+      "value": 4686
+    },
+    {
+      "player_slug": "oscar-delp",
+      "player_name": "Oscar Delp",
+      "pos": "TE",
+      "value": 2460
+    },
+    {
+      "player_slug": "parker-washington",
+      "player_name": "Parker Washington",
+      "pos": "WR",
+      "value": 4532
+    },
+    {
+      "player_slug": "parris-campbell",
+      "player_name": "Parris Campbell",
+      "pos": "WR",
+      "value": 205
+    },
+    {
+      "player_slug": "pat-bryant",
+      "player_name": "Pat Bryant",
+      "pos": "WR",
+      "value": 3017
+    },
+    {
+      "player_slug": "pat-freiermuth",
+      "player_name": "Pat Freiermuth",
+      "pos": "TE",
+      "value": 2900
+    },
+    {
+      "player_slug": "patrick-chung",
+      "player_name": "Patrick Chung",
+      "pos": "DB",
+      "value": 100
+    },
+    {
+      "player_slug": "patrick-jones-ii",
+      "player_name": "Patrick Jones II",
+      "pos": "DL",
+      "value": 1854
+    },
+    {
+      "player_slug": "patrick-mahomes",
+      "player_name": "Patrick Mahomes",
+      "pos": "QB",
+      "value": 8188
+    },
+    {
+      "player_slug": "patrick-onwuasor",
+      "player_name": "Patrick Onwuasor",
+      "pos": "LB",
+      "value": 348
+    },
+    {
+      "player_slug": "patrick-queen",
+      "player_name": "Patrick Queen",
+      "pos": "LB",
+      "value": 2884
+    },
+    {
+      "player_slug": "patrick-ricard",
+      "player_name": "Patrick Ricard",
+      "pos": "RB",
+      "value": 148
+    },
+    {
+      "player_slug": "patrick-surtain-ii",
+      "player_name": "Patrick Surtain II",
+      "pos": "DB",
+      "value": 7416
+    },
+    {
+      "player_slug": "patrick-taylor",
+      "player_name": "Patrick Taylor",
+      "pos": "RB",
+      "value": 303
+    },
+    {
+      "player_slug": "patrick-taylor-jr",
+      "player_name": "Patrick Taylor Jr.",
+      "pos": "RB",
+      "value": 404
+    },
+    {
+      "player_slug": "paul-taulelei",
+      "player_name": "Paul Taulelei",
+      "pos": "TE",
+      "value": 412
+    },
+    {
+      "player_slug": "paulson-adebo",
+      "player_name": "Paulson Adebo",
+      "pos": "DB",
+      "value": 2575
+    },
+    {
+      "player_slug": "payton-wilson",
+      "player_name": "Payton Wilson",
+      "pos": "LB",
+      "value": 3605
+    },
+    {
+      "player_slug": "penny-hart",
+      "player_name": "Penny Hart",
+      "pos": "WR",
+      "value": 191
+    },
+    {
+      "player_slug": "pete-werner",
+      "player_name": "Pete Werner",
+      "pos": "LB",
+      "value": 1854
+    },
+    {
+      "player_slug": "peter-woods",
+      "player_name": "Peter Woods",
+      "pos": "DL",
+      "value": 3738
+    },
+    {
+      "player_slug": "pharaoh-brown",
+      "player_name": "Pharaoh Brown",
+      "pos": "TE",
+      "value": 189
+    },
+    {
+      "player_slug": "phil-mafah",
+      "player_name": "Phil Mafah",
+      "pos": "RB",
+      "value": 3914
+    },
+    {
+      "player_slug": "philadelphia-eagles-dst",
+      "player_name": "Philadelphia Eagles DST",
+      "pos": "DST",
+      "value": 680
+    },
+    {
+      "player_slug": "phillip-dorsett",
+      "player_name": "Phillip Dorsett",
+      "pos": "WR",
+      "value": 109
+    },
+    {
+      "player_slug": "phillip-lindsay",
+      "player_name": "Phillip Lindsay",
+      "pos": "RB",
+      "value": 151
+    },
+    {
+      "player_slug": "pittsburgh-steelers-dst",
+      "player_name": "Pittsburgh Steelers DST",
+      "pos": "DST",
+      "value": 618
+    },
+    {
+      "player_slug": "pj-walker",
+      "player_name": "PJ Walker",
+      "pos": "QB",
+      "value": 258
+    },
+    {
+      "player_slug": "pooka-williams-jr",
+      "player_name": "Pooka Williams Jr.",
+      "pos": "RB",
+      "value": 618
+    },
+    {
+      "player_slug": "poona-ford",
+      "player_name": "Poona Ford",
+      "pos": "DL",
+      "value": 1091
+    },
+    {
+      "player_slug": "preston-stone",
+      "player_name": "Preston Stone",
+      "pos": "QB",
+      "value": 803
+    },
+    {
+      "player_slug": "princely-umanmielen",
+      "player_name": "Princely Umanmielen",
+      "pos": "DL",
+      "value": 2060
+    },
+    {
+      "player_slug": "princeton-fant",
+      "player_name": "Princeton Fant",
+      "pos": "TE",
+      "value": 412
+    },
+    {
+      "player_slug": "puka-nacua",
+      "player_name": "Puka Nacua",
+      "pos": "WR",
+      "value": 8500
+    },
+    {
+      "player_slug": "quandre-diggs",
+      "player_name": "Quandre Diggs",
+      "pos": "DB",
+      "value": 1083
+    },
+    {
+      "player_slug": "quay-walker",
+      "player_name": "Quay Walker",
+      "pos": "LB",
+      "value": 2884
+    },
+    {
+      "player_slug": "quentin-johnston",
+      "player_name": "Quentin Johnston",
+      "pos": "WR",
+      "value": 4254
+    },
+    {
+      "player_slug": "quentin-lake",
+      "player_name": "Quentin Lake",
+      "pos": "DB",
+      "value": 721
+    },
+    {
+      "player_slug": "quez-watkins",
+      "player_name": "Quez Watkins",
+      "pos": "WR",
+      "value": 412
+    },
+    {
+      "player_slug": "quincy-williams",
+      "player_name": "Quincy Williams",
+      "pos": "LB",
+      "value": 1733
+    },
+    {
+      "player_slug": "quinn-ewers",
+      "player_name": "Quinn Ewers",
+      "pos": "QB",
+      "value": 3150
+    },
+    {
+      "player_slug": "quinnen-williams",
+      "player_name": "Quinnen Williams",
+      "pos": "DL",
+      "value": 2678
+    },
+    {
+      "player_slug": "quinshon-judkins",
+      "player_name": "Quinshon Judkins",
+      "pos": "RB",
+      "value": 5900
+    },
+    {
+      "player_slug": "quinton-jefferson",
+      "player_name": "Quinton Jefferson",
+      "pos": "DL",
+      "value": 294
+    },
+    {
+      "player_slug": "quinyon-mitchell",
+      "player_name": "Quinyon Mitchell",
+      "pos": "DB",
+      "value": 5665
+    },
+    {
+      "player_slug": "r-j-moore",
+      "player_name": "R.J. Moore",
+      "pos": "WR",
+      "value": 309
+    },
+    {
+      "player_slug": "r-mason-thomas",
+      "player_name": "R Mason Thomas",
+      "pos": "DL",
+      "value": 3132
+    },
+    {
+      "player_slug": "rachaad-white",
+      "player_name": "Rachaad White",
+      "pos": "RB",
+      "value": 3605
+    },
+    {
+      "player_slug": "raekwon-davis",
+      "player_name": "Raekwon Davis",
+      "pos": "DL",
+      "value": 515
+    },
+    {
+      "player_slug": "raheem-mostert",
+      "player_name": "Raheem Mostert",
+      "pos": "RB",
+      "value": 60
+    },
+    {
+      "player_slug": "raheim-sanders",
+      "player_name": "Raheim Sanders",
+      "pos": "WR",
+      "value": 2575
+    },
+    {
+      "player_slug": "rashad-weaver",
+      "player_name": "Rashad Weaver",
+      "pos": "DL",
+      "value": 1030
+    },
+    {
+      "player_slug": "rashan-gary",
+      "player_name": "Rashan Gary",
+      "pos": "DL",
+      "value": 4635
+    },
+    {
+      "player_slug": "rashee-rice",
+      "player_name": "Rashee Rice",
+      "pos": "WR",
+      "value": 6200
+    },
+    {
+      "player_slug": "rasheem-green",
+      "player_name": "Rasheem Green",
+      "pos": "DL",
+      "value": 909
+    },
+    {
+      "player_slug": "rasheen-ali",
+      "player_name": "Rasheen Ali",
+      "pos": "RB",
+      "value": 2369
+    },
+    {
+      "player_slug": "rashid-shaheed",
+      "player_name": "Rashid Shaheed",
+      "pos": "WR",
+      "value": 3720
+    },
+    {
+      "player_slug": "rashod-bateman",
+      "player_name": "Rashod Bateman",
+      "pos": "WR",
+      "value": 2662
+    },
+    {
+      "player_slug": "rasul-douglas",
+      "player_name": "Rasul Douglas",
+      "pos": "DB",
+      "value": 663
+    },
+    {
+      "player_slug": "ray-davis",
+      "player_name": "Ray Davis",
+      "pos": "RB",
+      "value": 2497
+    },
+    {
+      "player_slug": "rayshawn-jenkins",
+      "player_name": "Rayshawn Jenkins",
+      "pos": "LB",
+      "value": 789
+    },
+    {
+      "player_slug": "reggie-bonnafon",
+      "player_name": "Reggie Bonnafon",
+      "pos": "RB",
+      "value": 171
+    },
+    {
+      "player_slug": "reggie-ragland",
+      "player_name": "Reggie Ragland",
+      "pos": "LB",
+      "value": 308
+    },
+    {
+      "player_slug": "reggie-roberson-jr",
+      "player_name": "Reggie Roberson Jr.",
+      "pos": "WR",
+      "value": 206
+    },
+    {
+      "player_slug": "reggie-virgil",
+      "player_name": "Reggie Virgil",
+      "pos": "WR",
+      "value": 1381
+    },
+    {
+      "player_slug": "reshad-jones",
+      "player_name": "Reshad Jones",
+      "pos": "DB",
+      "value": 100
+    },
+    {
+      "player_slug": "rhamondre-stevenson",
+      "player_name": "Rhamondre Stevenson",
+      "pos": "RB",
+      "value": 3986
+    },
+    {
+      "player_slug": "richie-james",
+      "player_name": "Richie James",
+      "pos": "WR",
+      "value": 100
+    },
+    {
+      "player_slug": "ricky-pearsall",
+      "player_name": "Ricky Pearsall",
+      "pos": "WR",
+      "value": 3495
+    },
+    {
+      "player_slug": "rico-dowdle",
+      "player_name": "Rico Dowdle",
+      "pos": "RB",
+      "value": 4054
+    },
+    {
+      "player_slug": "riley-leonard",
+      "player_name": "Riley Leonard",
+      "pos": "QB",
+      "value": 2946
+    },
+    {
+      "player_slug": "riley-nowakowski",
+      "player_name": "Riley Nowakowski",
+      "pos": "TE",
+      "value": 960
+    },
+    {
+      "player_slug": "river-cracraft",
+      "player_name": "River Cracraft",
+      "pos": "WR",
+      "value": 84
+    },
+    {
+      "player_slug": "rj-harvey",
+      "player_name": "RJ Harvey",
+      "pos": "RB",
+      "value": 4670
+    },
+    {
+      "player_slug": "robbie-anderson",
+      "player_name": "Robbie Anderson",
+      "pos": "WR",
+      "value": 179
+    },
+    {
+      "player_slug": "robert-henry-jr",
+      "player_name": "Robert Henry Jr.",
+      "pos": "RB",
+      "value": 618
+    },
+    {
+      "player_slug": "robert-quinn",
+      "player_name": "Robert Quinn",
+      "pos": "DL",
+      "value": 217
+    },
+    {
+      "player_slug": "robert-rochell",
+      "player_name": "Robert Rochell",
+      "pos": "DB",
+      "value": 618
+    },
+    {
+      "player_slug": "robert-tonyan",
+      "player_name": "Robert Tonyan",
+      "pos": "TE",
+      "value": 189
+    },
+    {
+      "player_slug": "robert-woods",
+      "player_name": "Robert Woods",
+      "pos": "WR",
+      "value": 101
+    },
+    {
+      "player_slug": "rock-ya-sin",
+      "player_name": "Rock Ya-Sin",
+      "pos": "DB",
+      "value": 754
+    },
+    {
+      "player_slug": "rodney-mcleod",
+      "player_name": "Rodney McLeod",
+      "pos": "DB",
+      "value": 164
+    },
+    {
+      "player_slug": "roger-mccreary",
+      "player_name": "Roger McCreary",
+      "pos": "DB",
+      "value": 2575
+    },
+    {
+      "player_slug": "roman-wilson",
+      "player_name": "Roman Wilson",
+      "pos": "WR",
+      "value": 2884
+    },
+    {
+      "player_slug": "rome-odunze",
+      "player_name": "Rome Odunze",
+      "pos": "WR",
+      "value": 6900
+    },
+    {
+      "player_slug": "romello-height",
+      "player_name": "Romello Height",
+      "pos": "DL",
+      "value": 1854
+    },
+    {
+      "player_slug": "romeo-doubs",
+      "player_name": "Romeo Doubs",
+      "pos": "WR",
+      "value": 4264
+    },
+    {
+      "player_slug": "rondale-moore",
+      "player_name": "Rondale Moore",
+      "pos": "WR",
+      "value": 100
+    },
+    {
+      "player_slug": "ronnie-harrison-jr",
+      "player_name": "Ronnie Harrison Jr.",
+      "pos": "DB",
+      "value": 903
+    },
+    {
+      "player_slug": "ronnie-perkins",
+      "player_name": "Ronnie Perkins",
+      "pos": "DL",
+      "value": 1236
+    },
+    {
+      "player_slug": "ronnie-rivers",
+      "player_name": "Ronnie Rivers",
+      "pos": "RB",
+      "value": 412
+    },
+    {
+      "player_slug": "roquan-smith",
+      "player_name": "Roquan Smith",
+      "pos": "LB",
+      "value": 4815
+    },
+    {
+      "player_slug": "roschon-johnson",
+      "player_name": "Roschon Johnson",
+      "pos": "RB",
+      "value": 1889
+    },
+    {
+      "player_slug": "ross-blacklock",
+      "player_name": "Ross Blacklock",
+      "pos": "DL",
+      "value": 1030
+    },
+    {
+      "player_slug": "ross-dwelley",
+      "player_name": "Ross Dwelley",
+      "pos": "TE",
+      "value": 198
+    },
+    {
+      "player_slug": "royce-freeman",
+      "player_name": "Royce Freeman",
+      "pos": "RB",
+      "value": 259
+    },
+    {
+      "player_slug": "rueben-bain-jr",
+      "player_name": "Rueben Bain Jr.",
+      "pos": "DL",
+      "value": 4844
+    },
+    {
+      "player_slug": "russell-gage",
+      "player_name": "Russell Gage",
+      "pos": "WR",
+      "value": 277
+    },
+    {
+      "player_slug": "russell-wilson",
+      "player_name": "Russell Wilson",
+      "pos": "QB",
+      "value": 810
+    },
+    {
+      "player_slug": "ryan-becker",
+      "player_name": "Ryan Becker",
+      "pos": "TE",
+      "value": 515
+    },
+    {
+      "player_slug": "ryan-flournoy",
+      "player_name": "Ryan Flournoy",
+      "pos": "WR",
+      "value": 2380
+    },
+    {
+      "player_slug": "ryquell-armstead",
+      "player_name": "Ryquell Armstead",
+      "pos": "RB",
+      "value": 182
+    },
+    {
+      "player_slug": "salvon-ahmed",
+      "player_name": "Salvon Ahmed",
+      "pos": "RB",
+      "value": 412
+    },
+    {
+      "player_slug": "sam-darnold",
+      "player_name": "Sam Darnold",
+      "pos": "QB",
+      "value": 4985
+    },
+    {
+      "player_slug": "sam-eguavoen",
+      "player_name": "Sam Eguavoen",
+      "pos": "LB",
+      "value": 510
+    },
+    {
+      "player_slug": "sam-howell",
+      "player_name": "Sam Howell",
+      "pos": "QB",
+      "value": 2838
+    },
+    {
+      "player_slug": "sam-hubbard",
+      "player_name": "Sam Hubbard",
+      "pos": "DL",
+      "value": 1059
+    },
+    {
+      "player_slug": "sam-laporta",
+      "player_name": "Sam LaPorta",
+      "pos": "TE",
+      "value": 5600
+    },
+    {
+      "player_slug": "sam-roush",
+      "player_name": "Sam Roush",
+      "pos": "TE",
+      "value": 2245
+    },
+    {
+      "player_slug": "sam-williams",
+      "player_name": "Sam Williams",
+      "pos": "DL",
+      "value": 1854
+    },
+    {
+      "player_slug": "samaje-perine",
+      "player_name": "Samaje Perine",
+      "pos": "RB",
+      "value": 668
+    },
+    {
+      "player_slug": "sammy-watkins",
+      "player_name": "Sammy Watkins",
+      "pos": "WR",
+      "value": 113
+    },
+    {
+      "player_slug": "samson-ebukam",
+      "player_name": "Samson Ebukam",
+      "pos": "DL",
+      "value": 613
+    },
+    {
+      "player_slug": "san-francisco-49ers-dst",
+      "player_name": "San Francisco 49ers DST",
+      "pos": "DST",
+      "value": 721
+    },
+    {
+      "player_slug": "saquon-barkley",
+      "player_name": "Saquon Barkley",
+      "pos": "RB",
+      "value": 5144
+    },
+    {
+      "player_slug": "sauce-gardner",
+      "player_name": "Sauce Gardner",
+      "pos": "DB",
+      "value": 6695
+    },
+    {
+      "player_slug": "savion-williams",
+      "player_name": "Savion Williams",
+      "pos": "WR",
+      "value": 2177
+    },
+    {
+      "player_slug": "scotty-miller",
+      "player_name": "Scotty Miller",
+      "pos": "WR",
+      "value": 307
+    },
+    {
+      "player_slug": "sean-tucker",
+      "player_name": "Sean Tucker",
+      "pos": "RB",
+      "value": 3274
+    },
+    {
+      "player_slug": "seattle-seahawks-dst",
+      "player_name": "Seattle Seahawks DST",
+      "pos": "DST",
+      "value": 525
+    },
+    {
+      "player_slug": "seth-williams",
+      "player_name": "Seth Williams",
+      "pos": "WR",
+      "value": 515
+    },
+    {
+      "player_slug": "sevyn-banks",
+      "player_name": "Sevyn Banks",
+      "pos": "DB",
+      "value": 824
+    },
+    {
+      "player_slug": "shane-buechele",
+      "player_name": "Shane Buechele",
+      "pos": "QB",
+      "value": 258
+    },
+    {
+      "player_slug": "shaq-barrett",
+      "player_name": "Shaq Barrett",
+      "pos": "DL",
+      "value": 305
+    },
+    {
+      "player_slug": "shaq-thompson",
+      "player_name": "Shaq Thompson",
+      "pos": "LB",
+      "value": 642
+    },
+    {
+      "player_slug": "shaquem-griffin",
+      "player_name": "Shaquem Griffin",
+      "pos": "LB",
+      "value": 267
+    },
+    {
+      "player_slug": "shaquille-leonard",
+      "player_name": "Shaquille Leonard",
+      "pos": "LB",
+      "value": 534
+    },
+    {
+      "player_slug": "shedeur-sanders",
+      "player_name": "Shedeur Sanders",
+      "pos": "QB",
+      "value": 3117
+    },
+    {
+      "player_slug": "shedrick-jackson",
+      "player_name": "Shedrick Jackson",
+      "pos": "WR",
+      "value": 412
+    },
+    {
+      "player_slug": "shelby-harris",
+      "player_name": "Shelby Harris",
+      "pos": "DL",
+      "value": 377
+    },
+    {
+      "player_slug": "sheldon-rankins",
+      "player_name": "Sheldon Rankins",
+      "pos": "DL",
+      "value": 642
+    },
+    {
+      "player_slug": "sheldrick-redwine",
+      "player_name": "Sheldrick Redwine",
+      "pos": "DB",
+      "value": 488
+    },
+    {
+      "player_slug": "shemar-stewart",
+      "player_name": "Shemar Stewart",
+      "pos": "DL",
+      "value": 2910
+    },
+    {
+      "player_slug": "shemar-turner",
+      "player_name": "Shemar Turner",
+      "pos": "DL",
+      "value": 2060
+    },
+    {
+      "player_slug": "shi-smith",
+      "player_name": "Shi Smith",
+      "pos": "WR",
+      "value": 412
+    },
+    {
+      "player_slug": "siaki-ika",
+      "player_name": "Siaki Ika",
+      "pos": "DL",
+      "value": 100
+    },
+    {
+      "player_slug": "simi-fehoko",
+      "player_name": "Simi Fehoko",
+      "pos": "WR",
+      "value": 309
+    },
+    {
+      "player_slug": "sione-vaki",
+      "player_name": "Sione Vaki",
+      "pos": "RB",
+      "value": 2884
+    },
+    {
+      "player_slug": "sirvocea-dennis",
+      "player_name": "SirVocea Dennis",
+      "pos": "LB",
+      "value": 1648
+    },
+    {
+      "player_slug": "skylar-thompson",
+      "player_name": "Skylar Thompson",
+      "pos": "QB",
+      "value": 386
+    },
+    {
+      "player_slug": "skyler-bell",
+      "player_name": "Skyler Bell",
+      "pos": "WR",
+      "value": 2865
+    },
+    {
+      "player_slug": "skyy-moore",
+      "player_name": "Skyy Moore",
+      "pos": "WR",
+      "value": 721
+    },
+    {
+      "player_slug": "slade-bolden",
+      "player_name": "Slade Bolden",
+      "pos": "TE",
+      "value": 309
+    },
+    {
+      "player_slug": "solomon-thomas",
+      "player_name": "Solomon Thomas",
+      "pos": "DL",
+      "value": 641
+    },
+    {
+      "player_slug": "sonny-styles",
+      "player_name": "Sonny Styles",
+      "pos": "LB",
+      "value": 5971
+    },
+    {
+      "player_slug": "spencer-rattler",
+      "player_name": "Spencer Rattler",
+      "pos": "QB",
+      "value": 2327
+    },
+    {
+      "player_slug": "spencer-sanders",
+      "player_name": "Spencer Sanders",
+      "pos": "RB",
+      "value": 515
+    },
+    {
+      "player_slug": "stefon-diggs",
+      "player_name": "Stefon Diggs",
+      "pos": "WR",
+      "value": 1974
+    },
+    {
+      "player_slug": "stephen-sullivan",
+      "player_name": "Stephen Sullivan",
+      "pos": "TE",
+      "value": 412
+    },
+    {
+      "player_slug": "stephon-gilmore",
+      "player_name": "Stephon Gilmore",
+      "pos": "DB",
+      "value": 100
+    },
+    {
+      "player_slug": "sterling-shepard",
+      "player_name": "Sterling Shepard",
+      "pos": "WR",
+      "value": 219
+    },
+    {
+      "player_slug": "steven-nelson",
+      "player_name": "Steven Nelson",
+      "pos": "DB",
+      "value": 361
+    },
+    {
+      "player_slug": "t-j-edwards",
+      "player_name": "T.J. Edwards",
+      "pos": "LB",
+      "value": 1926
+    },
+    {
+      "player_slug": "t-j-hockenson",
+      "player_name": "T.J. Hockenson",
+      "pos": "TE",
+      "value": 3496
+    },
+    {
+      "player_slug": "t-j-parker",
+      "player_name": "T.J. Parker",
+      "pos": "DL",
+      "value": 3459
+    },
+    {
+      "player_slug": "t-j-watt",
+      "player_name": "T.J. Watt",
+      "pos": "DL",
+      "value": 5015
+    },
+    {
+      "player_slug": "tacario-davis",
+      "player_name": "Tacario Davis",
+      "pos": "DB",
+      "value": 1937
+    },
+    {
+      "player_slug": "tae-hayes",
+      "player_name": "Tae Hayes",
+      "pos": "DB",
+      "value": 824
+    },
+    {
+      "player_slug": "tahj-brooks",
+      "player_name": "Tahj Brooks",
+      "pos": "RB",
+      "value": 2136
+    },
+    {
+      "player_slug": "tai-felton",
+      "player_name": "Tai Felton",
+      "pos": "WR",
+      "value": 1030
+    },
+    {
+      "player_slug": "taki-taimani",
+      "player_name": "Taki Taimani",
+      "pos": "DL",
+      "value": 721
+    },
+    {
+      "player_slug": "takk-mckinley",
+      "player_name": "Takk McKinley",
+      "pos": "DL",
+      "value": 455
+    },
+    {
+      "player_slug": "takkarist-mckinley",
+      "player_name": "Takkarist McKinley",
+      "pos": "DL",
+      "value": 482
+    },
+    {
+      "player_slug": "talanoa-hufanga",
+      "player_name": "Talanoa Hufanga",
+      "pos": "DB",
+      "value": 1854
+    },
+    {
+      "player_slug": "tampa-bay-buccaneers-dst",
+      "player_name": "Tampa Bay Buccaneers DST",
+      "pos": "DST",
+      "value": 494
+    },
+    {
+      "player_slug": "tank-bigsby",
+      "player_name": "Tank Bigsby",
+      "pos": "RB",
+      "value": 3095
+    },
+    {
+      "player_slug": "tank-dell",
+      "player_name": "Tank Dell",
+      "pos": "WR",
+      "value": 3200
+    },
+    {
+      "player_slug": "tanner-hudson",
+      "player_name": "Tanner Hudson",
+      "pos": "TE",
+      "value": 293
+    },
+    {
+      "player_slug": "tanner-koziol",
+      "player_name": "Tanner Koziol",
+      "pos": "LB",
+      "value": 1887
+    },
+    {
+      "player_slug": "tanner-mckee",
+      "player_name": "Tanner McKee",
+      "pos": "QB",
+      "value": 644
+    },
+    {
+      "player_slug": "tanner-mclachlan",
+      "player_name": "Tanner McLachlan",
+      "pos": "TE",
+      "value": 515
+    },
+    {
+      "player_slug": "tanner-mordecai",
+      "player_name": "Tanner Mordecai",
+      "pos": "QB",
+      "value": 386
+    },
+    {
+      "player_slug": "tanner-morgan",
+      "player_name": "Tanner Morgan",
+      "pos": "QB",
+      "value": 386
+    },
+    {
+      "player_slug": "tariq-woolen",
+      "player_name": "Tariq Woolen",
+      "pos": "DB",
+      "value": 3296
+    },
+    {
+      "player_slug": "taron-johnson",
+      "player_name": "Taron Johnson",
+      "pos": "DB",
+      "value": 1435
+    },
+    {
+      "player_slug": "tarvarius-moore",
+      "player_name": "Tarvarius Moore",
+      "pos": "DB",
+      "value": 674
+    },
+    {
+      "player_slug": "tashaun-gipson",
+      "player_name": "Tashaun Gipson",
+      "pos": "DB",
+      "value": 166
+    },
+    {
+      "player_slug": "taven-bryan",
+      "player_name": "Taven Bryan",
+      "pos": "DL",
+      "value": 651
+    },
+    {
+      "player_slug": "tavion-thomas",
+      "player_name": "Tavion Thomas",
+      "pos": "RB",
+      "value": 515
+    },
+    {
+      "player_slug": "taylen-green",
+      "player_name": "Taylen Green",
+      "pos": "QB",
+      "value": 2415
+    },
+    {
+      "player_slug": "taysom-hill",
+      "player_name": "Taysom Hill",
+      "pos": "TE",
+      "value": 209
+    },
+    {
+      "player_slug": "taywan-taylor",
+      "player_name": "Taywan Taylor",
+      "pos": "WR",
+      "value": 130
+    },
+    {
+      "player_slug": "teair-tart",
+      "player_name": "Teair Tart",
+      "pos": "DL",
+      "value": 598
+    },
+    {
+      "player_slug": "ted-hurst",
+      "player_name": "Ted Hurst",
+      "pos": "WR",
+      "value": 2251
+    },
+    {
+      "player_slug": "tee-higgins",
+      "player_name": "Tee Higgins",
+      "pos": "WR",
+      "value": 5700
+    },
+    {
+      "player_slug": "tennessee-titans-dst",
+      "player_name": "Tennessee Titans DST",
+      "pos": "DST",
+      "value": 268
+    },
+    {
+      "player_slug": "terrace-marshall-jr",
+      "player_name": "Terrace Marshall Jr.",
+      "pos": "WR",
+      "value": 412
+    },
+    {
+      "player_slug": "terrance-ferguson",
+      "player_name": "Terrance Ferguson",
+      "pos": "TE",
+      "value": 3730
+    },
+    {
+      "player_slug": "terry-mclaurin",
+      "player_name": "Terry McLaurin",
+      "pos": "WR",
+      "value": 3875
+    },
+    {
+      "player_slug": "tershawn-wharton",
+      "player_name": "Tershawn Wharton",
+      "pos": "DL",
+      "value": 927
+    },
+    {
+      "player_slug": "tetairoa-mcmillan",
+      "player_name": "Tetairoa McMillan",
+      "pos": "WR",
+      "value": 7200
+    },
+    {
+      "player_slug": "tez-johnson",
+      "player_name": "Tez Johnson",
+      "pos": "WR",
+      "value": 2872
+    },
+    {
+      "player_slug": "theo-johnson",
+      "player_name": "Theo Johnson",
+      "pos": "TE",
+      "value": 2958
+    },
+    {
+      "player_slug": "thomas-booker",
+      "player_name": "Thomas Booker",
+      "pos": "DL",
+      "value": 927
+    },
+    {
+      "player_slug": "tj-sanders",
+      "player_name": "TJ Sanders",
+      "pos": "DL",
+      "value": 2266
+    },
+    {
+      "player_slug": "tommy-devito",
+      "player_name": "Tommy DeVito",
+      "pos": "QB",
+      "value": 515
+    },
+    {
+      "player_slug": "tommy-tremble",
+      "player_name": "Tommy Tremble",
+      "pos": "TE",
+      "value": 412
+    },
+    {
+      "player_slug": "tony-pollard",
+      "player_name": "Tony Pollard",
+      "pos": "RB",
+      "value": 3264
+    },
+    {
+      "player_slug": "tory-horton",
+      "player_name": "Tory Horton",
+      "pos": "WR",
+      "value": 3645
+    },
+    {
+      "player_slug": "trace-mcsorley",
+      "player_name": "Trace McSorley",
+      "pos": "QB",
+      "value": 194
+    },
+    {
+      "player_slug": "travis-etienne-jr",
+      "player_name": "Travis Etienne Jr.",
+      "pos": "RB",
+      "value": 5512
+    },
+    {
+      "player_slug": "travis-hunter",
+      "player_name": "Travis Hunter",
+      "pos": "WR",
+      "value": 4400
+    },
+    {
+      "player_slug": "travis-kelce",
+      "player_name": "Travis Kelce",
+      "pos": "TE",
+      "value": 1825
+    },
+    {
+      "player_slug": "travon-walker",
+      "player_name": "Travon Walker",
+      "pos": "DL",
+      "value": 2575
+    },
+    {
+      "player_slug": "trayveon-williams",
+      "player_name": "Trayveon Williams",
+      "pos": "RB",
+      "value": 388
+    },
+    {
+      "player_slug": "trayvon-mullen",
+      "player_name": "Trayvon Mullen",
+      "pos": "DB",
+      "value": 824
+    },
+    {
+      "player_slug": "tre-brown",
+      "player_name": "Tre Brown",
+      "pos": "DB",
+      "value": 927
+    },
+    {
+      "player_slug": "tre-davious-white",
+      "player_name": "Tre'Davious White",
+      "pos": "DB",
+      "value": 856
+    },
+    {
+      "player_slug": "tre-flowers",
+      "player_name": "Tre Flowers",
+      "pos": "DB",
+      "value": 618
+    },
+    {
+      "player_slug": "tre-harris",
+      "player_name": "Tre' Harris",
+      "pos": "WR",
+      "value": 3671
+    },
+    {
+      "player_slug": "tre-mckitty",
+      "player_name": "Tre' McKitty",
+      "pos": "TE",
+      "value": 515
+    },
+    {
+      "player_slug": "tre-nixon",
+      "player_name": "Tre Nixon",
+      "pos": "WR",
+      "value": 206
+    },
+    {
+      "player_slug": "tre-norwood",
+      "player_name": "Tre Norwood",
+      "pos": "DB",
+      "value": 824
+    },
+    {
+      "player_slug": "tre-tucker",
+      "player_name": "Tre Tucker",
+      "pos": "WR",
+      "value": 3184
+    },
+    {
+      "player_slug": "tremaine-edmunds",
+      "player_name": "Tremaine Edmunds",
+      "pos": "LB",
+      "value": 2060
+    },
+    {
+      "player_slug": "trent-mcduffie",
+      "player_name": "Trent McDuffie",
+      "pos": "DB",
+      "value": 3914
+    },
+    {
+      "player_slug": "trent-sherfield",
+      "player_name": "Trent Sherfield",
+      "pos": "WR",
+      "value": 279
+    },
+    {
+      "player_slug": "trent-taylor",
+      "player_name": "Trent Taylor",
+      "pos": "WR",
+      "value": 162
+    },
+    {
+      "player_slug": "trenton-irwin",
+      "player_name": "Trenton Irwin",
+      "pos": "WR",
+      "value": 183
+    },
+    {
+      "player_slug": "treveyon-henderson",
+      "player_name": "TreVeyon Henderson",
+      "pos": "RB",
+      "value": 6248
+    },
+    {
+      "player_slug": "trevon-diggs",
+      "player_name": "Trevon Diggs",
+      "pos": "DB",
+      "value": 2575
+    },
+    {
+      "player_slug": "trevon-hill",
+      "player_name": "Trevon Hill",
+      "pos": "DB",
+      "value": 927
+    },
+    {
+      "player_slug": "trevor-etienne",
+      "player_name": "Trevor Etienne",
+      "pos": "RB",
+      "value": 4326
+    },
+    {
+      "player_slug": "trevor-lawrence",
+      "player_name": "Trevor Lawrence",
+      "pos": "QB",
+      "value": 6875
+    },
+    {
+      "player_slug": "trey-amos",
+      "player_name": "Trey Amos",
+      "pos": "DB",
+      "value": 2266
+    },
+    {
+      "player_slug": "trey-benson",
+      "player_name": "Trey Benson",
+      "pos": "RB",
+      "value": 824
+    },
+    {
+      "player_slug": "trey-hendrickson",
+      "player_name": "Trey Hendrickson",
+      "pos": "DL",
+      "value": 2633
+    },
+    {
+      "player_slug": "trey-lance",
+      "player_name": "Trey Lance",
+      "pos": "QB",
+      "value": 1545
+    },
+    {
+      "player_slug": "trey-mcbride",
+      "player_name": "Trey McBride",
+      "pos": "TE",
+      "value": 7500
+    },
+    {
+      "player_slug": "trey-moore",
+      "player_name": "Trey Moore",
+      "pos": "DL",
+      "value": 1236
+    },
+    {
+      "player_slug": "trey-sermon",
+      "player_name": "Trey Sermon",
+      "pos": "RB",
+      "value": 309
+    },
+    {
+      "player_slug": "treydan-stukes",
+      "player_name": "Treydan Stukes",
+      "pos": "DB",
+      "value": 2884
+    },
+    {
+      "player_slug": "treylon-burks",
+      "player_name": "Treylon Burks",
+      "pos": "WR",
+      "value": 1875
+    },
+    {
+      "player_slug": "trill-williams",
+      "player_name": "Trill Williams",
+      "pos": "DB",
+      "value": 927
+    },
+    {
+      "player_slug": "trishton-jackson",
+      "player_name": "Trishton Jackson",
+      "pos": "WR",
+      "value": 206
+    },
+    {
+      "player_slug": "troy-andersen",
+      "player_name": "Troy Andersen",
+      "pos": "LB",
+      "value": 2575
+    },
+    {
+      "player_slug": "troy-franklin",
+      "player_name": "Troy Franklin",
+      "pos": "WR",
+      "value": 3943
+    },
+    {
+      "player_slug": "troy-pride-jr",
+      "player_name": "Troy Pride Jr.",
+      "pos": "DB",
+      "value": 412
+    },
+    {
+      "player_slug": "trysten-hill",
+      "player_name": "Trysten Hill",
+      "pos": "DL",
+      "value": 618
+    },
+    {
+      "player_slug": "tua-tagovailoa",
+      "player_name": "Tua Tagovailoa",
+      "pos": "QB",
+      "value": 4120
+    },
+    {
+      "player_slug": "tucker-kraft",
+      "player_name": "Tucker Kraft",
+      "pos": "TE",
+      "value": 5900
+    },
+    {
+      "player_slug": "tuli-tuipulotu",
+      "player_name": "Tuli Tuipulotu",
+      "pos": "DL",
+      "value": 3605
+    },
+    {
+      "player_slug": "tutu-atwell",
+      "player_name": "Tutu Atwell",
+      "pos": "WR",
+      "value": 1236
+    },
+    {
+      "player_slug": "ty-chandler",
+      "player_name": "Ty Chandler",
+      "pos": "RB",
+      "value": 808
+    },
+    {
+      "player_slug": "ty-davis-price",
+      "player_name": "Ty Davis-Price",
+      "pos": "RB",
+      "value": 618
+    },
+    {
+      "player_slug": "ty-fryfogle",
+      "player_name": "Ty Fryfogle",
+      "pos": "WR",
+      "value": 309
+    },
+    {
+      "player_slug": "ty-johnson",
+      "player_name": "Ty Johnson",
+      "pos": "RB",
+      "value": 388
+    },
+    {
+      "player_slug": "ty-montgomery",
+      "player_name": "Ty Montgomery",
+      "pos": "RB",
+      "value": 99
+    },
+    {
+      "player_slug": "ty-simpson",
+      "player_name": "Ty Simpson",
+      "pos": "QB",
+      "value": 4276
+    },
+    {
+      "player_slug": "ty-summers",
+      "player_name": "Ty Summers",
+      "pos": "LB",
+      "value": 458
+    },
+    {
+      "player_slug": "tycen-anderson",
+      "player_name": "Tycen Anderson",
+      "pos": "DB",
+      "value": 1545
+    },
+    {
+      "player_slug": "tyjae-spears",
+      "player_name": "Tyjae Spears",
+      "pos": "RB",
+      "value": 3605
+    },
+    {
+      "player_slug": "tykee-smith",
+      "player_name": "Tykee Smith",
+      "pos": "DB",
+      "value": 1854
+    },
+    {
+      "player_slug": "tylan-wallace",
+      "player_name": "Tylan Wallace",
+      "pos": "WR",
+      "value": 206
+    },
+    {
+      "player_slug": "tyleik-williams",
+      "player_name": "Tyleik Williams",
+      "pos": "DL",
+      "value": 1442
+    },
+    {
+      "player_slug": "tyler-allgeier",
+      "player_name": "Tyler Allgeier",
+      "pos": "RB",
+      "value": 3647
+    },
+    {
+      "player_slug": "tyler-bass",
+      "player_name": "Tyler Bass",
+      "pos": "K",
+      "value": 494
+    },
+    {
+      "player_slug": "tyler-boyd",
+      "player_name": "Tyler Boyd",
+      "pos": "WR",
+      "value": 674
+    },
+    {
+      "player_slug": "tyler-conklin",
+      "player_name": "Tyler Conklin",
+      "pos": "TE",
+      "value": 643
+    },
+    {
+      "player_slug": "tyler-davis",
+      "player_name": "Tyler Davis",
+      "pos": "DL",
+      "value": 1545
+    },
+    {
+      "player_slug": "tyler-higbee",
+      "player_name": "Tyler Higbee",
+      "pos": "TE",
+      "value": 1019
+    },
+    {
+      "player_slug": "tyler-huntley",
+      "player_name": "Tyler Huntley",
+      "pos": "QB",
+      "value": 773
+    },
+    {
+      "player_slug": "tyler-johnson",
+      "player_name": "Tyler Johnson",
+      "pos": "WR",
+      "value": 309
+    },
+    {
+      "player_slug": "tyler-kroft",
+      "player_name": "Tyler Kroft",
+      "pos": "TE",
+      "value": 126
+    },
+    {
+      "player_slug": "tyler-lockett",
+      "player_name": "Tyler Lockett",
+      "pos": "WR",
+      "value": 246
+    },
+    {
+      "player_slug": "tyler-nubin",
+      "player_name": "Tyler Nubin",
+      "pos": "DB",
+      "value": 2884
+    },
+    {
+      "player_slug": "tyler-onyedim",
+      "player_name": "Tyler Onyedim",
+      "pos": "DL",
+      "value": 2060
+    },
+    {
+      "player_slug": "tyler-shough",
+      "player_name": "Tyler Shough",
+      "pos": "QB",
+      "value": 6500
+    },
+    {
+      "player_slug": "tyler-warren",
+      "player_name": "Tyler Warren",
+      "pos": "TE",
+      "value": 6911
+    },
+    {
+      "player_slug": "tyquan-lewis",
+      "player_name": "Tyquan Lewis",
+      "pos": "DL",
+      "value": 685
+    },
+    {
+      "player_slug": "tyquan-thornton",
+      "player_name": "Tyquan Thornton",
+      "pos": "WR",
+      "value": 824
+    },
+    {
+      "player_slug": "tyrann-mathieu",
+      "player_name": "Tyrann Mathieu",
+      "pos": "DB",
+      "value": 540
+    },
+    {
+      "player_slug": "tyree-wilson",
+      "player_name": "Tyree Wilson",
+      "pos": "DL",
+      "value": 3090
+    },
+    {
+      "player_slug": "tyreek-hill",
+      "player_name": "Tyreek Hill",
+      "pos": "WR",
+      "value": 2128
+    },
+    {
+      "player_slug": "tyrel-dodson",
+      "player_name": "Tyrel Dodson",
+      "pos": "LB",
+      "value": 1545
+    },
+    {
+      "player_slug": "tyrice-knight",
+      "player_name": "Tyrice Knight",
+      "pos": "LB",
+      "value": 1545
+    },
+    {
+      "player_slug": "tyrod-taylor",
+      "player_name": "Tyrod Taylor",
+      "pos": "QB",
+      "value": 86
+    },
+    {
+      "player_slug": "tyrone-tracy-jr",
+      "player_name": "Tyrone Tracy Jr.",
+      "pos": "RB",
+      "value": 3914
+    },
+    {
+      "player_slug": "tyson-bagent",
+      "player_name": "Tyson Bagent",
+      "pos": "QB",
+      "value": 773
+    },
+    {
+      "player_slug": "tyson-campbell",
+      "player_name": "Tyson Campbell",
+      "pos": "DB",
+      "value": 2266
+    },
+    {
+      "player_slug": "tyus-bowser",
+      "player_name": "Tyus Bowser",
+      "pos": "LB",
+      "value": 788
+    },
+    {
+      "player_slug": "uchenna-nwosu",
+      "player_name": "Uchenna Nwosu",
+      "pos": "DL",
+      "value": 1966
+    },
+    {
+      "player_slug": "van-jefferson",
+      "player_name": "Van Jefferson",
+      "pos": "WR",
+      "value": 287
+    },
+    {
+      "player_slug": "velus-jones-jr",
+      "player_name": "Velus Jones Jr.",
+      "pos": "WR",
+      "value": 404
+    },
+    {
+      "player_slug": "vincent-taylor",
+      "player_name": "Vincent Taylor",
+      "pos": "DL",
+      "value": 316
+    },
+    {
+      "player_slug": "vinnie-curry",
+      "player_name": "Vinnie Curry",
+      "pos": "DL",
+      "value": 112
+    },
+    {
+      "player_slug": "vita-vea",
+      "player_name": "Vita Vea",
+      "pos": "DL",
+      "value": 1284
+    },
+    {
+      "player_slug": "von-miller",
+      "player_name": "Von Miller",
+      "pos": "DL",
+      "value": 187
+    },
+    {
+      "player_slug": "vonn-bell",
+      "player_name": "Vonn Bell",
+      "pos": "DB",
+      "value": 679
+    },
+    {
+      "player_slug": "wade-woodaz",
+      "player_name": "Wade Woodaz",
+      "pos": "LB",
+      "value": 1363
+    },
+    {
+      "player_slug": "walter-nolen",
+      "player_name": "Walter Nolen",
+      "pos": "DL",
+      "value": 2587
+    },
+    {
+      "player_slug": "wan-dale-robinson",
+      "player_name": "Wan'Dale Robinson",
+      "pos": "WR",
+      "value": 4592
+    },
+    {
+      "player_slug": "washington-commanders-dst",
+      "player_name": "Washington Commanders DST",
+      "pos": "DST",
+      "value": 350
+    },
+    {
+      "player_slug": "wayne-gallman",
+      "player_name": "Wayne Gallman",
+      "pos": "RB",
+      "value": 154
+    },
+    {
+      "player_slug": "whitney-mercilus",
+      "player_name": "Whitney Mercilus",
+      "pos": "DL",
+      "value": 111
+    },
+    {
+      "player_slug": "wil-lutz",
+      "player_name": "Wil Lutz",
+      "pos": "K",
+      "value": 433
+    },
+    {
+      "player_slug": "will-anderson-jr",
+      "player_name": "Will Anderson Jr.",
+      "pos": "DL",
+      "value": 5356
+    },
+    {
+      "player_slug": "will-campbell",
+      "player_name": "Will Campbell",
+      "pos": "DL",
+      "value": 2097
+    },
+    {
+      "player_slug": "will-dissly",
+      "player_name": "Will Dissly",
+      "pos": "TE",
+      "value": 206
+    },
+    {
+      "player_slug": "will-howard",
+      "player_name": "Will Howard",
+      "pos": "QB",
+      "value": 2800
+    },
+    {
+      "player_slug": "will-kacmarek",
+      "player_name": "Will Kacmarek",
+      "pos": "TE",
+      "value": 1649
+    },
+    {
+      "player_slug": "will-levis",
+      "player_name": "Will Levis",
+      "pos": "QB",
+      "value": 1288
+    },
+    {
+      "player_slug": "will-mallory",
+      "player_name": "Will Mallory",
+      "pos": "TE",
+      "value": 412
+    },
+    {
+      "player_slug": "will-rogers",
+      "player_name": "Will Rogers",
+      "pos": "QB",
+      "value": 937
+    },
+    {
+      "player_slug": "will-shipley",
+      "player_name": "Will Shipley",
+      "pos": "RB",
+      "value": 2060
+    },
+    {
+      "player_slug": "woody-marks",
+      "player_name": "Woody Marks",
+      "pos": "RB",
+      "value": 3709
+    },
+    {
+      "player_slug": "xavien-howard",
+      "player_name": "Xavien Howard",
+      "pos": "DB",
+      "value": 1123
+    },
+    {
+      "player_slug": "xavier-hutchinson",
+      "player_name": "Xavier Hutchinson",
+      "pos": "WR",
+      "value": 1545
+    },
+    {
+      "player_slug": "xavier-legette",
+      "player_name": "Xavier Legette",
+      "pos": "WR",
+      "value": 3605
+    },
+    {
+      "player_slug": "xavier-mckinney",
+      "player_name": "Xavier McKinney",
+      "pos": "DB",
+      "value": 3605
+    },
+    {
+      "player_slug": "xavier-worthy",
+      "player_name": "Xavier Worthy",
+      "pos": "WR",
+      "value": 4276
+    },
+    {
+      "player_slug": "yannick-ngakoue",
+      "player_name": "Yannick Ngakoue",
+      "pos": "DL",
+      "value": 1043
+    },
+    {
+      "player_slug": "younghoe-koo",
+      "player_name": "Younghoe Koo",
+      "pos": "K",
+      "value": 515
+    },
+    {
+      "player_slug": "za-darius-smith",
+      "player_name": "Za'Darius Smith",
+      "pos": "DL",
+      "value": 417
+    },
+    {
+      "player_slug": "zach-allen",
+      "player_name": "Zach Allen",
+      "pos": "DL",
+      "value": 2266
+    },
+    {
+      "player_slug": "zach-charbonnet",
+      "player_name": "Zach Charbonnet",
+      "pos": "RB",
+      "value": 4327
+    },
+    {
+      "player_slug": "zach-cunningham",
+      "player_name": "Zach Cunningham",
+      "pos": "LB",
+      "value": 849
+    },
+    {
+      "player_slug": "zach-ertz",
+      "player_name": "Zach Ertz",
+      "pos": "TE",
+      "value": 213
+    },
+    {
+      "player_slug": "zach-harrison",
+      "player_name": "Zach Harrison",
+      "pos": "DL",
+      "value": 1545
+    },
+    {
+      "player_slug": "zach-sieler",
+      "player_name": "Zach Sieler",
+      "pos": "DL",
+      "value": 1255
+    },
+    {
+      "player_slug": "zach-wilson",
+      "player_name": "Zach Wilson",
+      "pos": "QB",
+      "value": 386
+    },
+    {
+      "player_slug": "zachariah-branch",
+      "player_name": "Zachariah Branch",
+      "pos": "WR",
+      "value": 3702
+    },
+    {
+      "player_slug": "zack-moss",
+      "player_name": "Zack Moss",
+      "pos": "RB",
+      "value": 393
+    },
+    {
+      "player_slug": "zaire-franklin",
+      "player_name": "Zaire Franklin",
+      "pos": "LB",
+      "value": 2659
+    },
+    {
+      "player_slug": "zamir-white",
+      "player_name": "Zamir White",
+      "pos": "RB",
+      "value": 1236
+    },
+    {
+      "player_slug": "zavier-scott",
+      "player_name": "Zavier Scott",
+      "pos": "WR",
+      "value": 1957
+    },
+    {
+      "player_slug": "zavion-thomas",
+      "player_name": "Zavion Thomas",
+      "pos": "WR",
+      "value": 1580
+    },
+    {
+      "player_slug": "zay-flowers",
+      "player_name": "Zay Flowers",
+      "pos": "WR",
+      "value": 6200
+    },
+    {
+      "player_slug": "zay-jones",
+      "player_name": "Zay Jones",
+      "pos": "WR",
+      "value": 261
+    },
+    {
+      "player_slug": "zion-tupuola-fetui",
+      "player_name": "Zion Tupuola-Fetui",
+      "pos": "DL",
+      "value": 2266
+    },
+    {
+      "player_slug": "zion-young",
+      "player_name": "Zion Young",
+      "pos": "DL",
+      "value": 2750
+    },
+    {
+      "player_slug": "zonovan-knight",
+      "player_name": "Zonovan Knight",
+      "pos": "RB",
+      "value": 2575
+    }
+  ]
+}
