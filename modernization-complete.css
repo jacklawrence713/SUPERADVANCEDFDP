@@ -1,0 +1,256 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   FANTASY DRAFT PROS — COMPREHENSIVE UI MODERNIZATION
+   Full visual overhaul for premium sports analytics aesthetic
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   UNIVERSAL ENHANCEMENTS - Applied to ALL elements
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+* {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ALL buttons - Add polish */
+button {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  font-family: inherit;
+}
+
+button:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+button:not(:disabled):active {
+  transform: translateY(0);
+}
+
+/* ALL cards/surfaces - Improve presentation */
+div[style*="background: var(--surface)"],
+div[style*="bgCard"],
+div[style*="borderRadius: 12"],
+div[style*="borderRadius: 14"],
+div[style*="borderRadius: 16"] {
+  transition: all 0.2s ease-in-out;
+  border-radius: 14px !important;
+}
+
+div[style*="background: var(--surface)"]:hover,
+div[style*="bgCard"]:hover {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+/* ALL text inputs - Better focus states */
+input,
+textarea,
+select {
+  transition: all 0.15s ease-in-out;
+  font-family: inherit;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  box-shadow: 0 0 0 3px var(--accent-primary-dim);
+  border-color: var(--accent-primary);
+}
+
+/* ALL lists/grids - Better spacing */
+div[style*="display: grid"] {
+  gap: 24px !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMPREHENSIVE RANKINGS PAGE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Rankings rows - Premium styling */
+div[style*="display: flex"][style*="alignItems: center"][style*="justifyContent: space-between"][style*="padding"] {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 8px;
+  padding: 16px !important;
+  transition: all 0.2s ease-in-out;
+}
+
+div[style*="display: flex"][style*="alignItems: center"][style*="justifyContent: space-between"]:hover {
+  background: var(--surface-elevated);
+  border-color: var(--accent-primary);
+  box-shadow: 0 4px 12px rgba(123, 77, 255, 0.1);
+  transform: translateX(4px);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMPREHENSIVE TRADE ANALYZER
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Team columns */
+div[style*="flex: 1"][style*="display: flex"][style*="flexDirection: column"] {
+  padding: 20px !important;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px !important;
+  gap: 16px !important;
+}
+
+/* Player selection */
+div[style*="display: flex"][style*="alignItems: center"][style*="gap: 10"][style*="padding"][style*="background"] {
+  border-radius: 12px !important;
+  border: 1px solid var(--border) !important;
+  background: var(--surface-elevated) !important;
+  padding: 12px 16px !important;
+  transition: all 0.15s ease-in-out;
+}
+
+div[style*="display: flex"][style*="alignItems: center"][style*="gap: 10"][style*="padding"]:hover {
+  border-color: var(--accent-primary) !important;
+  transform: translateX(2px);
+}
+
+/* Trade result */
+div[style*="background: #22c55e"],
+div[style*="background: #ef4444"] {
+  border-radius: 14px !important;
+  padding: 24px !important;
+  gap: 16px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMPREHENSIVE VEGAS LINES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Game cards */
+div[style*="background: var(--surface)"][style*="border: 1px solid"][style*="borderRadius: 14"][style*="padding: 16"] {
+  padding: 20px !important;
+  border-radius: 14px !important;
+  gap: 16px !important;
+  transition: all 0.2s ease-in-out;
+}
+
+div[style*="background: var(--surface)"][style*="border: 1px solid"][style*="borderRadius: 14"]:hover {
+  border-color: var(--accent-primary) !important;
+  box-shadow: 0 8px 16px rgba(123, 77, 255, 0.08) !important;
+}
+
+/* Odds - Monospace */
+span[style*="fontSize: 18"][style*="fontWeight: 800"] {
+  font-family: 'Courier New', monospace !important;
+  letter-spacing: 1px !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMPREHENSIVE ADMIN DASHBOARD
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Metric cards */
+div[style*="display: grid"][style*="gridTemplateColumns"] {
+  gap: 24px !important;
+}
+
+@media (min-width: 1024px) {
+  div[style*="display: grid"][style*="gridTemplateColumns"] {
+    gap: 32px !important;
+  }
+}
+
+/* Stat values */
+div[style*="fontWeight: 900"][style*="fontSize: 28"],
+div[style*="fontWeight: 900"][style*="fontSize: 32"] {
+  font-size: 32px !important;
+  letter-spacing: -1px !important;
+  margin: 12px 0 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PAGE HEADINGS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+div[style*="fontWeight: 900"][style*="fontSize: 24"],
+div[style*="fontWeight: 900"][style*="fontSize: 28"] {
+  font-size: 28px !important;
+  font-weight: 900 !important;
+  letter-spacing: -1px !important;
+  margin-bottom: 8px !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOBILE OPTIMIZATIONS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 640px) {
+  /* Grid to stack */
+  div[style*="display: grid"][style*="gridTemplateColumns"] {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  /* Touch targets */
+  button {
+    min-height: 48px !important;
+    padding: 12px 16px !important;
+  }
+
+  input,
+  textarea,
+  select {
+    min-height: 48px !important;
+    font-size: 16px !important;
+  }
+
+  /* Better mobile spacing */
+  div[style*="padding: 16"] {
+    padding: 12px !important;
+  }
+
+  div[style*="padding: 20"] {
+    padding: 16px !important;
+  }
+
+  /* Readable sizes */
+  span[style*="fontSize: 12"] {
+    font-size: 14px !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DARK MODE REFINEMENTS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Better contrast */
+span[style*="color: #5c5880"],
+span[style*="color: #9b96b8"] {
+  color: var(--text-secondary) !important;
+}
+
+/* Subtle borders */
+div[style*="border: 1px solid #2e2a4a"] {
+  border-color: var(--border) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ACCESSIBILITY
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:focus-visible {
+  outline: 2px solid var(--accent-primary) !important;
+  outline-offset: 2px !important;
+}
+
+::selection {
+  background: var(--accent-primary);
+  color: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
