@@ -744,3 +744,102 @@ input::placeholder, textarea::placeholder {
     display: none;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMPATIBILITY OVERRIDES FOR EXISTING INLINE STYLES
+   Improves visual presentation without breaking existing markup
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Enhance all elements with inline styles */
+* {
+  scroll-behavior: smooth;
+}
+
+/* Improve button states */
+button {
+  transition: all 0.15s ease-in-out;
+}
+
+button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* Input/textarea improvements */
+input, textarea, select {
+  transition: all 0.15s ease-in-out;
+}
+
+/* Improve scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--surface);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Fix focus visible state */
+*:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+/* Improve text selection */
+::selection {
+  background: var(--accent-primary);
+  color: #fff;
+}
+
+/* Mobile touch targets */
+@media (max-width: 767px) {
+  button {
+    min-height: 44px !important;
+  }
+
+  input, textarea, select {
+    min-height: 44px !important;
+  }
+}
+
+/* Desktop enhancements */
+@media (min-width: 1024px) {
+  /* Improve card layouts */
+  [style*="borderRadius: 12"],
+  [style*="borderRadius: 14"] {
+    transition: all 0.2s ease-in-out;
+  }
+
+  [style*="borderRadius: 12"]:hover,
+  [style*="borderRadius: 14"]:hover {
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PRINT STYLES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media print {
+  .hidden-print {
+    display: none !important;
+  }
+
+  button, input[type="button"], [onclick] {
+    display: none;
+  }
+}

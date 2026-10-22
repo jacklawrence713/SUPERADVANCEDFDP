@@ -9,6 +9,7 @@ import { getFeaturePaywallCopy } from "./src/paywall-config";
 import type { FeatureKey } from "./src/paywall-config";
 
 // ── Supabase ─────────────────────────────────────────────────────────────────
+import { createThemeVars, Button, Card, Badge, TabNav, EmptyState, Alert, Spinner, PageHeader, FlexLayout, GridLayout } from "./ui-modernization-helpers";
 const SUPA_URL = (import.meta as any).env?.VITE_SUPABASE_URL;
 const SUPA_KEY = (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY;
 const EDGE_URL = (import.meta as any).env?.VITE_EDGE_FUNCTIONS_URL || (SUPA_URL ? `${SUPA_URL}/functions/v1` : null);
@@ -83,8 +84,8 @@ async function trackEvent(type: string, data: Record<string, any> = {}) {
   } catch(e) { /* silent */ }
 }
 
-const DARK={bg:"#13111e",bgCard:"#1c1a2e",bgInput:"#0f0d1a",border:"#2e2a4a",borderPurple:"#5b3fd4",purple:"#7c4dff",purpleLight:"#9b72ff",purpleDim:"#3d2a7a",text:"#ffffff",textSub:"#9b96b8",textDim:"#5c5880",green:"#22c55e",red:"#ef4444",gold:"#f59e0b",cyan:"#06b6d4"};
-const LIGHT={bg:"#f0f2ff",bgCard:"#ffffff",bgInput:"#eef0ff",border:"#d4d8f5",borderPurple:"#7c4dff",purple:"#6d28d9",purpleLight:"#7c3aed",purpleDim:"#ede9fe",text:"#1a1d3a",textSub:"#4a5080",textDim:"#9ba3c9",green:"#059669",red:"#dc2626",gold:"#b45309",cyan:"#0891b2"};
+const DARK={bg:"var(--bg)",bgCard:"var(--surface)",bgInput:"var(--surface-elevated)",border:"var(--border)",borderPurple:"var(--border-accent)",purple:"var(--accent-primary)",purpleLight:"var(--accent-primary-light)",purpleDim:"var(--accent-primary-dim)",text:"var(--text-primary)",textSub:"var(--text-secondary)",textDim:"var(--text-muted)",green:"var(--status-success)",red:"var(--status-danger)",gold:"var(--status-warning)",cyan:"var(--status-info)"};
+const LIGHT={bg:"var(--bg)",bgCard:"var(--surface)",bgInput:"var(--surface-elevated)",border:"var(--border)",borderPurple:"var(--border-accent)",purple:"var(--accent-primary)",purpleLight:"var(--accent-primary-light)",purpleDim:"var(--accent-primary-dim)",text:"var(--text-primary)",textSub:"var(--text-secondary)",textDim:"var(--text-muted)",green:"var(--status-success)",red:"var(--status-danger)",gold:"var(--status-warning)",cyan:"var(--status-info)"};
 const POS_COLORS={QB:"#818cf8",RB:"#34d399",WR:"#c084fc",TE:"#f59e0b",K:"#a78bfa",DST:"#94a3b8",DL:"#f87171",LB:"#fb923c",DB:"#22d3ee",PICK:"#f1c40f"};
 const LEAGUE_TYPES=["Dynasty","Redraft"];
 const FORMATS=["Superflex","PPR","Half","Standard"];
@@ -7651,7 +7652,7 @@ if(item[0]==="admin"){var adminEmails=["jlawrence@cmgfi.com","admin@fantasydraft
       React.createElement("div",{style:{position:"relative",borderBottom:"1px solid "+T.border}},
         isDesktop&&React.createElement("button",{onClick:function(){rankingTabsRef.current&&rankingTabsRef.current.scrollBy({left:-200,behavior:"smooth"});},style:{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",zIndex:2,background:T.bgCard,border:"1px solid "+T.border,borderRadius:"50%",width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:T.text,fontSize:14,padding:0}},"‹"),
         React.createElement("div",{ref:rankingTabsRef,style:{display:"flex",gap:6,overflowX:"auto",padding:isDesktop?"10px 36px":"10px 12px",scrollbarWidth:"none",WebkitOverflowScrolling:"touch"}},
-          [["news","📰 Dynasty News"],["playervalues","$ Player Values"],["allrankings","All Rankings"],["qbs","QBs"],["rbs","RBs"],["wrs","WRs"],["tes","TEs"],["idp","IDP"],["rookie","Rookie Picks"],["mockdraft","Mock Draft"],["startup","Startup Draft"],["rosterbuilder","Roster Builder"],["h2h","H2H Matchup"],["tradefinder","Trade Finder"],["vegas","Vegas Lines"],["trending","Trending"],["market","Market"],["valuetrends","Value Trends"],["pickcalc","Pick Calculator"],["watchlist","Watchlist"],["keeper","Keeper Calc"],["compare","Compare"],["history","Trade History"]].map(function(st){
+          [["news","📰 Dynasty News"],["playervalues","$ Player Values"],["allrankings","All Rankings"],["qbs","QBs"],["rbs","RBs"],["wrs","WRs"],["tes","TEs"],["idp","IDP"],["rookie","Rookie Picks"],["mockdraft","Mock Draft"],["startup","Startup Draft"],["rosterbuilder","Roster Builder"],["h2h","H2H Matchup"],["tradefinder","Trade Finder"],["vegaslines","Vegas Lines"],["trending","Trending"],["market","Market"],["valuetrends","Value Trends"],["pickcalc","Pick Calculator"],["watchlist","Watchlist"],["keeper","Keeper Calc"],["compare","Compare"],["history","Trade History"]].map(function(st){
             var active=rankSubTab===st[0];
             return React.createElement("button",{key:st[0],onClick:function(){setRankSubTab(st[0]);},style:{padding:"7px 14px",borderRadius:20,border:"1px solid "+(active?T.purple:T.border),background:active?T.purple:"transparent",color:active?"#fff":T.textSub,fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}},st[1]);
           })
