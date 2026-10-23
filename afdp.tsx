@@ -14,9 +14,7 @@ const SUPA_URL = (import.meta as any).env?.VITE_SUPABASE_URL;
 const SUPA_KEY = (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY;
 const EDGE_URL = (import.meta as any).env?.VITE_EDGE_FUNCTIONS_URL || (SUPA_URL ? `${SUPA_URL}/functions/v1` : null);
 // Auth + data client
-const authClient = SUPA_URL && SUPA_KEY ? createClient(SUPA_URL, SUPA_KEY) : null;
-// Analytics write client — separate instance so it always uses anon key, never inherits user session
-const analyticsClient = SUPA_URL && SUPA_KEY ? createClient(SUPA_URL, SUPA_KEY) : null;
+const supabaseClient = SUPA_URL && SUPA_KEY ? createClient(SUPA_URL, SUPA_KEY) : null;
 
 // ── Edge Function helpers ─────────────────────────────────────────────────────
 async function callEdgeFn(fn: string, body: any, userToken?: string) {
@@ -72,7 +70,7 @@ async function getGeo() {
 }
 
 async function trackEvent(type: string, data: Record<string, any> = {}) {
-  const client = analyticsClient;
+  const client = supabaseClient;
   if (!client) return;
   try {
     const result = await client.from("analytics_events").insert({
@@ -2235,7 +2233,7 @@ function AuthModal(props){
     if(!email.includes("@")){setErr("Enter a valid email address");return;}
     setErr("");setLoading(true);
     try{
-      var {error}=await authClient!.auth.resetPasswordForEmail(email,{redirectTo:"https://fantasydraftpros.com/?reset=true"});
+      var {error}=await supabaseClient!.auth.resetPasswordForEmail(email,{redirectTo:"https://fantasydraftpros.com/?reset=true"});
       if(error)throw error;
       setResetSent(true);
     }catch(e:any){setErr(e.message||"Something went wrong. Please try again.");}
@@ -2249,14 +2247,14 @@ function AuthModal(props){
     try {
       if(mode==="signup"){
         if(step===1){setLoading(false);setStep(2);return;}
-        var signUpResult=await authClient!.auth.signUp({
+        var signUpResult=await supabaseClient!.auth.signUp({
           email,password,
           options:{data:{name,plan},emailRedirectTo:"https://fantasydraftpros.com"}
         });
         if(signUpResult.error)throw signUpResult.error;
         // Store IP + visitor_id on user row for duplicate trial detection (non-blocking)
         if(signUpResult.data.session){
-          (async function(){try{var g=await getGeo().catch(function(){return null;});var upd:any={};if(g?.ip)upd.signup_ip=g.ip;var vid=getVisitorId();if(vid)upd.signup_visitor_id=vid;if(Object.keys(upd).length>0)await authClient!.from("users").update(upd).eq("id",signUpResult.data.session!.user.id);}catch(e){}})();
+          (async function(){try{var g=await getGeo().catch(function(){return null;});var upd:any={};if(g?.ip)upd.signup_ip=g.ip;var vid=getVisitorId();if(vid)upd.signup_visitor_id=vid;if(Object.keys(upd).length>0)await supabaseClient!.from("users").update(upd).eq("id",signUpResult.data.session!.user.id);}catch(e){}})();
         }
         // GATE 0 CORRECTIVE: Support both Confirm Email configurations
         // If session exists (Confirm Email disabled): Send authenticated welcome email immediately
@@ -2276,7 +2274,7 @@ function AuthModal(props){
           setErr("");
         }
       } else if(mode==="signin"){
-        var signInResult=await authClient!.auth.signInWithPassword({email,password});
+        var signInResult=await supabaseClient!.auth.signInWithPassword({email,password});
         if(signInResult.error)throw signInResult.error;
         // DEFENSIVE: Verify user and session exist before dereferencing
         if(!signInResult.data.user)throw new Error("Sign in succeeded but no user data returned");
@@ -2288,13 +2286,13 @@ function AuthModal(props){
         // Log in immediately with auth data — don't wait for DB
         onAuth({id:usr.id,name:usr.user_metadata?.name||usr.email||"",email:usr.email||"",plan:(admin3||fa3)?"elite":"free",isPro:admin3||fa3,isAdmin:admin3,token:sess.access_token});
         // Load profile from DB in background and update
-        authClient!.from("users").select("name,plan,is_pro,is_admin,signup_ip,signup_visitor_id").eq("id",usr.id).single().then(function(profResult){
+        supabaseClient!.from("users").select("name,plan,is_pro,is_admin,signup_ip,signup_visitor_id").eq("id",usr.id).single().then(function(profResult){
           var prof=profResult.data;
           if(!prof)return;
           var isAdm=admin3||prof.is_admin||false;
           onAuth({id:usr.id,name:prof.name||usr.user_metadata?.name||usr.email||"",email:usr.email||"",plan:(isAdm||fa3)?"elite":(prof.plan||"free"),isPro:prof.is_pro||isAdm||fa3,isAdmin:isAdm,token:sess.access_token});
           // Backfill IP + visitor_id if missing (for users who signed in before this feature)
-          if(!prof.signup_ip||!prof.signup_visitor_id){(async function(){try{var g=await getGeo().catch(function(){return null;});var upd:any={};if(!prof.signup_ip&&g?.ip)upd.signup_ip=g.ip;if(!prof.signup_visitor_id){var vid=getVisitorId();if(vid)upd.signup_visitor_id=vid;}if(Object.keys(upd).length>0)authClient!.from("users").update(upd).eq("id",usr.id);}catch(e){}})();}
+          if(!prof.signup_ip||!prof.signup_visitor_id){(async function(){try{var g=await getGeo().catch(function(){return null;});var upd:any={};if(!prof.signup_ip&&g?.ip)upd.signup_ip=g.ip;if(!prof.signup_visitor_id){var vid=getVisitorId();if(vid)upd.signup_visitor_id=vid;}if(Object.keys(upd).length>0)supabaseClient!.from("users").update(upd).eq("id",usr.id);}catch(e){}})();}
         }).catch(function(){});
       }
     } catch(e:any){
@@ -2819,7 +2817,7 @@ export default function App(){
   },[]);
   // Warm up Supabase on app load so auth is fast when user clicks sign in
   useEffect(function(){
-    if(authClient)authClient.auth.getSession().catch(function(){});
+    if(supabaseClient)supabaseClient.auth.getSession().catch(function(){});
   },[]);
   // Fetch FDP Value history for player page
   var ppSnapshotCtx=normalizeSnapshotContext({isDynasty:isDynasty,scoring:sKey,superflex:isSF,tePremium:tePremium,idp:idpMode});
@@ -2836,7 +2834,7 @@ export default function App(){
     (async function(){
       var all:FdpSnapshot[]=[];var hasMore=true;var cursorDate:string|null=null;var cursorId:number|null=null;var seen=new Set<number>();
       while(hasMore&&!cancelled){
-        var q=authClient.from("fdp_value_snapshots").select("id,player_slug,player_name,value,values_version,effective_at,recorded_at,valuation_factors").eq("player_slug",slug).eq("league_type",ctx.leagueType).eq("scoring",ctx.scoring).eq("superflex",ctx.superflex).eq("te_premium",ctx.tePremium).eq("idp",ctx.idp).order("effective_at",{ascending:false}).order("id",{ascending:false}).limit(HISTORY_PAGE_SIZE);
+        var q=supabaseClient.from("fdp_value_snapshots").select("id,player_slug,player_name,value,values_version,effective_at,recorded_at,valuation_factors").eq("player_slug",slug).eq("league_type",ctx.leagueType).eq("scoring",ctx.scoring).eq("superflex",ctx.superflex).eq("te_premium",ctx.tePremium).eq("idp",ctx.idp).order("effective_at",{ascending:false}).order("id",{ascending:false}).limit(HISTORY_PAGE_SIZE);
         if(cursorDate!==null&&cursorId!==null){q=q.or("effective_at.lt."+cursorDate+",and(effective_at.eq."+cursorDate+",id.lt."+cursorId+")");}
         var res=await q;
         if(res.error){if(!cancelled){setPpHistoryLoading(false);setPpHistoryError(true);}return;}
@@ -2876,8 +2874,8 @@ export default function App(){
   },[]);// eslint-disable-line react-hooks/exhaustive-deps
   // Auth state sync with Supabase
   useEffect(function(){
-    if(!authClient)return;
-    var {data:{subscription}}=authClient.auth.onAuthStateChange(function(event,session){
+    if(!supabaseClient)return;
+    var {data:{subscription}}=supabaseClient.auth.onAuthStateChange(function(event,session){
       if(event==="SIGNED_OUT"||!session){saveAndSetUser(null);setLeagueFetchedAt("");return;}
       if(event==="PASSWORD_RECOVERY"){setShowResetPw(true);return;}
       if(event==="SIGNED_IN"||event==="TOKEN_REFRESHED"||event==="INITIAL_SESSION"){
@@ -2887,7 +2885,7 @@ export default function App(){
         // Set user immediately from session — no DB wait
         saveAndSetUser({id:usr.id,name:usr.user_metadata?.name||usr.email||"",email:usr.email||"",plan:(isAdmin2||fa4)?"elite":"free",isPro:isAdmin2||fa4,isAdmin:isAdmin2,token:session.access_token});
         // Load profile from DB in background and update
-        authClient.from("users").select("name,plan,is_pro,is_admin").eq("id",usr.id).single().then(function(profResult){
+        supabaseClient.from("users").select("name,plan,is_pro,is_admin").eq("id",usr.id).single().then(function(profResult){
           var prof=profResult.data;
           if(!prof)return;
           var isAdm=isAdmin2||prof.is_admin||false;
@@ -3018,7 +3016,7 @@ export default function App(){
     setCancelLoading(false);
   }
   async function checkSubscriptionAfterPayment(){
-    if(!authClient)return;
+    if(!supabaseClient)return;
     // Re-read user from localStorage to avoid stale closure
     var currentUser;
     try{var s=localStorage.getItem('fdp_user_v1');currentUser=s?JSON.parse(s):null;}catch(e){currentUser=null;}
@@ -3028,9 +3026,9 @@ export default function App(){
     var maxAttempts=10;
     for(var i=0;i<maxAttempts;i++){
       try{
-        var {data:sess}=await authClient.auth.getSession();
+        var {data:sess}=await supabaseClient.auth.getSession();
         if(!sess?.session){setPostPaymentStatus("Session expired — please log in again.");setPostPaymentLoading(false);return;}
-        var {data:prof}=await authClient.from("users").select("id,plan,is_pro,subscription_status").eq("id",sess.session.user.id).single();
+        var {data:prof}=await supabaseClient.from("users").select("id,plan,is_pro,subscription_status").eq("id",sess.session.user.id).single();
         if(prof?.is_pro){
           saveAndSetUser(Object.assign({},currentUser,{plan:prof.plan||"pro",isPro:true,subscriptionStatus:prof.subscription_status||"active"}));
           setShowPostPayment(false);setPostPaymentLoading(false);setPostPaymentStatus("");
@@ -4692,9 +4690,9 @@ var [historicalPropResults,setHistoricalPropResults]=useState([]);  var [propGra
             React.createElement("div",{style:{textAlign:"center",marginBottom:18}},
               React.createElement("div",{style:{fontWeight:900,fontSize:22,marginBottom:4,color:T.text}},"Set New Password"),
               React.createElement("div",{style:{fontSize:13,color:T.textSub}},"Enter your new password below")),
-            React.createElement("input",{placeholder:"New password (6+ characters)",type:"password",value:resetPwVal,onChange:function(e){setResetPwVal(e.target.value);},onKeyDown:function(e){if(e.key==="Enter"&&resetPwVal.length>=6){setResetPwLoading(true);setResetPwErr("");authClient.auth.updateUser({password:resetPwVal}).then(function(r){setResetPwLoading(false);if(r.error){setResetPwErr(r.error.message);}else{setResetPwDone(true);}}).catch(function(e){setResetPwLoading(false);setResetPwErr(e.message||"Something went wrong");});}},style:{background:T.bgInput,color:T.text,border:"1px solid "+T.border,borderRadius:10,padding:"13px 16px",fontSize:14,outline:"none",width:"100%",boxSizing:"border-box",marginBottom:resetPwErr?8:16}}),
+            React.createElement("input",{placeholder:"New password (6+ characters)",type:"password",value:resetPwVal,onChange:function(e){setResetPwVal(e.target.value);},onKeyDown:function(e){if(e.key==="Enter"&&resetPwVal.length>=6){setResetPwLoading(true);setResetPwErr("");supabaseClient.auth.updateUser({password:resetPwVal}).then(function(r){setResetPwLoading(false);if(r.error){setResetPwErr(r.error.message);}else{setResetPwDone(true);}}).catch(function(e){setResetPwLoading(false);setResetPwErr(e.message||"Something went wrong");});}},style:{background:T.bgInput,color:T.text,border:"1px solid "+T.border,borderRadius:10,padding:"13px 16px",fontSize:14,outline:"none",width:"100%",boxSizing:"border-box",marginBottom:resetPwErr?8:16}}),
             resetPwErr&&React.createElement("div",{style:{fontSize:12,color:T.red,marginBottom:12,padding:"8px 12px",background:T.red+"15",borderRadius:8}},resetPwErr),
-            React.createElement("button",{onClick:function(){if(resetPwVal.length<6){setResetPwErr("Password must be 6+ characters");return;}setResetPwLoading(true);setResetPwErr("");authClient.auth.updateUser({password:resetPwVal}).then(function(r){setResetPwLoading(false);if(r.error){setResetPwErr(r.error.message);}else{setResetPwDone(true);}}).catch(function(e){setResetPwLoading(false);setResetPwErr(e.message||"Something went wrong");});},disabled:resetPwLoading,style:{width:"100%",padding:"14px",borderRadius:12,border:"none",cursor:"pointer",fontWeight:800,fontSize:15,background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",opacity:resetPwLoading?0.7:1}},resetPwLoading?"Updating...":"Update Password")))),
+            React.createElement("button",{onClick:function(){if(resetPwVal.length<6){setResetPwErr("Password must be 6+ characters");return;}setResetPwLoading(true);setResetPwErr("");supabaseClient.auth.updateUser({password:resetPwVal}).then(function(r){setResetPwLoading(false);if(r.error){setResetPwErr(r.error.message);}else{setResetPwDone(true);}}).catch(function(e){setResetPwLoading(false);setResetPwErr(e.message||"Something went wrong");});},disabled:resetPwLoading,style:{width:"100%",padding:"14px",borderRadius:12,border:"none",cursor:"pointer",fontWeight:800,fontSize:15,background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",opacity:resetPwLoading?0.7:1}},resetPwLoading?"Updating...":"Update Password")))),
 
     // Roster modal
     rosterViewTeam!==null&&(function(){
@@ -4944,7 +4942,7 @@ var [historicalPropResults,setHistoricalPropResults]=useState([]);  var [propGra
         !user?React.createElement(React.Fragment,null,
           React.createElement("button",{onClick:function(){setAuthMode("signin");setShowAuth(true);},style:{padding:"8px 16px",minHeight:44,borderRadius:20,border:"1px solid "+T.border,background:"transparent",color:T.textSub,cursor:"pointer",fontWeight:600,fontSize:12,WebkitTapHighlightColor:"transparent"}},"Sign In"),
           React.createElement("button",{onClick:function(){setAuthMode("signup");setShowAuth(true);},style:{padding:"8px 18px",minHeight:44,borderRadius:20,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",cursor:"pointer",fontWeight:700,fontSize:12,WebkitTapHighlightColor:"transparent"}},"Sign Up Free")
-        ):React.createElement(UserMenu,{user:user,T:T,onSignOut:function(){authClient?.auth.signOut();saveAndSetUser(null);setShowAdmin(false);},onUpgrade:function(){if(user){setReportSubTab("upgrade");setTab("reports");}else{setAuthMode("signup");setShowAuth(true);}},onAdmin:function(){setTab("admin");}})
+        ):React.createElement(UserMenu,{user:user,T:T,onSignOut:function(){supabaseClient?.auth.signOut();saveAndSetUser(null);setShowAdmin(false);},onUpgrade:function(){if(user){setReportSubTab("upgrade");setTab("reports");}else{setAuthMode("signup");setShowAuth(true);}},onAdmin:function(){setTab("admin");}})
       )
     ),
 
@@ -4979,7 +4977,7 @@ if(item[0]==="admin"){var adminEmails=["jlawrence@cmgfi.com","admin@fantasydraft
         !user?React.createElement("div",{style:{display:"flex",flexDirection:"column",gap:8}},
           React.createElement("button",{onClick:function(){setAuthMode("signup");setShowAuth(true);},style:{padding:"10px",borderRadius:10,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer"}},"Sign Up Free"),
           React.createElement("button",{onClick:function(){setAuthMode("signin");setShowAuth(true);},style:{padding:"10px",borderRadius:10,border:"1px solid "+T.border,background:"transparent",color:T.text,fontWeight:700,fontSize:12,cursor:"pointer"}},"Sign In")
-        ):React.createElement(UserMenu,{user:user,T:T,onSignOut:function(){authClient?.auth.signOut();saveAndSetUser(null);setShowAdmin(false);},onUpgrade:function(){if(user){setReportSubTab("upgrade");setTab("reports");}else{setAuthMode("signup");setShowAuth(true);}},onAdmin:function(){setTab("admin");}})
+        ):React.createElement(UserMenu,{user:user,T:T,onSignOut:function(){supabaseClient?.auth.signOut();saveAndSetUser(null);setShowAdmin(false);},onUpgrade:function(){if(user){setReportSubTab("upgrade");setTab("reports");}else{setAuthMode("signup");setShowAuth(true);}},onAdmin:function(){setTab("admin");}})
       )
     ),
 

@@ -123,10 +123,10 @@ describe('GATE 1A: Service-Role Credential Exposure Prevention', () => {
       expect(sendEmailContent).not.toContain('if (type !== "welcome")');
     });
 
-    it('should use RLS with authenticated authClient', () => {
+    it('should use RLS with authenticated supabaseClient', () => {
       const afdpPath = path.join(process.cwd(), 'afdp.tsx');
       const afdpContent = fs.readFileSync(afdpPath, 'utf-8');
-      expect(afdpContent).toContain('authClient');
+      expect(afdpContent).toContain('supabaseClient');
       expect(afdpContent).toContain('Bearer');
     });
   });
