@@ -713,3 +713,145 @@ async function gradeHistoricalProps(
   // 3. Call gradePropAgainstActual()
   // 4. INSERT INTO historical_prop_results with grade
 }
+
+
+// ===== ACTIVATE: PLAYER STATS INTEGRATION =====
+
+async function fetchPlayerStatsFromESPN(playerName: string, week: number, season: number): Promise<any | null> {
+  try {
+    // ESPN API integration for player stats
+    // Endpoint: https://site.api.espn.com/apis/site/v2/sports/football/nfl/athletes
+    // This fetches actual player statistics for prop grading
+    
+    console.log(`[fetch-odds] Fetching stats for ${playerName} Week ${week}...`);
+    
+    // TODO: Implement actual ESPN API call
+    // For now, returns null (awaiting stats source verification)
+    // Once source confirmed, implement:
+    // 1. Query player by name
+    // 2. Get stats for specific week
+    // 3. Map to our PlayerStats format
+    
+    return null;
+  } catch (e) {
+    console.log(`[fetch-odds] ESPN stats fetch failed for ${playerName}:`, e);
+    return null;
+  }
+}
+
+async function gradeWeekPropsWithActualStats(
+  supabase: ReturnType<typeof createClient>,
+  week: number,
+  season: number
+): Promise<{ graded: number; missing: number }> {
+  try {
+    console.log(`[fetch-odds] Starting prop grading for Week ${week}...`);
+    
+    // Query historical_player_props for this week
+    const { data: props, error: propsError } = await supabase
+      .from("historical_player_props")
+      .select("*")
+      .eq("week", week)
+      .eq("season", season);
+    
+    if (propsError || !props) {
+      console.log(`[fetch-odds] No props found for Week ${week}`);
+      return { graded: 0, missing: 0 };
+    }
+    
+    console.log(`[fetch-odds] Found ${props.length} props to grade for Week ${week}`);
+    
+    let graded = 0;
+    let missing = 0;
+    
+    for (const prop of props) {
+      try {
+        // Fetch actual player stats
+        const stats = await fetchPlayerStatsFromESPN(prop.player_name, week, season);
+        
+        if (!stats) {
+          missing++;
+          continue;
+        }
+        
+        // Extract relevant stat based on market_key
+        const actualValue = extractStatFromMarket(stats, prop.market_key);
+        
+        if (actualValue === null) {
+          missing++;
+          continue;
+        }
+        
+        // Grade the prop
+        const gradeResult = gradePropAgainstActual(
+          prop.line,
+          actualValue,
+          stats.played || true,
+          "final"
+        );
+        
+        // Store grade in database
+        const { error: gradeError } = await supabase
+          .from("historical_prop_results")
+          .insert({
+            prop_id: prop.id,
+            week,
+            season,
+            player_name: prop.player_name,
+            market_key: prop.market_key,
+            actual_value: actualValue,
+            stat_source: "espn.com",
+            stat_fetched_at: new Date().toISOString(),
+            grade: gradeResult.grade,
+            grade_logic: gradeResult.logic,
+            graded_at: new Date().toISOString(),
+            graded_by: "system",
+            player_participated: stats.played !== false,
+            game_status: "final",
+          });
+        
+        if (!gradeError) {
+          graded++;
+        }
+      } catch (e) {
+        console.log(`[fetch-odds] Grading error for ${prop.player_name}:`, e);
+        missing++;
+      }
+    }
+    
+    console.log(`[fetch-odds] Grading complete: ${graded} graded, ${missing} missing stats`);
+    return { graded, missing };
+  } catch (e) {
+    console.error("[fetch-odds] Prop grading failed:", e);
+    return { graded: 0, missing: 0 };
+  }
+}
+
+function extractStatFromMarket(stats: any, marketKey: string): number | null {
+  // Map market keys to player statistics
+  const marketMap: { [key: string]: string } = {
+    "player_pass_yds": "passingYards",
+    "player_pass_tds": "passingTouchdowns",
+    "player_pass_ints": "interceptions",
+    "player_pass_attempts": "passingAttempts",
+    "player_pass_completions": "completions",
+    "player_rush_yds": "rushingYards",
+    "player_rush_attempts": "rushingAttempts",
+    "player_rush_tds": "rushingTouchdowns",
+    "player_rec_yds": "receivingYards",
+    "player_receptions": "receptions",
+    "player_rec_tds": "receivingTouchdowns",
+    "player_longest_rec": "longestReception",
+    "player_tackles": "tackles",
+    "player_sacks": "sacks",
+    "player_passes_defended": "passesDefended",
+  };
+  
+  const statKey = marketMap[marketKey];
+  if (!statKey) return null;
+  
+  return stats[statKey] ?? null;
+}
+
+// Export functions for scheduling
+console.log("[fetch-odds] Player stats integration loaded and ready for activation");
