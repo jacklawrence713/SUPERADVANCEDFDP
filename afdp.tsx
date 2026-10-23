@@ -2593,7 +2593,7 @@ function AnalyticsDashboard({T,data,loading,onLoad}:{T:any,data:any,loading:bool
           return React.createElement("div",{key:d.day,style:{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}},
             d.count>0&&React.createElement("div",{style:{fontSize:11,fontWeight:600,color:isToday?T.purple:T.text,lineHeight:1}},d.count),
             React.createElement("div",{title:d.day+" · "+d.count+" visitors",style:{width:"100%",height:h,borderRadius:4,background:isToday?T.purple:"rgba(124, 77, 255, "+opacity+")",border:isToday?"2px solid "+T.purple:"none",transition:"all 0.3s",cursor:"default",boxShadow:isToday?"0 0 8px "+T.purple+"30":"none"}}),
-            isToday&&React.createElement("div",{style:{fontSize:8,fontWeight:700,color:T.purple,marginTop:1}},isToday?"🔷 TODAY":"")
+            isToday&&React.createElement("div",{style:{fontSize:8,fontWeight:700,color:T.purple,marginTop:1}},isToday?"TODAY":"")
           );
         })
       ),
