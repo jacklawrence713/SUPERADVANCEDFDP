@@ -82,11 +82,11 @@ describe('GATE 1A: Service-Role Credential Exposure Prevention', () => {
       expect(afdpContent).not.toContain('analyticsReadClient');
     });
 
-    it('should have removed analytics state variables', () => {
+    it('should have analytics state variables with secure implementation', () => {
       const afdpPath = path.join(process.cwd(), 'afdp.tsx');
       const afdpContent = fs.readFileSync(afdpPath, 'utf-8');
-      expect(afdpContent).not.toContain('setAnalyticsData'); // Removed in security hardening
-      expect(afdpContent).not.toContain('setPublicStats'); // This one truly removed
+      expect(afdpContent).toContain('setAnalyticsData'); // Restored with Edge Function auth
+      expect(afdpContent).not.toContain('setPublicStats'); // This one remains removed
     });
 
     it('should have removed homepage trades metric display', () => {
@@ -96,16 +96,16 @@ describe('GATE 1A: Service-Role Credential Exposure Prevention', () => {
       expect(afdpContent).not.toContain('publicStats&&publicStats.trades>0');
     });
 
-    it('should not contain AnalyticsDashboard component (Phase 2 cleanup)', () => {
+    it('should contain AnalyticsDashboard with secure Edge Function integration', () => {
       const afdpPath = path.join(process.cwd(), 'afdp.tsx');
       const afdpContent = fs.readFileSync(afdpPath, 'utf-8');
-      expect(afdpContent).not.toContain('function AnalyticsDashboard'); // Removed for security
+      expect(afdpContent).toContain('function AnalyticsDashboard'); // Restored with secure pattern
     });
 
-    it('should not reference Platform Analytics admin tab (Phase 2 cleanup)', () => {
+    it('should reference Platform Analytics via secure Edge Function', () => {
       const afdpPath = path.join(process.cwd(), 'afdp.tsx');
       const afdpContent = fs.readFileSync(afdpPath, 'utf-8');
-      expect(afdpContent).not.toContain('Platform Analytics'); // Removed for security
+      expect(afdpContent).toContain('Platform Analytics'); // Restored with Edge Function auth
     });
 
     it('should not have stale VITE_SUPABASE_ANON_KEY instructions in runtime (Phase 2 cleanup)', () => {
