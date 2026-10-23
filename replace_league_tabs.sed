@@ -1,0 +1,1 @@
+5693s/{display:"flex",gap:8,overflowX:"auto",padding:isDesktop?"12px 36px":"12px 16px",scrollbarWidth:"none"}/{display:"flex",gap:6,overflowX:"auto",padding:isDesktop?"10px 36px":"10px 12px",scrollbarWidth:"none",WebkitOverflowScrolling:"touch",msOverflowStyle:"none"}/
