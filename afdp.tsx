@@ -2989,6 +2989,8 @@ export default function App(){
   var [resetPwDone,setResetPwDone]=useState(false);
   var [resetPwLoading,setResetPwLoading]=useState(false);
   var [showAdmin,setShowAdmin]=useState(false);
+  var [darkMode,setDarkMode]=useState(function(){try{var s=localStorage.getItem('fdp_dark_v1');return s?JSON.parse(s):true;}catch(e){return true;}});
+  function toggleDarkMode(){setDarkMode(function(d){var next=!d;try{localStorage.setItem('fdp_dark_v1',JSON.stringify(next));}catch(e){}return next;});}
   var [analyticsData,setAnalyticsData]=useState<any>(null);
   var [analyticsLoading,setAnalyticsLoading]=useState(false);
   async function loadAnalytics(){
