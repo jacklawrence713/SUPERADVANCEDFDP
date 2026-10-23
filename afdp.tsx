@@ -301,6 +301,7 @@ async function fetchVegasOdds(token: string | undefined, forceRefresh: boolean =
   }
 }
 
+async function triggerPropGrading(token: string | undefined, week: number, season: number = 2026): Promise<any> {  if (!token) return { error: "Not authenticated" };  try {    const response = await fetch(EDGE_URL + "/fetch-grade-props", {      method: "POST",      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },      body: JSON.stringify({ week, season }),    });    if (!response.ok) return { error: `HTTP ${response.status}` };    const data = await response.json();    return data;  } catch (err) {    console.error("Prop grading trigger error:", err);    return { error: String(err) };  }}async function fetchHistoricalPropResults(token: string | undefined, week: number, season: number = 2026): Promise<any[]> {  if (!token) return [];  try {    const supabaseUrl = "https://xbvkjxdcpbkdcltihbhk.supabase.co";    const response = await fetch(`${supabaseUrl}/rest/v1/historical_prop_results?week=eq.${week}&season=eq.${season}`, {      headers: {        Authorization: `Bearer ${token}`,        "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhidmtqeGRjcGJrZGNsdGloYmhrIiwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJpYXQiOjE2OTcwMDAwMDAsImV4cCI6MTkyNjk0MDAwMH0.DLLg4lh8GjNgYxYJLGdLM9hL-J3zN5qRq-KbJ5rJ0yY",      },    });    if (!response.ok) return [];    return await response.json();  } catch (err) {    console.error("Historical prop results fetch error:", err);    return [];  }}
 function buildHardcodedOdds(): {[t:string]:{spread:number,total:number,opp:string}} {
   return {};
 }
@@ -3198,6 +3199,7 @@ export default function App(){
   var [oddsFetchedAt,setOddsFetchedAt]=useState("");
   var [oddsStale,setOddsStale]=useState(false);
   var [oddsChecking,setOddsChecking]=useState(false);
+var [historicalPropResults,setHistoricalPropResults]=useState([]);  var [propGradingInProgress,setPropGradingInProgress]=useState(false);
   var [oddsChecked,setOddsChecked]=useState(false);
   var [tradeHistory,setTradeHistory]=useState(function(){try{var s=localStorage.getItem('fdp_th_v1');return s?JSON.parse(s):[];}catch(e){return [];}});
   var [tradeSaved,setTradeSaved]=useState(false);

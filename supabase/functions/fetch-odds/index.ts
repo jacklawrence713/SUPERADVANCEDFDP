@@ -348,12 +348,82 @@ async function fetchPlayerPropsForEvents(
   eventIds: string[]
 ): Promise<PlayerProp[] | null> {
   try {
-    // Future enhancement: For each eventId, call The Odds API player props endpoint
-    // Market keys: player_pass_yds, player_rec_yds, player_rush_yds, player_receptions, etc.
-    // Normalize across bookmakers using median consensus
-    // 
-    // For now, returns null (no props data)
-    // To enable: verify The Odds API tier supports player props markets
+    if (!eventIds || eventIds.length === 0) return null;
+
+    const allProps: PlayerProp[] = [];
+
+    // Test The Odds API player props support
+    for (const eventId of eventIds.slice(0, 1)) {
+      try {
+        const url = `https://api.the-odds-api.com/v4/sports/americanfootball_nfl/events/${eventId}/odds?apiKey=${apiKey}&regions=us&markets=player_pass_yds,player_pass_tds,player_rec_yds,player_receptions,player_rush_yds,player_rush_tds`;
+        const res = await fetch(url);
+
+        if (!res.ok) {
+          console.log(`[fetch-odds] Player props endpoint test returned ${res.status} for event ${eventId}`);
+          // If 404 or 400, endpoint not supported
+          if (res.status === 404 || res.status === 400) {
+            console.log("[fetch-odds] The Odds API player props endpoint not available on this tier");
+            return null;
+          }
+          continue;
+        }
+
+        const data = await res.json();
+        if (!data.bookmakers || data.bookmakers.length === 0) {
+          console.log("[fetch-odds] No player props markets in response");
+          return null;
+        }
+
+        // Props endpoint is supported - fetch all events
+        console.log("[fetch-odds] Player props endpoint confirmed available");
+
+        // Fetch remaining events
+        for (const eid of eventIds) {
+          try {
+            const propUrl = `https://api.the-odds-api.com/v4/sports/americanfootball_nfl/events/${eid}/odds?apiKey=${apiKey}&regions=us&markets=player_pass_yds,player_pass_tds,player_rec_yds,player_receptions,player_rush_yds,player_rush_tds`;
+            const propRes = await fetch(propUrl);
+
+            if (!propRes.ok) continue;
+
+            const propData = await propRes.json();
+            if (!propData.bookmakers) continue;
+
+            // Parse props from bookmakers
+            for (const bk of propData.bookmakers) {
+              for (const market of bk.markets || []) {
+                const outcomes = market.outcomes || [];
+                if (outcomes.length < 2) continue;
+
+                const prop: PlayerProp = {
+                  eventId: eid,
+                  game: propData.home_team && propData.away_team
+                    ? `${ODDS_TEAM_MAP[propData.away_team] || "?"} @ ${ODDS_TEAM_MAP[propData.home_team] || "?"}`
+                    : "?",
+                  player: outcomes[0]?.player || outcomes[0]?.name || "",
+                  team: "",
+                  market: market.key,
+                  line: outcomes[0]?.point || 0,
+                  overPrice: outcomes[0]?.price,
+                  underPrice: outcomes[1]?.price,
+                  bookmakers: 1,
+                  opponent: "",
+                };
+
+                allProps.push(prop);
+              }
+            }
+          } catch (e) {
+            continue;
+          }
+        }
+
+        return allProps.length > 0 ? allProps : null;
+      } catch (e) {
+        console.log("[fetch-odds] Player props test fetch failed:", e);
+        return null;
+      }
+    }
+
     return null;
   } catch (e) {
     console.log("[fetch-odds] player props fetch failed");
@@ -719,22 +789,132 @@ async function gradeHistoricalProps(
 
 async function fetchPlayerStatsFromESPN(playerName: string, week: number, season: number): Promise<any | null> {
   try {
-    // ESPN API integration for player stats
-    // Endpoint: https://site.api.espn.com/apis/site/v2/sports/football/nfl/athletes
-    // This fetches actual player statistics for prop grading
-    
-    console.log(`[fetch-odds] Fetching stats for ${playerName} Week ${week}...`);
-    
-    // TODO: Implement actual ESPN API call
-    // For now, returns null (awaiting stats source verification)
-    // Once source confirmed, implement:
-    // 1. Query player by name
-    // 2. Get stats for specific week
-    // 3. Map to our PlayerStats format
-    
+    // Fetch actual player statistics from ESPN for prop grading
+    // Queries: 1) All games for week 2) Player stats from those games
+
+    const gameResults = await fetchNFLGamesFromESPN(week, season);
+    if (!gameResults || gameResults.length === 0) {
+      return null;
+    }
+
+    // For each game, fetch player stats and search for matching player
+    for (const game of gameResults) {
+      try {
+        const statsUrl = `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${game.date}&week=${week}&season=${season}`;
+        const statsRes = await fetch(statsUrl);
+
+        if (!statsRes.ok) continue;
+
+        const scoreboardData = await statsRes.json();
+        if (!scoreboardData.events) continue;
+
+        // Search through events for player stats
+        for (const event of scoreboardData.events) {
+          if (!event.competitions || event.competitions.length === 0) continue;
+
+          const comp = event.competitions[0];
+          if (!comp.competitors) continue;
+
+          for (const competitor of comp.competitors) {
+            if (!competitor.statistics) continue;
+
+            // Search player stats within this team's stats
+            for (const statGroup of competitor.statistics) {
+              if (!statGroup.athletes) continue;
+
+              for (const athlete of statGroup.athletes) {
+                // Normalize name comparison (handle "Ja'Marr Chase" variations)
+                const athleteName = athlete.displayName || athlete.name || "";
+                if (athleteName.toLowerCase().includes(playerName.toLowerCase()) ||
+                    playerName.toLowerCase().includes(athleteName.toLowerCase())) {
+
+                  const stats: any = {
+                    played: true,
+                    passingYards: 0,
+                    passingTouchdowns: 0,
+                    passingAttempts: 0,
+                    completions: 0,
+                    interceptions: 0,
+                    rushingYards: 0,
+                    rushingAttempts: 0,
+                    rushingTouchdowns: 0,
+                    receivingYards: 0,
+                    receptions: 0,
+                    receivingTouchdowns: 0,
+                    longestReception: 0,
+                    tackles: 0,
+                    sacks: 0,
+                    passesDefended: 0,
+                  };
+
+                  // Map ESPN stats to our format
+                  if (athlete.stats) {
+                    for (const stat of athlete.stats) {
+                      if (!stat.stats) continue;
+
+                      // Passing
+                      if (stat.displayName === "Passing") {
+                        stats.passingYards = stat.stats[0]?.value || 0;
+                        stats.passingTouchdowns = stat.stats[1]?.value || 0;
+                        stats.interceptions = stat.stats[2]?.value || 0;
+                        stats.passingAttempts = stat.stats[3]?.value || 0;
+                        stats.completions = stat.stats[4]?.value || 0;
+                      }
+                      // Rushing
+                      else if (stat.displayName === "Rushing") {
+                        stats.rushingYards = stat.stats[0]?.value || 0;
+                        stats.rushingAttempts = stat.stats[1]?.value || 0;
+                        stats.rushingTouchdowns = stat.stats[2]?.value || 0;
+                      }
+                      // Receiving
+                      else if (stat.displayName === "Receiving") {
+                        stats.receivingYards = stat.stats[0]?.value || 0;
+                        stats.receptions = stat.stats[1]?.value || 0;
+                        stats.receivingTouchdowns = stat.stats[2]?.value || 0;
+                        stats.longestReception = stat.stats[3]?.value || 0;
+                      }
+                      // Defense
+                      else if (stat.displayName === "Defense") {
+                        stats.tackles = stat.stats[0]?.value || 0;
+                        stats.sacks = stat.stats[1]?.value || 0;
+                        stats.passesDefended = stat.stats[2]?.value || 0;
+                      }
+                    }
+                  }
+
+                  return stats;
+                }
+              }
+            }
+          }
+        }
+      } catch (e) {
+        continue;
+      }
+    }
+
     return null;
   } catch (e) {
     console.log(`[fetch-odds] ESPN stats fetch failed for ${playerName}:`, e);
+    return null;
+  }
+}
+
+async function fetchNFLGamesFromESPN(week: number, season: number): Promise<any[] | null> {
+  try {
+    const url = `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?week=${week}&season=${season}`;
+    const res = await fetch(url);
+
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    if (!data.events) return null;
+
+    return data.events.map((event: any) => ({
+      date: event.date,
+      status: event.status?.type,
+    }));
+  } catch {
     return null;
   }
 }
