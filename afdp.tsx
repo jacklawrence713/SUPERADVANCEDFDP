@@ -2797,7 +2797,7 @@ export default function App(){
     if(path.indexOf("trade")!==-1)return "trade";
     return "trade";
   });
-  function setTab(t:string){setTabRaw(t);if(playerPage){setPlayerPage(null);window.history.pushState({},"","/");}window.location.hash=t;}
+  function setTab(t:string){console.log("[TRACE-setTab]",{targetTab:t});setTabRaw(t);if(playerPage){setPlayerPage(null);window.history.pushState({},"","/");}window.location.hash=t;}
   var [playerPage,setPlayerPage]=useState<any>(function(){
     var m=window.location.pathname.match(/^\/players\/([a-z0-9-]+)\/?$/);
     if(m){var p=findPlayerBySlug(m[1]);if(p){document.title=p.name+" Dynasty Value & Trade Analysis | Fantasy Draft Pros";return p;}}
