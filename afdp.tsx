@@ -317,6 +317,23 @@ var PAST_WEEKS=[
 {week:6,label:"Week 6 · Oct 13–17",lines:[["DEN","SEA",1.5,45],["JAX","TEX",-1.5,44],["ATL","CHI",-1.5,45],["CLE","BAL",1.5,44],["NE","NYJ",2,44],["NYG","NO",-2.5,46],["LAR","ARI",1,45],["KC","LAC",3,45],["LV","BUF",-1.5,45],["GB","DAL",3,48],["SF","WAS",1.5,46]],results:{"DEN-SEA":[17,14],"JAX-TEX":[31,34],"ATL-CHI":[31,23],"CLE-BAL":[13,10],"NE-NYJ":[26,19],"NYG-NO":[27,34],"LAR-ARI":[16,18],"KC-LAC":[22,6],"LV-BUF":[30,33],"GB-DAL":[23,13],"SF-WAS":[23,17]},props:[],propResults:{}}
 ];
 // Current week's lines (Week 7, Oct 20-21, 2026) — fetched from live API
+
+// Render historical prop results with grades
+function renderHistoricalPropResults(props: any[], T: any): React.ReactNode {
+  if (!props || props.length === 0) {
+    return React.createElement("div", {style: {color: T.textSub, fontSize: 12, marginTop: 12, fontStyle: "italic"}}, "No graded props for this week");
+  }
+  const gradeColor = (grade: string): string => {
+    const colors: {[k: string]: string} = {"OVER": "#22c55e", "UNDER": "#ef4444", "PUSH": "#eab308", "DNP": "#94a3b8"};
+    return colors[grade] || T.textDim;
+  };
+  const marketDisplay = (key: string): string => {
+    const map: {[k: string]: string} = {"player_pass_yds": "Pass Yards", "player_pass_tds": "Pass TDs", "player_rec_yds": "Rec Yards", "player_receptions": "Receptions", "player_rush_yds": "Rush Yards", "player_rush_tds": "Rush TDs", "player_tackles": "Tackles", "player_sacks": "Sacks"};
+    return map[key] || key;
+  };
+  return React.createElement("div", {style: {marginTop: 16}}, React.createElement("div", {style: {fontSize: 12, fontWeight: 700, color: "#059669", marginBottom: 8}}, "Graded Player Props"), props.map((p: any) => React.createElement("div", {key: `${p.player_name}-${p.market_key}`, style: {background: T.bgCard, border: "1px solid " + T.border, borderRadius: 10, padding: 10, marginBottom: 8, fontSize: 11}}, React.createElement("div", {style: {display: "flex", justifyContent: "space-between", marginBottom: 6}}, React.createElement("div", {style: {fontWeight: 700}}, p.player_name + " · " + marketDisplay(p.market_key)), React.createElement("div", {style: {fontWeight: 700, color: gradeColor(p.grade), textTransform: "uppercase", fontSize: 10}}, p.grade)), React.createElement("div", {style: {display: "flex", gap: 12, color: T.textSub, fontSize: 10}}, React.createElement("span", null, "Line: " + (p.line || "?")), React.createElement("span", null, "Actual: " + (p.actual_value !== null ? p.actual_value : "—"))), p.grade_logic ? React.createElement("div", {style: {marginTop: 4, color: T.textDim, fontSize: 9, fontStyle: "italic"}}, "Logic: " + p.grade_logic) : null)));
+}
+
 // (Vegas odds now fetched via fetchVegasOdds)
 
 // Note: Live API (fetch-odds) fetches current week from The Odds API
@@ -5690,7 +5707,7 @@ if(item[0]==="admin"){var adminEmails=["jlawrence@cmgfi.com","admin@fantasydraft
     tab==="league"&&React.createElement("div",{style:{paddingBottom:80}},
       React.createElement("div",{style:{position:"relative",borderBottom:"1px solid "+T.border}},
         isDesktop&&React.createElement("button",{onClick:function(){leagueTabsRef.current&&leagueTabsRef.current.scrollBy({left:-200,behavior:"smooth"});},style:{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",zIndex:2,background:T.bgCard,border:"1px solid "+T.border,borderRadius:"50%",width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:T.text,fontSize:14,padding:0}},"‹"),
-        React.createElement("div",{ref:leagueTabsRef,style:{display:"flex",gap:8,overflowX:"auto",padding:isDesktop?"12px 36px":"12px 16px",scrollbarWidth:"none"}},
+        React.createElement("div",{ref:leagueTabsRef,style:{display:"flex",gap:6,overflowX:"auto",padding:isDesktop?"10px 36px":"10px 12px",scrollbarWidth:"none",WebkitOverflowScrolling:"touch",msOverflowStyle:"none"}},
           [["overview","League Intelligence"],["power","Power Rankings"],["pickpower","Pick Power Rankings"],["playoff","Playoff Odds"],["champ","Championship"],["advice","Team Advice"],["roster","Roster Health"],["waiver","Waiver Wire"],["lineup","Lineup"],["startsit","Start/Sit"],["trades","League Trades"],["auction","Draft Room"],["rivalry","Rivalry"],["recap","Recap"],["chat","Chat"],["alerts","Alerts"],["leagimport","Import"]].map(function(st){
             var active=leagueSubTab===st[0];
             return React.createElement("button",{key:st[0],onClick:function(){
