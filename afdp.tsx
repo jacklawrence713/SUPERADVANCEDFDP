@@ -2430,20 +2430,6 @@ function TradeItem(props){
 
 function playerSlug(name:string){return name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");}
 function AnalyticsDashboard({T,data,loading,onLoad}:{T:any,data:any,loading:boolean,onLoad:()=>void}){
-  
-  // Auto-trigger prop grading for Prior Weeks
-  useEffect(()=>{
-    if(rankSubTab==="vegaslines"&&vegasSubTab==="history"&&selectedVegasWeek<7&&!propGradingInProgress){
-      triggerPropGrading(user?.token,selectedVegasWeek,2026).then(r=>{
-        console.log("Prop grading triggered for Week",selectedVegasWeek);
-        fetchHistoricalPropResults(user?.token,selectedVegasWeek,2026).then(results=>{
-          setHistoricalPropResults(results);
-          console.log("Loaded",results.length,"graded props");
-        });
-      }).catch(e=>console.error("Grading error:",e));
-    }
-  },[selectedVegasWeek,vegasSubTab,rankSubTab,user?.token,propGradingInProgress]);
-
   useEffect(function(){onLoad();},[]);// eslint-disable-line react-hooks/exhaustive-deps
 
   // Build daily chart from raw page_view events
@@ -4947,7 +4933,7 @@ var [historicalPropResults,setHistoricalPropResults]=useState([]);  var [propGra
     ),
 
     // DESKTOP SIDEBAR NAV
-    isDesktop&&React.createElement("div",{style:{width:220,flexShrink:0,position:"sticky",top:0,height:"100vh",background:T.bgCard,borderRight:"1px solid "+T.border,display:"flex",flexDirection:"column",padding:"20px 0",zIndex:100}},
+    isDesktop&&React.createElement("div",{style:{width:220,flexShrink:0,position:"fixed",left:0,top:0,height:"100vh",background:T.bgCard,borderRight:"1px solid "+T.border,display:"flex",flexDirection:"column",padding:"20px 0",zIndex:100}},
       React.createElement("div",{style:{padding:"0 16px 20px",borderBottom:"1px solid "+T.border,marginBottom:12}},
         React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10}},
           LogoSvg,
@@ -5013,7 +4999,7 @@ if(item[0]==="admin"){var adminEmails=["jlawrence@cmgfi.com","admin@fantasydraft
     ),
 
     // MAIN CONTENT WRAPPER (flex:1 on desktop for sidebar layout)
-    React.createElement("div",{style:{flex:1,minWidth:0,overflowY:"auto",maxWidth:isDesktop?"100%":undefined,width:isDesktop?"100%":undefined,paddingBottom:isDesktop?40:70}},
+    React.createElement("div",{style:{flex:1,minWidth:0,overflowY:"auto",marginLeft:isDesktop?220:0,maxWidth:isDesktop?"100%":undefined,width:isDesktop?"100%":undefined,paddingBottom:isDesktop?40:70}},
 
     // ════ TRADE TAB ════
     tab==="trade"&&React.createElement("div",{style:{padding:"16px 16px 0"}},
