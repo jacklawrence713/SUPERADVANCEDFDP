@@ -3300,7 +3300,7 @@ var [historicalPropResults,setHistoricalPropResults]=useState([]);  var [propGra
     if(!user?.token)return;
     setOddsLoading(true);
     fetchVegasOdds(user.token,false).then(function(response){
-      setOddsResponse(response);
+      setOddsResponse(function(prev){return {odds:response.odds||{},source:response.source||"unavailable",fetchedAt:response.fetchedAt||"",error:response.error,vegasData:response.vegasData||prev.vegasData};});
       setOddsLoading(false);
       if(response.error)setOddsError(response.error);
     });
