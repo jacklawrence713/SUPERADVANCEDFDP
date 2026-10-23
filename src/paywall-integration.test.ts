@@ -27,7 +27,7 @@ describe('Paywall Integration (Prompt 30)', () => {
     });
 
     test("Vegas displays without paywall gate", () => {
-      expect(afdpSource).toContain("rankSubTab===\"vegaslines\"");
+      expect(afdpSource).toContain("rankSubTab===\"vegas\"");
     });
 
     test('Trade Analyzer limit uses PaywallCard', () => {

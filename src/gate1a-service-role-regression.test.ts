@@ -85,7 +85,7 @@ describe('GATE 1A: Service-Role Credential Exposure Prevention', () => {
     it('should have removed analytics state variables', () => {
       const afdpPath = path.join(process.cwd(), 'afdp.tsx');
       const afdpContent = fs.readFileSync(afdpPath, 'utf-8');
-      expect(afdpContent).toContain('setAnalyticsData'); // Now restored securely
+      expect(afdpContent).not.toContain('setAnalyticsData'); // Removed in security hardening
       expect(afdpContent).not.toContain('setPublicStats'); // This one truly removed
     });
 
@@ -99,13 +99,13 @@ describe('GATE 1A: Service-Role Credential Exposure Prevention', () => {
     it('should not contain AnalyticsDashboard component (Phase 2 cleanup)', () => {
       const afdpPath = path.join(process.cwd(), 'afdp.tsx');
       const afdpContent = fs.readFileSync(afdpPath, 'utf-8');
-      expect(afdpContent).toContain('function AnalyticsDashboard'); // Restored securely
+      expect(afdpContent).not.toContain('function AnalyticsDashboard'); // Removed for security
     });
 
     it('should not reference Platform Analytics admin tab (Phase 2 cleanup)', () => {
       const afdpPath = path.join(process.cwd(), 'afdp.tsx');
       const afdpContent = fs.readFileSync(afdpPath, 'utf-8');
-      expect(afdpContent).toContain('Platform Analytics'); // Restored with Edge Function
+      expect(afdpContent).not.toContain('Platform Analytics'); // Removed for security
     });
 
     it('should not have stale VITE_SUPABASE_ANON_KEY instructions in runtime (Phase 2 cleanup)', () => {
@@ -126,8 +126,9 @@ describe('GATE 1A: Service-Role Credential Exposure Prevention', () => {
     it('should use RLS with authenticated supabaseClient', () => {
       const afdpPath = path.join(process.cwd(), 'afdp.tsx');
       const afdpContent = fs.readFileSync(afdpPath, 'utf-8');
-      expect(afdpContent).toContain('supabaseClient');
-      expect(afdpContent).toContain('Bearer');
+      expect(afdpContent).toContain('authClient'); // Authenticated Supabase client
+      expect(afdpContent).toContain('VITE_SUPABASE_URL');
+      expect(afdpContent).toContain('VITE_SUPABASE_PUBLISHABLE_KEY');
     });
   });
 });

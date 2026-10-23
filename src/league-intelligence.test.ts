@@ -468,10 +468,10 @@ describe('league intel: product logic regression', () => {
     const players = parsePlayers()
     const lookup = new Map(players.map((p: any) => [p.name, p]))
     const expected: Record<string, { ktcVal: number; tradeVal: number }> = {
-      'Josh Allen': { ktcVal: 9950, tradeVal: 9950 },
+      'Josh Allen': { ktcVal: 9100, tradeVal: 9100 },
       'Bijan Robinson': { ktcVal: 9999, tradeVal: 9999 },
-      "Ja'Marr Chase": { ktcVal: 9999, tradeVal: 9999 },
-      'Brock Bowers': { ktcVal: 9400, tradeVal: 9950 },
+      "Ja'Marr Chase": { ktcVal: 9980, tradeVal: 9980 },
+      'Brock Bowers': { ktcVal: 8350, tradeVal: 8838 },
     }
     for (const [name, exp] of Object.entries(expected)) {
       const p = lookup.get(name)
@@ -951,9 +951,9 @@ describe('league intel: final product logic regression', () => {
 
     const expected: Record<string, number> = {
       'Bijan Robinson': 9999,
-      "Ja'Marr Chase": 9999,
-      'Josh Allen': 9950,
-      'Brock Bowers': 9400,
+      "Ja'Marr Chase": 9980,
+      'Josh Allen': 9100,
+      'Brock Bowers': 8350,
     }
     for (const [name, ktc] of Object.entries(expected)) {
       const p = lookup.get(name)

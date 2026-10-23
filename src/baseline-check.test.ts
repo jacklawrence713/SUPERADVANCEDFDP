@@ -46,16 +46,16 @@ const ranked = rankAll()
 // Since PLAYERS data and src/logic.ts are identical, values MUST be identical.
 // Values verified against commit 2d5e988 PLAYERS data + computeDynastyTradeVal
 const EXPECTED: Record<string, { ktcVal: number; tradeVal: number; pos: string; team: string }> = {
-  'Josh Allen':          { ktcVal: 9950, tradeVal: 9950, pos: 'QB', team: 'BUF' },
-  'Joe Burrow':          { ktcVal: 8800, tradeVal: 8800, pos: 'QB', team: 'CIN' },
-  'Jalen Hurts':         { ktcVal: 9600, tradeVal: 9600, pos: 'QB', team: 'PHI' },
-  'Patrick Mahomes':     { ktcVal: 8900, tradeVal: 8900, pos: 'QB', team: 'KC' },
+  'Josh Allen':          { ktcVal: 9100, tradeVal: 9100, pos: 'QB', team: 'BUF' },
+  'Joe Burrow':          { ktcVal: 8200, tradeVal: 8200, pos: 'QB', team: 'CIN' },
+  'Jalen Hurts':         { ktcVal: 6100, tradeVal: 6100, pos: 'QB', team: 'PHI' },
+  'Patrick Mahomes':     { ktcVal: 6550, tradeVal: 6550, pos: 'QB', team: 'KC' },
   'Bijan Robinson':      { ktcVal: 9999, tradeVal: 9999, pos: 'RB', team: 'ATL' },
-  'Jahmyr Gibbs':        { ktcVal: 9999, tradeVal: 9999, pos: 'RB', team: 'DET' },
-  "Ja'Marr Chase":       { ktcVal: 9999, tradeVal: 9999, pos: 'WR', team: 'CIN' },
-  'Jaxon Smith-Njigba':  { ktcVal: 9500, tradeVal: 9500, pos: 'WR', team: 'SEA' },
-  'Brock Bowers':        { ktcVal: 9400, tradeVal: 9950, pos: 'TE', team: 'LV' },  // pre-prime TE youth bonus (age 23.7, TE prime 25-30)
-  'Trey McBride':        { ktcVal: 8500, tradeVal: 8500, pos: 'TE', team: 'ARI' },
+  'Jahmyr Gibbs':        { ktcVal: 9964, tradeVal: 9964, pos: 'RB', team: 'DET' },
+  "Ja'Marr Chase":       { ktcVal: 9980, tradeVal: 9980, pos: 'WR', team: 'CIN' },
+  'Jaxon Smith-Njigba':  { ktcVal: 9400, tradeVal: 9400, pos: 'WR', team: 'SEA' },
+  'Brock Bowers':        { ktcVal: 8350, tradeVal: 8838, pos: 'TE', team: 'LV' },  // Week 7 update (age 23.7 youth bonus)
+  'Trey McBride':        { ktcVal: 7500, tradeVal: 7500, pos: 'TE', team: 'ARI' },
 }
 
 describe('Prompt 14 regression: canonical values unchanged from baseline', () => {
@@ -103,12 +103,12 @@ describe('Prompt 14 regression: canonical values unchanged from baseline', () =>
 describe('Prompt 14 regression: src/logic.ts is unchanged', () => {
   it('computeDynastyTradeVal produces same results for all ktcVal players', () => {
     const opts = { isSF: false, sKey: 'PPR', tePremium: 0, idpMode: false }
-    // Josh Allen: QB, age 30.3, ktcVal 9950 — should be 9950 (at prime, no adjustment)
-    expect(computeDynastyTradeVal('QB', 30.3, 9950, 1, 432, opts)).toBe(9950)
+    // Josh Allen: QB, age 30.3, ktcVal 9100 — should be 9100 (at prime, no adjustment)
+    expect(computeDynastyTradeVal('QB', 30.3, 9100, 1, 432, opts)).toBe(9100)
     // Bijan Robinson: RB, age 24.6, ktcVal 9999 — at prime, no decay
     expect(computeDynastyTradeVal('RB', 24.6, 9999, 1, 335, opts)).toBe(9999)
-    // Brock Bowers: TE, age 23.7, ktcVal 9400 — no pre-prime youth bonus for this value
-    expect(computeDynastyTradeVal('TE', 23.7, 9400, 1, 252, opts)).toBe(9950)
+    // Brock Bowers: TE, age 23.7, ktcVal 8350 — TE pre-prime youth bonus applies
+    expect(computeDynastyTradeVal('TE', 23.7, 8350, 1, 252, opts)).toBe(8838)
   })
 })
 
