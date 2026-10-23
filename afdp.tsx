@@ -4509,7 +4509,7 @@ export default function App(){
     ),
 
     // RIGHT COLUMN WRAPPER (ticker + main content for proper desktop flex layout)
-    React.createElement("div",{style:{flex:1,display:"flex",flexDirection:"column",minWidth:0,height:"100vh"}},
+    React.createElement("div",{style:{flex:1,display:"flex",flexDirection:"column",minWidth:0,height:"100vh",marginLeft:isDesktop?220:0}},
       // Dynasty Value Ticker (all tabs — outside scroll wrapper so it stays fixed)
       React.createElement("div",{style:{overflow:"hidden",background:darkMode?"#0a0818":"#f8f7ff",borderBottom:"1px solid "+T.border,padding:"6px 0",flexShrink:0}},
         React.createElement("style",null,"@keyframes fdp-ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}"),
@@ -4526,7 +4526,7 @@ export default function App(){
       ),
 
       // MAIN CONTENT WRAPPER (flex:1 on desktop for sidebar layout)
-      React.createElement("div",{style:{flex:1,minWidth:0,overflowY:"auto",maxWidth:isDesktop?900:undefined,width:isDesktop?"100%":undefined,paddingBottom:isDesktop?40:70}},
+      React.createElement("div",{style:{flex:1,minWidth:0,overflowY:"auto",width:isDesktop?"100%":undefined,paddingBottom:isDesktop?40:70}},
 
     // ════ TRADE TAB ════
     tab==="trade"&&React.createElement("div",{style:{padding:"16px 16px 0"}},
