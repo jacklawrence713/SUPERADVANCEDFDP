@@ -290,14 +290,14 @@ async function fetchVegasOdds(token: string | undefined, forceRefresh: boolean =
     });
 
     if (!response.ok) {
-      return { odds: {}, source: "unavailable", fetchedAt: "", error: `HTTP ${response.status}` };
+      return { odds: {}, source: "unavailable", fetchedAt: "", error: `HTTP ${response.status}`, vegasData: {} };
     }
 
     const data = await response.json() as OddsResponse;
     return data;
   } catch (err) {
     console.error("Vegas fetch error:", err);
-    return { odds: {}, source: "unavailable", fetchedAt: "", error: String(err) };
+    return { odds: {}, source: "unavailable", fetchedAt: "", error: String(err), vegasData: {} };
   }
 }
 
