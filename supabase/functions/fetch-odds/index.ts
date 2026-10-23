@@ -345,91 +345,92 @@ async function fetchRealTimeFutures(apiKey: string): Promise<Partial<VegasData> 
 
 async function fetchPlayerPropsForEvents(
   apiKey: string,
-  eventIds: string[]
-): Promise<PlayerProp[] | null> {
+  eventIds: string[],
+  week: number,
+  season: number,
+  supabase: ReturnType<typeof createClient>
+): Promise<{ success: boolean; count: number; error?: string }> {
   try {
-    if (!eventIds || eventIds.length === 0) return null;
+    if (!eventIds || eventIds.length === 0) {
+      console.log("[fetch-odds] No event IDs for props");
+      return { success: false, count: 0 };
+    }
 
-    const allProps: PlayerProp[] = [];
+    let totalPropsInserted = 0;
+    const supportedMarkets = ["player_pass_yds", "player_pass_tds", "player_rec_yds", "player_receptions", "player_rush_yds", "player_rush_tds"];
 
-    // Test The Odds API player props support
-    for (const eventId of eventIds.slice(0, 1)) {
+    for (const eventId of eventIds) {
       try {
-        const url = `https://api.the-odds-api.com/v4/sports/americanfootball_nfl/events/${eventId}/odds?apiKey=${apiKey}&regions=us&markets=player_pass_yds,player_pass_tds,player_rec_yds,player_receptions,player_rush_yds,player_rush_tds`;
+        const marketParams = supportedMarkets.join(",");
+        const url = `https://api.the-odds-api.com/v4/sports/americanfootball_nfl/events/${eventId}/odds?apiKey=${apiKey}&regions=us&markets=${marketParams}`;
         const res = await fetch(url);
 
         if (!res.ok) {
-          console.log(`[fetch-odds] Player props endpoint test returned ${res.status} for event ${eventId}`);
-          // If 404 or 400, endpoint not supported
-          if (res.status === 404 || res.status === 400) {
-            console.log("[fetch-odds] The Odds API player props endpoint not available on this tier");
-            return null;
-          }
+          if (res.status === 404 || res.status === 400) continue;
           continue;
         }
 
-        const data = await res.json();
-        if (!data.bookmakers || data.bookmakers.length === 0) {
-          console.log("[fetch-odds] No player props markets in response");
-          return null;
-        }
+        const eventData = await res.json();
+        if (!eventData.bookmakers || eventData.bookmakers.length === 0) continue;
 
-        // Props endpoint is supported - fetch all events
-        console.log("[fetch-odds] Player props endpoint confirmed available");
+        const homeTeam = eventData.home_team ? ODDS_TEAM_MAP[eventData.home_team] : null;
+        const awayTeam = eventData.away_team ? ODDS_TEAM_MAP[eventData.away_team] : null;
+        const propsToInsert: any[] = [];
 
-        // Fetch remaining events
-        for (const eid of eventIds) {
-          try {
-            const propUrl = `https://api.the-odds-api.com/v4/sports/americanfootball_nfl/events/${eid}/odds?apiKey=${apiKey}&regions=us&markets=player_pass_yds,player_pass_tds,player_rec_yds,player_receptions,player_rush_yds,player_rush_tds`;
-            const propRes = await fetch(propUrl);
+        for (const bookmaker of eventData.bookmakers) {
+          for (const market of bookmaker.markets || []) {
+            const outcomes = market.outcomes || [];
+            if (outcomes.length < 2) continue;
 
-            if (!propRes.ok) continue;
+            const playerName = outcomes[0]?.player || outcomes[0]?.name;
+            if (!playerName) continue;
 
-            const propData = await propRes.json();
-            if (!propData.bookmakers) continue;
+            const line = outcomes[0]?.point;
+            if (line === null || line === undefined) continue;
 
-            // Parse props from bookmakers
-            for (const bk of propData.bookmakers) {
-              for (const market of bk.markets || []) {
-                const outcomes = market.outcomes || [];
-                if (outcomes.length < 2) continue;
-
-                const prop: PlayerProp = {
-                  eventId: eid,
-                  game: propData.home_team && propData.away_team
-                    ? `${ODDS_TEAM_MAP[propData.away_team] || "?"} @ ${ODDS_TEAM_MAP[propData.home_team] || "?"}`
-                    : "?",
-                  player: outcomes[0]?.player || outcomes[0]?.name || "",
-                  team: "",
-                  market: market.key,
-                  line: outcomes[0]?.point || 0,
-                  overPrice: outcomes[0]?.price,
-                  underPrice: outcomes[1]?.price,
-                  bookmakers: 1,
-                  opponent: "",
-                };
-
-                allProps.push(prop);
-              }
-            }
-          } catch (e) {
-            continue;
+            propsToInsert.push({
+              week,
+              season,
+              event_id: eventId,
+              player_name: playerName,
+              team: awayTeam || "?",
+              opponent: homeTeam || "?",
+              position: null,
+              market_key: market.key,
+              market_display: market.key.replace("player_", "").replace(/_/g, " "),
+              line,
+              over_price: outcomes[0]?.price,
+              under_price: outcomes[1]?.price,
+              bookmaker: bookmaker.key || "unknown",
+              captured_at: new Date().toISOString(),
+            });
           }
         }
 
-        return allProps.length > 0 ? allProps : null;
+        if (propsToInsert.length > 0) {
+          const { error: insertError } = await supabase
+            .from("historical_player_props")
+            .upsert(propsToInsert, { onConflict: "event_id,player_name,market_key,bookmaker,week" });
+
+          if (!insertError) {
+            totalPropsInserted += propsToInsert.length;
+            console.log(`[fetch-odds] Inserted ${propsToInsert.length} props for ${eventId}`);
+          }
+        }
       } catch (e) {
-        console.log("[fetch-odds] Player props test fetch failed:", e);
-        return null;
+        console.error(`[fetch-odds] Error on event ${eventId}:`, e);
+        continue;
       }
     }
 
-    return null;
+    console.log(`[fetch-odds] Total props: ${totalPropsInserted}`);
+    return { success: totalPropsInserted > 0, count: totalPropsInserted };
   } catch (e) {
-    console.log("[fetch-odds] player props fetch failed");
-    return null;
+    console.error("[fetch-odds] Props fetch error:", e);
+    return { success: false, count: 0, error: String(e) };
   }
 }
+
 
 
 // VEGAS FUTURES INFRASTRUCTURE (Ready for real-time fetch upgrade)
@@ -665,6 +666,24 @@ Deno.serve(async (req) => {
         _inflight = fetchFromProvider(apiKey, supabase).finally(() => { _inflight = null; });
       }
       const response = await _inflight;
+      
+      // Capture player props from The Odds API
+      if (response.source === "api" && Object.keys(response.odds || {}).length > 0) {
+        try {
+          const eventIds = [...new Set(Object.values(response.odds).filter(o => o.eventId).map(o => o.eventId))];
+          const currentDate = new Date();
+          const week = Math.ceil((currentDate.getTime() - new Date(2026, 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000));
+          const season = 2026;
+          
+          if (eventIds.length > 0) {
+            const propsResult = await fetchPlayerPropsForEvents(apiKey, eventIds, Math.max(1, Math.min(18, week)), season, supabase);
+            console.log(`[fetch-odds] Props capture result: ${propsResult.count} props for ${eventIds.length} events`);
+          }
+        } catch (e) {
+          console.error("[fetch-odds] Props capture error:", e);
+        }
+      }
+      
       return new Response(JSON.stringify(response), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
