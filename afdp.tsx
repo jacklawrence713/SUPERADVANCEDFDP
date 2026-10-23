@@ -2789,7 +2789,7 @@ function AnalyticsDashboard({T,data,loading,onLoad}:{T:any,data:any,loading:bool
 function findPlayerBySlug(slug:string){return PLAYERS.find(function(p){return playerSlug(p.name)===slug;})||null;}
 
 export default function App(){
-  var validTabs=["trade","league","rankings","reports","admin"];
+  var validTabs=["trade","league","rankings","reports","admin","vegaslines"];
   var [tab,setTabRaw]=useState(function(){
     var h=window.location.hash.replace("#","");if(validTabs.includes(h))return h;
     var path=window.location.pathname;
@@ -4998,7 +4998,7 @@ if(item[0]==="admin"){var adminEmails=["jlawrence@cmgfi.com","admin@fantasydraft
     ),
 
     // Dynasty Value Ticker (visible on all devices)
-    React.createElement("div",{style:{overflow:"hidden",background:darkMode?"#0a0818":"#f8f7ff",borderBottom:"1px solid "+T.border,padding:"6px 0",flexShrink:0}},
+    React.createElement("div",{style:{overflow:"hidden",background:darkMode?"#0a0818":"#f8f7ff",borderBottom:"1px solid "+T.border,padding:"6px 0",flex:"0 0 auto",flexShrink:0}},
       React.createElement("style",null,"@keyframes fdp-ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}"),
       React.createElement("div",{style:{display:"flex",gap:20,animation:"fdp-ticker 120s linear infinite",width:"max-content"}},
         rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;}).slice(0,100).concat(rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;}).slice(0,100)).map(function(p,i){
@@ -10615,5 +10615,5 @@ rankSubTab==="vegaslines"&&(function(){console.log("[Vegas] Rendering Vegas sect
     React.createElement("button",{onClick:function(){setTab("reports");setReportSubTab("contact");},style:{position:"fixed",bottom:isDesktop?20:72,right:20,width:52,height:52,borderRadius:"50%",background:"#3b82f6",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 16px rgba(59,130,246,0.5)",zIndex:200,fontSize:22,color:"#fff"}},"\uD83D\uDCAC")
   );
 }
-// Deployment: Tue, Oct 20, 2026  3:47:52 PM},/    \!isDesktop\&\&React.createElement("div",{style:{overflow:"hidden",background:darkMode?"#0a0818":"#f8f7ff",borderBottom:"1px solid "+T.border,padding:"6px 0",flexShrink:0}},}
+// Deployment: Tue, Oct 20, 2026  3:47:52 PM},/    \!isDesktop\&\&React.createElement("div",{style:{overflow:"hidden",background:darkMode?"#0a0818":"#f8f7ff",borderBottom:"1px solid "+T.border,padding:"6px 0",flex:"0 0 auto",flexShrink:0}},}
 // Final deployment trigger
