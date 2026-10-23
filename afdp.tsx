@@ -4458,7 +4458,7 @@ export default function App(){
     ),
 
     // DESKTOP SIDEBAR NAV
-    isDesktop&&React.createElement("div",{style:{width:220,flexShrink:0,position:"sticky",top:0,height:"100vh",background:T.bgCard,borderRight:"1px solid "+T.border,display:"flex",flexDirection:"column",padding:"20px 0",zIndex:100,overflowY:"auto",overflowX:"hidden"}},
+    isDesktop&&React.createElement("div",{style:{width:220,flexShrink:0,position:"fixed",left:0,top:0,height:"100vh",background:T.bgCard,borderRight:"1px solid "+T.border,display:"flex",flexDirection:"column",padding:"20px 0",zIndex:100,overflowY:"auto",overflowX:"hidden"}},
       React.createElement("div",{style:{padding:"0 16px 20px",borderBottom:"1px solid "+T.border,marginBottom:12}},
         React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10}},
           LogoSvg,
