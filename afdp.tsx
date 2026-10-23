@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { computeDynastyTradeVal, computeRedraftTradeVal, REDRAFT_TV_MULT, VALUES_UPDATED_AT, PRODUCT_STATS, formatContextLabel, explainFdpValue, generateTradeCandidates, computeTeamPosValues, computeTeamNeeds, computePosRanksForTeams, computeValueChange, isSnapshotContextSupported, normalizeSnapshotContext, HISTORY_PAGE_SIZE, findComparisonSnapshots, explainValueMovement, formatCalendarDate, formatRelativeTime, leagueFetchedAtKey, deriveProvider, freshnessFetchVerb } from "./src/logic";
 import type { FdpSnapshot } from "./src/logic";
@@ -9,12 +9,13 @@ import { getFeaturePaywallCopy } from "./src/paywall-config";
 import type { FeatureKey } from "./src/paywall-config";
 
 // ── Supabase ─────────────────────────────────────────────────────────────────
-import { createThemeVars, Button, Card, Badge, TabNav, EmptyState, Alert, Spinner, PageHeader, FlexLayout, GridLayout } from "./ui-modernization-helpers";
 const SUPA_URL = (import.meta as any).env?.VITE_SUPABASE_URL;
 const SUPA_KEY = (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY;
 const EDGE_URL = (import.meta as any).env?.VITE_EDGE_FUNCTIONS_URL || (SUPA_URL ? `${SUPA_URL}/functions/v1` : null);
 // Auth + data client
-const supabaseClient = SUPA_URL && SUPA_KEY ? createClient(SUPA_URL, SUPA_KEY) : null;
+const authClient = SUPA_URL && SUPA_KEY ? createClient(SUPA_URL, SUPA_KEY) : null;
+// Analytics write client — separate instance so it always uses anon key, never inherits user session
+const analyticsClient = SUPA_URL && SUPA_KEY ? createClient(SUPA_URL, SUPA_KEY, {auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}}) : null;
 
 // ── Edge Function helpers ─────────────────────────────────────────────────────
 async function callEdgeFn(fn: string, body: any, userToken?: string) {
@@ -23,8 +24,8 @@ async function callEdgeFn(fn: string, body: any, userToken?: string) {
   const res = await fetch(`${EDGE_URL}/${fn}`, { method: "POST", headers, body: JSON.stringify(body) });
   if (!res.ok) { const txt = await res.text().catch(() => ""); try { return JSON.parse(txt); } catch { return { error: `HTTP ${res.status}` }; } }
   return res.json();
-}
 
+}
 // Prompt 28: Request ID generation
 function generateRequestId(){return crypto.randomUUID();}
 
@@ -44,9 +45,6 @@ function getVisitorId(): string {
     return id;
   } catch { return "anonymous"; }
 }
-
-// Prompt 28: Fetch authoritative server quota status
-
 let _trackedEmail = "";
 function setTrackedUser(email: string) { _trackedEmail = email || ""; }
 
@@ -70,7 +68,7 @@ async function getGeo() {
 }
 
 async function trackEvent(type: string, data: Record<string, any> = {}) {
-  const client = supabaseClient;
+  const client = analyticsClient;
   if (!client) return;
   try {
     const result = await client.from("analytics_events").insert({
@@ -82,8 +80,8 @@ async function trackEvent(type: string, data: Record<string, any> = {}) {
   } catch(e) { /* silent */ }
 }
 
-const DARK={bg:"var(--bg)",bgCard:"var(--surface)",bgInput:"var(--surface-elevated)",border:"var(--border)",borderPurple:"var(--border-accent)",purple:"var(--accent-primary)",purpleLight:"var(--accent-primary-light)",purpleDim:"var(--accent-primary-dim)",text:"var(--text-primary)",textSub:"var(--text-secondary)",textDim:"var(--text-muted)",green:"var(--status-success)",red:"var(--status-danger)",gold:"var(--status-warning)",cyan:"var(--status-info)"};
-const LIGHT={bg:"var(--bg)",bgCard:"var(--surface)",bgInput:"var(--surface-elevated)",border:"var(--border)",borderPurple:"var(--border-accent)",purple:"var(--accent-primary)",purpleLight:"var(--accent-primary-light)",purpleDim:"var(--accent-primary-dim)",text:"var(--text-primary)",textSub:"var(--text-secondary)",textDim:"var(--text-muted)",green:"var(--status-success)",red:"var(--status-danger)",gold:"var(--status-warning)",cyan:"var(--status-info)"};
+const DARK={bg:"#13111e",bgCard:"#1c1a2e",bgInput:"#0f0d1a",border:"#2e2a4a",borderPurple:"#5b3fd4",purple:"#7c4dff",purpleLight:"#9b72ff",purpleDim:"#3d2a7a",text:"#ffffff",textSub:"#9b96b8",textDim:"#5c5880",green:"#22c55e",red:"#ef4444",gold:"#f59e0b",cyan:"#06b6d4"};
+const LIGHT={bg:"#f0f2ff",bgCard:"#ffffff",bgInput:"#eef0ff",border:"#d4d8f5",borderPurple:"#7c4dff",purple:"#6d28d9",purpleLight:"#7c3aed",purpleDim:"#ede9fe",text:"#1a1d3a",textSub:"#4a5080",textDim:"#9ba3c9",green:"#059669",red:"#dc2626",gold:"#b45309",cyan:"#0891b2"};
 const POS_COLORS={QB:"#818cf8",RB:"#34d399",WR:"#c084fc",TE:"#f59e0b",K:"#a78bfa",DST:"#94a3b8",DL:"#f87171",LB:"#fb923c",DB:"#22d3ee",PICK:"#f1c40f"};
 const LEAGUE_TYPES=["Dynasty","Redraft"];
 const FORMATS=["Superflex","PPR","Half","Standard"];
@@ -92,17 +90,86 @@ const PRIME={QB:[26,35],RB:[22,27],WR:[23,29],TE:[25,30],K:[25,38],DST:[0,99],DL
 const FREE_RANK_LIMIT=20;
 const FREE_TRADE_LIMIT=3; // PHASE 4D.0.3: Lifetime free analyses per account
 const DYNASTY_NEWS=[
-  {id:100,ts:"Oct 21",tag:"INJURY",pos:"WR",title:"A.J. Brown sidelined — Patriots WR1 out with ankle injury",body:"New England WR A.J. Brown suffered a high ankle sprain in Week 3, forcing him to IR through Week 10. At 29, the injury is a concern for dynasty value — drops to 3,200 in short-term rebuild. D.J. Moore and rookie talent step up. Brown remains a 2027 hold as he recovers durability concerns."},
-  {id:99,ts:"Oct 21",tag:"NEWS",pos:"RB",title:"Jahmyr Gibbs dominates — Detroit RB1 locked in at 10,450",body:"Jahmyr Gibbs exploded for 156 rushing yards and 2 TDs as Detroit dominated Arizona 45-21 in Week 6. Through 6 weeks, Gibbs has 892 yards and 8 TDs — elite RB1 pace. His dynasty value spikes to 10,450. At 24, he's locked in as a top-3 RB for the next decade."},
-  {id:98,ts:"Oct 21",tag:"NEWS",pos:"QB",title:"Caleb Williams emerges as elite QB — top-3 dynasty locked",body:"Chicago QB Caleb Williams is firing on all cylinders. Bears crushed New Orleans 45-24 in Week 4, with Caleb throwing 4 TDs. Through 6 weeks: 1,847 pass yards, 14 TDs, 6 INT. Dynasty value surges to 10,200. At 23, his ceiling is highest among all QBs."},
-  {id:97,ts:"Oct 20",tag:"INJURY",pos:"WR",title:"Jayden Higgins tears ACL in Week 7 — Houston losing WR depth",body:"Houston WR Jayden Higgins suffered a torn ACL during Week 7 practice and is out for the remainder of 2026. At just 23, he's a long-term stash for 2027 recovery. Nico Collins sees immediate target spike to 12+ per game. Collins becomes Houston's WR1 for the rest of season."},
-  {id:96,ts:"Oct 20",tag:"NEWS",pos:"WR",title:"Ja'Marr Chase elite through Week 6 — 847 yards, 9 TDs",body:"Cincinnati WR Ja'Marr Chase has been elite: 6 catches per game average, 141 yards per game through Weeks 2-6 (slow Week 1: 2/12). Through 6 weeks: 847 yards, 9 TDs. His dynasty value remains capped at 9,999. Top-3 WR locked. Cincy's passing game is humming."},
-  {id:95,ts:"Oct 19",tag:"NEWS",pos:"WR",title:"Jaxon Smith-Njigba elite form in Seattle — 730 yards",body:"Seattle WR Jaxon Smith-Njigba has averaged 8 catches for 122 yards over 6 games. Through 6 weeks: 730 yards, 5 TDs at age 23. Dynasty value holds at 9,500. Locked-in dynasty WR1 with upside. Seattle's passing game is elite under new system."},
-  {id:94,ts:"Oct 19",tag:"NEWS",pos:"TE",title:"Brock Bowers breakout — 47 catches through Week 6",body:"Las Vegas TE Brock Bowers has caught 47 passes for 542 yards and 6 TDs through 6 weeks — elite TE1 pace. His dynasty value spikes from 9,400 to 9,950 (pre-prime youth bonus). At 23, he's in his earning years. Top-3 TE locked. Raiders passing game firing."},
-  {id:93,ts:"Oct 18",tag:"NEWS",pos:"RB",title:"Kenneth Walker III elite — Kansas City's midseason gem",body:"Kansas City RB Kenneth Walker III has been elite — 645 rush yards, 6 TDs through 6 games on excellent efficiency. His dynasty value spikes to 8,950. At 25, he's a core RB1. Buy low window closed. An RB1 locked in at reasonable price midseason."},
-  {id:92,ts:"Oct 17",tag:"NEWS",pos:"QB",title:"Josh Allen leading Bills at age 30 — MVP contention",body:"Buffalo QB Josh Allen remains elite at age 30 (born May 1996). Through 6 weeks: 2,000 pass yards, 18 TDs, 450 rush yards, 5-2 record. Dynasty value holds firm at 9,950 as MVP +200 favorite. Still a top-3 dynasty QB with best all-around talent and playoff pedigree."},
-  {id:91,ts:"Oct 16",tag:"NEWS",pos:"RB",title:"Derrick Henry showing no age decline — 738 yards",body:"Baltimore RB Derrick Henry has been elite at 33 — 738 rushing yards, 8 TDs through 6 weeks. Dynasty value locked at 9,850. At 33, he's defying age decline. Ravens are 5-1 with elite run game. Henry remains a core RB1 for 2026 and beyond."},
-  {id:90,ts:"Oct 15",tag:"NEWS",pos:"QB",title:"Patrick Mahomes healthy recovery — KC stable at 9,900",body:"Kansas City QB Patrick Mahomes looks fully recovered from ACL tear. Through 6 weeks: 1,924 pass yards, 13 TDs, 2 INT on 5-1 record. Dynasty value holds firm at 9,900. Still a top-3 QB despite limited rushing due to recovery. KC playoff favorite."}
+  {id:83,ts:"Sep 15",tag:"INJURY",pos:"WR",title:"A.J. Brown placed on IR — high ankle sprain out until Week 6+",body:"Patriots WR A.J. Brown suffered a high ankle sprain in the Wednesday night season opener vs. Seattle and has been placed on injured reserve. He's expected to miss at least 4-5 weeks. At 29, this is a brutal blow to his dynasty value — NE's passing game takes a massive hit without him. Drake Maye loses his WR1. Dynasty managers should sell if someone will buy at a discount. D.J. Moore and Keon Coleman see target bumps in Buffalo-style offenses. Brown's value drops from 5,800 to 4,800."},
+  {id:82,ts:"Sep 15",tag:"INJURY",pos:"QB",title:"Kyler Murray concussion — Carson Wentz leads Vikings comeback",body:"Minnesota QB Kyler Murray exited in the first quarter with a concussion after a hit from GB LB Quay Walker. Carson Wentz entered and was brilliant — 12/19, 133 yards, 3 TDs, 0 INT — leading a 29-0 run to beat the Packers 39-22. Murray is week-to-week. Dynasty impact: Murray's value dips on injury concern at 29. J.J. McCarthy could get an opportunity if Murray misses extended time. Wentz is a streaming QB2 in the interim."},
+  {id:81,ts:"Sep 15",tag:"INJURY",pos:"WR",title:"Zay Flowers hamstring injury — left after 150-yard first half",body:"Ravens WR Zay Flowers was having a career day with 5 catches for 150 yards before leaving the game with a hamstring injury. The severity is TBD — hamstrings can linger for weeks. At 26, Flowers' long-term dynasty value is fine, but short-term he could miss 2-4 weeks. Rashod Bateman and Nelson Agholor would see increased targets if Flowers sits. Monitor Wednesday practice reports."},
+  {id:80,ts:"Sep 14",tag:"NEWS",pos:"QB",title:"Mahomes dominates in return — Chiefs crush Broncos 31-10 on MNF",body:"Patrick Mahomes looked fully healthy in his first game since tearing his ACL in Week 15 last year, going 184 yards and 2 TDs with zero turnovers. Kenneth Walker III exploded for 173 rushing yards as KC's ground game was unstoppable. Rashee Rice caught 6 passes including a TD. Dynasty takeaway: Mahomes is still elite, and Walker (traded from SEA in the offseason) looks like a league-winner at his depressed dynasty price. Buy Walker immediately."},
+  {id:79,ts:"Sep 14",tag:"NEWS",pos:"QB",title:"Bears drop 59 on Panthers — Caleb Williams arrives as dynasty QB1",body:"Chicago put up 59 points in the most lopsided Week 1 game in decades. Caleb Williams threw for 269 yards and 2 TDs while rushing for 65 yards. D'Andre Swift gashed Carolina for 124 rushing yards. Bryce Young threw for 361 yards and 3 TDs in garbage time but the Panthers allowed the most points in franchise history. Dynasty impact: Williams' value spikes — he's a top-5 dynasty QB. Swift is an RB1. Young is a sell if anyone will buy."},
+  {id:78,ts:"Sep 14",tag:"NEWS",pos:"RB",title:"Gibbs 156 rush yards, Henry 3 TDs — elite RBs dominate Week 1",body:"Jahmyr Gibbs ran for 156 yards on 29 carries as Detroit survived New Orleans 31-30 in OT. Derrick Henry had 144 yards and 3 TDs as Baltimore routed Indianapolis 41-23. Jonathan Taylor fought back with 98 yards and 2 TDs in a losing effort. Kenneth Walker III led all rushers with 173 yards for KC. Dynasty takeaway: Gibbs and Henry are locked-in top-5 RBs. Walker's value is surging."},
+  {id:77,ts:"Sep 14",tag:"NEWS",pos:"WR",title:"Ja'Marr Chase bust alert — 2 catches, 12 yards in Week 1",body:"The dynasty WR1 was held to just 2 receptions for 12 yards on 4 targets as Cincinnati beat Tampa Bay 33-27. Mike Gesicki (5/78) and the running game carried the Bengals. Don't panic — Chase faced elite CB coverage and Burrow only threw for 254 yards. This is a buy-low window, not a sell signal. Chase's talent and target share will normalize. TB's defense was legit."},
+  {id:76,ts:"Sep 14",tag:"NEWS",pos:"WR",title:"Chris Olave erupts for 182 yards — Saints nearly upset Lions",body:"Tyler Shough threw for 410 yards and 3 TDs in his first NFL start, with Chris Olave catching 10 passes for 182 yards. New Orleans took a 30-21 lead before Detroit rallied to win 31-30 in OT on an Amon-Ra St. Brown TD. Dynasty impact: Olave is a locked-in WR1. Shough looked legit — monitor his value as a SF waiver add. St. Brown had 10 catches, 67 yards and 2 TDs."},
+  {id:75,ts:"Sep 14",tag:"NEWS",pos:"QB",title:"Josh Allen 334 yards in Bills' 36-31 shootout win over Texans",body:"The Week 1 game of the year — Allen threw for 334 yards and 2 TDs while Dalton Kincaid erupted for 130 receiving yards. Stroud fired back with 274 yards and 2 TDs. David Montgomery punched in 2 TDs for Houston. Dynasty takeaway: Allen remains the QB1 overall. Kincaid is a top-3 dynasty TE. This is the rivalry of the decade."},
+  {id:74,ts:"Sep 14",tag:"NEWS",pos:"WR",title:"JSN 8/122, Justin Jefferson 8/92/2 — star WRs deliver Week 1",body:"Jaxon Smith-Njigba caught 8 passes for 122 yards in Seattle's low-scoring 13-10 win. Justin Jefferson torched Green Bay for 8 catches, 92 yards and 2 TDs as Minnesota dominated 39-22. Jordan Love threw for 387 yards but it wasn't enough. Dynasty takeaway: JSN and Jefferson are top-5 dynasty WRs. Both delivered exactly as expected."},
+  {id:73,ts:"Sep 14",tag:"INJURY",pos:"QB",title:"Sam Darnold exits with hip injury — Drew Lock leads Seahawks to win",body:"Seahawks QB Sam Darnold suffered a hip injury early in the Week 1 opener vs. New England and did not return. Drew Lock came in and went 16/22 for 187 yards and 1 TD in the 13-10 win. Monitor Darnold's status — if he misses time, Lock becomes a streaming QB option on the defending champs. Jadarian Price had 52 yards on 10 carries in his debut."},
+  {id:72,ts:"Sep 14",tag:"NEWS",pos:"QB",title:"Jaxson Dart impresses in Giants' 28-20 upset over Cowboys",body:"The rookie QB threw for 230 yards and 3 TDs while adding 54 rushing yards as the Giants stunned Dallas on SNF. Cam Skattebo rushed for 81 yards and Isaiah Likely caught 8 passes for 78 yards. Dak Prescott was limited to 175 yards. Malik Nabers caught 6 for 69 yards in his return from injury. Dynasty impact: Dart is a must-add in SF leagues. Buy Nabers — he's healthy and producing."},
+  {id:67,ts:"Sep 4",tag:"NEWS",pos:"QB",title:"Mahomes Monday Night comeback — Chiefs vs Broncos Week 1",body:"Patrick Mahomes makes his long-awaited return from the torn ACL/LCL suffered in Week 15 last season. The Monday Night closer at Arrowhead against Denver is appointment television. Mahomes was a full camp participant and is fully cleared, but expect less rushing volume as KC protects his knee. He's a locked-in QB1 for Week 1 — the only question is ceiling vs. floor. Dynasty value unchanged at elite tier."},
+  {id:66,ts:"Sep 4",tag:"NEWS",pos:"WR",title:"Season opener preview — Seahawks host Patriots Wed Sept 9",body:"The Super Bowl LX rematch kicks off the 2026 season Wednesday night at 8:20 PM ET on NBC/Peacock. Seattle defends its title at home. For fantasy, Jaxon Smith-Njigba (9,400) and Drake Maye are must-starts. The Seahawks also debut rookie RB Jadarian Price if Charbonnet remains out. High-scoring game expected — stack these offenses in DFS."},
+  {id:65,ts:"Sep 3",tag:"INJURY",pos:"RB",title:"Ashton Jeanty sprained ankle — questionable for Week 1",body:"Raiders RB Ashton Jeanty (8,100) hasn't practiced due to a sprained ankle, but HC Klint Kubiak says he's 'optimistic' Jeanty plays Week 1 vs. Miami. Las Vegas only has 3 RBs on the 53-man roster, signaling confidence he'll suit up. If he sits, Zamir White becomes a desperation RB2 flex. Dynasty value unaffected — this is a minor short-term concern for a 22-year-old stud."},
+  {id:64,ts:"Sep 3",tag:"INJURY",pos:"WR",title:"Tank Dell placed on IR — return designation",body:"Houston placed Tank Dell on injured reserve with a return designation, meaning he's out at least the first four games but can come back later in the season. With Jayden Higgins also on IR (torn ACL), the Texans' WR corps behind Nico Collins is decimated. Collins becomes a locked-in top-5 WR play. Dynasty managers should hold Dell — he's only 26 and will return. Buy low if the owner panics."},
+  {id:63,ts:"Sep 2",tag:"INJURY",pos:"WR",title:"Rome Odunze & D'Andre Swift exit Bears practice with injuries",body:"Both Odunze and Swift left Thursday practice with undisclosed injuries, casting doubt on their Week 1 availability. Odunze (6,900) was expected to be Chicago's WR1 alongside Caleb Williams this season. If either sits, Keenan Allen and Roschon Johnson see immediate value bumps. Monitor Friday injury reports — this could be precautionary or something more serious."},
+  {id:62,ts:"Sep 1",tag:"TRADE",pos:"QB",title:"Quinn Ewers traded from Dolphins to Jaguars",body:"Miami dealt QB Quinn Ewers to Jacksonville for a future sixth-round pick. Ewers joins a Jaguars offense in transition — Trevor Lawrence is the starter, but Ewers provides solid insurance and a developmental asset. His dynasty value is minimal in 1QB leagues but he's a deep SF stash if Lawrence struggles. The Dolphins are fully committed to their current QB room."},
+  {id:61,ts:"Sep 1",tag:"TRADE",pos:"RB",title:"Kaleb Johnson traded from Steelers to Packers",body:"Green Bay acquired RB Kaleb Johnson from Pittsburgh for a 2028 6th-round pick. With Josh Jacobs on the Commissioner's Exempt List indefinitely, the Packers are aggressively building backfield depth. Johnson (3,193) joins MarShawn Lloyd and AJ Dillon in a committee — but Lloyd remains the lead back for now. Johnson is a dynasty hold with upside if the Jacobs situation drags on all season."},
+  {id:60,ts:"Aug 31",tag:"NEWS",pos:"DL",title:"Aaron Donald un-retires — signs 1yr/$20M with Rams",body:"The three-time Defensive Player of the Year is back. Donald rejoins an LA defense that already added Myles Garrett this offseason, giving the Rams arguably the most dominant pass-rush duo in NFL history. He'll likely play a rotational, passing-down role to stay fresh. IDP leagues: high-end DL3 with upside. The bigger impact is boosting the Rams DST — already the Super Bowl favorite — to elite tier."},
+  {id:59,ts:"Aug 31",tag:"NEWS",pos:"RB",title:"Josh Jacobs placed on Commissioner's Exempt List",body:"The Packers' lead back cannot practice or play while on the exempt list following offseason domestic abuse charges (reduced to two misdemeanors). Timeline for return is unclear — could be weeks or longer. Dynasty managers should hold but prepare contingencies. MarShawn Lloyd and AJ Dillon move up in Green Bay's backfield. If you're contending, trade for Lloyd now before his price spikes."},
+  {id:58,ts:"Aug 31",tag:"INJURY",pos:"RB",title:"James Conner on IR — Jeremiyah Love ankle still uncertain",body:"Arizona placed Conner on IR (foot, misses first 4+ games) and rookie Jeremiyah Love is battling a high ankle sprain from the preseason opener. Love is trending toward Week 1 but not guaranteed. Tyler Allgeier (signed 2yr/$12.25M) could open as the lead back if Love sits. Volatile backfield — avoid in redraft, but Love remains a top dynasty RB asset long-term."},
+  {id:57,ts:"Aug 31",tag:"INJURY",pos:"WR",title:"Jayden Higgins tears ACL — out for 2026 season",body:"Houston's second-year WR tore his ACL in practice and is done for 2026. Higgins had 500+ yds and 6 TD as a rookie and was dominating camp. Massive blow to the Texans' WR depth. Dynasty stash for 2027 — he's only 23. Short-term, Nico Collins and Tank Dell see target share spikes. Robert Woods and John Metchie become deeper sleepers in Houston."},
+  {id:56,ts:"Aug 31",tag:"NEWS",pos:"TE",title:"George Kittle activated off PUP — Week 1 return possible",body:"The 49ers activated Kittle off the PUP list as he recovers from a torn Achilles suffered in January. He's ahead of schedule and has a legit shot at playing Week 1. At 32 coming off an Achilles, temper expectations — but if healthy, he's still a top-8 TE. Dynasty sellers should move him to contenders while his name carries value. De'Zhaun Stribling remains the long-term 49ers pass-catcher to own."},
+  {id:55,ts:"Aug 31",tag:"INJURY",pos:"WR",title:"Malik Nabers back in 11-on-11 drills — Week 1 trending up",body:"Giants WR Nabers was seen practicing without a non-contact jersey and participating in full team drills for the first time since his ACL recovery. This is a huge step forward. He may still start on a snap count in Week 1, but his dynasty value is climbing back. Buy window is closing — Nabers at 22 with elite talent is a top-15 dynasty WR even at reduced volume early."},
+  {id:54,ts:"Aug 31",tag:"INJURY",pos:"WR",title:"Luther Burden III returns to practice — groin recovery on track",body:"The Bears' second-year WR returned to the field for the first time since his Aug 8 groin injury. Initially expected to miss a month, Burden's early return is encouraging. He's a dynasty WR2 with WR1 upside in Chicago's offense with Caleb Williams. Monitor his snap count in Week 1 but he should be a full participant by Week 2-3."},
+  {id:53,ts:"Aug 31",tag:"NEWS",pos:"QB",title:"Will Levis cut by Titans — requests fresh start",body:"Former 2nd-round pick Will Levis was released by Tennessee after requesting his freedom. Cam Ward has firmly taken over as the Titans' franchise QB. Levis' SF dynasty value craters — he's a deep stash only if he lands a backup job with a clear path to starting. Ward's dynasty stock gets another boost as the undisputed TEN QB1."},
+  {id:52,ts:"Aug 30",tag:"NEWS",pos:"TE",title:"Packers sign Jonnu Smith — three trades on cutdown day",body:"Green Bay pulled off three trades and signed veteran TE Jonnu Smith during the roster cutdown frenzy. Smith provides a safety net as a pass-catching TE in a Packers offense loaded with weapons. He's a low-end TE2 in redraft but negligible dynasty value at 30. The bigger story is GB's aggressive roster building — they're going all-in for 2026."},
+  {id:51,ts:"Aug 30",tag:"INJURY",pos:"DL",title:"Harold Landry on PUP list — Patriots DE misses first 4 games",body:"New England placed Landry on the physically unable to perform list, sidelining the pass-rusher for at least the first four games of 2026. IDP managers should pivot to Keion White or Josh Uche in the Patriots' front seven. Landry is a hold but don't count on him contributing until Week 5 at the earliest."},
+  {id:44,ts:"Aug 3",tag:"NEWS",pos:"RB",title:"Jonathon Brooks dominating Panthers training camp",body:"Brooks was a full participant in camp for the first time in his career and looks explosive. HC Dave Canales said 'He looks like the guy I remember — he feels great, looks fast.' After back-to-back torn ACLs cost him 2024-2025, Brooks is finally healthy and could form a lethal 1-2 punch with Chuba Hubbard. The buy window is closing fast — his dynasty price is about to spike."},
+  {id:43,ts:"Aug 3",tag:"NEWS",pos:"QB",title:"Patrick Mahomes fully cleared — full participant at Chiefs camp",body:"Mahomes has been fully cleared following his torn ACL/LCL from Week 15 last season. HC Andy Reid confirmed he's a full participant and 'doing everything he normally does.' KC is lining him up under center more to protect his knee. SF dynasty value holds firm — he's still a top-3 dynasty QB, but expect less rushing volume in 2026."},
+  {id:42,ts:"Aug 3",tag:"NEWS",pos:"WR",title:"Malik Nabers avoids PUP list but Week 1 status uncertain",body:"Nabers tore his ACL in 2025 and underwent a second knee surgery to remove scar tissue this offseason. The Giants avoided placing him on PUP, and he's returned to practice, but he says he doesn't know if he'll be ready for Week 1 vs. Dallas. Analysts project he misses the first 4-5 games. Buy low in dynasty — he's still just 22 with elite talent. Jaxson Dart's early-season value takes a hit without his WR1."},
+  {id:41,ts:"Aug 2",tag:"NEWS",pos:"WR",title:"Chris Olave signs 4-year, $132M extension with Saints",body:"Olave locked in long-term with New Orleans after posting 100 rec, 1,163 yds, and 9 TD on 156 targets in 2025. At 26, he's entering his prime as the Saints' alpha WR. Dynasty value gets a boost with the security — but monitor rookie Jordyn Tyson (drafted 8th overall) eating into targets. Olave remains a mid-tier WR1 in dynasty."},
+  {id:40,ts:"Aug 1",tag:"NEWS",pos:"WR",title:"De'Zhaun Stribling emerging as 49ers WR1 at camp",body:"The 49ers' 2nd-round pick (33rd overall) is turning heads in San Francisco. Brock Purdy called him a 'baller' — praising his routes, strength, and separation. With Aiyuk on the reserve list and Kittle on PUP, the target tree is wide open. Stribling (2,884) is a dynasty stash with WR2 upside if he wins the starting job. Christian Kirk is already dealing with a calf injury, opening the door further."},
+  {id:49,ts:"Aug 11",tag:"NEWS",pos:"QB",title:"Vikings name Kyler Murray starting QB over J.J. McCarthy",body:"Minnesota officially named Murray the Week 1 starter over 2024 1st-rounder J.J. McCarthy. Short-term blow to McCarthy's dynasty value — hold, as Murray is on a 1-year deal and McCarthy remains the long-term plan. Murray's rushing upside makes him a solid QB2 in redraft, and his presence could boost Justin Jefferson's production if the passing game is more dynamic."},
+  {id:48,ts:"Aug 10",tag:"NEWS",pos:"QB",title:"Watson trending toward Browns starting job over Shedeur Sanders",body:"Reports indicate Deshaun Watson is winning Cleveland's QB competition over rookie Shedeur Sanders. Sanders managers should hold — Watson's injury history makes a mid-season transition likely — but temper expectations for Year 1 production. If Watson starts Week 1, it suppresses value of Jerry Jeudy and Cedric Tillman short-term."},
+  {id:47,ts:"Aug 9",tag:"INJURY",pos:"WR",title:"Malik Nabers knee rehab — Week 1 status uncertain",body:"Giants WR Malik Nabers continues rehabbing his surgically repaired right knee (torn ACL from Week 4 of 2025) and hasn't fully participated in training camp. He's doing individual drills and looking fluid but has sat out all 7-on-7 and team periods. Elite dynasty value intact long-term, but prepare backup plans for early weeks in case he starts on a snap count or misses time."},
+  {id:46,ts:"Aug 8",tag:"NEWS",pos:"WR",title:"Cyrus Allen emerging as Chiefs WR sleeper",body:"Fifth-round rookie WR Cyrus Allen has earned the trust of Patrick Mahomes and Andy Reid throughout camp, emerging as a legitimate contributor. In a KC offense that historically elevates late-round WRs (think Mecole Hardman's early role), Allen could carve out meaningful snaps by Week 1. Must-add on dynasty waivers — acquisition cost is near zero and the ceiling in that offense is significant."},
+  {id:45,ts:"Aug 8",tag:"NEWS",pos:"QB",title:"Cam Ward dominating Titans camp — chemistry with Carnell Tate",body:"Year 2 QB Cam Ward is commanding Tennessee's camp like no Titans QB since prime Tannehill, completing 11-of-16 with two TDs on Day 1. Rookie WR Carnell Tate has caught three TDs from Ward in scrimmages, establishing himself as the top target. Buy Ward now before his price inflates — top-tier dynasty QB asset entering Year 2 with visible improvement and real weapons."},
+  {id:44,ts:"Aug 7",tag:"NEWS",pos:"RB",title:"Steelers RB battle: Jaylen Warren vs. Rico Dowdle",body:"Pittsburgh's initial depth chart lists Warren as RB1 over free agent Dowdle, but beat reporters note Dowdle has flashed quickness, speed, and vision throughout camp. HC Mike McCarthy building a committee approach. Treat this as a 55/45 split favoring Warren — neither has standalone RB1 upside, making both mid-RB2 dynasty assets with RB3 weekly floor risk."},
+  {id:43,ts:"Aug 6",tag:"NEWS",pos:"RB",title:"Jonathan Taylor signs $44M extension with Colts",body:"The Colts locked up Jonathan Taylor on a 2-year, $44M extension through his age-28 season. Strong dynasty hold signal — Taylor's role is secure and Indy is committed to feeding him. However, the contract carries aging curve risk, so consider selling at peak value if you can get a 1st-round pick + young asset in return."},
+  {id:42,ts:"Aug 1",tag:"INJURY",pos:"WR",title:"Ricky Pearsall out for 2026 — season-ending PCL surgery",body:"49ers WR Pearsall will undergo season-ending PCL surgery after aggravating a knee injury from Week 4 of 2025. His dynasty value takes a hit as he misses a critical Year 3 development window, though SF expects full recovery for 2027. Hold at his buy-low floor. The 49ers responded by re-signing Deebo Samuel, which further clouds Pearsall's long-term target share."},
+  {id:41,ts:"Aug 1",tag:"NEWS",pos:"WR",title:"Deebo Samuel returns to 49ers — major role incoming",body:"Deebo signed a 1-year, $7M deal to rejoin San Francisco after Pearsall's season-ending injury. He'll play WR, RB, and return kicks full-time. Fantasy value spikes in redraft as the clear WR2 alongside Aiyuk, but in dynasty he's a short-term rental at age 30. Win-now managers should acquire at his depressed dynasty price; rebuilders sell high after a few strong weeks."},
+  {id:40,ts:"Aug 1",tag:"INJURY",pos:"TE",title:"George Kittle on PUP list — 49ers TE situation in flux",body:"Kittle was placed on the PUP list recovering from a torn Achilles, though the veteran wants to play Week 1. At 32 coming off a major lower-body injury, dynasty managers should be cautious — Achilles tears historically sap athleticism from pass-catching TEs. Kittle's dynasty value is in decline; sellers should move him to contenders while he still carries name value."},
+  {id:39,ts:"Aug 1",tag:"NEWS",pos:"WR",title:"A.J. Brown traded to Patriots — dynasty sell-high candidate",body:"The Eagles shipped A.J. Brown to New England for a 2027 5th and 2028 1st. Brown moves from Hurts to Drake Maye, which is actually an upgrade in passing volume — Philly ranked 27th in pass rate last year. He's a low-end WR1 for 2026 redraft, but at 29 in dynasty, this is your sell window. Move him for a young asset + pick while his value is inflated by the new situation."},
+  {id:38,ts:"Jul 30",tag:"NEWS",pos:"WR",title:"Jaylen Waddle settling in with Broncos — paired with Bo Nix",body:"Denver sent a 2026 1st, 3rd, and 4th to Miami for Waddle this offseason. At 27 with a 3-year/$84.75M deal through 2028, he immediately becomes the Broncos' WR1 opposite Courtland Sutton. Dynasty value is stable — Waddle logged 64/910/6 in 2025 and now gets a rising QB in Bo Nix. Hold as a WR2 with WR1 upside if Nix takes the next step."},
+  {id:37,ts:"Jul 28",tag:"NEWS",pos:"QB",title:"Carson Beck competing for Cardinals starting job",body:"The 3rd-round pick out of Miami signed his 4-year/$7.4M rookie deal and entered a three-way QB battle with Jacoby Brissett and Gardner Minshew. Beck (3,605) won't start right away — OC Nathaniel Hackett says he plays 'when he's ready.' But as Arizona's long-term answer at QB, he's a deep SF dynasty stash. Kyler Murray is gone and this job will be Beck's by midseason if he shows out in preseason."},
+  {id:36,ts:"Jul 28",tag:"NEWS",pos:"QB",title:"Fernando Mendoza sitting behind Cousins in Las Vegas",body:"The #1 overall pick signed his fully guaranteed 4-year/$57.27M rookie deal but HC Klint Kubiak confirmed Kirk Cousins starts Week 1. Mendoza is learning to play under center and command the huddle at the NFL level. Dynasty managers should be patient — his SF ceiling is enormous, but this is a redshirt year. Buy if his price dips during the season while Cousins starts."},
+  {id:35,ts:"Jul 26",tag:"NEWS",pos:"RB",title:"Training camp RB battles to watch: JAX, SEA, CAR",body:"RESOLVED: Jacksonville's backfield belongs to Bhayshul Tuten after Etienne was traded to NO. In Seattle, rookie Jadarian Price (5,826) is the lead back with Charbonnet still rehabbing his torn ACL. Carolina's Brooks is surging. All three backfields are now settled heading into Week 1."},
+  {id:34,ts:"May 8",tag:"NEWS",pos:"WR",title:"Adam Thielen officially retires after stellar career",body:"Thielen hung up the cleats after productive stints with the Vikings and Steelers. Dynasty managers who were holding should have sold last season. His retirement opens additional target share for younger WRs in Pittsburgh — watch Germie Bernard (3,485) and Kaden Wetjen (1,339)."},
+  {id:24,ts:"May 7",tag:"NEWS",pos:"RB",title:"2026 UDFAs: Robert Henry Jr. and Desmond Reid lead the class",body:"The UDFA class has several dynasty stashes. Robert Henry Jr. (618) signed with Washington and was RB7 of this class pre-draft with 6.9 YPC. Desmond Reid (515) signed with Buffalo — explosive but 5-6, 174 lbs limits his ceiling. Diego Pavia (824) is a Superflex stash in Baltimore behind Lamar. Add all three to your taxi squad."},
+  {id:25,ts:"May 7",tag:"NEWS",pos:"TE",title:"Isaiah Likely signs massive deal with Giants — TE1 upside",body:"Likely (4,271) inked a 3yr/$40M deal with New York and immediately becomes the NYG TE1. With Russell Wilson and a new-look offense, Likely has top-8 TE upside in 2026. Buy in TEP leagues while his value hasn't caught up to his role."},
+  {id:26,ts:"May 7",tag:"NEWS",pos:"RB",title:"Bijan Robinson reclaims dynasty RB1 — 9,999 FDP value",body:"Robinson (9,999) has reclaimed the #1 overall dynasty spot, edging out Gibbs (9,964) and Chase (9,980). At just 24 with a locked-in three-down role in Atlanta, he's the safest dynasty asset. Hold at all costs — he's untouchable."},
+  {id:27,ts:"May 7",tag:"TRADE",pos:"WR",title:"Dynasty buy-low targets: MHJ, Travis Hunter & Ricky Pearsall",body:"Marvin Harrison Jr. (5,500) is a screaming buy — a 23-year-old entering Year 3 after a strong sophomore campaign in Arizona. Travis Hunter (4,400) is even cheaper for a #1 overall pick with generational athleticism entering Year 2. Ricky Pearsall (3,495) is a long-term hold after his PCL injury (return Feb 2027). MHJ and Hunter should be valued significantly higher by midseason."},
+  {id:28,ts:"May 7",tag:"NEWS",pos:"RB",title:"Young RB studs: Bucky Irving, Chase Brown & rookie Jadarian Price",body:"Irving (5,583) is the locked-in TB feature back at 23 entering Year 3 — rehabbing shoulder surgery but expected back for Week 1. Chase Brown (6,355) owns the CIN backfield entering Year 4 as an established starter. Rookie Jadarian Price (5,826) could open as SEA's lead back with Charbonnet recovering from a torn ACL. Irving and Brown are dynasty RB2s with RB1 upside. Price is a top-3 dynasty rookie RB."},
+  {id:29,ts:"May 7",tag:"TRADE",pos:"WR",title:"Sell-high window: D.J. Moore, Courtland Sutton & aging vets",body:"D.J. Moore (4,926) is 29 and declining in Buffalo. Courtland Sutton (4,082) turns 31 this season with Waddle now in Denver. Both are prime sell-high candidates — move them for young assets or 2027 picks while value remains. The same goes for any RB over 29 — the cliff comes fast."},
+  {id:30,ts:"May 7",tag:"NEWS",pos:"QB",title:"Jaxson Dart leads Year 2 QB breakout class",body:"Dart (5,533) threw for 2,272 yds and 24 total TD as a rookie despite injuries. With NYG's new coaching staff and weapons, he's poised for a massive sophomore leap. Cam Ward (4,579) and Shedeur Sanders (2,426) round out the Year 2 QB class — all three are just 23 with enormous SF dynasty ceilings. Buy before the season."},
+  {id:17,ts:"May 6",tag:"NEWS",pos:"WR",title:"George Pickens signs $27.3M franchise tag with Dallas",body:"Pickens (6,650) is locked into the Cowboys for 2026 after signing his franchise tag. Coming off a career-best 93 rec, 1,429 yds Pro Bowl season, he's the clear WR1 in Dallas. Cowboys insist there's zero interest in trading him. Buy as a WR1 at a slight discount."},
+  {id:18,ts:"May 6",tag:"NEWS",pos:"RB",title:"Kenneth Walker III is the Kansas City RB1",body:"Walker (6,200) won Super Bowl MVP with the Chiefs and enters 2026 as the undisputed bellcow in the NFL's best offense. At 25, he's a rock-solid RB1 with elite touchdown upside in Andy Reid's system. His dynasty stock is rising fast."},
+  {id:19,ts:"May 6",tag:"NEWS",pos:"QB",title:"Tua Tagovailoa signs with Atlanta — dynasty sleeper",body:"Tua (3,296) signed a vet-minimum deal with the Falcons. With Michael Penix Jr.'s health uncertain, Tua could start. He's a massive Superflex buy-low — elite weapons in London, Bijan, and the ATL offense. Monitor camp competition closely."},
+  {id:20,ts:"May 5",tag:"NEWS",pos:"RB",title:"Jadarian Price: Rookie RB in Seattle behind injured Charbonnet",body:"Price (5,826) landed with the Super Bowl champion Seahawks at pick 32. With Zach Charbonnet recovering from a torn ACL, Price could open 2026 as the lead back. Elite landing spot — he's the dynasty RB2 of this class behind Love."},
+  {id:21,ts:"May 5",tag:"NEWS",pos:"WR",title:"Alec Pierce re-signs with Colts on massive deal",body:"Pierce (5,157) posted 1,800 yds and 13 TD over the past two seasons while averaging 21.8 YPR. At 26, he's entering his prime as the Colts' deep threat WR1 opposite Adonai Mitchell. Dynasty WR2 upside in that offense."},
+  {id:22,ts:"May 4",tag:"NEWS",pos:"RB",title:"Rico Dowdle reunites with McCarthy in Pittsburgh",body:"Dowdle (4,107) signed with the Steelers and profiles as the 1A back in a committee with Jaylen Warren. Former Cowboys connection with head coach Mike McCarthy gives him an immediate role. Low-end RB2 in redraft, hold in dynasty."},
+  {id:23,ts:"May 3",tag:"NEWS",pos:"WR",title:"2026 rookie class: Shallow but top-heavy",body:"Analysts agree this is the weakest dynasty rookie class since 2012. Jeremiyah Love (7,869) and Carnell Tate (6,611) are the clear tier 1. Beyond the top 7 picks, there's a significant talent drop-off. Sell 2026 late picks for proven players."},
+  {id:1,ts:"May 1",tag:"NEWS",pos:"QB",title:"C.J. Stroud dynasty value surging after offseason work",body:"Stroud (5,200) is locked in as Houston's franchise QB at just 25. Reports from OTAs describe improved deep ball accuracy and pocket mobility. Buy before the season — his ceiling is top-5 dynasty QB."},
+  {id:2,ts:"May 1",tag:"NEWS",pos:"RB",title:"Omarion Hampton named LAC bellcow — dynasty stock rising",body:"Hampton (7,800) is the undisputed starter in Los Angeles after a dominant rookie campaign. Coaches confirmed a three-down role entering Year 2. He's a top-7 dynasty RB and climbing."},
+  {id:3,ts:"May 1",tag:"NEWS",pos:"WR",title:"Travis Hunter buy-low window closing fast",body:"Hunter (4,400) flashed elite WR/CB versatility as a rookie in Jacksonville. At 22 years old with #1 overall pick pedigree, he's severely undervalued. Multiple dynasty analysts project him as a top-15 dynasty WR by midseason. Buy now."},
+  {id:4,ts:"Apr 28",tag:"NEWS",pos:"TE",title:"Colston Loveland breaks out — TE3 in dynasty",body:"Loveland (7,050) posted 78 rec, 820 yds, 7 TD in his sophomore season with Chicago. At 23, he's firmly the dynasty TE3 behind Bowers and McBride. TEP leagues should value him even higher."},
+  {id:5,ts:"Apr 26",tag:"NEWS",pos:"QB",title:"Jaxson Dart Year 2 breakout — dynasty QB1 of the 2025 class",body:"Ole Miss product Dart (5,533) is entering his second NFL season with the Giants after being selected 25th overall in the 2025 draft. Elite processing and arm talent have him primed for a sophomore leap. SF dynasty managers should target him as a top-12 QB."},
+  {id:6,ts:"Apr 26",tag:"DRAFT",pos:"RB",title:"Jeremiyah Love lands in Arizona at 1-3",body:"Notre Dame RB Jeremiyah Love (7,869) goes 3rd overall to the Cardinals. Immediate dynasty RB1 — Arizona hands him a three-down role. Top-5 dynasty RB with elite speed."},
+  {id:7,ts:"Apr 26",tag:"DRAFT",pos:"WR",title:"Carnell Tate lands in Tennessee at 1-4",body:"Ohio State WR Carnell Tate (6,611) goes 4th overall to the Titans. Dynasty WR1 ceiling with elite route-running. New franchise receiver in Nashville."},
+  {id:8,ts:"Apr 26",tag:"DRAFT",pos:"TE",title:"Kenyon Sadiq goes 1-16 to the Jets",body:"Oregon TE Sadiq (4,896) lands in New York at pick 16. Immediate TE1 upside with elite athletic profile. Must-buy in TEP leagues."},
+  {id:9,ts:"Apr 26",tag:"DRAFT",pos:"LB",title:"Sonny Styles goes 1-7 to Washington",body:"Ohio State LB Sonny Styles (5,665) lands with the Commanders at pick 7. Premier IDP asset — three-down coverage backer with immediate starter upside."},
+  {id:10,ts:"Apr 26",tag:"DRAFT",pos:"QB",title:"Fernando Mendoza goes #1 overall to Raiders",body:"Indiana's Mendoza (4,738) is the 2026 #1 overall pick. Las Vegas hands him the keys — elite arm talent SF dynasty asset with rushing upside."},
+  {id:11,ts:"Apr 20",tag:"NEWS",pos:"RB",title:"Cam Skattebo locked in as NYG feature back",body:"Skattebo (5,643) dominated spring workouts and is the clear RB1 in New York. His bruising style and pass-catching ability make him a three-down lock. Dynasty value should be closer to 6,000."},
+  {id:12,ts:"Apr 18",tag:"NEWS",pos:"WR",title:"Marvin Harrison Jr. primed for Year 3 breakout",body:"MHJ (5,500) posted 1,300 yds and 12 TD in his sophomore NFL season in Arizona. Now entering Year 3 at just 23, he's a top-10 dynasty WR being valued outside the top 15. This is the last buy-low window."},
+  {id:13,ts:"Apr 15",tag:"NEWS",pos:"RB",title:"Quinshon Judkins owns the Cleveland backfield",body:"Judkins (6,397) is the unquestioned starter in Cleveland after a strong rookie year. At 22 with three-down ability, his dynasty ceiling is RB1. Hold or buy."},
+  {id:14,ts:"Apr 12",tag:"NEWS",pos:"QB",title:"J.J. McCarthy healthy and taking first-team reps",body:"McCarthy (2,589) is fully recovered and taking all first-team reps in Minnesota. At 23, his dynasty ceiling is enormous. SF leagues should be buying aggressively — he could be a top-8 dynasty QB by December."},
+  {id:15,ts:"Apr 10",tag:"NEWS",pos:"RB",title:"Derrick Henry aging curve watch — sell window open",body:"Henry (4,500) turns 32 in January 2027. Still producing elite numbers but the cliff is coming. Dynasty managers should sell for a young asset + pick while value remains."},
+  {id:16,ts:"Apr 8",tag:"TRADE",pos:"WR",title:"Jaxon Smith-Njigba: Dynasty WR2 and rising",body:"JSN (9,400) exploded in his sophomore season in Seattle and is now the dynasty WR2. At just 23, his target share is massive. He's approaching untouchable territory — only sell for an elite haul."},
 ];
 const ADMIN_EMAILS=["jacklawrence713@gmail.com","modgy28@hotmail.com","sbesk787@gmail.com","starrrya@yahoo.com"];
 const FULL_ACCESS_EMAILS=["stevengroller@yahoo.com","nzajac23@gmail.com","coryhardy22@gmail.com","heathermholdsworth@gmail.com","cssum0@hotmail.com","theprez@yahoo.com","theprez27@yahoo.com"];
@@ -176,1682 +243,1650 @@ var _sleeperNameMap:{[k:string]:string}={};
 function initSleeperNameMap(db:{[id:string]:{name?:string}}){_sleeperNameMap={};Object.keys(db).forEach(function(id){var p=db[id];if(p&&p.name)_sleeperNameMap[p.name]=id;});}
 function headshot(n:string){var id=SLEEPER_IDS[n]||_sleeperNameMap[n];return id?"https://sleepercdn.com/content/nfl/players/thumb/"+id+".jpg":null;}
 
-// ============================================================================
-// VEGAS TYPES - Clean Verified Data Structures
-// ============================================================================
-
-interface TeamOdds {
-  spread: number | null;
-  total: number | null;
-  opp: string;
-  homeTeam: string;
-  awayTeam: string;
-  commenceTime?: string;
-  eventId?: string;
-  spreadBookmakers?: number;
-  totalBookmakers?: number;
-}
-
-interface VegasData {
-  superBowl: Array<{team: string; odds: number}>;
-  divisions: Array<{division: string; odds: Array<{team: string; odds: number}>}>;
-  winTotals: Array<{team: string; over: number; under: number}>;
-  awards: Array<{award: string; odds: Array<{player: string; odds: number}>}>;
-  byeWeeks: {[week: number]: string[]};
-}
-
-interface OddsResponse {
-  odds: { [team: string]: TeamOdds };
-  source: "api" | "cache" | "unavailable";
-  fetchedAt: string;
-  stale?: boolean;
-  error?: string;
-  vegasData?: VegasData;
-}
-
-interface VegasGame {
-  eventId?: string;
-  away: string;
-  home: string;
-  kickoff: string;
-  status: string;
-  spread: number | null;
-  spreadLabel: string;
-  total: number | null;
-  totalLabel: string;
-  oddsAvailable: boolean;
-  week: number;
-  finalScore?: { away: number; home: number };
-  isFinal?: boolean;
-}
-
-// ============================================================================
-// VEGAS MERGE FUNCTION - Pure, Testable Logic
-// ============================================================================
-
-function mergeScheduleWithOdds(scheduleGames: VegasGame[], oddsResponse: OddsResponse): VegasGame[] {
-  if (!oddsResponse || !oddsResponse.odds || Object.keys(oddsResponse.odds).length === 0) {
-    return scheduleGames.map(game => ({
-      ...game,
-      spread: null,
-      spreadLabel: "Line Unavailable",
-      total: null,
-      totalLabel: "Unavailable",
-      oddsAvailable: false,
-    }));
-  }
-
-  return scheduleGames.map(game => {
-    const homeOdds = oddsResponse.odds[game.home];
-    const awayOdds = oddsResponse.odds[game.away];
-    
-    if (!homeOdds && !awayOdds) {
-      return {
-        ...game,
-        spread: null,
-        spreadLabel: "Line Unavailable",
-        total: null,
-        totalLabel: "Unavailable",
-        oddsAvailable: false,
-      };
-    }
-
-    const odds = homeOdds || awayOdds;
-    const spread = odds.spread ?? null;
-    const total = odds.total ?? null;
-
-    return {
-      ...game,
-      spread,
-      spreadLabel: spread === null ? "Line Unavailable" : spread === 0 ? "EVEN" : `${spread > 0 ? '+' : ''}${spread}`,
-      total,
-      totalLabel: total === null ? "Unavailable" : `${total}`,
-      oddsAvailable: spread !== null || total !== null,
-    };
-  });
-}
-
-// ============================================================================
-// VEGAS FETCH FUNCTION - Single Unified Request
-// ============================================================================
-
-async function fetchVegasOdds(token: string | undefined, forceRefresh: boolean = false): Promise<OddsResponse> {
-  if (!token) {
-    return { odds: {}, source: "unavailable", fetchedAt: "", error: "Not authenticated" };
-  }
-
-  try {
-    const response = await fetch(EDGE_URL + "/fetch-odds", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ forceRefresh }),
-    });
-
-    if (!response.ok) {
-      return { odds: {}, source: "unavailable", fetchedAt: "", error: `HTTP ${response.status}` };
-    }
-
-    const data = await response.json() as OddsResponse;
-    return data;
-  } catch (err) {
-    console.error("Vegas fetch error:", err);
-    return { odds: {}, source: "unavailable", fetchedAt: "", error: String(err) };
-  }
-}
-
-async function triggerPropGrading(token: string | undefined, week: number, season: number = 2026): Promise<any> {  if (!token) return { error: "Not authenticated" };  try {    const response = await fetch(EDGE_URL + "/fetch-grade-props", {      method: "POST",      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },      body: JSON.stringify({ week, season }),    });    if (!response.ok) return { error: `HTTP ${response.status}` };    const data = await response.json();    return data;  } catch (err) {    console.error("Prop grading trigger error:", err);    return { error: String(err) };  }}async function fetchHistoricalPropResults(token: string | undefined, week: number, season: number = 2026): Promise<any[]> {  if (!token) return [];  try {    const supabaseUrl = "https://xbvkjxdcpbkdcltihbhk.supabase.co";    const response = await fetch(`${supabaseUrl}/rest/v1/historical_prop_results?week=eq.${week}&season=eq.${season}`, {      headers: {        Authorization: `Bearer ${token}`,        "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhidmtqeGRjcGJrZGNsdGloYmhrIiwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJpYXQiOjE2OTcwMDAwMDAsImV4cCI6MTkyNjk0MDAwMH0.DLLg4lh8GjNgYxYJLGdLM9hL-J3zN5qRq-KbJ5rJ0yY",      },    });    if (!response.ok) return [];    return await response.json();  } catch (err) {    console.error("Historical prop results fetch error:", err);    return [];  }}
-
-// Render historical prop results
-function renderHistoricalPropResults(props: any[], T: any): React.ReactNode {
-  if (!props || props.length === 0) return null;
-  const gradeColor = (g: string): string => ({"OVER":"#22c55e","UNDER":"#ef4444","PUSH":"#eab308","DNP":"#94a3b8"}[g] || T.textDim);
-  const marketDisplay = (k: string): string => ({"player_pass_yds":"Pass Yards","player_pass_tds":"Pass TDs","player_rec_yds":"Rec Yards","player_receptions":"Receptions","player_rush_yds":"Rush Yards","player_rush_tds":"Rush TDs","player_tackles":"Tackles","player_sacks":"Sacks"}[k] || k);
-  return React.createElement("div",{style:{marginTop:16,padding:"0 16px"}},React.createElement("div",{style:{fontSize:13,fontWeight:700,color:"#059669",marginBottom:12}},"Graded Player Props"),props.map((p: any)=>React.createElement("div",{key:`${p.player_name}-${p.market_key}`,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:10,padding:10,marginBottom:8,fontSize:11}},React.createElement("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:6}},React.createElement("div",{style:{fontWeight:700}},p.player_name+" · "+marketDisplay(p.market_key)),React.createElement("div",{style:{fontWeight:700,color:gradeColor(p.grade),textTransform:"uppercase",fontSize:10}},p.grade)),React.createElement("div",{style:{display:"flex",gap:12,color:T.textSub,fontSize:10}},React.createElement("span",null,"Line: "+(p.line||"?")),React.createElement("span",null,"Actual: "+(p.actual_value!==null?p.actual_value:"—"))),p.grade_logic?React.createElement("div",{style:{marginTop:4,color:T.textDim,fontSize:9,fontStyle:"italic"}},"Logic: "+p.grade_logic):null)));
-}
-
-
-function buildHardcodedOdds(): {[t:string]:{spread:number,total:number,opp:string}} {
-  return {};
-}
-
 // ── Vegas Lines / Game Script (via fetch-odds Edge Function) ─────────────────
 // ── PAST WEEKS ARCHIVE ──
 var PAST_WEEKS=[
-{week:1,label:"Week 1 · Sep 9–14",lines:[["NE","SEA",-3,43],["LAR","SF",3,48],["CAR","CHI",-8,43],["TB","CIN",-2,50],["HOU","BUF",-1.5,44],["IND","BAL",-3,47],["JAX","CLE",-6,39],["ATL","PIT",-3.5,41],["ARI","LAC",3,45],["LV","MIA",-2.5,40],["MIN","GB",-2,45],["TEN","NYJ",-1.5,38],["PHI","WAS",-4.5,44],["DEN","KC",-2,43]],results:{"NE-SEA":[10,13],"LAR-SF":[7,27],"CAR-CHI":[37,59],"TB-CIN":[27,33],"HOU-BUF":[31,36],"IND-BAL":[23,41],"JAX-CLE":[34,10],"ATL-PIT":[13,20],"ARI-LAC":[26,14],"LV-MIA":[27,13],"MIN-GB":[39,22],"TEN-NYJ":[23,10],"PHI-WAS":[24,22],"DEN-KC":[31,10]},props:[],propResults:{}},
-{week:2,label:"Week 2 · Sep 17–21",lines:[["BUF","DET",-4,42],["FAL","CAR",3.5,45],["RAV","NO",2,43],["CHI","MIN",1.5,42],["TEX","CIN",1.5,47],["NE","PIT",4.5,44],["NYJ","GB",0.5,46],["TB","CLE",-1.5,44],["TEN","PHI",-1,47],["DEN","JAX",2,44],["LAC","LV",-2,44],["ARI","SEA",4,45],["NYG","LAR",5,45]],results:{"BUF-DET":[41,31],"FAL-CAR":[34,3],"RAV-NO":[24,17],"CHI-MIN":[9,3],"TEX-CIN":[20,6],"NE-PIT":[20,3],"NYJ-GB":[20,17],"TB-CLE":[23,19],"TEN-PHI":[24,20],"DEN-JAX":[13,20],"LAC-LV":[26,14],"ARI-SEA":[31,7],"NYG-LAR":[28,6]},props:[],propResults:{}},
-{week:3,label:"Week 3 · Sep 24–28",lines:[["CHI","PHI",3,45],["CLE","CAR",-1.5,42],["IND","TEX",1.5,47],["BUF","LAC",2.5,45],["DET","NYJ",-3,48],["WAS","SEA",1.5,48],["DAL","RAV",-1,48],["DEN","LAR",2,45]],results:{"CHI-PHI":[27,7],"CLE-CAR":[21,18],"IND-TEX":[19,17],"BUF-LAC":[24,16],"DET-NYJ":[31,24],"WAS-SEA":[33,31],"DAL-RAV":[31,34],"DEN-LAR":[30,26]},props:[],propResults:{}},
-{week:4,label:"Week 4 · Oct 1–5",lines:[["NO","ATL",-4.5,45],["WAS","IND",2.5,42],["TEX","DAL",-1,48],["CIN","JAX",-1,42],["PHI","LAR",-2.5,45],["CHI","NYJ",-2.5,42],["SEA","LAC",2,45],["CAR","DET",-1.5,45]],results:{"NO-ATL":[24,45],"WAS-IND":[13,30],"TEX-DAL":[34,30],"CIN-JAX":[17,22],"PHI-LAR":[20,24],"CHI-NYJ":[23,12],"SEA-LAC":[30,23],"CAR-DET":[32,26]},props:[],propResults:{}},
-{week:5,label:"Week 5 · Oct 8–12",lines:[["LAC","DEN",1.5,46],["ARI","DET",5,48],["SEA","SF",-1.5,48],["ATL","BAL",-2.5,45],["LAR","BUF",-2,48],["GB","CHI",4,42],["MIA","CIN",-1.5,47],["NYJ","CLE",1,45],["TEN","TEX",2.5,47],["PIT","IND",-2.5,45],["NE","LV",5.5,46]],results:{"LAC-DEN":[23,17],"ARI-DET":[21,45],"SEA-SF":[29,32],"ATL-BAL":[30,23],"LAR-BUF":[37,34],"GB-CHI":[31,7],"MIA-CIN":[31,24],"NYJ-CLE":[17,12],"TEN-TEX":[26,3],"PIT-IND":[34,22],"NE-LV":[45,17]},props:[],propResults:{}},
-{week:6,label:"Week 6 · Oct 13–17",lines:[["DEN","SEA",1.5,45],["JAX","TEX",-1.5,44],["ATL","CHI",-1.5,45],["CLE","BAL",1.5,44],["NE","NYJ",2,44],["NYG","NO",-2.5,46],["LAR","ARI",1,45],["KC","LAC",3,45],["LV","BUF",-1.5,45],["GB","DAL",3,48],["SF","WAS",1.5,46]],results:{"DEN-SEA":[17,14],"JAX-TEX":[31,34],"ATL-CHI":[31,23],"CLE-BAL":[13,10],"NE-NYJ":[26,19],"NYG-NO":[27,34],"LAR-ARI":[16,18],"KC-LAC":[22,6],"LV-BUF":[30,33],"GB-DAL":[23,13],"SF-WAS":[23,17]},props:[],propResults:{}}
+{week:1,label:"Week 1 · Sep 10–14",
+lines:[
+["SEA","NE",-3.5,45.5],["LAR","SF",3.5,48.5],
+["CIN","TB",-3.5,50.5],["DET","NO",-7,49.5],["TEN","NYJ",-1.5,38.5],
+["IND","BAL",3.5,47.5],["PIT","ATL",-5.5,41.5],["CAR","CHI",3,47.5],
+["JAX","CLE",-8.5,39.5],["HOU","BUF",1.5,44.5],["LV","MIA",-3,40.5],
+["MIN","GB",-1.5,46.5],["PHI","WAS",-6,44.5],["LAC","ARI",-9.5,47.5],
+["NYG","DAL",3,48.5],["KC","DEN",-2.5,43.5]
+] as [string,string,number,number][],
+results:{
+"SEA-NE":[13,10] as [number,number],"LAR-SF":[7,27] as [number,number],
+"CIN-TB":[33,27] as [number,number],"DET-NO":[31,30] as [number,number],
+"TEN-NYJ":[10,23] as [number,number],"IND-BAL":[23,41] as [number,number],
+"PIT-ATL":[20,13] as [number,number],"CAR-CHI":[37,59] as [number,number],
+"JAX-CLE":[34,10] as [number,number],"HOU-BUF":[31,36] as [number,number],
+"LV-MIA":[27,13] as [number,number],"MIN-GB":[39,22] as [number,number],
+"PHI-WAS":[24,22] as [number,number],"LAC-ARI":[14,26] as [number,number],
+"NYG-DAL":[28,20] as [number,number],"KC-DEN":[31,10] as [number,number]
+} as {[k:string]:[number,number]},
+props:[
+// Pass Yds
+{name:"Joe Burrow",pos:"QB",team:"CIN",stat:"Pass Yds",ou:264.5,opp:"TB"},
+{name:"Matthew Stafford",pos:"QB",team:"LAR",stat:"Pass Yds",ou:263.5,opp:"SF"},
+{name:"Dak Prescott",pos:"QB",team:"DAL",stat:"Pass Yds",ou:260.5,opp:"NYG"},
+{name:"Jared Goff",pos:"QB",team:"DET",stat:"Pass Yds",ou:261.5,opp:"NO"},
+{name:"Tyler Shough",pos:"QB",team:"NO",stat:"Pass Yds",ou:246.5,opp:"DET"},
+{name:"Brock Purdy",pos:"QB",team:"SF",stat:"Pass Yds",ou:244.5,opp:"LAR"},
+{name:"Jordan Love",pos:"QB",team:"GB",stat:"Pass Yds",ou:241.5,opp:"MIN"},
+{name:"Justin Herbert",pos:"QB",team:"LAC",stat:"Pass Yds",ou:236.5,opp:"ARI"},
+{name:"Patrick Mahomes",pos:"QB",team:"KC",stat:"Pass Yds",ou:232.5,opp:"DEN"},
+{name:"Josh Allen",pos:"QB",team:"BUF",stat:"Pass Yds",ou:220.5,opp:"HOU"},
+{name:"Lamar Jackson",pos:"QB",team:"BAL",stat:"Pass Yds",ou:219.5,opp:"IND"},
+{name:"Caleb Williams",pos:"QB",team:"CHI",stat:"Pass Yds",ou:226.5,opp:"CAR"},
+// Rush Yds
+{name:"Jahmyr Gibbs",pos:"RB",team:"DET",stat:"Rush Yds",ou:83.5,opp:"NO"},
+{name:"Derrick Henry",pos:"RB",team:"BAL",stat:"Rush Yds",ou:80.5,opp:"IND"},
+{name:"Jonathan Taylor",pos:"RB",team:"IND",stat:"Rush Yds",ou:77.5,opp:"BAL"},
+{name:"Saquon Barkley",pos:"RB",team:"PHI",stat:"Rush Yds",ou:77.5,opp:"WAS"},
+{name:"Bijan Robinson",pos:"RB",team:"ATL",stat:"Rush Yds",ou:76.5,opp:"PIT"},
+{name:"James Cook",pos:"RB",team:"BUF",stat:"Rush Yds",ou:74.5,opp:"HOU"},
+{name:"Javonte Williams",pos:"RB",team:"DAL",stat:"Rush Yds",ou:73.5,opp:"NYG"},
+{name:"D'Andre Swift",pos:"RB",team:"CHI",stat:"Rush Yds",ou:69.5,opp:"CAR"},
+{name:"Devon Achane",pos:"RB",team:"MIA",stat:"Rush Yds",ou:66.5,opp:"LV"},
+{name:"Breece Hall",pos:"RB",team:"NYJ",stat:"Rush Yds",ou:64.5,opp:"TEN"},
+{name:"Kenneth Walker III",pos:"RB",team:"KC",stat:"Rush Yds",ou:63.5,opp:"DEN"},
+{name:"Christian McCaffrey",pos:"RB",team:"SF",stat:"Rush Yds",ou:60.5,opp:"LAR"},
+// Rec Yds
+{name:"Puka Nacua",pos:"WR",team:"LAR",stat:"Rec Yds",ou:90.5,opp:"SF"},
+{name:"Ja'Marr Chase",pos:"WR",team:"CIN",stat:"Rec Yds",ou:87.5,opp:"TB"},
+{name:"Jaxon Smith-Njigba",pos:"WR",team:"SEA",stat:"Rec Yds",ou:81.5,opp:"NE"},
+{name:"CeeDee Lamb",pos:"WR",team:"DAL",stat:"Rec Yds",ou:76.5,opp:"NYG"},
+{name:"Chris Olave",pos:"WR",team:"NO",stat:"Rec Yds",ou:76.5,opp:"DET"},
+{name:"Justin Jefferson",pos:"WR",team:"MIN",stat:"Rec Yds",ou:74.5,opp:"GB"},
+{name:"Nico Collins",pos:"WR",team:"HOU",stat:"Rec Yds",ou:69.5,opp:"BUF"},
+{name:"Tee Higgins",pos:"WR",team:"CIN",stat:"Rec Yds",ou:61.5,opp:"TB"},
+{name:"Malik Nabers",pos:"WR",team:"NYG",stat:"Rec Yds",ou:60.5,opp:"DAL"},
+{name:"Trey McBride",pos:"TE",team:"ARI",stat:"Rec Yds",ou:58.5,opp:"LAC"},
+{name:"Rashee Rice",pos:"WR",team:"KC",stat:"Rec Yds",ou:59.5,opp:"DEN"},
+// Any TD
+{name:"Jahmyr Gibbs",pos:"RB",team:"DET",stat:"Any TD",ou:0,opp:"NO",odds:"-155"},
+{name:"Saquon Barkley",pos:"RB",team:"PHI",stat:"Any TD",ou:0,opp:"WAS",odds:"-150"},
+{name:"Ja'Marr Chase",pos:"WR",team:"CIN",stat:"Any TD",ou:0,opp:"TB",odds:"-126"},
+{name:"Derrick Henry",pos:"RB",team:"BAL",stat:"Any TD",ou:0,opp:"IND",odds:"-135"},
+{name:"Jonathan Taylor",pos:"RB",team:"IND",stat:"Any TD",ou:0,opp:"BAL",odds:"-120"},
+{name:"Amon-Ra St. Brown",pos:"WR",team:"DET",stat:"Any TD",ou:0,opp:"NO",odds:"+100"},
+{name:"CeeDee Lamb",pos:"WR",team:"DAL",stat:"Any TD",ou:0,opp:"NYG",odds:"+105"},
+{name:"Christian McCaffrey",pos:"RB",team:"SF",stat:"Any TD",ou:0,opp:"LAR",odds:"-115"},
+{name:"Justin Jefferson",pos:"WR",team:"MIN",stat:"Any TD",ou:0,opp:"GB",odds:"+115"},
+{name:"Rashee Rice",pos:"WR",team:"KC",stat:"Any TD",ou:0,opp:"DEN",odds:"+140"},
+{name:"Dalton Kincaid",pos:"TE",team:"BUF",stat:"Any TD",ou:0,opp:"HOU",odds:"+340"}
+] as {name:string,pos:string,team:string,stat:string,ou:number,opp:string,odds?:string}[],
+propResults:{
+"Joe Burrow|Pass Yds":254,"Matthew Stafford|Pass Yds":155,"Dak Prescott|Pass Yds":175,
+"Jared Goff|Pass Yds":206,"Tyler Shough|Pass Yds":410,"Brock Purdy|Pass Yds":205,
+"Jordan Love|Pass Yds":387,"Justin Herbert|Pass Yds":209,"Patrick Mahomes|Pass Yds":184,
+"Josh Allen|Pass Yds":334,"Lamar Jackson|Pass Yds":324,"Caleb Williams|Pass Yds":269,
+"Jahmyr Gibbs|Rush Yds":156,"Derrick Henry|Rush Yds":144,"Jonathan Taylor|Rush Yds":98,
+"Saquon Barkley|Rush Yds":83,"Bijan Robinson|Rush Yds":83,"James Cook|Rush Yds":57,
+"Javonte Williams|Rush Yds":41,"D'Andre Swift|Rush Yds":124,"Devon Achane|Rush Yds":36,
+"Breece Hall|Rush Yds":102,"Kenneth Walker III|Rush Yds":173,"Christian McCaffrey|Rush Yds":68,
+"Puka Nacua|Rec Yds":74,"Ja'Marr Chase|Rec Yds":12,"Jaxon Smith-Njigba|Rec Yds":122,
+"CeeDee Lamb|Rec Yds":44,"Chris Olave|Rec Yds":182,"Justin Jefferson|Rec Yds":92,
+"Nico Collins|Rec Yds":75,"Tee Higgins|Rec Yds":59,"Malik Nabers|Rec Yds":69,
+"Trey McBride|Rec Yds":95,"Rashee Rice|Rec Yds":52,
+"Jahmyr Gibbs|Any TD":"YES","Saquon Barkley|Any TD":"NO","Ja'Marr Chase|Any TD":"NO",
+"Derrick Henry|Any TD":"YES","Jonathan Taylor|Any TD":"YES",
+"Amon-Ra St. Brown|Any TD":"YES","CeeDee Lamb|Any TD":"YES",
+"Christian McCaffrey|Any TD":"NO","Justin Jefferson|Any TD":"YES",
+"Rashee Rice|Any TD":"YES","Dalton Kincaid|Any TD":"NO"
+} as {[k:string]:number|string}
+}
 ];
-// Current week's lines (Week 7, Oct 20-21, 2026) — fetched from live API
-// (Vegas odds now fetched via fetchVegasOdds)
-
-// Note: Live API (fetch-odds) fetches current week from The Odds API
-// Archive system (odds_archive table) stores all historical odds for replay analysis
+// Current week's lines (Week 5, Oct 8-12 2026)
+var WEEKLY_LINES:[string,string,number|null,number|null][]=[
+  // [home, away, homeSpread, total]  — Week 5 schedule (Oct 8-12 2026) — 15 games
+  // Byes: CAR, KC · LIVE ODDS FETCHED FROM THE_ODDS_API — schedule only, no fabricated odds
+  ["DAL","TB",null,null],["JAX","PHI",null,null],["MIA","CIN",null,null],
+  ["NE","LV",null,null],["NO","MIN",null,null],["NYJ","CLE",null,null],
+  ["PIT","IND",null,null],["TEN","HOU",null,null],["WAS","NYG",null,null],
+  ["GB","CHI",null,null],["LAC","DEN",null,null],["ARI","DET",null,null],
+  ["SEA","SF",null,null],["ATL","BAL",null,null],["LAR","BUF",null,null]
+];
 // Current week's results — add scores as games finish
 var WEEKLY_RESULTS:{[k:string]:[number,number]}={
-"SEA-NE":[13,10],"LAR-SF":[7,27],"CIN-TB":[33,27],"DET-NO":[31,30],"TEN-NYJ":[10,23],"IND-BAL":[23,41],"PIT-ATL":[20,13],"CAR-CHI":[37,59],"JAX-CLE":[34,10],"HOU-BUF":[31,36],"LV-MIA":[27,13],"MIN-GB":[39,22],"PHI-WAS":[24,22],"LAC-ARI":[14,26],"NYG-DAL":[28,20],"KC-DEN":[31,10]
 };
-
-function getGameScript(team:string,odds:{[t:string]:{spread:number,total:number,opp:string}}|null):{spread:number,total:number,script:string,label:string,color:string,opp:string}|null{
+// Week 6 schedule (Oct 15-19 2026) — 14 games
+// Byes: CIN, DET, MIA, MIN · Fallback for provider unavailability
+var WEEK_6_LINES:[string,string,number|null,number|null][]=[
+  // [home, away, homeSpread, total]  — Week 6 schedule (Oct 15-19 2026) — 14 games
+  // Byes: CIN, DET, MIA, MIN
+  ["DEN","SEA",null,null],["HOU","JAX",null,null],["CHI","ATL",null,null],
+  ["BAL","CLE",null,null],["TEN","IND",null,null],["NYJ","NE",null,null],
+  ["NYG","NO",null,null],["PHI","CAR",null,null],["PIT","TB",null,null],
+  ["LAR","ARI",null,null],["KC","LAC",null,null],["BUF","LV",null,null],
+  ["DAL","GB",null,null],["SF","WAS",null,null]
+];
+// Get current NFL week based on date (Oct 2026)
+function getCurrentNFLWeek(date:Date=new Date()):{week:number,lines:[string,string,number|null,number|null][],label:string}{
+  var month=date.getMonth(),day=date.getDate();
+  if(month===9){// October
+    if(day<=12){return{week:5,lines:WEEKLY_LINES,label:"Week 5"};}
+    if(day<=19){return{week:6,lines:WEEK_6_LINES,label:"Week 6"};}
+  }
+  // Fallback: return Week 5
+  return{week:5,lines:WEEKLY_LINES,label:"Week 5"};
+}
+function buildHardcodedOdds():{[t:string]:{spread:number|null,total:number|null,opp:string}}{
+  var r:{[t:string]:{spread:number|null,total:number|null,opp:string}}={};
+  WEEKLY_LINES.forEach(function(g){r[g[0]]={spread:g[2],total:g[3],opp:g[1]};r[g[1]]={spread:-g[2],total:g[3],opp:g[0]};});
+  return r;
+}
+// fetchOdds calls the server-side fetch-odds Edge Function (never the provider directly).
+// Returns {odds, source} — source distinguishes "api" / "cache" / "manual" / "unavailable".
+async function fetchOdds():Promise<{odds:{[t:string]:{spread:number|null,total:number|null,opp:string}},source:string,fetchedAt:string,stale:boolean}>{
+  try{
+    var r=await fetch(EDGE_URL+"/fetch-odds",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPA_KEY},body:"{}"});
+    var data=await r.json();
+    if(data&&data.odds&&Object.keys(data.odds).length>0){
+      return {odds:data.odds,source:data.source||"api",fetchedAt:data.fetchedAt||"",stale:data.stale||false};
+    }
+    return {odds:{},source:data?.source||"unavailable",fetchedAt:data?.fetchedAt||"",stale:false};
+  }catch{
+    return {odds:{},source:"unavailable",fetchedAt:"",stale:false};
+  }
+}
+function getGameScript(team:string,odds:{[t:string]:{spread:number|null,total:number|null,opp:string}}|null):{spread:number|null,total:number|null,script:string,label:string,color:string,opp:string}|null{
   if(!odds)return null;
   var g=odds[team];if(!g)return null;
   var spread=g.spread,total=g.total;
   var script="Neutral",label="Neutral",color="#94a3b8";
-  if(spread<=-7){script="Positive";label="Positive Script";color="#22c55e";}
+  if(spread!==null){if(spread<=-7){script="Positive";label="Positive Script";color="#22c55e";}
   else if(spread<=-3){script="Positive";label="Slight Fav";color="#4ade80";}
   else if(spread>=7){script="Negative";label="Negative Script";color="#f87171";}
-  else if(spread>=3){script="Negative";label="Slight Dog";color="#fb923c";}
-  var totalNote=total>=50?" · Shootout":total<=41?" · Low O/U":"";
+  else if(spread>=3){script="Negative";label="Slight Dog";color="#fb923c";}}
+  var totalNote=total!==null?(total>=50?" · Shootout":total<=41?" · Low O/U":""):" · Unavailable";
   return{spread,total,script,label:label+totalNote,color,opp:g.opp};
 }
 
-
-// Player status tracking for October 21, 2026
-const PLAYER_STATUS: {[name: string]: {status: 'active'|'injured'|'out'|'questionable', note?: string}} = {
-  "A.J. Brown": {status: 'out', note: 'Season-ending shoulder injury'},
-  "Jayden Higgins": {status: 'out', note: 'Torn ACL, out for season'},
-  "James Conner": {status: 'injured', note: 'On IR 4+ weeks, foot injury'},
-  "Rome Odunze": {status: 'questionable', note: 'Undisclosed injury monitoring'},
-};
-
-// Under Ranks - Undervalued players Oct 21 (strong value relative to performance)
-const UNDER_RANKS: Array<{rank: number; name: string; pos: string; team: string; reason: string; adj: string}> = [
-  {rank: 1, name: "Kenneth Walker III", pos: "RB", team: "KC", reason: "Breakout season: 645 yards, 6 TDs in 6 weeks", adj: "+100%"},
-  {rank: 2, name: "Caleb Williams", pos: "QB", team: "CHI", reason: "Elite QB1 trajectory: 1,847 yards, 14 TDs in 6 weeks", adj: "+45%"},
-  {rank: 3, name: "Brock Bowers", pos: "TE", team: "LV", reason: "TE1 pace: 47 catches, 542 yards, 6 TDs", adj: "+6%"},
-  {rank: 4, name: "Jahmyr Gibbs", pos: "RB", team: "DET", reason: "RB1 elite: 892 yards, 8 TDs through 6 weeks", adj: "+4%"},
-  {rank: 5, name: "Jaxon Smith-Njigba", pos: "WR", team: "SEA", reason: "Consistent WR1: 8 catches, 122 yards avg per game", adj: "+1%"},
-  {rank: 6, name: "Derrick Henry", pos: "RB", team: "BAL", reason: "Defying age at 33: 738 yards, 8 TDs elite pace", adj: "+0.5%"},
-  {rank: 7, name: "Justin Jefferson", pos: "WR", team: "MIN", reason: "Elite WR despite team struggles: 8/92/2 Week 1 form", adj: "-2%"},
-  {rank: 8, name: "Chris Olave", pos: "WR", team: "NO", reason: "WR1 locked: 182 yards in debut, elite potential", adj: "+1%"},
-  {rank: 9, name: "Nico Collins", pos: "WR", team: "HOU", reason: "Massive upgrade with Higgins out: Target spike to 12+ per game", adj: "+22%"},
-  {rank: 10, name: "Drake Maye", pos: "QB", team: "NE", reason: "Elite young QB despite Brown injury: 334 yards vs BUF", adj: "+8%"},
-];
 const PLAYERS=[
-  {name:"Lamar Jackson",pos:"QB",age:28.4,team:"BAL",proj:{PPR:445,Half:445,Standard:445},adp:1.0,ktcVal:9999,note:"Week 7: 2,100 yds 19 TD (6-1 BAL) · MVP -150 favorite · dual-threat dominating, elite rushing upside"},
-  {name:"Josh Allen",pos:"QB",age:30.3,team:"BUF",proj:{PPR:432,Half:432,Standard:432},adp:1.3,ktcVal:9950,note:"Week 7: 2,000 yds 18 TD 450 rush (5-2 BUF) · MVP +200 · best all-around talent, playoff pedigree"},
-  {name:"Jalen Hurts",pos:"QB",age:28.1,team:"PHI",proj:{PPR:418,Half:418,Standard:418},adp:1.6,ktcVal:9600,note:"Week 7: 1,900 yds 16 TD 300 rush (5-2 PHI) · MVP +400 · dual-threat star in elite system"},
-  {name:"Patrick Mahomes",pos:"QB",age:30.9,team:"KC",proj:{PPR:425,Half:425,Standard:425},adp:2.1,ktcVal:8900,note:"Week 7: Shoulder sprain limits mobility (return W8) · 2,800 yds 24 TD pace · MVP frontrunner despite injury"},
-  {name:"Jayden Daniels",pos:"QB",age:25.7,team:"WAS",proj:{PPR:398,Half:398,Standard:398},adp:3.4,ktcVal:8200,note:"Week 7: 1,700 yds 14 TD (3-4 WAS) · rookie showing poise, improving each week · upside play"},
-  {name:"Joe Burrow",pos:"QB",age:29.7,team:"CIN",proj:{PPR:388,Half:388,Standard:388},adp:3.2,ktcVal:8800,note:"Week 7: 2,200 yds 17 TD (4-3 CIN) · elite arm talent, Ja'Marr chemistry peak · injury history concern"},
-  {name:"C.J. Stroud",pos:"QB",age:24.9,team:"HOU",proj:{PPR:375,Half:375,Standard:375},adp:4.6,ktcVal:8400,note:"Week 7: 1,900 yds 16 TD (5-2 HOU) · Year 2 leap evident · top-5 offense talent, consistency building"},
-  {name:"Caleb Williams",pos:"QB",age:24.8,team:"CHI",proj:{PPR:368,Half:368,Standard:368},adp:6.2,ktcVal:7200,note:"Week 7: Strong QB starter · 3,200+ yds 24+ TD"},
-  {name:"Jordan Love",pos:"QB",age:27.8,team:"GB",proj:{PPR:352,Half:352,Standard:352},adp:9.1,ktcVal:4737,note:"Week 7: 3,700 yds 28 TD (5-2 GB) · Aaron Rodgers successor, elite Year 2, system knowledge peak, playoff contender trajectory"},
-  {name:"Drake Maye",pos:"QB",age:24,team:"NE",proj:{PPR:348,Half:348,Standard:348},adp:8.5,ktcVal:7500,note:"Week 7: Strong QB starter · 3,200+ yds 24+ TD"},
-  {name:"Bo Nix",pos:"QB",age:26.5,team:"DEN",proj:{PPR:352,Half:352,Standard:352},adp:7.8,ktcVal:5033,note:"Week 7: Emerging QB · 2,800+ yds 20+ TD · Year 2 progression"},
-  {name:"Anthony Richardson",pos:"QB",age:24.3,team:"IND",proj:{PPR:338,Half:338,Standard:338},adp:9.5,ktcVal:2302,note:"Week 7: Healthy scratch decision · JAX rookie regress, development needed, hold for 2027 evaluation, talent premium"},
-  {name:"Kyler Murray",pos:"QB",age:29.1,team:"MIN",proj:{PPR:335,Half:335,Standard:335},adp:11.2,ktcVal:3800,note:"Week 7: Backup/developmental QB · limited starting role · dynasty hold"},
-  {name:"Justin Fields",pos:"QB",age:27.5,team:"KC",proj:{PPR:328,Half:328,Standard:328},adp:11.8,ktcVal:2271,note:"Week 7: 200 yds 1 TD (KC backup role) · learning system, Year 2 potential, hold for opportunity, mobility elite 6.0 YPC"},
-  {name:"Jared Goff",pos:"QB",age:31.9,team:"DET",proj:{PPR:345,Half:345,Standard:345},adp:10.5,ktcVal:4052,note:"Week 7: Emerging QB · 2,800+ yds 20+ TD · Year 2 progression"},
-  {name:"Baker Mayfield",pos:"QB",age:31.4,team:"TB",proj:{PPR:322,Half:322,Standard:322},adp:12.5,ktcVal:4134,note:"Week 7: 3,800 yds 29 TD (TB solid starter) · veteran consistency, system fit improved, age 31 manageable, hold value stable"},
-  {name:"Cam Ward",pos:"QB",age:24.3,team:"TEN",proj:{PPR:335,Half:335,Standard:335},adp:10.6,ktcVal:6400,note:"Week 7: 256 yds 3 TD beats Raiders · OROY +180 · elite mobility + arm, Year 2 leap imminent"},
-  {name:"Shedeur Sanders",pos:"QB",age:24.6,team:"CLE",proj:{PPR:318,Half:318,Standard:318},adp:13.0,ktcVal:4900,note:"Week 7: 200 yds 1 TD (3-4 CLE) · Year 2 development, Bryce Young competition · hold for 2027 upside"},
-  {name:"Saquon Barkley",pos:"RB",age:29.5,team:"PHI",proj:{PPR:328,Half:302,Standard:276},adp:1.1,ktcVal:8200,note:"Week 7: 83 rush yds (Week 1, ramping) · 1,650 rush 13 TD pace · age 29 workhorse concern, 5.8 YPC elite efficiency, bell cow confirmed"},
-  {name:"Bijan Robinson",pos:"RB",age:24.6,team:"ATL",proj:{PPR:335,Half:335,Standard:335},adp:1.1,ktcVal:9999,note:"Week 7: Leading ATL backfield · 1,800 rush 14 TD 75 rec pace · elite talent entering prime age 24, system upgrades, committee over"},
-  {name:"Jahmyr Gibbs",pos:"RB",age:24.4,team:"DET",proj:{PPR:340,Half:340,Standard:340},adp:2.0,ktcVal:9999,note:"Week 7: 1,700 rush 14 TD 75 rec pace · Detroit bell cow confirmed, no Montgomery competition, age 24 prime years, elite system"},
-  {name:"Ashton Jeanty",pos:"RB",age:22.7,team:"LV",proj:{PPR:315,Half:291,Standard:267},adp:2.9,ktcVal:8300,note:"Week 7: Sprained ankle (week-to-week) · 18 carries 89 yds when healthy · LV RB1 breakout trajectory, full feature back role, age 22"},
-  {name:"De'Von Achane",pos:"RB",age:24.9,team:"MIA",proj:{PPR:308,Half:284,Standard:260},adp:3.6,ktcVal:8000,note:"Week 7: 36 rush yds (Week 1 slow, MIA lost to LV) · 1,350 rush 75 rec pace · elite speed, air raid system, age 24, playoff push"},
-  {name:"Breece Hall",pos:"RB",age:25.2,team:"NYJ",proj:{PPR:295,Half:272,Standard:249},adp:4.2,ktcVal:6200,note:"Week 7: 102 rush yds (Week 1) · 1,500 rush 60 rec pace · NYJ elevated role, age 25 upside, carries increasing"},
-  {name:"Christian McCaffrey",pos:"RB",age:30.2,team:"SF",proj:{PPR:278,Half:256,Standard:234},adp:5.9,ktcVal:6100,note:"Week 7: 68 rush yds (Week 1) · 1,100 rush 68 rec health risk · injury history concerning age 30, sell-high candidate"},
-  {name:"Kyren Williams",pos:"RB",age:26,team:"LAR",proj:{PPR:285,Half:263,Standard:241},adp:5.5,ktcVal:5800,note:"Week 7: 1,550 rush 14 TD · LAR featured back, elite metrics, age 26 prime, playoff contender system"},
-  {name:"Omarion Hampton",pos:"RB",age:23.5,team:"LAC",proj:{PPR:288,Half:265,Standard:242},adp:5.2,ktcVal:8600,note:"Week 7: 1,400 rush 11 TD · LAC Year 2 breakout evident, elite prospect, age 23 prime, committee over"},
-  {name:"Jonathan Taylor",pos:"RB",age:27.6,team:"IND",proj:{PPR:272,Half:250,Standard:228},adp:7.2,ktcVal:7200,note:"Week 7: 1,350 rush 11 TD pace · elite talent, IND workhorse, age 27 peak, carries consistent 18+ per game"},
-  {name:"Derrick Henry",pos:"RB",age:32.6,team:"BAL",proj:{PPR:258,Half:241,Standard:224},adp:8.2,ktcVal:8300,note:"Week 7: 144 yds 3 TD (Week 1) · 1,600 rush 12 TD pace · age 32 decline risk but still productive, BAL system ideal, heavy load"},
-  {name:"Josh Jacobs",pos:"RB",age:28.5,team:"GB",proj:{PPR:262,Half:241,Standard:220},adp:9.5,ktcVal:2200,note:"Week 7: Commissioners Exempt List · cannot play/practice, timeline undefined · hold contingency, expect release likely"},
-  {name:"D'Andre Swift",pos:"RB",age:27.6,team:"CHI",proj:{PPR:235,Half:216,Standard:197},adp:13.5,ktcVal:5000,note:"Week 7: 124 rush yds (Week 1) · 750 rush 62 rec pace · committee back, limited upside, PPR value only, aging"},
-  {name:"Ja'Marr Chase",pos:"WR",age:26.5,team:"CIN",proj:{PPR:362,Half:362,Standard:362},adp:1.2,ktcVal:9999,note:"Week 7: Elite alpha WR · 128 rec 1,750 yds 16 TD pace · Burrow chemistry peak, dynasty WR1"},
-  {name:"Justin Jefferson",pos:"WR",age:27.2,team:"MIN",proj:{PPR:345,Half:320,Standard:295},adp:1.7,ktcVal:9800,note:"Week 7: Returned from hamstring (limited snaps) · 120 rec 1,480 yds 12 TD pace · comeback trajectory"},
-  {name:"CeeDee Lamb",pos:"WR",age:27.4,team:"DAL",proj:{PPR:332,Half:308,Standard:284},adp:2.4,ktcVal:9400,note:"Week 7: 44 rec yds (Week 1 underperformed) · 125 rec 1,560 yds 13 TD · DAL WR1, elite target share"},
-  {name:"Amon-Ra St. Brown",pos:"WR",age:26.8,team:"DET",proj:{PPR:322,Half:298,Standard:274},adp:3.3,ktcVal:9600,note:"Week 7: 10/67/2 TD OT winner · 128 rec 1,360 yds 12 TD · DET system elite, consistent WR1"},
-  {name:"Marvin Harrison Jr.",pos:"WR",age:23.6,team:"ARI",proj:{PPR:315,Half:292,Standard:269},adp:3.7,ktcVal:5400,note:"Week 7: 1/33/0 (3 targets Week 1) · Year 3 breakout: 110 rec 1,300 yds 12 TD · ARI needs elite WR"},
-  {name:"Tetairoa McMillan",pos:"WR",age:23.4,team:"CAR",proj:{PPR:188,Half:173,Standard:158},adp:3.6,ktcVal:8000,note:"Week 7: 72 rec 820 yds 7 TD · CAR Year 2 breakout trajectory · dynasty cornerstone age 23"},
-  {name:"Travis Hunter",pos:"WR",age:23.3,team:"JAX",proj:{PPR:228,Half:211,Standard:194},adp:3.8,ktcVal:4600,note:"Week 7: 85 rec 960 yds 8 TD · JAX elite athlete Year 2 · WR/CB dual role unique dynasty asset"},
-  {name:"Puka Nacua",pos:"WR",age:25.2,team:"LAR",proj:{PPR:270,Half:250,Standard:230},adp:3.8,ktcVal:8600,note:"Week 7: 74 yds (27-7 blowout Week 1) · 102 rec 1,100 yds 8 TD · LAR WR1, elite efficiency metrics"},
-  {name:"A.J. Brown",pos:"WR",age:29.2,team:"NE",proj:{PPR:302,Half:280,Standard:258},adp:5.6,ktcVal:4600,note:"High ankle sprain IR through Week 10 · sell-high age 29 · recovery uncertain, use trade deadline"},
-  {name:"Brandon Aiyuk",pos:"WR",age:28.4,team:"SF",proj:{PPR:150,Half:138,Standard:126},adp:31.5,ktcVal:2800,note:"Reserve/left squad list (Week 7) · expected release imminent · targets WAS, hold until traded"},
-  {name:"Tee Higgins",pos:"WR",age:27.6,team:"CIN",proj:{PPR:290,Half:268,Standard:246},adp:6.2,ktcVal:7200,note:"Week 7: 59 rec yds (Week 1) · 98 rec 1,250 yds 12 TD · CIN WR2 to Ja'Marr, elite talent age 27"},
-  {name:"Drake London",pos:"WR",age:25.1,team:"ATL",proj:{PPR:285,Half:264,Standard:243},adp:6.8,ktcVal:7200,note:"Week 7: 2/29/0 invisible (Week 1) · 112 rec 1,200 yds 11 TD · ATL WR1 emerging, age 25 prime"},
-  {name:"Garrett Wilson",pos:"WR",age:26.1,team:"NYJ",proj:{PPR:278,Half:258,Standard:238},adp:8.5,ktcVal:6500,note:"Week 7: 100 rec 1,120 yds 9 TD · NYJ WR1 consistent, elite hands · age 26 entering prime"},
-  {name:"Rashee Rice",pos:"WR",age:26.3,team:"KC",proj:{PPR:272,Half:252,Standard:232},adp:9.5,ktcVal:6200,note:"Week 7: Strong WR1 · 100+ rec 1,200+ yds 10+ TD · consistent target"},
-  {name:"Tyreek Hill",pos:"WR",age:32.5,team:"FA",proj:{PPR:265,Half:245,Standard:225},adp:10.2,ktcVal:2755,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"DK Metcalf",pos:"WR",age:28.7,team:"PIT",proj:{PPR:268,Half:249,Standard:230},adp:10.5,ktcVal:4633,note:"Week 7: Emerging WR · 80+ rec 900+ yds · breakout ceiling"},
-  {name:"Rome Odunze",pos:"WR",age:24.2,team:"CHI",proj:{PPR:275,Half:255,Standard:235},adp:10.2,ktcVal:7200,note:"Week 7: 100 rec 1,100 yds 10 TD · CHI Year 2 leap evident · pulling away as WR1, age 24 prime"},
-  {name:"Brock Bowers",pos:"TE",age:23.7,team:"LV",proj:{PPR:252,Half:232,Standard:212},adp:2.6,ktcVal:9400,note:"Week 7: Generational tight end Year 2 · 125 rec 1,400 yds 12 TD pace · elite alpha TE, dynasty lock"},
-  {name:"Trey McBride",pos:"TE",age:26.8,team:"ARI",proj:{PPR:238,Half:219,Standard:200},adp:3.8,ktcVal:8500,note:"Week 7: 9/95/1 (13 targets Week 1) · 115 rec 1,200 yds 8 TD · ARI TE1 alpha target, consistent"},
-  {name:"Tyler Warren",pos:"TE",age:24.3,team:"IND",proj:{PPR:232,Half:213,Standard:194},adp:5.0,ktcVal:7800,note:"Week 7: 95 rec 1,020 yds 10 TD · IND Year 2 breakout · dynasty TE2, age 24 prime years"},
-  {name:"Sam LaPorta",pos:"TE",age:25.6,team:"DET",proj:{PPR:222,Half:204,Standard:186},adp:5.9,ktcVal:6800,note:"Week 7: 98 rec 1,050 yds 10 TD · DET TE1 secondary target · consistent value age 25"},
-  {name:"Mark Andrews",pos:"TE",age:31,team:"BAL",proj:{PPR:212,Half:195,Standard:178},adp:7.2,ktcVal:6000,note:"Week 7: 84 rec 920 yds 9 TD · BAL veteran TE1 · age 31 decline starting, sell equity"},
-  {name:"Travis Kelce",pos:"TE",age:36.9,team:"KC",proj:{PPR:182,Half:167,Standard:152},adp:10.2,ktcVal:3100,note:"Week 7: 78 rec 860 yds · age 36 declining, KC system aging · sell-high for future equity"},
-  {name:"Myles Garrett",pos:"DL",age:30.7,team:"CLE",proj:{PPR:148,Half:148,Standard:148},adp:7.8,ktcVal:8755,note:"Week 7: Elite pass rusher · CLE · double-digit sack pace"},
-  {name:"Micah Parsons",pos:"DL",age:27.3,team:"DAL",proj:{PPR:145,Half:145,Standard:145},adp:8.1,ktcVal:8034,note:"Week 7: Elite pass rusher · DAL · double-digit sack pace"},
-  {name:"Aidan Hutchinson",pos:"DL",age:26.1,team:"DET",proj:{PPR:142,Half:142,Standard:142},adp:8.5,ktcVal:5150,note:"Week 7: Strong defender · DET starter · consistent snap share"},
-  {name:"Will Anderson Jr.",pos:"DL",age:25,team:"HOU",proj:{PPR:135,Half:135,Standard:135},adp:9.9,ktcVal:5356,note:"Week 7: Strong defender · HOU starter · consistent snap share"},
-  {name:"Roquan Smith",pos:"LB",age:29.4,team:"BAL",proj:{PPR:152,Half:152,Standard:152},adp:7.5,ktcVal:4944,note:"Week 7: Reserve LB · BAL · limited value"},
-  {name:"Fred Warner",pos:"LB",age:29.8,team:"SF",proj:{PPR:148,Half:148,Standard:148},adp:7.9,ktcVal:3914,note:"Week 7: Reserve LB · SF · limited value"},
-  {name:"Zaire Franklin",pos:"LB",age:30.2,team:"IND",proj:{PPR:144,Half:144,Standard:144},adp:8.5,ktcVal:2884,note:"Week 7: Reserve LB · IND · limited value"},
-  {name:"Kyle Hamilton",pos:"DB",age:25.5,team:"BAL",proj:{PPR:142,Half:142,Standard:142},adp:8.8,ktcVal:8240,note:"Week 7: Elite pass rusher · BAL · double-digit sack pace"},
-  {name:"Derwin James",pos:"DB",age:30.1,team:"LAC",proj:{PPR:136,Half:136,Standard:136},adp:9.5,ktcVal:4326,note:"Week 7: Reserve DB · LAC · depth"},
-  {name:"Sauce Gardner",pos:"DB",age:25,team:"IND",proj:{PPR:125,Half:125,Standard:125},adp:11.2,ktcVal:6695,note:"Week 7: Strong defender · IND starter · consistent snap share"},
+  {name:"Lamar Jackson",pos:"QB",age:28.4,team:"BAL",proj:{PPR:445,Half:445,Standard:445},adp:1.1,ktcVal:7800,note:"Wk1: 324 yds 1 TD 1 rush TD · 4,400 yds 44 TD 950 rush MVP level"},
+  {name:"Josh Allen",pos:"QB",age:30.3,team:"BUF",proj:{PPR:432,Half:432,Standard:432},adp:1.5,ktcVal:9100,note:"Wk1: 334 yds 2 pass TD 2 rush TD · 4,500 yds 43 TD elite"},
+  {name:"Jalen Hurts",pos:"QB",age:28.1,team:"PHI",proj:{PPR:418,Half:418,Standard:418},adp:2.0,ktcVal:6100,note:"Wk1: 203 yds 3 TD 48 rush · 4,100 yds 35 TD 850 rush"},
+  {name:"Patrick Mahomes",pos:"QB",age:30.9,team:"KC",proj:{PPR:425,Half:425,Standard:425},adp:2.4,ktcVal:6550,note:"2026: 4,600 yds 40 TD · ACL recovery full participant at camp · Monday Night comeback vs DEN"},
+  {name:"Jayden Daniels",pos:"QB",age:25.7,team:"WAS",proj:{PPR:398,Half:398,Standard:398},adp:3.1,ktcVal:7100,note:"2026 Year 2 leap: 4,100 yds 32 TD · dual-threat elite ceiling at 25"},
+  {name:"Joe Burrow",pos:"QB",age:29.7,team:"CIN",proj:{PPR:388,Half:388,Standard:388},adp:3.9,ktcVal:8200,note:"2026: 4,800 yds 39 TD healthy · elite ceiling when right"},
+  {name:"C.J. Stroud",pos:"QB",age:24.9,team:"HOU",proj:{PPR:375,Half:375,Standard:375},adp:5.0,ktcVal:5200,note:"2026: 4,400 yds 34 TD Year 3"},
+  {name:"Caleb Williams",pos:"QB",age:24.8,team:"CHI",proj:{PPR:368,Half:368,Standard:368},adp:6.2,ktcVal:7200,note:"Wk1: 269 pass + 65 rush · Year 2 breakout · elite arm talent at 24"},
+  {name:"Jordan Love",pos:"QB",age:27.8,team:"GB",proj:{PPR:352,Half:352,Standard:352},adp:9.1,ktcVal:4737,note:"2026: 4,100 yds 32 TD"},
+  {name:"Drake Maye",pos:"QB",age:24,team:"NE",proj:{PPR:348,Half:348,Standard:348},adp:8.5,ktcVal:7500,note:"2026 Year 2 leap: 3,900 yds 29 TD · acquired AJ Brown · dynasty QB2 at 24"},
+  {name:"Bo Nix",pos:"QB",age:26.5,team:"DEN",proj:{PPR:352,Half:352,Standard:352},adp:7.8,ktcVal:5033,note:"2026 Year 2: 4,000 yds 32 TD"},
+  {name:"Anthony Richardson",pos:"QB",age:24.3,team:"IND",proj:{PPR:338,Half:338,Standard:338},adp:9.5,ktcVal:2302,note:"2026: 3,600 yds 27 TD 600 rush"},
+  {name:"Kyler Murray",pos:"QB",age:29.1,team:"MIN",proj:{PPR:335,Half:335,Standard:335},adp:11.2,ktcVal:3800,note:"Wk1: Concussion 1st quarter exit week-to-week · 3,800 yds 28 TD 500 rush"},
+  {name:"Justin Fields",pos:"QB",age:27.5,team:"KC",proj:{PPR:328,Half:328,Standard:328},adp:11.8,ktcVal:2271,note:"2026: 3,500 yds 24 TD 700 rush"},
+  {name:"Jared Goff",pos:"QB",age:31.9,team:"DET",proj:{PPR:345,Half:345,Standard:345},adp:10.5,ktcVal:4052,note:"2026: 4,300 yds 33 TD elite system"},
+  {name:"Baker Mayfield",pos:"QB",age:31.4,team:"TB",proj:{PPR:322,Half:322,Standard:322},adp:12.5,ktcVal:4134,note:"2026: 3,800 yds 29 TD"},
+  {name:"Cam Ward",pos:"QB",age:24.3,team:"TEN",proj:{PPR:335,Half:335,Standard:335},adp:11.0,ktcVal:4579,note:"2025 pick 1-1 · Year 2 breakout: 3,800 yds 29 TD"},
+  {name:"Shedeur Sanders",pos:"QB",age:24.6,team:"CLE",proj:{PPR:318,Half:318,Standard:318},adp:13.5,ktcVal:2426,note:"2025 pick 5-144 · Year 2: 3,500 yds 25 TD"},
+  {name:"Saquon Barkley",pos:"RB",age:29.5,team:"PHI",proj:{PPR:328,Half:302,Standard:276},adp:1.2,ktcVal:5700,note:"Wk1: 83 rush 136 total · 1,650 rush 13 TD age 29 workhorse"},
+  {name:"Bijan Robinson",pos:"RB",age:24.6,team:"ATL",proj:{PPR:335,Half:310,Standard:285},adp:1.9,ktcVal:9999,note:"2026: 1,800 rush 14 TD 75 rec"},
+  {name:"Jahmyr Gibbs",pos:"RB",age:24.4,team:"DET",proj:{PPR:340,Half:314,Standard:288},adp:2.0,ktcVal:9964,note:"2026: Bell cow · 1,700 rush 14 TD 75 rec · no Montgomery"},
+  {name:"Ashton Jeanty",pos:"RB",age:22.7,team:"LV",proj:{PPR:315,Half:291,Standard:267},adp:3.2,ktcVal:8100,note:"2025 pick 1-6 · Year 2: 1,600 rush 13 TD full feature back. Sprained ankle — questionable Week 1 but HC optimistic he plays"},
+  {name:"De'Von Achane",pos:"RB",age:24.9,team:"MIA",proj:{PPR:308,Half:284,Standard:260},adp:3.8,ktcVal:7200,note:"Wk1: 36 rush yds MIA lost to LV · 1,350 rush 75 rec elite speed"},
+  {name:"Breece Hall",pos:"RB",age:25.2,team:"NYJ",proj:{PPR:295,Half:272,Standard:249},adp:4.5,ktcVal:5800,note:"Wk1: 102 rush yds · 1,500 rush 60 rec"},
+  {name:"Christian McCaffrey",pos:"RB",age:30.2,team:"SF",proj:{PPR:278,Half:256,Standard:234},adp:6.2,ktcVal:5700,note:"2026: 1,100 rush 68 rec health risk"},
+  {name:"Kyren Williams",pos:"RB",age:26,team:"LAR",proj:{PPR:285,Half:263,Standard:241},adp:5.8,ktcVal:5500,note:"2026: 1,550 rush 14 TD featured"},
+  {name:"Omarion Hampton",pos:"RB",age:23.5,team:"LAC",proj:{PPR:288,Half:265,Standard:242},adp:5.5,ktcVal:7800,note:"2025 pick 1-22 · Year 2: 1,400 rush 11 TD breakout"},
+  {name:"Jonathan Taylor",pos:"RB",age:27.6,team:"IND",proj:{PPR:272,Half:250,Standard:228},adp:7.5,ktcVal:6600,note:"2026: 1,350 rush 11 TD"},
+  {name:"Derrick Henry",pos:"RB",age:32.6,team:"BAL",proj:{PPR:258,Half:241,Standard:224},adp:8.5,ktcVal:5000,note:"Wk1: 144 yds 3 TD · 1,600 rush 12 TD age risk"},
+  {name:"Josh Jacobs",pos:"RB",age:28.5,team:"GB",proj:{PPR:262,Half:241,Standard:220},adp:8.8,ktcVal:5069,note:"2026: Commissioner's Exempt List — cannot play/practice, timeline unclear. Hold but plan contingencies."},
+  {name:"D'Andre Swift",pos:"RB",age:27.6,team:"CHI",proj:{PPR:235,Half:216,Standard:197},adp:13.5,ktcVal:5000,note:"Wk1: 124 rush yds · 750 rush 62 rec"},
+  {name:"Ja'Marr Chase",pos:"WR",age:26.5,team:"CIN",proj:{PPR:362,Half:336,Standard:310},adp:1.4,ktcVal:9980,note:"2026: 135 rec 1,800 yds 18 TD elite"},
+  {name:"Justin Jefferson",pos:"WR",age:27.2,team:"MIN",proj:{PPR:345,Half:320,Standard:295},adp:1.9,ktcVal:8032,note:"2026: 135 rec 1,620 yds 12 TD"},
+  {name:"CeeDee Lamb",pos:"WR",age:27.4,team:"DAL",proj:{PPR:332,Half:308,Standard:284},adp:2.6,ktcVal:7200,note:"Wk1: 44 rec yds 1 TD underperformed · 125 rec 1,560 yds 13 TD"},
+  {name:"Amon-Ra St. Brown",pos:"WR",age:26.8,team:"DET",proj:{PPR:322,Half:298,Standard:274},adp:3.5,ktcVal:8100,note:"Wk1: 10/67/2 TD (OT winner) · 128 rec 1,360 yds 12 TD"},
+  {name:"Marvin Harrison Jr.",pos:"WR",age:23.6,team:"ARI",proj:{PPR:315,Half:292,Standard:269},adp:3.9,ktcVal:5200,note:"Wk1: 1/33/0 on 3 targets · Year 3 breakout: 110 rec 1,300 yds 12 TD"},
+  {name:"Tetairoa McMillan",pos:"WR",age:23.4,team:"CAR",proj:{PPR:188,Half:173,Standard:158},adp:3.8,ktcVal:7200,note:"2025 pick 1-8 · Year 2: 72 rec 820 yds 7 TD dynasty cornerstone"},
+  {name:"Travis Hunter",pos:"WR",age:23.3,team:"JAX",proj:{PPR:228,Half:211,Standard:194},adp:4.0,ktcVal:4400,note:"2025 pick 1-2 · Year 2: elite athlete 85 rec 960 yds 8 TD WR/CB"},
+  {name:"Puka Nacua",pos:"WR",age:25.2,team:"LAR",proj:{PPR:270,Half:250,Standard:230},adp:3.9,ktcVal:8500,note:"Wk1: 74 yds in 27-7 blowout loss · 102 rec 1,100 yds 8 TD"},
+  {name:"A.J. Brown",pos:"WR",age:29.2,team:"NE",proj:{PPR:302,Half:280,Standard:258},adp:5.4,ktcVal:4800,note:"Wk1: High ankle sprain IR out until Week 6+ · sell-high in dynasty at 29"},
+  {name:"Brandon Aiyuk",pos:"WR",age:28.4,team:"SF",proj:{PPR:150,Half:138,Standard:126},adp:30.0,ktcVal:3280,note:"Reserve/left squad list · expected release · wants to sign with WAS"},
+  {name:"Tee Higgins",pos:"WR",age:27.6,team:"CIN",proj:{PPR:290,Half:268,Standard:246},adp:6.5,ktcVal:5700,note:"2026: 98 rec 1,250 yds 12 TD"},
+  {name:"Drake London",pos:"WR",age:25.1,team:"ATL",proj:{PPR:285,Half:264,Standard:243},adp:7.2,ktcVal:6900,note:"Wk1: 2/29/0 invisible in loss · 112 rec 1,200 yds 11 TD"},
+  {name:"Garrett Wilson",pos:"WR",age:26.1,team:"NYJ",proj:{PPR:278,Half:258,Standard:238},adp:8.8,ktcVal:6200,note:"2026: 100 rec 1,120 yds 9 TD"},
+  {name:"Rashee Rice",pos:"WR",age:26.3,team:"KC",proj:{PPR:272,Half:252,Standard:232},adp:9.5,ktcVal:6200,note:"2026: 95 rec 1,080 yds 10 TD"},
+  {name:"Tyreek Hill",pos:"WR",age:32.5,team:"FA",proj:{PPR:265,Half:245,Standard:225},adp:10.2,ktcVal:2755,note:"2026: 100 rec 1,150 yds 8 TD declining age"},
+  {name:"DK Metcalf",pos:"WR",age:28.7,team:"PIT",proj:{PPR:268,Half:249,Standard:230},adp:10.5,ktcVal:4633,note:"2026: 90 rec 1,150 yds 10 TD"},
+  {name:"Rome Odunze",pos:"WR",age:24.2,team:"CHI",proj:{PPR:275,Half:255,Standard:235},adp:10.5,ktcVal:6900,note:"2026 Year 2 leap: 100 rec 1,100 yds 10 TD · pulling away as CHI WR1"},
+  {name:"Brock Bowers",pos:"TE",age:23.7,team:"LV",proj:{PPR:252,Half:232,Standard:212},adp:2.8,ktcVal:8350,note:"2026 Year 2: 125 rec 1,380 yds generational"},
+  {name:"Trey McBride",pos:"TE",age:26.8,team:"ARI",proj:{PPR:238,Half:219,Standard:200},adp:4.0,ktcVal:7500,note:"Wk1: 9/95/1 TD 13 targets · 115 rec 1,200 yds 8 TD"},
+  {name:"Tyler Warren",pos:"TE",age:24.3,team:"IND",proj:{PPR:232,Half:213,Standard:194},adp:5.2,ktcVal:6700,note:"2025 pick 1-14 · Year 2 breakout: 95 rec 1,020 yds 10 TD dynasty TE2"},
+  {name:"Sam LaPorta",pos:"TE",age:25.6,team:"DET",proj:{PPR:222,Half:204,Standard:186},adp:6.2,ktcVal:5600,note:"2026: 98 rec 1,050 yds 10 TD"},
+  {name:"Mark Andrews",pos:"TE",age:31,team:"BAL",proj:{PPR:212,Half:195,Standard:178},adp:7.5,ktcVal:3461,note:"2026: 84 rec 920 yds 9 TD"},
+  {name:"Travis Kelce",pos:"TE",age:36.9,team:"KC",proj:{PPR:182,Half:167,Standard:152},adp:10.5,ktcVal:2960,note:"2026: 78 rec 860 yds declining age"},
+  {name:"Myles Garrett",pos:"DL",age:30.7,team:"CLE",proj:{PPR:148,Half:148,Standard:148},adp:7.8,ktcVal:8755,note:"15 sacks 22 TFL"},
+  {name:"Micah Parsons",pos:"DL",age:27.3,team:"DAL",proj:{PPR:145,Half:145,Standard:145},adp:8.1,ktcVal:8034,note:"14 sacks 21 TFL"},
+  {name:"Aidan Hutchinson",pos:"DL",age:26.1,team:"DET",proj:{PPR:142,Half:142,Standard:142},adp:8.5,ktcVal:5150,note:"14 sacks 18 TFL"},
+  {name:"Will Anderson Jr.",pos:"DL",age:25,team:"HOU",proj:{PPR:135,Half:135,Standard:135},adp:9.9,ktcVal:5356,note:"13 sacks 16 TFL"},
+  {name:"Roquan Smith",pos:"LB",age:29.4,team:"BAL",proj:{PPR:152,Half:152,Standard:152},adp:7.5,ktcVal:4944,note:"155 tackles 5 sacks 3 INT"},
+  {name:"Fred Warner",pos:"LB",age:29.8,team:"SF",proj:{PPR:148,Half:148,Standard:148},adp:7.9,ktcVal:3914,note:"145 tackles 3 sacks"},
+  {name:"Zaire Franklin",pos:"LB",age:30.2,team:"IND",proj:{PPR:144,Half:144,Standard:144},adp:8.5,ktcVal:2884,note:"170 tackles"},
+  {name:"Kyle Hamilton",pos:"DB",age:25.5,team:"BAL",proj:{PPR:142,Half:142,Standard:142},adp:8.8,ktcVal:8240,note:"108 tackles 5 INT 3 sacks"},
+  {name:"Derwin James",pos:"DB",age:30.1,team:"LAC",proj:{PPR:136,Half:136,Standard:136},adp:9.5,ktcVal:4326,note:"110 tackles 3 INT"},
+  {name:"Sauce Gardner",pos:"DB",age:25,team:"IND",proj:{PPR:125,Half:125,Standard:125},adp:11.2,ktcVal:6695,note:"70 tackles 4 INT"},
   // Additional QBs
-  {name:"Justin Herbert",pos:"QB",age:28.5,team:"LAC",proj:{PPR:348,Half:348,Standard:348},adp:7.2,ktcVal:5604,note:"Week 7: Emerging QB · 2,800+ yds 20+ TD · Year 2 progression"},
-  {name:"Trevor Lawrence",pos:"QB",age:26.9,team:"JAX",proj:{PPR:355,Half:355,Standard:355},adp:6.5,ktcVal:5500,note:"Week 7: 3,500 yds 26 TD (4-3 JAX) · franchise QB proven, solid system, playoff push evident, healthy all season"},
-  {name:"Tua Tagovailoa",pos:"QB",age:28.5,team:"ATL",proj:{PPR:342,Half:342,Standard:342},adp:5.2,ktcVal:7900,note:"Week 7: 1,750 yds 13 TD (3-4 MIA) · concussion history adds injury risk · efficiency metrics strong"},
-  {name:"J.J. McCarthy",pos:"QB",age:23.6,team:"MIN",proj:{PPR:315,Half:315,Standard:315},adp:10.5,ktcVal:2589,note:"Week 7: Backup/developmental QB · limited starting role · dynasty hold"},
-  {name:"Brock Purdy",pos:"QB",age:26.7,team:"SF",proj:{PPR:338,Half:338,Standard:338},adp:3.8,ktcVal:8600,note:"Week 7: 1,800 yds 15 TD (5-2 SF) · elite system QB, play-action master · best supporting cast"},
-  {name:"Matthew Stafford",pos:"QB",age:38.6,team:"LAR",proj:{PPR:316,Half:316,Standard:316},adp:4.9,ktcVal:8100,note:"Week 7: 1,850 yds 14 TD (5-2 LAR) · mid-40s production level maintained · McVay system veteran"},
-  {name:"Kirk Cousins",pos:"QB",age:38,team:"LV",proj:{PPR:305,Half:305,Standard:305},adp:6.8,ktcVal:6800,note:"Week 7: 1,800 yds 13 TD (4-3 ATL) · solid veteran, Ridley healthy · mid-tier consistency play"},
-  {name:"Geno Smith",pos:"QB",age:35.9,team:"NYJ",proj:{PPR:308,Half:308,Standard:308},adp:15.9,ktcVal:2115,note:"Week 7: 3,100 yds 22 TD (SEA starter) · age 33 decline risk, still productive, sell-high opportunity, mobility declining"},
-  {name:"Bryce Young",pos:"QB",age:25.1,team:"CAR",proj:{PPR:295,Half:295,Standard:295},adp:18.8,ktcVal:3400,note:"Week 7: Starting again (CLE after benching) · Year 2 redemption arc, buy-low upside, system change helps, development continuing"},
+  {name:"Justin Herbert",pos:"QB",age:28.5,team:"LAC",proj:{PPR:348,Half:348,Standard:348},adp:7.2,ktcVal:5604,note:"4,200 yds 30 TD"},
+  {name:"Trevor Lawrence",pos:"QB",age:26.9,team:"JAX",proj:{PPR:355,Half:355,Standard:355},adp:6.5,ktcVal:5500,note:"Wk1: 18/23 245 yds 4 TD 150.6 rating · 4,100 yds 30 TD"},
+  {name:"Tua Tagovailoa",pos:"QB",age:28.5,team:"ATL",proj:{PPR:342,Half:342,Standard:342},adp:8.1,ktcVal:3296,note:"3,900 yds 28 TD · signed ATL 2026"},
+  {name:"J.J. McCarthy",pos:"QB",age:23.6,team:"MIN",proj:{PPR:315,Half:315,Standard:315},adp:10.5,ktcVal:2589,note:"2026 Year 2: 3,600 yds 27 TD post-injury"},
+  {name:"Brock Purdy",pos:"QB",age:26.7,team:"SF",proj:{PPR:338,Half:338,Standard:338},adp:8.6,ktcVal:5100,note:"Wk1: 205 yds 3 TD in 27-7 blowout · 4,000 yds 27 TD"},
+  {name:"Matthew Stafford",pos:"QB",age:38.6,team:"LAR",proj:{PPR:316,Half:316,Standard:316},adp:13.8,ktcVal:3400,note:"Wk1: 155 yds 0 TD INT benched · 38 yrs old declining"},
+  {name:"Kirk Cousins",pos:"QB",age:38,team:"LV",proj:{PPR:305,Half:305,Standard:305},adp:16.5,ktcVal:1865,note:"3,400 yds 22 TD · signed LV 1yr/$20M"},
+  {name:"Geno Smith",pos:"QB",age:35.9,team:"NYJ",proj:{PPR:308,Half:308,Standard:308},adp:15.9,ktcVal:2115,note:"3,500 yds 22 TD"},
+  {name:"Bryce Young",pos:"QB",age:25.1,team:"CAR",proj:{PPR:295,Half:295,Standard:295},adp:18.8,ktcVal:3400,note:"Wk1: 361 yds 3 TD but garbage time in 59-37 loss · Year 3: 3,200 yds"},
   // Additional RBs
-  {name:"Kenneth Walker III",pos:"RB",age:25.9,team:"KC",proj:{PPR:272,Half:250,Standard:228},adp:7.5,ktcVal:6800,note:"Week 7: 173 rush yds (KC elite system) · 950 rush 35 rec pace · strong handcuff, goal line touches consistent, backup status"},
-  {name:"James Cook",pos:"RB",age:26.9,team:"BUF",proj:{PPR:260,Half:240,Standard:220},adp:9.0,ktcVal:6400,note:"Week 7: Strong RB1 · 1,200+ rush 50+ rec 10+ TD"},
-  {name:"Rhamondre Stevenson",pos:"RB",age:28.5,team:"NE",proj:{PPR:238,Half:218,Standard:198},adp:11.2,ktcVal:4120,note:"Week 7: Emerging RB · 900+ rush 40+ rec · breakout trajectory"},
-  {name:"Travis Etienne Jr.",pos:"RB",age:27.6,team:"NO",proj:{PPR:235,Half:215,Standard:195},adp:11.8,ktcVal:5512,note:"Week 7: Emerging RB · 900+ rush 40+ rec · breakout trajectory"},
-  {name:"Isiah Pacheco",pos:"RB",age:27.5,team:"DET",proj:{PPR:228,Half:209,Standard:190},adp:12.9,ktcVal:3914,note:"Week 7: Bench back/handcuff · limited upside · hold for opportunity"},
-  {name:"Joe Mixon",pos:"RB",age:30.1,team:"FA",proj:{PPR:180,Half:165,Standard:150},adp:22.0,ktcVal:1545,note:"Week 7: Practice squad · FA · no value"},
-  {name:"David Montgomery",pos:"RB",age:29.2,team:"HOU",proj:{PPR:215,Half:198,Standard:181},adp:14.2,ktcVal:4349,note:"Week 7: Emerging RB · 900+ rush 40+ rec · breakout trajectory"},
-  {name:"Tony Pollard",pos:"RB",age:29.3,team:"TEN",proj:{PPR:210,Half:193,Standard:176},adp:14.8,ktcVal:3565,note:"Week 7: Strong support role · 600+ rush upside · TEN backup, age 26 elite talent, hold for trade value"},
-  {name:"Rachaad White",pos:"RB",age:27.6,team:"WAS",proj:{PPR:208,Half:191,Standard:174},adp:15.5,ktcVal:3605,note:"Week 7: Bench back/handcuff · limited upside · hold for opportunity"},
-  {name:"Jaylen Warren",pos:"RB",age:27.8,team:"PIT",proj:{PPR:195,Half:179,Standard:163},adp:17.2,ktcVal:4124,note:"Week 7: Emerging RB · 900+ rush 40+ rec · breakout trajectory"},
-  {name:"Zach Charbonnet",pos:"RB",age:25.6,team:"SEA",proj:{PPR:188,Half:173,Standard:158},adp:16.8,ktcVal:4327,note:"Week 7: Emerging RB · 900+ rush 40+ rec · breakout trajectory"},
-  {name:"Tank Bigsby",pos:"RB",age:24,team:"PHI",proj:{PPR:182,Half:167,Standard:152},adp:18.5,ktcVal:3095,note:"Week 7: Bench back/handcuff · limited upside · hold for opportunity"},
-  {name:"Javonte Williams",pos:"RB",age:26.3,team:"DAL",proj:{PPR:178,Half:163,Standard:148},adp:19.2,ktcVal:5395,note:"Week 7: 41 rush yds (limited role) · 600 rush 40 rec pace · committee behind Achane, handcuff value, depth only"},
-  {name:"Aaron Jones",pos:"RB",age:31.7,team:"MIN",proj:{PPR:172,Half:158,Standard:144},adp:20.0,ktcVal:2711,note:"Week 7: Bench back/handcuff · MIN · opportunity stash"},
-  {name:"Zonovan Knight",pos:"RB",age:25.4,team:"ARI",proj:{PPR:165,Half:151,Standard:137},adp:21.8,ktcVal:2575,note:"Week 7: Bench back/handcuff · ARI · opportunity stash"},
-  {name:"Blake Corum",pos:"RB",age:25.8,team:"LAR",proj:{PPR:158,Half:144,Standard:130},adp:23.1,ktcVal:4096,note:"Week 7: Emerging RB · 900+ rush 40+ rec · breakout trajectory"},
-  {name:"Kimani Vidal",pos:"RB",age:25,team:"LAC",proj:{PPR:152,Half:139,Standard:126},adp:23.8,ktcVal:2898,note:"Week 7: Bench back/handcuff · LAC · opportunity stash"},
-  {name:"Braelon Allen",pos:"RB",age:22.6,team:"NYJ",proj:{PPR:172,Half:158,Standard:144},adp:20.8,ktcVal:4635,note:"Week 7: Emerging RB · 900+ rush 40+ rec · breakout trajectory"},
-  {name:"Keaton Mitchell",pos:"RB",age:24.6,team:"LAC",proj:{PPR:142,Half:130,Standard:118},adp:25.5,ktcVal:3002,note:"Week 7: Bench back/handcuff · limited upside · hold for opportunity"},
-  {name:"MarShawn Lloyd",pos:"RB",age:25.6,team:"GB",proj:{PPR:235,Half:216,Standard:197},adp:12.0,ktcVal:3400,note:"Week 7: Bench back/handcuff · limited upside · hold for opportunity"},
-  {name:"Will Shipley",pos:"RB",age:24,team:"PHI",proj:{PPR:132,Half:121,Standard:110},adp:27.8,ktcVal:2060,note:"Week 7: Bench back/handcuff · PHI · opportunity stash"},
-  {name:"Ray Davis",pos:"RB",age:26.8,team:"BUF",proj:{PPR:125,Half:114,Standard:103},adp:29.2,ktcVal:2497,note:"Week 7: Bench back/handcuff · BUF · opportunity stash"},
-  {name:"Ty Chandler",pos:"RB",age:28.3,team:"NO",proj:{PPR:118,Half:108,Standard:98},adp:31.0,ktcVal:824,note:"Week 7: Practice squad · NO · no value"},
-  {name:"Javion Cohen",pos:"RB",age:24.1,team:"IND",proj:{PPR:112,Half:102,Standard:92},adp:33.5,ktcVal:1545,note:"Week 7: Practice squad · IND · no value"},
+  {name:"Kenneth Walker III",pos:"RB",age:25.9,team:"KC",proj:{PPR:272,Half:250,Standard:228},adp:7.5,ktcVal:6800,note:"Wk1: 173 rush yds · 1,250 rush 9 TD"},
+  {name:"James Cook",pos:"RB",age:26.9,team:"BUF",proj:{PPR:260,Half:240,Standard:220},adp:9.0,ktcVal:6400,note:"Wk1: 57 rush yds quiet in shootout · 900 rush 72 rec 11 TD"},
+  {name:"Rhamondre Stevenson",pos:"RB",age:28.5,team:"NE",proj:{PPR:238,Half:218,Standard:198},adp:11.2,ktcVal:4120,note:"1,050 rush 38 rec 7 TD"},
+  {name:"Travis Etienne Jr.",pos:"RB",age:27.6,team:"NO",proj:{PPR:235,Half:215,Standard:195},adp:11.8,ktcVal:5512,note:"1,000 rush 45 rec"},
+  {name:"Isiah Pacheco",pos:"RB",age:27.5,team:"DET",proj:{PPR:228,Half:209,Standard:190},adp:12.9,ktcVal:3914,note:"DET RB1: 950 rush 8 TD"},
+  {name:"Joe Mixon",pos:"RB",age:30.1,team:"FA",proj:{PPR:180,Half:165,Standard:150},adp:22.0,ktcVal:1545,note:"Released by HOU · missed 2025 with foot injury"},
+  {name:"David Montgomery",pos:"RB",age:29.2,team:"HOU",proj:{PPR:215,Half:198,Standard:181},adp:14.2,ktcVal:4349,note:"1,050 rush 9 TD tandem"},
+  {name:"Tony Pollard",pos:"RB",age:29.3,team:"TEN",proj:{PPR:210,Half:193,Standard:176},adp:14.8,ktcVal:3565,note:"800 rush 50 rec 7 TD"},
+  {name:"Rachaad White",pos:"RB",age:27.6,team:"WAS",proj:{PPR:208,Half:191,Standard:174},adp:15.5,ktcVal:3605,note:"700 rush 72 rec"},
+  {name:"Jaylen Warren",pos:"RB",age:27.8,team:"PIT",proj:{PPR:195,Half:179,Standard:163},adp:17.2,ktcVal:4124,note:"800 rush 40 rec"},
+  {name:"Zach Charbonnet",pos:"RB",age:25.6,team:"SEA",proj:{PPR:188,Half:173,Standard:158},adp:16.8,ktcVal:4327,note:"850 rush tandem"},
+  {name:"Tank Bigsby",pos:"RB",age:24,team:"PHI",proj:{PPR:182,Half:167,Standard:152},adp:18.5,ktcVal:3095,note:"750 rush 6 TD"},
+  {name:"Javonte Williams",pos:"RB",age:26.3,team:"DAL",proj:{PPR:178,Half:163,Standard:148},adp:19.2,ktcVal:5395,note:"800 rush 35 rec"},
+  {name:"Aaron Jones",pos:"RB",age:31.7,team:"MIN",proj:{PPR:172,Half:158,Standard:144},adp:20.0,ktcVal:2711,note:"600 rush 55 rec veteran"},
+  {name:"Zonovan Knight",pos:"RB",age:25.4,team:"ARI",proj:{PPR:165,Half:151,Standard:137},adp:21.8,ktcVal:2575,note:"700 rush starter"},
+  {name:"Blake Corum",pos:"RB",age:25.8,team:"LAR",proj:{PPR:158,Half:144,Standard:130},adp:23.1,ktcVal:4096,note:"650 rush 5 TD"},
+  {name:"Kimani Vidal",pos:"RB",age:25,team:"LAC",proj:{PPR:152,Half:139,Standard:126},adp:23.8,ktcVal:2898,note:"600 rush 40 rec"},
+  {name:"Braelon Allen",pos:"RB",age:22.6,team:"NYJ",proj:{PPR:172,Half:158,Standard:144},adp:20.8,ktcVal:4635,note:"Year 2: 700 rush 55 rec lead back potential"},
+  {name:"Keaton Mitchell",pos:"RB",age:24.6,team:"LAC",proj:{PPR:142,Half:130,Standard:118},adp:25.5,ktcVal:3002,note:"600 rush explosive"},
+  {name:"MarShawn Lloyd",pos:"RB",age:25.6,team:"GB",proj:{PPR:235,Half:216,Standard:197},adp:12.0,ktcVal:3400,note:"Wk1: 13 carries 37 yds 2.8 YPC · GB lead back with Jacobs on exempt list. Disappointing debut"},
+  {name:"Will Shipley",pos:"RB",age:24,team:"PHI",proj:{PPR:132,Half:121,Standard:110},adp:27.8,ktcVal:2060,note:"400 rush 55 rec"},
+  {name:"Ray Davis",pos:"RB",age:26.8,team:"BUF",proj:{PPR:125,Half:114,Standard:103},adp:29.2,ktcVal:2497,note:"450 rush backup"},
+  {name:"Ty Chandler",pos:"RB",age:28.3,team:"NO",proj:{PPR:118,Half:108,Standard:98},adp:31.0,ktcVal:824,note:"400 rush depth"},
+  {name:"Javion Cohen",pos:"RB",age:24.1,team:"IND",proj:{PPR:112,Half:102,Standard:92},adp:33.5,ktcVal:1545,note:"250 rush 40 rec"},
   // Additional WRs
-  {name:"Jaylen Waddle",pos:"WR",age:27.8,team:"DEN",proj:{PPR:265,Half:245,Standard:225},adp:10.4,ktcVal:5665,note:"Week 7: Emerging WR · 80+ rec 900+ yds · breakout ceiling"},
-  {name:"Chris Olave",pos:"WR",age:26.2,team:"NO",proj:{PPR:258,Half:238,Standard:218},adp:11.4,ktcVal:6800,note:"Week 7: Strong WR1 · 100+ rec 1,200+ yds 10+ TD · consistent target"},
-  {name:"George Pickens",pos:"WR",age:25.5,team:"DAL",proj:{PPR:252,Half:233,Standard:214},adp:11.5,ktcVal:7300,note:"Traded to DAL (Week 7) · franchise tagged $27.3M · elite WR2 in Dallas system, immediate impact"},
-  {name:"Jaxon Smith-Njigba",pos:"WR",age:24.5,team:"SEA",proj:{PPR:268,Half:248,Standard:228},adp:1.8,ktcVal:9500,note:"Week 7: 122 rec yds (Week 1) · 130+ rec 1,400 yds 10 TD pace · SEA WR1 elevated role, elite upside"},
-  {name:"Malik Nabers",pos:"WR",age:23.1,team:"NYG",proj:{PPR:262,Half:242,Standard:222},adp:8.0,ktcVal:9100,note:"Week 7: Elite WR in prime age 23 · 100+ rec 1,200+ yds · dynasty core"},
-  {name:"Zay Flowers",pos:"WR",age:26,team:"BAL",proj:{PPR:255,Half:236,Standard:217},adp:12.5,ktcVal:6200,note:"Week 7: Strong WR1 · 100+ rec 1,200+ yds 10+ TD · consistent target"},
-  {name:"Jordan Addison",pos:"WR",age:24.6,team:"MIN",proj:{PPR:238,Half:220,Standard:202},adp:14.2,ktcVal:5001,note:"Week 7: Emerging WR · 80+ rec 900+ yds · breakout ceiling"},
-  {name:"Josh Downs",pos:"WR",age:25,team:"IND",proj:{PPR:235,Half:217,Standard:199},adp:14.9,ktcVal:4519,note:"Week 7: Emerging WR · 80+ rec 900+ yds · breakout ceiling"},
-  {name:"Ladd McConkey",pos:"WR",age:24.8,team:"LAC",proj:{PPR:232,Half:214,Standard:196},adp:15.5,ktcVal:6600,note:"Week 7: Strong WR1 · 100+ rec 1,200+ yds 10+ TD · consistent target"},
-  {name:"DeVonta Smith",pos:"WR",age:27.8,team:"PHI",proj:{PPR:228,Half:211,Standard:194},adp:16.0,ktcVal:6200,note:"Week 7: Strong WR1 · 100+ rec 1,200+ yds 10+ TD · consistent target"},
-  {name:"Mike Evans",pos:"WR",age:33,team:"SF",proj:{PPR:225,Half:208,Standard:191},adp:16.5,ktcVal:4238,note:"Week 7: Emerging WR · 80+ rec 900+ yds · breakout ceiling"},
-  {name:"Michael Pittman Jr.",pos:"WR",age:28.9,team:"PIT",proj:{PPR:218,Half:201,Standard:184},adp:17.8,ktcVal:4307,note:"Week 7: Emerging WR · 80+ rec 900+ yds · breakout ceiling"},
-  {name:"D.J. Moore",pos:"WR",age:29.4,team:"BUF",proj:{PPR:215,Half:199,Standard:183},adp:18.2,ktcVal:4926,note:"Week 7: Emerging WR · 80+ rec 900+ yds · breakout ceiling"},
-  {name:"Xavier Worthy",pos:"WR",age:23.3,team:"KC",proj:{PPR:210,Half:194,Standard:178},adp:19.0,ktcVal:4276,note:"Week 7: Emerging WR · 80+ rec 900+ yds · breakout ceiling"},
-  {name:"Tank Dell",pos:"WR",age:26.8,team:"HOU",proj:{PPR:145,Half:134,Standard:123},adp:22.2,ktcVal:3900,note:"IR return designation · 4+ weeks out (Week 11) · buy-low age 26 elite talent behind Nico Collins"},
-  {name:"Davante Adams",pos:"WR",age:33.7,team:"LAR",proj:{PPR:195,Half:180,Standard:165},adp:20.8,ktcVal:4408,note:"Week 7: Emerging WR · 80+ rec 900+ yds · breakout ceiling"},
-  {name:"Kayshon Boutte",pos:"WR",age:24.3,team:"LAC",proj:{PPR:198,Half:183,Standard:168},adp:21.5,ktcVal:3605,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Deebo Samuel",pos:"WR",age:30.6,team:"SF",proj:{PPR:210,Half:194,Standard:178},adp:18.5,ktcVal:3200,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Keon Coleman",pos:"WR",age:23.3,team:"BUF",proj:{PPR:218,Half:202,Standard:186},adp:18.5,ktcVal:3230,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Tre Tucker",pos:"WR",age:25.5,team:"LV",proj:{PPR:185,Half:170,Standard:155},adp:24.0,ktcVal:3184,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Matthew Golden",pos:"WR",age:23.1,team:"HOU",proj:{PPR:178,Half:164,Standard:150},adp:24.8,ktcVal:4692,note:"Week 7: Emerging WR · 80+ rec 900+ yds · breakout ceiling"},
-  {name:"Brian Thomas Jr.",pos:"WR",age:23.9,team:"JAX",proj:{PPR:205,Half:190,Standard:175},adp:20.5,ktcVal:6300,note:"Week 7: Strong WR1 · 100+ rec 1,200+ yds 10+ TD · consistent target"},
-  {name:"Courtland Sutton",pos:"WR",age:30.9,team:"DEN",proj:{PPR:165,Half:152,Standard:139},adp:27.2,ktcVal:4082,note:"Week 7: Emerging WR · 80+ rec 900+ yds · breakout ceiling"},
-  {name:"Xavier Legette",pos:"WR",age:25.6,team:"CAR",proj:{PPR:158,Half:145,Standard:132},adp:28.8,ktcVal:3605,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Jakobi Meyers",pos:"WR",age:29.8,team:"JAX",proj:{PPR:152,Half:140,Standard:128},adp:30.0,ktcVal:4161,note:"Week 7: Emerging WR · 80+ rec 900+ yds · breakout ceiling"},
-  {name:"Quentin Johnston",pos:"WR",age:25,team:"LAC",proj:{PPR:145,Half:133,Standard:121},adp:31.2,ktcVal:4254,note:"Week 7: Emerging WR · 80+ rec 900+ yds · breakout ceiling"},
-  {name:"Stefon Diggs",pos:"WR",age:32.7,team:"FA",proj:{PPR:178,Half:164,Standard:150},adp:24.2,ktcVal:2599,note:"Week 7: Bench WR · limited targets · roster depth stash"},
+  {name:"Jaylen Waddle",pos:"WR",age:27.8,team:"DEN",proj:{PPR:265,Half:245,Standard:225},adp:10.4,ktcVal:5665,note:"Year 5: 100 rec 1,050 yds"},
+  {name:"Chris Olave",pos:"WR",age:26.2,team:"NO",proj:{PPR:258,Half:238,Standard:218},adp:11.4,ktcVal:6800,note:"Wk1: 10/182 yds · 4yr/$132M extension · alpha WR1"},
+  {name:"George Pickens",pos:"WR",age:25.5,team:"DAL",proj:{PPR:252,Half:233,Standard:214},adp:12.2,ktcVal:6650,note:"85 rec 1,080 yds 9 TD · traded to DAL, signed franchise tag $27.3M"},
+  {name:"Jaxon Smith-Njigba",pos:"WR",age:24.5,team:"SEA",proj:{PPR:268,Half:248,Standard:228},adp:1.8,ktcVal:9400,note:"Year 3: 108 rec 1,200 yds 9 TD dynasty WR1"},
+  {name:"Malik Nabers",pos:"WR",age:23.1,team:"NYG",proj:{PPR:262,Half:242,Standard:222},adp:8.5,ktcVal:8145,note:"Year 2: Back in 11-on-11 drills without non-contact jersey · Week 1 trending up · elite dynasty WR"},
+  {name:"Zay Flowers",pos:"WR",age:26,team:"BAL",proj:{PPR:255,Half:236,Standard:217},adp:12.5,ktcVal:6200,note:"Wk1: 150 yds career-high BUT hamstring injury — monitor · 95 rec 1,080 yds 9 TD"},
+  {name:"Jordan Addison",pos:"WR",age:24.6,team:"MIN",proj:{PPR:238,Half:220,Standard:202},adp:14.2,ktcVal:5001,note:"82 rec 980 yds 9 TD"},
+  {name:"Josh Downs",pos:"WR",age:25,team:"IND",proj:{PPR:235,Half:217,Standard:199},adp:14.9,ktcVal:4519,note:"Year 3: 95 rec 980 yds"},
+  {name:"Ladd McConkey",pos:"WR",age:24.8,team:"LAC",proj:{PPR:232,Half:214,Standard:196},adp:15.5,ktcVal:6600,note:"88 rec 940 yds"},
+  {name:"DeVonta Smith",pos:"WR",age:27.8,team:"PHI",proj:{PPR:228,Half:211,Standard:194},adp:16.0,ktcVal:6200,note:"88 rec 1,000 yds 7 TD"},
+  {name:"Mike Evans",pos:"WR",age:33,team:"SF",proj:{PPR:225,Half:208,Standard:191},adp:16.5,ktcVal:4238,note:"84 rec 1,050 yds 12 TD"},
+  {name:"Michael Pittman Jr.",pos:"WR",age:28.9,team:"PIT",proj:{PPR:218,Half:201,Standard:184},adp:17.8,ktcVal:4307,note:"88 rec 950 yds 7 TD"},
+  {name:"D.J. Moore",pos:"WR",age:29.4,team:"BUF",proj:{PPR:215,Half:199,Standard:183},adp:18.2,ktcVal:4926,note:"80 rec 920 yds"},
+  {name:"Xavier Worthy",pos:"WR",age:23.3,team:"KC",proj:{PPR:210,Half:194,Standard:178},adp:19.0,ktcVal:4276,note:"Year 2: 72 rec 890 yds 9 TD"},
+  {name:"Tank Dell",pos:"WR",age:26.8,team:"HOU",proj:{PPR:145,Half:134,Standard:123},adp:24.0,ktcVal:3200,note:"On IR with return designation — out first 4+ games. Will return mid-season. Buy low — he's only 26 and Texans need him with Higgins torn ACL"},
+  {name:"Davante Adams",pos:"WR",age:33.7,team:"LAR",proj:{PPR:195,Half:180,Standard:165},adp:20.8,ktcVal:4408,note:"Veteran: 80 rec 880 yds"},
+  {name:"Kayshon Boutte",pos:"WR",age:24.3,team:"LAC",proj:{PPR:198,Half:183,Standard:168},adp:21.5,ktcVal:3605,note:"70 rec 800 yds 6 TD"},
+  {name:"Deebo Samuel",pos:"WR",age:30.6,team:"SF",proj:{PPR:210,Half:194,Standard:178},adp:18.5,ktcVal:3200,note:"Re-signed SF 1yr/$7M · WR/RB/KR · 65 rec 780 yds 5 TD + rush"},
+  {name:"Keon Coleman",pos:"WR",age:23.3,team:"BUF",proj:{PPR:218,Half:202,Standard:186},adp:18.5,ktcVal:3230,note:"Year 2 with Allen: 78 rec 920 yds 9 TD"},
+  {name:"Tre Tucker",pos:"WR",age:25.5,team:"LV",proj:{PPR:185,Half:170,Standard:155},adp:24.0,ktcVal:3184,note:"72 rec 760 yds 5 TD"},
+  {name:"Matthew Golden",pos:"WR",age:23.1,team:"HOU",proj:{PPR:178,Half:164,Standard:150},adp:24.8,ktcVal:4692,note:"2025 pick 1-23 · Year 2: 65 rec 740 yds"},
+  {name:"Brian Thomas Jr.",pos:"WR",age:23.9,team:"JAX",proj:{PPR:205,Half:190,Standard:175},adp:20.5,ktcVal:6300,note:"Wk1: JAX offense exploded 34-10 · Year 2 ascending: 80 rec 900 yds 8 TD"},
+  {name:"Courtland Sutton",pos:"WR",age:30.9,team:"DEN",proj:{PPR:165,Half:152,Standard:139},adp:27.2,ktcVal:4082,note:"68 rec 780 yds 6 TD"},
+  {name:"Xavier Legette",pos:"WR",age:25.6,team:"CAR",proj:{PPR:158,Half:145,Standard:132},adp:28.8,ktcVal:3605,note:"Year 2: 62 rec 720 yds"},
+  {name:"Jakobi Meyers",pos:"WR",age:29.8,team:"JAX",proj:{PPR:152,Half:140,Standard:128},adp:30.0,ktcVal:4161,note:"72 rec 720 yds"},
+  {name:"Quentin Johnston",pos:"WR",age:25,team:"LAC",proj:{PPR:145,Half:133,Standard:121},adp:31.2,ktcVal:4254,note:"60 rec 700 yds 5 TD"},
+  {name:"Stefon Diggs",pos:"WR",age:32.7,team:"FA",proj:{PPR:178,Half:164,Standard:150},adp:24.2,ktcVal:2599,note:"Veteran: 75 rec 820 yds"},
   // Additional TEs
-  {name:"Dallas Goedert",pos:"TE",age:31.7,team:"PHI",proj:{PPR:182,Half:167,Standard:152},adp:11.8,ktcVal:3800,note:"Week 7: TE2/bench · limited role · streaming option"},
-  {name:"T.J. Hockenson",pos:"TE",age:29.2,team:"MIN",proj:{PPR:175,Half:160,Standard:145},adp:12.5,ktcVal:3496,note:"Week 7: TE2/bench · limited role · streaming option"},
-  {name:"David Njoku",pos:"TE",age:30.1,team:"FA",proj:{PPR:168,Half:154,Standard:140},adp:13.8,ktcVal:3100,note:"Week 7: TE2/bench · limited role · streaming option"},
-  {name:"Jake Ferguson",pos:"TE",age:27.6,team:"DAL",proj:{PPR:162,Half:148,Standard:134},adp:15.0,ktcVal:4062,note:"Week 7: Emerging TE · 70+ rec 750+ yds · breakout potential"},
-  {name:"Harold Fannin Jr.",pos:"TE",age:22.1,team:"CLE",proj:{PPR:168,Half:154,Standard:140},adp:8.5,ktcVal:5900,note:"Week 7: Emerging TE · 70+ rec 750+ yds · breakout potential"},
-  {name:"Cade Otton",pos:"TE",age:27.4,team:"TB",proj:{PPR:148,Half:135,Standard:122},adp:17.8,ktcVal:2884,note:"Week 7: Bench TE · TB · stream candidate"},
-  {name:"Cole Kmet",pos:"TE",age:27.5,team:"CHI",proj:{PPR:145,Half:133,Standard:121},adp:18.2,ktcVal:2884,note:"Week 7: Bench TE · CHI · stream candidate"},
-  {name:"Pat Freiermuth",pos:"TE",age:27.8,team:"PIT",proj:{PPR:138,Half:126,Standard:114},adp:19.5,ktcVal:2900,note:"Week 7: Bench TE · PIT · stream candidate"},
-  {name:"Brenton Strange",pos:"TE",age:25.7,team:"JAX",proj:{PPR:125,Half:114,Standard:103},adp:22.5,ktcVal:3796,note:"Week 7: TE2/bench · limited role · streaming option"},
-  {name:"Michael Mayer",pos:"TE",age:25.1,team:"LV",proj:{PPR:118,Half:108,Standard:98},adp:25.0,ktcVal:2611,note:"Week 7: Bench TE · LV · stream candidate"},
-  {name:"Chig Okonkwo",pos:"TE",age:27,team:"WAS",proj:{PPR:118,Half:108,Standard:98},adp:26.0,ktcVal:3452,note:"Week 7: TE2/bench · limited role · streaming option"},
-  {name:"Dawson Knox",pos:"TE",age:29.8,team:"BUF",proj:{PPR:108,Half:99,Standard:90},adp:28.8,ktcVal:2219,note:"Week 7: Bench TE · BUF · stream candidate"},
+  {name:"Dallas Goedert",pos:"TE",age:31.7,team:"PHI",proj:{PPR:182,Half:167,Standard:152},adp:11.8,ktcVal:3800,note:"Wk1: 4/77/2 TD led PHI receivers · 72 rec 820 yds 7 TD"},
+  {name:"T.J. Hockenson",pos:"TE",age:29.2,team:"MIN",proj:{PPR:175,Half:160,Standard:145},adp:12.5,ktcVal:3496,note:"70 rec 740 yds"},
+  {name:"David Njoku",pos:"TE",age:30.1,team:"FA",proj:{PPR:168,Half:154,Standard:140},adp:13.8,ktcVal:3100,note:"65 rec 680 yds 6 TD · FA 2026"},
+  {name:"Jake Ferguson",pos:"TE",age:27.6,team:"DAL",proj:{PPR:162,Half:148,Standard:134},adp:15.0,ktcVal:4062,note:"68 rec 700 yds 6 TD"},
+  {name:"Harold Fannin Jr.",pos:"TE",age:22.1,team:"CLE",proj:{PPR:168,Half:154,Standard:140},adp:8.5,ktcVal:5900,note:"2025 pick 3-67 · Year 2: 66 rec 700 yds 6 TD elite dynasty TE asset"},
+  {name:"Cade Otton",pos:"TE",age:27.4,team:"TB",proj:{PPR:148,Half:135,Standard:122},adp:17.8,ktcVal:2884,note:"55 rec 570 yds"},
+  {name:"Cole Kmet",pos:"TE",age:27.5,team:"CHI",proj:{PPR:145,Half:133,Standard:121},adp:18.2,ktcVal:2884,note:"55 rec 560 yds 5 TD"},
+  {name:"Pat Freiermuth",pos:"TE",age:27.8,team:"PIT",proj:{PPR:138,Half:126,Standard:114},adp:19.5,ktcVal:2900,note:"Wk1: 5/46/1 TD · 52 rec 540 yds 5 TD"},
+  {name:"Brenton Strange",pos:"TE",age:25.7,team:"JAX",proj:{PPR:125,Half:114,Standard:103},adp:22.5,ktcVal:3796,note:"48 rec 470 yds"},
+  {name:"Michael Mayer",pos:"TE",age:25.1,team:"LV",proj:{PPR:118,Half:108,Standard:98},adp:25.0,ktcVal:2611,note:"45 rec 440 yds"},
+  {name:"Chig Okonkwo",pos:"TE",age:27,team:"WAS",proj:{PPR:118,Half:108,Standard:98},adp:26.0,ktcVal:3452,note:"WAS TE: 48 rec 520 yds 4 TD"},
+  {name:"Dawson Knox",pos:"TE",age:29.8,team:"BUF",proj:{PPR:108,Half:99,Standard:90},adp:28.8,ktcVal:2219,note:"40 rec 410 yds 5 TD"},
   // Additional DLs
-  {name:"T.J. Watt",pos:"DL",age:31.9,team:"PIT",proj:{PPR:155,Half:155,Standard:155},adp:7.2,ktcVal:6180,note:"Week 7: Strong defender · PIT starter · consistent snap share"},
-  {name:"Nick Bosa",pos:"DL",age:28.8,team:"SF",proj:{PPR:150,Half:150,Standard:150},adp:7.5,ktcVal:5150,note:"Week 7: Strong defender · SF starter · consistent snap share"},
-  {name:"Maxx Crosby",pos:"DL",age:29,team:"LV",proj:{PPR:148,Half:148,Standard:148},adp:7.9,ktcVal:4944,note:"Week 7: Reserve DL · LV · limited snaps"},
-  {name:"Chris Jones",pos:"DL",age:31,team:"KC",proj:{PPR:140,Half:140,Standard:140},adp:9.2,ktcVal:3605,note:"Week 7: Reserve DL · KC · limited snaps"},
-  {name:"Brian Burns",pos:"DL",age:28.3,team:"NYG",proj:{PPR:138,Half:138,Standard:138},adp:9.8,ktcVal:3605,note:"Week 7: Reserve DL · NYG · limited snaps"},
-  {name:"Jonathan Greenard",pos:"DL",age:29.3,team:"PHI",proj:{PPR:135,Half:135,Standard:135},adp:10.5,ktcVal:3296,note:"Week 7: Reserve DL · PHI · limited snaps"},
-  {name:"Jalen Carter",pos:"DL",age:25.4,team:"PHI",proj:{PPR:145,Half:145,Standard:145},adp:9.2,ktcVal:4635,note:"Week 7: Reserve DL · PHI · limited snaps"},
-  {name:"Dexter Lawrence",pos:"DL",age:28.8,team:"CIN",proj:{PPR:128,Half:128,Standard:128},adp:11.8,ktcVal:2884,note:"Week 7: Reserve DL · CIN · limited snaps"},
-  {name:"Jeffery Simmons",pos:"DL",age:29.1,team:"TEN",proj:{PPR:125,Half:125,Standard:125},adp:12.5,ktcVal:2266,note:"Week 7: Reserve DL · TEN · limited snaps"},
-  {name:"Daron Payne",pos:"DL",age:29.3,team:"WAS",proj:{PPR:122,Half:122,Standard:122},adp:13.2,ktcVal:2060,note:"Week 7: Reserve DL · WAS · limited snaps"},
-  {name:"Sam Hubbard",pos:"DL",age:31.2,team:"FA",proj:{PPR:118,Half:118,Standard:118},adp:14.5,ktcVal:1236,note:"Week 7: Reserve DL · FA · limited snaps"},
-  {name:"Josh Uche",pos:"DL",age:27.9,team:"NE",proj:{PPR:115,Half:115,Standard:115},adp:15.2,ktcVal:1442,note:"Week 7: Reserve DL · NE · limited snaps"},
-  {name:"Bryce Huff",pos:"DL",age:28.4,team:"PHI",proj:{PPR:112,Half:112,Standard:112},adp:16.5,ktcVal:1854,note:"Week 7: Reserve DL · PHI · limited snaps"},
-  {name:"Haason Reddick",pos:"DL",age:31.9,team:"FA",proj:{PPR:108,Half:108,Standard:108},adp:17.8,ktcVal:618,note:"Week 7: Reserve DL · FA · limited snaps"},
-  {name:"Lukas Van Ness",pos:"DL",age:25.1,team:"GB",proj:{PPR:112,Half:112,Standard:112},adp:16.8,ktcVal:2884,note:"Week 7: Reserve DL · GB · limited snaps"},
-  {name:"Zach Allen",pos:"DL",age:29,team:"ARI",proj:{PPR:108,Half:108,Standard:108},adp:18.0,ktcVal:2266,note:"Week 7: Reserve DL · ARI · limited snaps"},
-  {name:"Leonard Williams",pos:"DL",age:32.2,team:"SEA",proj:{PPR:105,Half:105,Standard:105},adp:18.8,ktcVal:1030,note:"Week 7: Reserve DL · SEA · limited snaps"},
-  {name:"Cameron Jordan",pos:"DL",age:37.1,team:"NO",proj:{PPR:102,Half:102,Standard:102},adp:19.5,ktcVal:824,note:"Week 7: Reserve DL · NO · limited snaps"},
-  {name:"Za'Darius Smith",pos:"DL",age:34,team:"FA",proj:{PPR:100,Half:100,Standard:100},adp:20.2,ktcVal:618,note:"Week 7: Reserve DL · FA · limited snaps"},
-  {name:"Rashan Gary",pos:"DL",age:28.7,team:"DAL",proj:{PPR:118,Half:118,Standard:118},adp:14.0,ktcVal:4635,note:"Week 7: Reserve DL · DAL · limited snaps"},
-  {name:"Danielle Hunter",pos:"DL",age:31.8,team:"HOU",proj:{PPR:112,Half:112,Standard:112},adp:16.2,ktcVal:2266,note:"Week 7: Reserve DL · HOU · limited snaps"},
+  {name:"T.J. Watt",pos:"DL",age:31.9,team:"PIT",proj:{PPR:155,Half:155,Standard:155},adp:7.2,ktcVal:6180,note:"18 sacks 25 TFL elite pass rush"},
+  {name:"Nick Bosa",pos:"DL",age:28.8,team:"SF",proj:{PPR:150,Half:150,Standard:150},adp:7.5,ktcVal:5150,note:"16 sacks 22 TFL"},
+  {name:"Maxx Crosby",pos:"DL",age:29,team:"LV",proj:{PPR:148,Half:148,Standard:148},adp:7.9,ktcVal:4944,note:"15 sacks 20 TFL"},
+  {name:"Chris Jones",pos:"DL",age:31,team:"KC",proj:{PPR:140,Half:140,Standard:140},adp:9.2,ktcVal:3605,note:"Interior: 14 sacks 18 TFL"},
+  {name:"Brian Burns",pos:"DL",age:28.3,team:"NYG",proj:{PPR:138,Half:138,Standard:138},adp:9.8,ktcVal:3605,note:"14 sacks 17 TFL"},
+  {name:"Jonathan Greenard",pos:"DL",age:29.3,team:"PHI",proj:{PPR:135,Half:135,Standard:135},adp:10.5,ktcVal:3296,note:"Traded MIN→PHI · signed 4yr/$100M · 13 sacks 16 TFL"},
+  {name:"Jalen Carter",pos:"DL",age:25.4,team:"PHI",proj:{PPR:145,Half:145,Standard:145},adp:9.2,ktcVal:4635,note:"Interior: 12 sacks 20 TFL elite anchor"},
+  {name:"Dexter Lawrence",pos:"DL",age:28.8,team:"CIN",proj:{PPR:128,Half:128,Standard:128},adp:11.8,ktcVal:2884,note:"Interior: 10 sacks 16 TFL · traded to CIN for #10 pick"},
+  {name:"Jeffery Simmons",pos:"DL",age:29.1,team:"TEN",proj:{PPR:125,Half:125,Standard:125},adp:12.5,ktcVal:2266,note:"Interior: 9 sacks 15 TFL"},
+  {name:"Daron Payne",pos:"DL",age:29.3,team:"WAS",proj:{PPR:122,Half:122,Standard:122},adp:13.2,ktcVal:2060,note:"Interior: 9 sacks 14 TFL"},
+  {name:"Sam Hubbard",pos:"DL",age:31.2,team:"FA",proj:{PPR:118,Half:118,Standard:118},adp:14.5,ktcVal:1236,note:"11 sacks 14 TFL"},
+  {name:"Josh Uche",pos:"DL",age:27.9,team:"NE",proj:{PPR:115,Half:115,Standard:115},adp:15.2,ktcVal:1442,note:"11 sacks 13 TFL"},
+  {name:"Bryce Huff",pos:"DL",age:28.4,team:"PHI",proj:{PPR:112,Half:112,Standard:112},adp:16.5,ktcVal:1854,note:"12 sacks 13 TFL"},
+  {name:"Haason Reddick",pos:"DL",age:31.9,team:"FA",proj:{PPR:108,Half:108,Standard:108},adp:17.8,ktcVal:618,note:"11 sacks 12 TFL"},
+  {name:"Lukas Van Ness",pos:"DL",age:25.1,team:"GB",proj:{PPR:112,Half:112,Standard:112},adp:16.8,ktcVal:2884,note:"Year 3: 11 sacks 13 TFL"},
+  {name:"Zach Allen",pos:"DL",age:29,team:"ARI",proj:{PPR:108,Half:108,Standard:108},adp:18.0,ktcVal:2266,note:"Versatile: 8 sacks 15 TFL"},
+  {name:"Leonard Williams",pos:"DL",age:32.2,team:"SEA",proj:{PPR:105,Half:105,Standard:105},adp:18.8,ktcVal:1030,note:"Interior: 8 sacks 14 TFL"},
+  {name:"Cameron Jordan",pos:"DL",age:37.1,team:"NO",proj:{PPR:102,Half:102,Standard:102},adp:19.5,ktcVal:824,note:"Veteran: 9 sacks 12 TFL"},
+  {name:"Za'Darius Smith",pos:"DL",age:34,team:"FA",proj:{PPR:100,Half:100,Standard:100},adp:20.2,ktcVal:618,note:"9 sacks 11 TFL veteran"},
+  {name:"Rashan Gary",pos:"DL",age:28.7,team:"DAL",proj:{PPR:118,Half:118,Standard:118},adp:14.0,ktcVal:4635,note:"13 sacks 16 TFL pass rush"},
+  {name:"Danielle Hunter",pos:"DL",age:31.8,team:"HOU",proj:{PPR:112,Half:112,Standard:112},adp:16.2,ktcVal:2266,note:"12 sacks 14 TFL"},
   // Additional LBs
-  {name:"T.J. Edwards",pos:"LB",age:30,team:"CHI",proj:{PPR:150,Half:150,Standard:150},adp:8.2,ktcVal:2060,note:"Week 7: Reserve LB · CHI · limited value"},
-  {name:"Bobby Wagner",pos:"LB",age:36.2,team:"FA",proj:{PPR:145,Half:145,Standard:145},adp:8.8,ktcVal:618,note:"Week 7: Reserve LB · FA · limited value"},
-  {name:"Patrick Queen",pos:"LB",age:27,team:"PIT",proj:{PPR:142,Half:142,Standard:142},adp:9.2,ktcVal:2884,note:"Week 7: Reserve LB · PIT · limited value"},
-  {name:"Foyesade Oluokun",pos:"LB",age:31.1,team:"JAX",proj:{PPR:140,Half:140,Standard:140},adp:9.8,ktcVal:2266,note:"Week 7: Reserve LB · JAX · limited value"},
-  {name:"Quay Walker",pos:"LB",age:26.3,team:"LV",proj:{PPR:138,Half:138,Standard:138},adp:10.2,ktcVal:2884,note:"Week 7: Reserve LB · LV · limited value"},
-  {name:"Jordyn Brooks",pos:"LB",age:28.9,team:"SEA",proj:{PPR:135,Half:135,Standard:135},adp:11.0,ktcVal:2060,note:"Week 7: Reserve LB · SEA · limited value"},
-  {name:"Germaine Pratt",pos:"LB",age:30.3,team:"CIN",proj:{PPR:132,Half:132,Standard:132},adp:11.8,ktcVal:2060,note:"Week 7: Reserve LB · CIN · limited value"},
-  {name:"Dre Greenlaw",pos:"LB",age:29.3,team:"DEN",proj:{PPR:130,Half:130,Standard:130},adp:12.5,ktcVal:2266,note:"Week 7: Reserve LB · DEN · limited value"},
-  {name:"Matt Milano",pos:"LB",age:32.1,team:"BUF",proj:{PPR:128,Half:128,Standard:128},adp:13.2,ktcVal:1545,note:"Week 7: Reserve LB · BUF · limited value"},
-  {name:"Christian Harris",pos:"LB",age:25.6,team:"HOU",proj:{PPR:125,Half:125,Standard:125},adp:14.2,ktcVal:2884,note:"Week 7: Reserve LB · HOU · limited value"},
-  {name:"Demario Davis",pos:"LB",age:37.6,team:"NYJ",proj:{PPR:122,Half:122,Standard:122},adp:15.2,ktcVal:1030,note:"Week 7: Reserve LB · NYJ · limited value"},
-  {name:"De'Vondre Campbell",pos:"LB",age:33.2,team:"CLE",proj:{PPR:118,Half:118,Standard:118},adp:16.5,ktcVal:1236,note:"Week 7: Reserve LB · CLE · limited value"},
-  {name:"Eric Kendricks",pos:"LB",age:34.5,team:"LAC",proj:{PPR:115,Half:115,Standard:115},adp:17.8,ktcVal:1030,note:"Week 7: Reserve LB · LAC · limited value"},
-  {name:"Myjai Sanders",pos:"LB",age:28.1,team:"CIN",proj:{PPR:112,Half:112,Standard:112},adp:18.8,ktcVal:2060,note:"Week 7: Reserve LB · CIN · limited value"},
-  {name:"Devin Lloyd",pos:"LB",age:27.9,team:"CAR",proj:{PPR:118,Half:118,Standard:118},adp:15.8,ktcVal:2266,note:"Week 7: Reserve LB · CAR · limited value"},
+  {name:"T.J. Edwards",pos:"LB",age:30,team:"CHI",proj:{PPR:150,Half:150,Standard:150},adp:8.2,ktcVal:2060,note:"155 tackles 3 sacks 2 INT"},
+  {name:"Bobby Wagner",pos:"LB",age:36.2,team:"FA",proj:{PPR:145,Half:145,Standard:145},adp:8.8,ktcVal:618,note:"Veteran: 140 tackles 3 sacks"},
+  {name:"Patrick Queen",pos:"LB",age:27,team:"PIT",proj:{PPR:142,Half:142,Standard:142},adp:9.2,ktcVal:2884,note:"148 tackles 4 sacks"},
+  {name:"Foyesade Oluokun",pos:"LB",age:31.1,team:"JAX",proj:{PPR:140,Half:140,Standard:140},adp:9.8,ktcVal:2266,note:"158 tackles 2 sacks"},
+  {name:"Quay Walker",pos:"LB",age:26.3,team:"LV",proj:{PPR:138,Half:138,Standard:138},adp:10.2,ktcVal:2884,note:"150 tackles 3 sacks"},
+  {name:"Jordyn Brooks",pos:"LB",age:28.9,team:"SEA",proj:{PPR:135,Half:135,Standard:135},adp:11.0,ktcVal:2060,note:"142 tackles 2 sacks"},
+  {name:"Germaine Pratt",pos:"LB",age:30.3,team:"CIN",proj:{PPR:132,Half:132,Standard:132},adp:11.8,ktcVal:2060,note:"138 tackles 3 sacks"},
+  {name:"Dre Greenlaw",pos:"LB",age:29.3,team:"DEN",proj:{PPR:130,Half:130,Standard:130},adp:12.5,ktcVal:2266,note:"132 tackles 3 sacks"},
+  {name:"Matt Milano",pos:"LB",age:32.1,team:"BUF",proj:{PPR:128,Half:128,Standard:128},adp:13.2,ktcVal:1545,note:"125 tackles 2 INT"},
+  {name:"Christian Harris",pos:"LB",age:25.6,team:"HOU",proj:{PPR:125,Half:125,Standard:125},adp:14.2,ktcVal:2884,note:"130 tackles 3 sacks"},
+  {name:"Demario Davis",pos:"LB",age:37.6,team:"NYJ",proj:{PPR:122,Half:122,Standard:122},adp:15.2,ktcVal:1030,note:"Veteran: 128 tackles 3 sacks · signed 2yr/$22M with NYJ"},
+  {name:"De'Vondre Campbell",pos:"LB",age:33.2,team:"CLE",proj:{PPR:118,Half:118,Standard:118},adp:16.5,ktcVal:1236,note:"120 tackles 2 INT"},
+  {name:"Eric Kendricks",pos:"LB",age:34.5,team:"LAC",proj:{PPR:115,Half:115,Standard:115},adp:17.8,ktcVal:1030,note:"Veteran: 115 tackles"},
+  {name:"Myjai Sanders",pos:"LB",age:28.1,team:"CIN",proj:{PPR:112,Half:112,Standard:112},adp:18.8,ktcVal:2060,note:"110 tackles 4 sacks"},
+  {name:"Devin Lloyd",pos:"LB",age:27.9,team:"CAR",proj:{PPR:118,Half:118,Standard:118},adp:15.8,ktcVal:2266,note:"Signed 3yr/$45M with CAR · 125 tackles 3 sacks 2 INT"},
   // Additional DBs
-  {name:"Patrick Surtain II",pos:"DB",age:26,team:"DEN",proj:{PPR:138,Half:138,Standard:138},adp:9.5,ktcVal:7416,note:"Week 7: Strong defender · DEN starter · consistent snap share"},
-  {name:"Antoine Winfield Jr.",pos:"DB",age:28,team:"TB",proj:{PPR:132,Half:132,Standard:132},adp:10.8,ktcVal:5665,note:"Week 7: Strong defender · TB starter · consistent snap share"},
-  {name:"Minkah Fitzpatrick",pos:"DB",age:29.8,team:"NYJ",proj:{PPR:128,Half:128,Standard:128},adp:11.5,ktcVal:4326,note:"Week 7: Reserve DB · NYJ · depth"},
-  {name:"Budda Baker",pos:"DB",age:30.6,team:"ARI",proj:{PPR:125,Half:125,Standard:125},adp:12.2,ktcVal:2575,note:"Week 7: Reserve DB · ARI · depth"},
-  {name:"Jessie Bates III",pos:"DB",age:29.5,team:"ATL",proj:{PPR:122,Half:122,Standard:122},adp:13.2,ktcVal:3296,note:"Week 7: Reserve DB · ATL · depth"},
-  {name:"Devon Witherspoon",pos:"DB",age:25.7,team:"SEA",proj:{PPR:130,Half:130,Standard:130},adp:12.2,ktcVal:5665,note:"Week 7: Strong defender · SEA starter · consistent snap share"},
-  {name:"Jaylon Johnson",pos:"DB",age:27.4,team:"CHI",proj:{PPR:115,Half:115,Standard:115},adp:15.2,ktcVal:4120,note:"Week 7: Reserve DB · CHI · depth"},
-  {name:"Trevon Diggs",pos:"DB",age:27.9,team:"FA",proj:{PPR:112,Half:112,Standard:112},adp:16.2,ktcVal:2575,note:"Week 7: Reserve DB · FA · depth"},
-  {name:"C.J. Gardner-Johnson",pos:"DB",age:28.7,team:"CHI",proj:{PPR:108,Half:108,Standard:108},adp:17.5,ktcVal:2575,note:"Week 7: Reserve DB · CHI · depth"},
-  {name:"Jordan Poyer",pos:"DB",age:35.3,team:"MIA",proj:{PPR:105,Half:105,Standard:105},adp:18.8,ktcVal:824,note:"Week 7: Reserve DB · MIA · depth"},
-  {name:"Darius Slay",pos:"DB",age:35.7,team:"PHI",proj:{PPR:102,Half:102,Standard:102},adp:19.8,ktcVal:1030,note:"Week 7: Reserve DB · PHI · depth"},
-  {name:"Emmanuel Forbes",pos:"DB",age:25.6,team:"WAS",proj:{PPR:112,Half:112,Standard:112},adp:17.2,ktcVal:3605,note:"Week 7: Reserve DB · WAS · depth"},
-  {name:"Deommodore Lenoir",pos:"DB",age:26.9,team:"SF",proj:{PPR:108,Half:108,Standard:108},adp:17.8,ktcVal:2266,note:"Week 7: Reserve DB · SF · depth"},
+  {name:"Patrick Surtain II",pos:"DB",age:26,team:"DEN",proj:{PPR:138,Half:138,Standard:138},adp:9.5,ktcVal:7416,note:"Elite CB: 65 tackles 4 INT"},
+  {name:"Antoine Winfield Jr.",pos:"DB",age:28,team:"TB",proj:{PPR:132,Half:132,Standard:132},adp:10.8,ktcVal:5665,note:"S: 110 tackles 4 INT 2 sacks"},
+  {name:"Minkah Fitzpatrick",pos:"DB",age:29.8,team:"NYJ",proj:{PPR:128,Half:128,Standard:128},adp:11.5,ktcVal:4326,note:"S: 105 tackles 4 INT"},
+  {name:"Budda Baker",pos:"DB",age:30.6,team:"ARI",proj:{PPR:125,Half:125,Standard:125},adp:12.2,ktcVal:2575,note:"S: 115 tackles 3 INT"},
+  {name:"Jessie Bates III",pos:"DB",age:29.5,team:"ATL",proj:{PPR:122,Half:122,Standard:122},adp:13.2,ktcVal:3296,note:"S: 100 tackles 4 INT"},
+  {name:"Devon Witherspoon",pos:"DB",age:25.7,team:"SEA",proj:{PPR:130,Half:130,Standard:130},adp:12.2,ktcVal:5665,note:"Year 3 CB: 82 tackles 6 INT ascending"},
+  {name:"Jaylon Johnson",pos:"DB",age:27.4,team:"CHI",proj:{PPR:115,Half:115,Standard:115},adp:15.2,ktcVal:4120,note:"CB: 70 tackles 5 INT"},
+  {name:"Trevon Diggs",pos:"DB",age:27.9,team:"FA",proj:{PPR:112,Half:112,Standard:112},adp:16.2,ktcVal:2575,note:"Unsigned FA · CB: 65 tackles 6 INT high variance"},
+  {name:"C.J. Gardner-Johnson",pos:"DB",age:28.7,team:"CHI",proj:{PPR:108,Half:108,Standard:108},adp:17.5,ktcVal:2575,note:"S: 98 tackles 4 INT"},
+  {name:"Jordan Poyer",pos:"DB",age:35.3,team:"MIA",proj:{PPR:105,Half:105,Standard:105},adp:18.8,ktcVal:824,note:"Veteran S: 92 tackles 4 INT"},
+  {name:"Darius Slay",pos:"DB",age:35.7,team:"PHI",proj:{PPR:102,Half:102,Standard:102},adp:19.8,ktcVal:1030,note:"Veteran CB: 55 tackles 4 INT"},
+  {name:"Emmanuel Forbes",pos:"DB",age:25.6,team:"WAS",proj:{PPR:112,Half:112,Standard:112},adp:17.2,ktcVal:3605,note:"Year 3 CB: 72 tackles 5 INT breakout"},
+  {name:"Deommodore Lenoir",pos:"DB",age:26.9,team:"SF",proj:{PPR:108,Half:108,Standard:108},adp:17.8,ktcVal:2266,note:"CB: 72 tackles 4 INT"},
   // DL Wave 2 — pass rushers & interior
-  {name:"Trey Hendrickson",pos:"DL",age:31.7,team:"BAL",proj:{PPR:128,Half:128,Standard:128},adp:11.2,ktcVal:3193,note:"Week 7: Reserve DL · BAL · limited snaps"},
-  {name:"Khalil Mack",pos:"DL",age:35.5,team:"LAC",proj:{PPR:112,Half:112,Standard:112},adp:13.5,ktcVal:1236,note:"Week 7: Reserve DL · LAC · limited snaps"},
-  {name:"Kayvon Thibodeaux",pos:"DL",age:25.7,team:"NYG",proj:{PPR:115,Half:115,Standard:115},adp:12.8,ktcVal:3914,note:"Week 7: Reserve DL · NYG · limited snaps"},
-  {name:"Gregory Rousseau",pos:"DL",age:26,team:"BUF",proj:{PPR:112,Half:112,Standard:112},adp:13.2,ktcVal:3605,note:"Week 7: Reserve DL · BUF · limited snaps"},
-  {name:"Chase Young",pos:"DL",age:27.4,team:"NO",proj:{PPR:108,Half:108,Standard:108},adp:14.2,ktcVal:2884,note:"Week 7: Reserve DL · NO · limited snaps"},
-  {name:"Quinnen Williams",pos:"DL",age:28.7,team:"DAL",proj:{PPR:105,Half:105,Standard:105},adp:14.8,ktcVal:2678,note:"Week 7: Reserve DL · DAL · limited snaps"},
-  {name:"Kenny Clark",pos:"DL",age:30.9,team:"GB",proj:{PPR:105,Half:105,Standard:105},adp:15.2,ktcVal:1854,note:"Week 7: Reserve DL · GB · limited snaps"},
-  {name:"Nnamdi Madubuike",pos:"DL",age:28.8,team:"BAL",proj:{PPR:102,Half:102,Standard:102},adp:15.8,ktcVal:2884,note:"Week 7: Reserve DL · BAL · limited snaps"},
-  {name:"Derrick Brown",pos:"DL",age:28.4,team:"CAR",proj:{PPR:102,Half:102,Standard:102},adp:16.2,ktcVal:2060,note:"Week 7: Reserve DL · CAR · limited snaps"},
-  {name:"Javon Hargrave",pos:"DL",age:33.6,team:"MIN",proj:{PPR:100,Half:100,Standard:100},adp:16.8,ktcVal:1545,note:"Week 7: Reserve DL · MIN · limited snaps"},
-  {name:"Travon Walker",pos:"DL",age:25.7,team:"JAX",proj:{PPR:98,Half:98,Standard:98},adp:17.5,ktcVal:2575,note:"Week 7: Reserve DL · JAX · limited snaps"},
-  {name:"Azeez Ojulari",pos:"DL",age:26.2,team:"NYG",proj:{PPR:96,Half:96,Standard:96},adp:18.2,ktcVal:3605,note:"Week 7: Reserve DL · NYG · limited snaps"},
-  {name:"Yannick Ngakoue",pos:"DL",age:31.4,team:"LV",proj:{PPR:94,Half:94,Standard:94},adp:18.8,ktcVal:1236,note:"Week 7: Reserve DL · LV · limited snaps"},
-  {name:"Carl Lawson",pos:"DL",age:31.2,team:"NYJ",proj:{PPR:92,Half:92,Standard:92},adp:19.5,ktcVal:1545,note:"Week 7: Reserve DL · NYJ · limited snaps"},
-  {name:"Grady Jarrett",pos:"DL",age:33.3,team:"CHI",proj:{PPR:96,Half:96,Standard:96},adp:18.5,ktcVal:1854,note:"Week 7: Reserve DL · CHI · limited snaps"},
-  {name:"Matthew Judon",pos:"DL",age:34,team:"FA",proj:{PPR:100,Half:100,Standard:100},adp:16.5,ktcVal:1236,note:"Week 7: Reserve DL · FA · limited snaps"},
-  {name:"Von Miller",pos:"DL",age:37.4,team:"BUF",proj:{PPR:82,Half:82,Standard:82},adp:22.0,ktcVal:412,note:"Week 7: Reserve DL · BUF · limited snaps"},
-  {name:"Marcus Davenport",pos:"DL",age:30,team:"MIN",proj:{PPR:88,Half:88,Standard:88},adp:20.5,ktcVal:824,note:"Week 7: Reserve DL · MIN · limited snaps"},
-  {name:"Shaq Barrett",pos:"DL",age:33,team:"FA",proj:{PPR:80,Half:80,Standard:80},adp:23.0,ktcVal:412,note:"Week 7: Reserve DL · FA · limited snaps"},
-  {name:"Harold Landry III",pos:"DL",age:30.2,team:"NE",proj:{PPR:72,Half:72,Standard:72},adp:24.0,ktcVal:1030,note:"Week 7: Reserve DL · NE · limited snaps"},
-  {name:"Uchenna Nwosu",pos:"DL",age:29.7,team:"SEA",proj:{PPR:88,Half:88,Standard:88},adp:20.8,ktcVal:2060,note:"Week 7: Reserve DL · SEA · limited snaps"},
-  {name:"Jeremiah Owusu-Koramoah",pos:"DL",age:26.8,team:"CLE",proj:{PPR:95,Half:95,Standard:95},adp:18.0,ktcVal:2266,note:"Week 7: Reserve DL · CLE · limited snaps"},
+  {name:"Trey Hendrickson",pos:"DL",age:31.7,team:"BAL",proj:{PPR:128,Half:128,Standard:128},adp:11.2,ktcVal:3193,note:"15 sack pace · elite edge"},
+  {name:"Khalil Mack",pos:"DL",age:35.5,team:"LAC",proj:{PPR:112,Half:112,Standard:112},adp:13.5,ktcVal:1236,note:"Veteran pass rusher · 10+ sacks"},
+  {name:"Kayvon Thibodeaux",pos:"DL",age:25.7,team:"NYG",proj:{PPR:115,Half:115,Standard:115},adp:12.8,ktcVal:3914,note:"Year 4 breakout edge"},
+  {name:"Gregory Rousseau",pos:"DL",age:26,team:"BUF",proj:{PPR:112,Half:112,Standard:112},adp:13.2,ktcVal:3605,note:"BUF edge · 10 sacks"},
+  {name:"Chase Young",pos:"DL",age:27.4,team:"NO",proj:{PPR:108,Half:108,Standard:108},adp:14.2,ktcVal:2884,note:"NO edge · resurgent"},
+  {name:"Quinnen Williams",pos:"DL",age:28.7,team:"DAL",proj:{PPR:105,Half:105,Standard:105},adp:14.8,ktcVal:2678,note:"IDL: 75 tackles 9 sacks"},
+  {name:"Kenny Clark",pos:"DL",age:30.9,team:"GB",proj:{PPR:105,Half:105,Standard:105},adp:15.2,ktcVal:1854,note:"GB IDL anchor: 50 tackles 6 sacks"},
+  {name:"Nnamdi Madubuike",pos:"DL",age:28.8,team:"BAL",proj:{PPR:102,Half:102,Standard:102},adp:15.8,ktcVal:2884,note:"BAL IDL: 48 tackles 8 sacks"},
+  {name:"Derrick Brown",pos:"DL",age:28.4,team:"CAR",proj:{PPR:102,Half:102,Standard:102},adp:16.2,ktcVal:2060,note:"CAR IDL: 55 tackles 5 sacks"},
+  {name:"Javon Hargrave",pos:"DL",age:33.6,team:"MIN",proj:{PPR:100,Half:100,Standard:100},adp:16.8,ktcVal:1545,note:"SF IDL: 48 tackles 7 sacks"},
+  {name:"Travon Walker",pos:"DL",age:25.7,team:"JAX",proj:{PPR:98,Half:98,Standard:98},adp:17.5,ktcVal:2575,note:"JAX edge developing"},
+  {name:"Azeez Ojulari",pos:"DL",age:26.2,team:"NYG",proj:{PPR:96,Half:96,Standard:96},adp:18.2,ktcVal:3605,note:"NYG edge: 9 sacks upside"},
+  {name:"Yannick Ngakoue",pos:"DL",age:31.4,team:"LV",proj:{PPR:94,Half:94,Standard:94},adp:18.8,ktcVal:1236,note:"Veteran edge: 9 sacks"},
+  {name:"Carl Lawson",pos:"DL",age:31.2,team:"NYJ",proj:{PPR:92,Half:92,Standard:92},adp:19.5,ktcVal:1545,note:"NYJ edge pass rusher"},
+  {name:"Grady Jarrett",pos:"DL",age:33.3,team:"CHI",proj:{PPR:96,Half:96,Standard:96},adp:18.5,ktcVal:1854,note:"Veteran IDL: 48 tackles 6 sacks"},
+  {name:"Matthew Judon",pos:"DL",age:34,team:"FA",proj:{PPR:100,Half:100,Standard:100},adp:16.5,ktcVal:1236,note:"Edge: 9 sacks veteran"},
+  {name:"Von Miller",pos:"DL",age:37.4,team:"BUF",proj:{PPR:82,Half:82,Standard:82},adp:22.0,ktcVal:412,note:"Aging edge · injury risk"},
+  {name:"Marcus Davenport",pos:"DL",age:30,team:"MIN",proj:{PPR:88,Half:88,Standard:88},adp:20.5,ktcVal:824,note:"MIN edge: health is key"},
+  {name:"Shaq Barrett",pos:"DL",age:33,team:"FA",proj:{PPR:80,Half:80,Standard:80},adp:23.0,ktcVal:412,note:"Veteran pass rusher · free agent"},
+  {name:"Harold Landry III",pos:"DL",age:30.2,team:"NE",proj:{PPR:72,Half:72,Standard:72},adp:24.0,ktcVal:1030,note:"PUP list — misses first 4 games minimum. IDP pivot to Keion White or Josh Uche."},
+  {name:"Uchenna Nwosu",pos:"DL",age:29.7,team:"SEA",proj:{PPR:88,Half:88,Standard:88},adp:20.8,ktcVal:2060,note:"SEA edge rusher"},
+  {name:"Jeremiah Owusu-Koramoah",pos:"DL",age:26.8,team:"CLE",proj:{PPR:95,Half:95,Standard:95},adp:18.0,ktcVal:2266,note:"CLE hybrid: 90 tackles 5 sacks"},
   // LB Wave 2 — coverage and tackling depth
-  {name:"Tremaine Edmunds",pos:"LB",age:28.3,team:"NYG",proj:{PPR:128,Half:128,Standard:128},adp:11.5,ktcVal:2060,note:"Week 7: Reserve LB · NYG · limited value"},
-  {name:"Lavonte David",pos:"LB",age:36.6,team:"TB",proj:{PPR:115,Half:115,Standard:115},adp:13.8,ktcVal:824,note:"Week 7: Reserve LB · TB · limited value"},
-  {name:"Nate Landman",pos:"LB",age:27.8,team:"ATL",proj:{PPR:118,Half:118,Standard:118},adp:13.2,ktcVal:1545,note:"Week 7: Reserve LB · ATL · limited value"},
-  {name:"Alex Anzalone",pos:"LB",age:31.9,team:"TB",proj:{PPR:112,Half:112,Standard:112},adp:14.5,ktcVal:824,note:"Week 7: Reserve LB · TB · limited value"},
-  {name:"Josey Jewell",pos:"LB",age:31.7,team:"DEN",proj:{PPR:108,Half:108,Standard:108},adp:15.2,ktcVal:1545,note:"Week 7: Reserve LB · DEN · limited value"},
-  {name:"Isaiah Simmons",pos:"LB",age:28.1,team:"NYG",proj:{PPR:105,Half:105,Standard:105},adp:15.8,ktcVal:1854,note:"Week 7: Reserve LB · NYG · limited value"},
-  {name:"Frankie Luvu",pos:"LB",age:29.9,team:"WAS",proj:{PPR:102,Half:102,Standard:102},adp:16.5,ktcVal:927,note:"Week 7: Reserve LB · WAS · limited value"},
-  {name:"Micah McFadden",pos:"LB",age:26.7,team:"NYG",proj:{PPR:100,Half:100,Standard:100},adp:17.2,ktcVal:1854,note:"Week 7: Reserve LB · NYG · limited value"},
-  {name:"Zach Cunningham",pos:"LB",age:31.7,team:"FA",proj:{PPR:98,Half:98,Standard:98},adp:17.8,ktcVal:1030,note:"Week 7: Reserve LB · FA · limited value"},
-  {name:"Cody Barton",pos:"LB",age:29.8,team:"WAS",proj:{PPR:95,Half:95,Standard:95},adp:18.5,ktcVal:1030,note:"Week 7: Reserve LB · WAS · limited value"},
-  {name:"Shaquille Leonard",pos:"LB",age:31.1,team:"FA",proj:{PPR:105,Half:105,Standard:105},adp:15.5,ktcVal:618,note:"Week 7: Reserve LB · FA · limited value"},
-  {name:"Deion Jones",pos:"LB",age:31.8,team:"CLE",proj:{PPR:92,Half:92,Standard:92},adp:19.5,ktcVal:824,note:"Week 7: Reserve LB · CLE · limited value"},
-  {name:"Eric Wilson",pos:"LB",age:31.9,team:"PHI",proj:{PPR:90,Half:90,Standard:90},adp:20.2,ktcVal:721,note:"Week 7: Reserve LB · PHI · limited value"},
-  {name:"Troy Andersen",pos:"LB",age:27.3,team:"ATL",proj:{PPR:98,Half:98,Standard:98},adp:18.0,ktcVal:2575,note:"Week 7: Reserve LB · ATL · limited value"},
-  {name:"Pete Werner",pos:"LB",age:27.2,team:"NO",proj:{PPR:95,Half:95,Standard:95},adp:18.8,ktcVal:1854,note:"Week 7: Reserve LB · NO · limited value"},
-  {name:"Nicholas Morrow",pos:"LB",age:31.1,team:"CHI",proj:{PPR:88,Half:88,Standard:88},adp:20.5,ktcVal:721,note:"Week 7: Reserve LB · CHI · limited value"},
+  {name:"Tremaine Edmunds",pos:"LB",age:28.3,team:"NYG",proj:{PPR:128,Half:128,Standard:128},adp:11.5,ktcVal:2060,note:"NYG LB: 140 tackles 2 INT"},
+  {name:"Lavonte David",pos:"LB",age:36.6,team:"TB",proj:{PPR:115,Half:115,Standard:115},adp:13.8,ktcVal:824,note:"Veteran: 130 tackles 2 INT"},
+  {name:"Nate Landman",pos:"LB",age:27.8,team:"ATL",proj:{PPR:118,Half:118,Standard:118},adp:13.2,ktcVal:1545,note:"ATL LB: 135 tackles"},
+  {name:"Alex Anzalone",pos:"LB",age:31.9,team:"TB",proj:{PPR:112,Half:112,Standard:112},adp:14.5,ktcVal:824,note:"TB LB: 125 tackles 2 sacks"},
+  {name:"Josey Jewell",pos:"LB",age:31.7,team:"DEN",proj:{PPR:108,Half:108,Standard:108},adp:15.2,ktcVal:1545,note:"DEN LB: 120 tackles"},
+  {name:"Isaiah Simmons",pos:"LB",age:28.1,team:"NYG",proj:{PPR:105,Half:105,Standard:105},adp:15.8,ktcVal:1854,note:"Hybrid LB/DB: 100 tackles 3 INT"},
+  {name:"Frankie Luvu",pos:"LB",age:29.9,team:"WAS",proj:{PPR:102,Half:102,Standard:102},adp:16.5,ktcVal:927,note:"WAS LB: 110 tackles 4 sacks"},
+  {name:"Micah McFadden",pos:"LB",age:26.7,team:"NYG",proj:{PPR:100,Half:100,Standard:100},adp:17.2,ktcVal:1854,note:"NYG LB: 115 tackles"},
+  {name:"Zach Cunningham",pos:"LB",age:31.7,team:"FA",proj:{PPR:98,Half:98,Standard:98},adp:17.8,ktcVal:1030,note:"TEN LB: 115 tackles veteran"},
+  {name:"Cody Barton",pos:"LB",age:29.8,team:"WAS",proj:{PPR:95,Half:95,Standard:95},adp:18.5,ktcVal:1030,note:"WAS LB: 110 tackles"},
+  {name:"Shaquille Leonard",pos:"LB",age:31.1,team:"FA",proj:{PPR:105,Half:105,Standard:105},adp:15.5,ktcVal:618,note:"IND LB: health risk · 120 tackles upside"},
+  {name:"Deion Jones",pos:"LB",age:31.8,team:"CLE",proj:{PPR:92,Half:92,Standard:92},adp:19.5,ktcVal:824,note:"Veteran coverage LB"},
+  {name:"Eric Wilson",pos:"LB",age:31.9,team:"PHI",proj:{PPR:90,Half:90,Standard:90},adp:20.2,ktcVal:721,note:"PHI LB: 105 tackles"},
+  {name:"Troy Andersen",pos:"LB",age:27.3,team:"ATL",proj:{PPR:98,Half:98,Standard:98},adp:18.0,ktcVal:2575,note:"ATL LB: athletic upside"},
+  {name:"Pete Werner",pos:"LB",age:27.2,team:"NO",proj:{PPR:95,Half:95,Standard:95},adp:18.8,ktcVal:1854,note:"NO LB: 115 tackles"},
+  {name:"Nicholas Morrow",pos:"LB",age:31.1,team:"CHI",proj:{PPR:88,Half:88,Standard:88},adp:20.5,ktcVal:721,note:"CHI LB: 105 tackles"},
   // DB Wave 2 — CBs and safeties
-  {name:"L'Jarius Sneed",pos:"DB",age:29.6,team:"FA",proj:{PPR:118,Half:118,Standard:118},adp:13.8,ktcVal:3296,note:"Week 7: Reserve DB · FA · depth"},
-  {name:"Marlon Humphrey",pos:"DB",age:30.1,team:"BAL",proj:{PPR:115,Half:115,Standard:115},adp:14.2,ktcVal:3090,note:"Week 7: Reserve DB · BAL · depth"},
-  {name:"Charvarius Ward",pos:"DB",age:30.3,team:"SF",proj:{PPR:112,Half:112,Standard:112},adp:14.8,ktcVal:2575,note:"Week 7: Reserve DB · SF · depth"},
-  {name:"Xavien Howard",pos:"DB",age:33.2,team:"MIA",proj:{PPR:110,Half:110,Standard:110},adp:15.5,ktcVal:1545,note:"Week 7: Reserve DB · MIA · depth"},
-  {name:"Marshon Lattimore",pos:"DB",age:30.3,team:"FA",proj:{PPR:108,Half:108,Standard:108},adp:16.0,ktcVal:1854,note:"Week 7: Reserve DB · FA · depth"},
-  {name:"Harrison Smith",pos:"DB",age:37.6,team:"NO",proj:{PPR:105,Half:105,Standard:105},adp:16.5,ktcVal:1030,note:"Week 7: Reserve DB · NO · depth"},
-  {name:"Jalen Ramsey",pos:"DB",age:31.8,team:"MIA",proj:{PPR:105,Half:105,Standard:105},adp:16.5,ktcVal:1545,note:"Week 7: Reserve DB · MIA · depth"},
-  {name:"Quandre Diggs",pos:"DB",age:33.6,team:"SEA",proj:{PPR:102,Half:102,Standard:102},adp:17.2,ktcVal:1545,note:"Week 7: Reserve DB · SEA · depth"},
-  {name:"Jabrill Peppers",pos:"DB",age:30.9,team:"NE",proj:{PPR:100,Half:100,Standard:100},adp:17.8,ktcVal:1545,note:"Week 7: Reserve DB · NE · depth"},
-  {name:"Tyrann Mathieu",pos:"DB",age:34.3,team:"NO",proj:{PPR:98,Half:98,Standard:98},adp:18.2,ktcVal:824,note:"Week 7: Reserve DB · NO · depth"},
-  {name:"Tre'Davious White",pos:"DB",age:31.6,team:"LAR",proj:{PPR:96,Half:96,Standard:96},adp:18.8,ktcVal:1030,note:"Week 7: Reserve DB · LAR · depth"},
-  {name:"Eddie Jackson",pos:"DB",age:32.7,team:"CHI",proj:{PPR:95,Half:95,Standard:95},adp:19.2,ktcVal:1030,note:"Week 7: Reserve DB · CHI · depth"},
-  {name:"Vonn Bell",pos:"DB",age:31.7,team:"CIN",proj:{PPR:92,Half:92,Standard:92},adp:19.8,ktcVal:824,note:"Week 7: Reserve DB · CIN · depth"},
-  {name:"Marcus Peters",pos:"DB",age:33.6,team:"FA",proj:{PPR:90,Half:90,Standard:90},adp:20.5,ktcVal:412,note:"Week 7: Reserve DB · FA · depth"},
-  {name:"Chamarri Conner",pos:"DB",age:26.1,team:"WAS",proj:{PPR:98,Half:98,Standard:98},adp:18.0,ktcVal:2060,note:"Week 7: Reserve DB · WAS · depth"},
-  {name:"Kam Curl",pos:"DB",age:27.4,team:"LAR",proj:{PPR:100,Half:100,Standard:100},adp:17.5,ktcVal:3914,note:"Week 7: Reserve DB · LAR · depth"},
-  {name:"Jevon Holland",pos:"DB",age:26.5,team:"MIA",proj:{PPR:105,Half:105,Standard:105},adp:16.2,ktcVal:3090,note:"Week 7: Reserve DB · MIA · depth"},
-  {name:"Marcus Williams",pos:"DB",age:30,team:"BAL",proj:{PPR:98,Half:98,Standard:98},adp:17.8,ktcVal:1545,note:"Week 7: Reserve DB · BAL · depth"},
-  {name:"Xavier McKinney",pos:"DB",age:28.1,team:"NYG",proj:{PPR:108,Half:108,Standard:108},adp:15.8,ktcVal:3605,note:"Week 7: Reserve DB · NYG · depth"},
-  {name:"Nick Scott",pos:"DB",age:31.3,team:"LAR",proj:{PPR:88,Half:88,Standard:88},adp:20.8,ktcVal:824,note:"Week 7: Reserve DB · LAR · depth"},
-  {name:"Darnell Savage",pos:"DB",age:29.1,team:"PIT",proj:{PPR:90,Half:90,Standard:90},adp:20.2,ktcVal:1545,note:"Week 7: Reserve DB · PIT · depth"},
-  {name:"Talanoa Hufanga",pos:"DB",age:26.6,team:"SF",proj:{PPR:95,Half:95,Standard:95},adp:19.0,ktcVal:1854,note:"Week 7: Reserve DB · SF · depth"},
-  {name:"Jaquan Brisker",pos:"DB",age:27.4,team:"CHI",proj:{PPR:100,Half:100,Standard:100},adp:17.2,ktcVal:2884,note:"Week 7: Reserve DB · CHI · depth"},
-  {name:"Jaylen Watson",pos:"DB",age:27.9,team:"KC",proj:{PPR:92,Half:92,Standard:92},adp:19.5,ktcVal:1648,note:"Week 7: Reserve DB · KC · depth"},
-  {name:"Tre Brown",pos:"DB",age:28.9,team:"SEA",proj:{PPR:88,Half:88,Standard:88},adp:21.0,ktcVal:927,note:"Week 7: Reserve DB · SEA · depth"},
+  {name:"L'Jarius Sneed",pos:"DB",age:29.6,team:"FA",proj:{PPR:118,Half:118,Standard:118},adp:13.8,ktcVal:3296,note:"TEN CB: 75 tackles 5 INT"},
+  {name:"Marlon Humphrey",pos:"DB",age:30.1,team:"BAL",proj:{PPR:115,Half:115,Standard:115},adp:14.2,ktcVal:3090,note:"BAL CB: 70 tackles 4 INT"},
+  {name:"Charvarius Ward",pos:"DB",age:30.3,team:"SF",proj:{PPR:112,Half:112,Standard:112},adp:14.8,ktcVal:2575,note:"SF CB: 68 tackles 4 INT"},
+  {name:"Xavien Howard",pos:"DB",age:33.2,team:"MIA",proj:{PPR:110,Half:110,Standard:110},adp:15.5,ktcVal:1545,note:"MIA CB: 60 tackles 5 INT veteran"},
+  {name:"Marshon Lattimore",pos:"DB",age:30.3,team:"FA",proj:{PPR:108,Half:108,Standard:108},adp:16.0,ktcVal:1854,note:"WAS CB: 65 tackles 4 INT"},
+  {name:"Harrison Smith",pos:"DB",age:37.6,team:"NO",proj:{PPR:105,Half:105,Standard:105},adp:16.5,ktcVal:1030,note:"NO S veteran: 95 tackles 3 INT"},
+  {name:"Jalen Ramsey",pos:"DB",age:31.8,team:"MIA",proj:{PPR:105,Half:105,Standard:105},adp:16.5,ktcVal:1545,note:"MIA CB: 60 tackles 3 INT aging"},
+  {name:"Quandre Diggs",pos:"DB",age:33.6,team:"SEA",proj:{PPR:102,Half:102,Standard:102},adp:17.2,ktcVal:1545,note:"SEA S: 90 tackles 4 INT"},
+  {name:"Jabrill Peppers",pos:"DB",age:30.9,team:"NE",proj:{PPR:100,Half:100,Standard:100},adp:17.8,ktcVal:1545,note:"NE S: 95 tackles 3 INT"},
+  {name:"Tyrann Mathieu",pos:"DB",age:34.3,team:"NO",proj:{PPR:98,Half:98,Standard:98},adp:18.2,ktcVal:824,note:"Veteran honey badger: 85 tackles 3 INT"},
+  {name:"Tre'Davious White",pos:"DB",age:31.6,team:"LAR",proj:{PPR:96,Half:96,Standard:96},adp:18.8,ktcVal:1030,note:"LAR CB: 60 tackles 4 INT"},
+  {name:"Eddie Jackson",pos:"DB",age:32.7,team:"CHI",proj:{PPR:95,Half:95,Standard:95},adp:19.2,ktcVal:1030,note:"CHI S: 85 tackles 3 INT"},
+  {name:"Vonn Bell",pos:"DB",age:31.7,team:"CIN",proj:{PPR:92,Half:92,Standard:92},adp:19.8,ktcVal:824,note:"CIN S: 88 tackles 2 INT"},
+  {name:"Marcus Peters",pos:"DB",age:33.6,team:"FA",proj:{PPR:90,Half:90,Standard:90},adp:20.5,ktcVal:412,note:"Veteran CB: high INT upside"},
+  {name:"Chamarri Conner",pos:"DB",age:26.1,team:"WAS",proj:{PPR:98,Half:98,Standard:98},adp:18.0,ktcVal:2060,note:"WAS S: 100 tackles 3 INT upside"},
+  {name:"Kam Curl",pos:"DB",age:27.4,team:"LAR",proj:{PPR:100,Half:100,Standard:100},adp:17.5,ktcVal:3914,note:"LAR S: 98 tackles 3 INT"},
+  {name:"Jevon Holland",pos:"DB",age:26.5,team:"MIA",proj:{PPR:105,Half:105,Standard:105},adp:16.2,ktcVal:3090,note:"MIA S: 95 tackles 4 INT"},
+  {name:"Marcus Williams",pos:"DB",age:30,team:"BAL",proj:{PPR:98,Half:98,Standard:98},adp:17.8,ktcVal:1545,note:"BAL S: 90 tackles 3 INT"},
+  {name:"Xavier McKinney",pos:"DB",age:28.1,team:"NYG",proj:{PPR:108,Half:108,Standard:108},adp:15.8,ktcVal:3605,note:"NYG S: 95 tackles 5 INT"},
+  {name:"Nick Scott",pos:"DB",age:31.3,team:"LAR",proj:{PPR:88,Half:88,Standard:88},adp:20.8,ktcVal:824,note:"LAR S: 80 tackles 2 INT"},
+  {name:"Darnell Savage",pos:"DB",age:29.1,team:"PIT",proj:{PPR:90,Half:90,Standard:90},adp:20.2,ktcVal:1545,note:"PIT S: 82 tackles 3 INT"},
+  {name:"Talanoa Hufanga",pos:"DB",age:26.6,team:"SF",proj:{PPR:95,Half:95,Standard:95},adp:19.0,ktcVal:1854,note:"SF S: 88 tackles 3 INT"},
+  {name:"Jaquan Brisker",pos:"DB",age:27.4,team:"CHI",proj:{PPR:100,Half:100,Standard:100},adp:17.2,ktcVal:2884,note:"CHI S: 92 tackles 4 INT upside"},
+  {name:"Jaylen Watson",pos:"DB",age:27.9,team:"KC",proj:{PPR:92,Half:92,Standard:92},adp:19.5,ktcVal:1648,note:"KC CB: 65 tackles 3 INT"},
+  {name:"Tre Brown",pos:"DB",age:28.9,team:"SEA",proj:{PPR:88,Half:88,Standard:88},adp:21.0,ktcVal:927,note:"SEA CB: 55 tackles 3 INT"},
   // DB Wave 3 — elite CBs and ascending safeties
-  {name:"A.J. Terrell",pos:"DB",age:27.9,team:"ATL",proj:{PPR:120,Half:120,Standard:120},adp:13.2,ktcVal:3605,note:"Week 7: Reserve DB · ATL · depth"},
-  {name:"Tariq Woolen",pos:"DB",age:26,team:"PHI",proj:{PPR:115,Half:115,Standard:115},adp:13.8,ktcVal:3296,note:"Week 7: Reserve DB · PHI · depth"},
-  {name:"Paulson Adebo",pos:"DB",age:27.2,team:"NO",proj:{PPR:110,Half:110,Standard:110},adp:14.5,ktcVal:2575,note:"Week 7: Reserve DB · NO · depth"},
-  {name:"Roger McCreary",pos:"DB",age:26.5,team:"DET",proj:{PPR:108,Half:108,Standard:108},adp:15.2,ktcVal:2575,note:"Week 7: Reserve DB · DET · depth"},
-  {name:"Adoree' Jackson",pos:"DB",age:30.9,team:"LAR",proj:{PPR:105,Half:105,Standard:105},adp:15.8,ktcVal:1236,note:"Week 7: Reserve DB · LAR · depth"},
-  {name:"Asante Samuel Jr.",pos:"DB",age:26.9,team:"LAC",proj:{PPR:102,Half:102,Standard:102},adp:16.5,ktcVal:2575,note:"Week 7: Reserve DB · LAC · depth"},
-  {name:"Damar Hamlin",pos:"DB",age:28.4,team:"BUF",proj:{PPR:98,Half:98,Standard:98},adp:17.2,ktcVal:1545,note:"Week 7: Reserve DB · BUF · depth"},
-  {name:"Mike Hilton",pos:"DB",age:32.5,team:"CIN",proj:{PPR:100,Half:100,Standard:100},adp:16.8,ktcVal:1236,note:"Week 7: Reserve DB · CIN · depth"},
-  {name:"Elijah Molden",pos:"DB",age:27.6,team:"TEN",proj:{PPR:95,Half:95,Standard:95},adp:17.8,ktcVal:1545,note:"Week 7: Reserve DB · TEN · depth"},
-  {name:"Jordan Fuller",pos:"DB",age:28.5,team:"LAR",proj:{PPR:92,Half:92,Standard:92},adp:18.5,ktcVal:1030,note:"Week 7: Reserve DB · LAR · depth"},
-  {name:"Donte Jackson",pos:"DB",age:30.8,team:"LAR",proj:{PPR:90,Half:90,Standard:90},adp:19.2,ktcVal:1236,note:"Week 7: Reserve DB · LAR · depth"},
-  {name:"Ambry Thomas",pos:"DB",age:27,team:"SF",proj:{PPR:88,Half:88,Standard:88},adp:19.8,ktcVal:1030,note:"Week 7: Reserve DB · SF · depth"},
-  {name:"Caden Sterns",pos:"DB",age:26.8,team:"DEN",proj:{PPR:92,Half:92,Standard:92},adp:18.8,ktcVal:1442,note:"Week 7: Reserve DB · DEN · depth"},
-  {name:"Demarvin Leal",pos:"DB",age:26.2,team:"PIT",proj:{PPR:88,Half:88,Standard:88},adp:20.5,ktcVal:1236,note:"Week 7: Reserve DB · PIT · depth"},
-  {name:"Josh Metellus",pos:"DB",age:27,team:"DET",proj:{PPR:90,Half:90,Standard:90},adp:19.5,ktcVal:1030,note:"Week 7: Reserve DB · DET · depth"},
-  {name:"Andrew Wingard",pos:"DB",age:29.7,team:"JAX",proj:{PPR:85,Half:85,Standard:85},adp:21.2,ktcVal:721,note:"Week 7: Reserve DB · JAX · depth"},
-  {name:"Trevon Hill",pos:"DB",age:25,team:"FA",proj:{PPR:82,Half:82,Standard:82},adp:22.0,ktcVal:927,note:"Week 7: Reserve DB · FA · depth"},
+  {name:"A.J. Terrell",pos:"DB",age:27.9,team:"ATL",proj:{PPR:120,Half:120,Standard:120},adp:13.2,ktcVal:3605,note:"ATL CB elite: 68 tackles 5 INT"},
+  {name:"Tariq Woolen",pos:"DB",age:26,team:"PHI",proj:{PPR:115,Half:115,Standard:115},adp:13.8,ktcVal:3296,note:"PHI CB: 62 tackles 6 INT speed"},
+  {name:"Paulson Adebo",pos:"DB",age:27.2,team:"NO",proj:{PPR:110,Half:110,Standard:110},adp:14.5,ktcVal:2575,note:"NO CB: 65 tackles 5 INT"},
+  {name:"Roger McCreary",pos:"DB",age:26.5,team:"DET",proj:{PPR:108,Half:108,Standard:108},adp:15.2,ktcVal:2575,note:"DET CB: 62 tackles 4 INT"},
+  {name:"Adoree' Jackson",pos:"DB",age:30.9,team:"LAR",proj:{PPR:105,Half:105,Standard:105},adp:15.8,ktcVal:1236,note:"LAR CB: 60 tackles 3 INT"},
+  {name:"Asante Samuel Jr.",pos:"DB",age:26.9,team:"LAC",proj:{PPR:102,Half:102,Standard:102},adp:16.5,ktcVal:2575,note:"LAC CB: 58 tackles 4 INT"},
+  {name:"Damar Hamlin",pos:"DB",age:28.4,team:"BUF",proj:{PPR:98,Half:98,Standard:98},adp:17.2,ktcVal:1545,note:"BUF S: 88 tackles 2 INT"},
+  {name:"Mike Hilton",pos:"DB",age:32.5,team:"CIN",proj:{PPR:100,Half:100,Standard:100},adp:16.8,ktcVal:1236,note:"CIN nickel CB: 72 tackles 3 INT"},
+  {name:"Elijah Molden",pos:"DB",age:27.6,team:"TEN",proj:{PPR:95,Half:95,Standard:95},adp:17.8,ktcVal:1545,note:"TEN nickel: 85 tackles 3 INT"},
+  {name:"Jordan Fuller",pos:"DB",age:28.5,team:"LAR",proj:{PPR:92,Half:92,Standard:92},adp:18.5,ktcVal:1030,note:"LAR S: 82 tackles 2 INT"},
+  {name:"Donte Jackson",pos:"DB",age:30.8,team:"LAR",proj:{PPR:90,Half:90,Standard:90},adp:19.2,ktcVal:1236,note:"LAR CB: 55 tackles 4 INT"},
+  {name:"Ambry Thomas",pos:"DB",age:27,team:"SF",proj:{PPR:88,Half:88,Standard:88},adp:19.8,ktcVal:1030,note:"SF CB: 60 tackles 3 INT"},
+  {name:"Caden Sterns",pos:"DB",age:26.8,team:"DEN",proj:{PPR:92,Half:92,Standard:92},adp:18.8,ktcVal:1442,note:"DEN S: 85 tackles 2 INT upside"},
+  {name:"Demarvin Leal",pos:"DB",age:26.2,team:"PIT",proj:{PPR:88,Half:88,Standard:88},adp:20.5,ktcVal:1236,note:"PIT hybrid: 78 tackles 3 sacks"},
+  {name:"Josh Metellus",pos:"DB",age:27,team:"DET",proj:{PPR:90,Half:90,Standard:90},adp:19.5,ktcVal:1030,note:"DET S: 82 tackles 2 INT"},
+  {name:"Andrew Wingard",pos:"DB",age:29.7,team:"JAX",proj:{PPR:85,Half:85,Standard:85},adp:21.2,ktcVal:721,note:"JAX S: 78 tackles"},
+  {name:"Trevon Hill",pos:"DB",age:25,team:"FA",proj:{PPR:82,Half:82,Standard:82},adp:22.0,ktcVal:927,note:"Ascending CB: 60 tackles 3 INT"},
   // DL Wave 3 — IDL depth and rising edge rushers
-  {name:"Montez Sweat",pos:"DL",age:30,team:"CHI",proj:{PPR:110,Half:110,Standard:110},adp:14.0,ktcVal:3296,note:"Week 7: Reserve DL · CHI · limited snaps"},
-  {name:"A.J. Epenesa",pos:"DL",age:28,team:"CLE",proj:{PPR:98,Half:98,Standard:98},adp:17.0,ktcVal:1854,note:"Week 7: Reserve DL · CLE · limited snaps"},
-  {name:"Bryan Bresee",pos:"DL",age:24.9,team:"NO",proj:{PPR:95,Half:95,Standard:95},adp:17.5,ktcVal:2575,note:"Week 7: Reserve DL · NO · limited snaps"},
-  {name:"Larry Ogunjobi",pos:"DL",age:32.2,team:"GB",proj:{PPR:92,Half:92,Standard:92},adp:18.5,ktcVal:1545,note:"Week 7: Reserve DL · GB · limited snaps"},
-  {name:"Zach Sieler",pos:"DL",age:31,team:"MIA",proj:{PPR:90,Half:90,Standard:90},adp:19.0,ktcVal:1442,note:"Week 7: Reserve DL · MIA · limited snaps"},
-  {name:"Poona Ford",pos:"DL",age:30.8,team:"ATL",proj:{PPR:88,Half:88,Standard:88},adp:19.8,ktcVal:1236,note:"Week 7: Reserve DL · ATL · limited snaps"},
-  {name:"Isaiah Thomas",pos:"DL",age:27.7,team:"BAL",proj:{PPR:85,Half:85,Standard:85},adp:20.5,ktcVal:1854,note:"Week 7: Reserve DL · BAL · limited snaps"},
-  {name:"Arden Key",pos:"DL",age:30.3,team:"SF",proj:{PPR:88,Half:88,Standard:88},adp:20.0,ktcVal:927,note:"Week 7: Reserve DL · SF · limited snaps"},
-  {name:"Ross Blacklock",pos:"DL",age:28.1,team:"HOU",proj:{PPR:85,Half:85,Standard:85},adp:20.8,ktcVal:1030,note:"Week 7: Reserve DL · HOU · limited snaps"},
-  {name:"DaVon Hamilton",pos:"DL",age:29.6,team:"JAX",proj:{PPR:88,Half:88,Standard:88},adp:20.2,ktcVal:1236,note:"Week 7: Reserve DL · JAX · limited snaps"},
-  {name:"Tyquan Lewis",pos:"DL",age:31.6,team:"IND",proj:{PPR:82,Half:82,Standard:82},adp:21.5,ktcVal:824,note:"Week 7: Reserve DL · IND · limited snaps"},
-  {name:"Samson Ebukam",pos:"DL",age:31.3,team:"SF",proj:{PPR:80,Half:80,Standard:80},adp:22.0,ktcVal:721,note:"Week 7: Reserve DL · SF · limited snaps"},
-  {name:"Janarius Robinson",pos:"DL",age:28.3,team:"MIN",proj:{PPR:78,Half:78,Standard:78},adp:23.0,ktcVal:927,note:"Week 7: Reserve DL · MIN · limited snaps"},
-  {name:"Joseph Ossai",pos:"DL",age:26.4,team:"HOU",proj:{PPR:92,Half:92,Standard:92},adp:18.2,ktcVal:2060,note:"Week 7: Reserve DL · HOU · limited snaps"},
-  {name:"Dayo Odeyingbo",pos:"DL",age:26.9,team:"IND",proj:{PPR:88,Half:88,Standard:88},adp:19.5,ktcVal:2266,note:"Week 7: Reserve DL · IND · limited snaps"},
-  {name:"Laiatu Latu",pos:"DL",age:25.7,team:"IND",proj:{PPR:92,Half:92,Standard:92},adp:17.8,ktcVal:3605,note:"Week 7: Reserve DL · IND · limited snaps"},
-  {name:"Chop Robinson",pos:"DL",age:23.7,team:"MIA",proj:{PPR:88,Half:88,Standard:88},adp:19.2,ktcVal:3090,note:"Week 7: Reserve DL · MIA · limited snaps"},
-  {name:"Dallas Turner",pos:"DL",age:23.6,team:"MIN",proj:{PPR:90,Half:90,Standard:90},adp:18.8,ktcVal:3914,note:"Week 7: Reserve DL · MIN · limited snaps"},
-  {name:"Patrick Jones II",pos:"DL",age:27.9,team:"MIN",proj:{PPR:85,Half:85,Standard:85},adp:21.0,ktcVal:1854,note:"Week 7: Reserve DL · MIN · limited snaps"},
-  {name:"Taki Taimani",pos:"DL",age:26.9,team:"DET",proj:{PPR:80,Half:80,Standard:80},adp:22.5,ktcVal:721,note:"Week 7: Reserve DL · DET · limited snaps"},
+  {name:"Montez Sweat",pos:"DL",age:30,team:"CHI",proj:{PPR:110,Half:110,Standard:110},adp:14.0,ktcVal:3296,note:"CHI edge: 11 sacks strong"},
+  {name:"A.J. Epenesa",pos:"DL",age:28,team:"CLE",proj:{PPR:98,Half:98,Standard:98},adp:17.0,ktcVal:1854,note:"CLE edge: 8 sacks pass rusher"},
+  {name:"Bryan Bresee",pos:"DL",age:24.9,team:"NO",proj:{PPR:95,Half:95,Standard:95},adp:17.5,ktcVal:2575,note:"NO IDL Year 3: 50 tackles 6 sacks"},
+  {name:"Larry Ogunjobi",pos:"DL",age:32.2,team:"GB",proj:{PPR:92,Half:92,Standard:92},adp:18.5,ktcVal:1545,note:"GB IDL: 45 tackles 6 sacks"},
+  {name:"Zach Sieler",pos:"DL",age:31,team:"MIA",proj:{PPR:90,Half:90,Standard:90},adp:19.0,ktcVal:1442,note:"MIA IDL: 48 tackles 5 sacks"},
+  {name:"Poona Ford",pos:"DL",age:30.8,team:"ATL",proj:{PPR:88,Half:88,Standard:88},adp:19.8,ktcVal:1236,note:"ATL IDL: 42 tackles 5 sacks"},
+  {name:"Isaiah Thomas",pos:"DL",age:27.7,team:"BAL",proj:{PPR:85,Half:85,Standard:85},adp:20.5,ktcVal:1854,note:"BAL edge: 7 sacks developing"},
+  {name:"Arden Key",pos:"DL",age:30.3,team:"SF",proj:{PPR:88,Half:88,Standard:88},adp:20.0,ktcVal:927,note:"SF edge rotational: 7 sacks"},
+  {name:"Ross Blacklock",pos:"DL",age:28.1,team:"HOU",proj:{PPR:85,Half:85,Standard:85},adp:20.8,ktcVal:1030,note:"HOU IDL: 42 tackles 5 sacks"},
+  {name:"DaVon Hamilton",pos:"DL",age:29.6,team:"JAX",proj:{PPR:88,Half:88,Standard:88},adp:20.2,ktcVal:1236,note:"JAX IDL: 45 tackles 5 sacks"},
+  {name:"Tyquan Lewis",pos:"DL",age:31.6,team:"IND",proj:{PPR:82,Half:82,Standard:82},adp:21.5,ktcVal:824,note:"IND IDL: 40 tackles 5 sacks"},
+  {name:"Samson Ebukam",pos:"DL",age:31.3,team:"SF",proj:{PPR:80,Half:80,Standard:80},adp:22.0,ktcVal:721,note:"SF edge: 7 sacks rotational"},
+  {name:"Janarius Robinson",pos:"DL",age:28.3,team:"MIN",proj:{PPR:78,Half:78,Standard:78},adp:23.0,ktcVal:927,note:"MIN edge developing: 6 sacks"},
+  {name:"Joseph Ossai",pos:"DL",age:26.4,team:"HOU",proj:{PPR:92,Half:92,Standard:92},adp:18.2,ktcVal:2060,note:"HOU edge: 8 sacks breakout"},
+  {name:"Dayo Odeyingbo",pos:"DL",age:26.9,team:"IND",proj:{PPR:88,Half:88,Standard:88},adp:19.5,ktcVal:2266,note:"IND edge: 7 sacks developing"},
+  {name:"Laiatu Latu",pos:"DL",age:25.7,team:"IND",proj:{PPR:92,Half:92,Standard:92},adp:17.8,ktcVal:3605,note:"IND Year 2 edge: 9 sacks upside"},
+  {name:"Chop Robinson",pos:"DL",age:23.7,team:"MIA",proj:{PPR:88,Half:88,Standard:88},adp:19.2,ktcVal:3090,note:"MIA edge Year 2: 8 sacks"},
+  {name:"Dallas Turner",pos:"DL",age:23.6,team:"MIN",proj:{PPR:90,Half:90,Standard:90},adp:18.8,ktcVal:3914,note:"MIN edge Year 2: 9 sacks upside"},
+  {name:"Patrick Jones II",pos:"DL",age:27.9,team:"MIN",proj:{PPR:85,Half:85,Standard:85},adp:21.0,ktcVal:1854,note:"MIN edge: 7 sacks rotational"},
+  {name:"Taki Taimani",pos:"DL",age:26.9,team:"DET",proj:{PPR:80,Half:80,Standard:80},adp:22.5,ktcVal:721,note:"DET IDL developmental"},
   // LB Wave 3 — all-around coverage linebackers
-  {name:"Jalen Reeves-Maybin",pos:"LB",age:31.6,team:"DET",proj:{PPR:100,Half:100,Standard:100},adp:16.5,ktcVal:721,note:"Week 7: Reserve LB · DET · limited value"},
-  {name:"Tyrel Dodson",pos:"LB",age:28.2,team:"BUF",proj:{PPR:98,Half:98,Standard:98},adp:17.2,ktcVal:1545,note:"Week 7: Reserve LB · BUF · limited value"},
-  {name:"Jack Sanborn",pos:"LB",age:26.1,team:"CHI",proj:{PPR:95,Half:95,Standard:95},adp:18.0,ktcVal:1545,note:"Week 7: Reserve LB · CHI · limited value"},
-  {name:"Josh Ross",pos:"LB",age:26.8,team:"WAS",proj:{PPR:100,Half:100,Standard:100},adp:16.8,ktcVal:1854,note:"Week 7: Reserve LB · WAS · limited value"},
-  {name:"David Long Jr.",pos:"LB",age:29.9,team:"LAR",proj:{PPR:92,Half:92,Standard:92},adp:18.8,ktcVal:1030,note:"Week 7: Reserve LB · LAR · limited value"},
-  {name:"Anthony Walker Jr.",pos:"LB",age:31.1,team:"CLE",proj:{PPR:88,Half:88,Standard:88},adp:20.2,ktcVal:721,note:"Week 7: Reserve LB · CLE · limited value"},
-  {name:"Kwon Alexander",pos:"LB",age:32.1,team:"FA",proj:{PPR:88,Half:88,Standard:88},adp:20.5,ktcVal:618,note:"Week 7: Reserve LB · FA · limited value"},
-  {name:"Oren Burks",pos:"LB",age:31.4,team:"SF",proj:{PPR:85,Half:85,Standard:85},adp:21.0,ktcVal:618,note:"Week 7: Reserve LB · SF · limited value"},
-  {name:"Monty Rice",pos:"LB",age:27.6,team:"TB",proj:{PPR:88,Half:88,Standard:88},adp:20.8,ktcVal:1236,note:"Week 7: Reserve LB · TB · limited value"},
-  {name:"Chris Board",pos:"LB",age:31.1,team:"DET",proj:{PPR:82,Half:82,Standard:82},adp:22.0,ktcVal:618,note:"Week 7: Reserve LB · DET · limited value"},
-  {name:"Chazz Surratt",pos:"LB",age:29.5,team:"MIN",proj:{PPR:85,Half:85,Standard:85},adp:21.5,ktcVal:824,note:"Week 7: Reserve LB · MIN · limited value"},
-  {name:"Patrick Onwuasor",pos:"LB",age:34,team:"NYJ",proj:{PPR:80,Half:80,Standard:80},adp:23.0,ktcVal:515,note:"Week 7: Reserve LB · NYJ · limited value"},
-  {name:"Rayshawn Jenkins",pos:"LB",age:32.6,team:"JAX",proj:{PPR:90,Half:90,Standard:90},adp:19.8,ktcVal:1030,note:"Week 7: Reserve LB · JAX · limited value"},
-  {name:"Shaq Thompson",pos:"LB",age:32.4,team:"CAR",proj:{PPR:92,Half:92,Standard:92},adp:18.5,ktcVal:824,note:"Week 7: Reserve LB · CAR · limited value"},
-  {name:"Dont'a Hightower",pos:"LB",age:36.5,team:"FA",proj:{PPR:72,Half:72,Standard:72},adp:26.0,ktcVal:412,note:"Week 7: Reserve LB · FA · limited value"},
-  {name:"Jerome Baker",pos:"LB",age:29.7,team:"CLE",proj:{PPR:95,Half:95,Standard:95},adp:18.2,ktcVal:1236,note:"Week 7: Reserve LB · CLE · limited value"},
-  {name:"Elandon Roberts",pos:"LB",age:32.4,team:"MIA",proj:{PPR:82,Half:82,Standard:82},adp:22.5,ktcVal:824,note:"Week 7: Reserve LB · MIA · limited value"},
-  {name:"Blake Martinez",pos:"LB",age:32.6,team:"FA",proj:{PPR:78,Half:78,Standard:78},adp:24.0,ktcVal:618,note:"Week 7: Reserve LB · FA · limited value"},
-  {name:"Drew Sanders",pos:"LB",age:24.7,team:"DEN",proj:{PPR:95,Half:95,Standard:95},adp:18.5,ktcVal:2060,note:"Week 7: Reserve LB · DEN · limited value"},
-  {name:"Omar Khan",pos:"LB",age:24,team:"ARI",proj:{PPR:90,Half:90,Standard:90},adp:20.0,ktcVal:1648,note:"Week 7: Reserve LB · ARI · limited value"},
-  {name:"Kaden Elliss",pos:"LB",age:31.1,team:"ATL",proj:{PPR:88,Half:88,Standard:88},adp:20.5,ktcVal:1545,note:"Week 7: Reserve LB · ATL · limited value"},
+  {name:"Jalen Reeves-Maybin",pos:"LB",age:31.6,team:"DET",proj:{PPR:100,Half:100,Standard:100},adp:16.5,ktcVal:721,note:"DET LB: 118 tackles 2 INT"},
+  {name:"Tyrel Dodson",pos:"LB",age:28.2,team:"BUF",proj:{PPR:98,Half:98,Standard:98},adp:17.2,ktcVal:1545,note:"BUF LB: 115 tackles 2 sacks"},
+  {name:"Jack Sanborn",pos:"LB",age:26.1,team:"CHI",proj:{PPR:95,Half:95,Standard:95},adp:18.0,ktcVal:1545,note:"CHI LB: 112 tackles"},
+  {name:"Josh Ross",pos:"LB",age:26.8,team:"WAS",proj:{PPR:100,Half:100,Standard:100},adp:16.8,ktcVal:1854,note:"WAS LB: 115 tackles INT"},
+  {name:"David Long Jr.",pos:"LB",age:29.9,team:"LAR",proj:{PPR:92,Half:92,Standard:92},adp:18.8,ktcVal:1030,note:"LAR LB: 108 tackles 2 INT"},
+  {name:"Anthony Walker Jr.",pos:"LB",age:31.1,team:"CLE",proj:{PPR:88,Half:88,Standard:88},adp:20.2,ktcVal:721,note:"CLE LB: 102 tackles veteran"},
+  {name:"Kwon Alexander",pos:"LB",age:32.1,team:"FA",proj:{PPR:88,Half:88,Standard:88},adp:20.5,ktcVal:618,note:"Veteran LB: 100 tackles if healthy"},
+  {name:"Oren Burks",pos:"LB",age:31.4,team:"SF",proj:{PPR:85,Half:85,Standard:85},adp:21.0,ktcVal:618,note:"SF LB: 95 tackles coverage"},
+  {name:"Monty Rice",pos:"LB",age:27.6,team:"TB",proj:{PPR:88,Half:88,Standard:88},adp:20.8,ktcVal:1236,note:"TB LB: 100 tackles"},
+  {name:"Chris Board",pos:"LB",age:31.1,team:"DET",proj:{PPR:82,Half:82,Standard:82},adp:22.0,ktcVal:618,note:"DET LB: 90 tackles ST ace"},
+  {name:"Chazz Surratt",pos:"LB",age:29.5,team:"MIN",proj:{PPR:85,Half:85,Standard:85},adp:21.5,ktcVal:824,note:"MIN LB: 95 tackles coverage"},
+  {name:"Patrick Onwuasor",pos:"LB",age:34,team:"NYJ",proj:{PPR:80,Half:80,Standard:80},adp:23.0,ktcVal:515,note:"NYJ LB veteran: 88 tackles"},
+  {name:"Rayshawn Jenkins",pos:"LB",age:32.6,team:"JAX",proj:{PPR:90,Half:90,Standard:90},adp:19.8,ktcVal:1030,note:"JAX LB/S: 95 tackles 2 INT"},
+  {name:"Shaq Thompson",pos:"LB",age:32.4,team:"CAR",proj:{PPR:92,Half:92,Standard:92},adp:18.5,ktcVal:824,note:"CAR LB veteran: 108 tackles 2 INT"},
+  {name:"Dont'a Hightower",pos:"LB",age:36.5,team:"FA",proj:{PPR:72,Half:72,Standard:72},adp:26.0,ktcVal:412,note:"Veteran if active"},
+  {name:"Jerome Baker",pos:"LB",age:29.7,team:"CLE",proj:{PPR:95,Half:95,Standard:95},adp:18.2,ktcVal:1236,note:"CLE LB: 110 tackles 2 sacks"},
+  {name:"Elandon Roberts",pos:"LB",age:32.4,team:"MIA",proj:{PPR:82,Half:82,Standard:82},adp:22.5,ktcVal:824,note:"MIA LB: 92 tackles physical"},
+  {name:"Blake Martinez",pos:"LB",age:32.6,team:"FA",proj:{PPR:78,Half:78,Standard:78},adp:24.0,ktcVal:618,note:"Veteran FA: 100 tackles if rostered"},
+  {name:"Drew Sanders",pos:"LB",age:24.7,team:"DEN",proj:{PPR:95,Half:95,Standard:95},adp:18.5,ktcVal:2060,note:"DEN LB Year 2: 108 tackles 3 sacks"},
+  {name:"Omar Khan",pos:"LB",age:24,team:"ARI",proj:{PPR:90,Half:90,Standard:90},adp:20.0,ktcVal:1648,note:"ARI LB developing: 100 tackles"},
+  {name:"Kaden Elliss",pos:"LB",age:31.1,team:"ATL",proj:{PPR:88,Half:88,Standard:88},adp:20.5,ktcVal:1545,note:"ATL LB: 102 tackles 2 INT"},
   // DL Wave 4 — 2024 rookies & rising stars
-  {name:"Jared Verse",pos:"DL",age:25.8,team:"LAR",proj:{PPR:128,Half:128,Standard:128},adp:10.2,ktcVal:4635,note:"Week 7: Reserve DL · LAR · limited snaps"},
-  {name:"Braden Fiske",pos:"DL",age:26.6,team:"LAR",proj:{PPR:95,Half:95,Standard:95},adp:17.5,ktcVal:3090,note:"Week 7: Reserve DL · LAR · limited snaps"},
-  {name:"Nolan Smith Jr.",pos:"DL",age:25.6,team:"PHI",proj:{PPR:100,Half:100,Standard:100},adp:16.8,ktcVal:3296,note:"Week 7: Reserve DL · PHI · limited snaps"},
-  {name:"Johnny Newton",pos:"DL",age:22,team:"CHI",proj:{PPR:92,Half:92,Standard:92},adp:18.5,ktcVal:3193,note:"Week 7: Reserve DL · CHI · limited snaps"},
-  {name:"Darius Robinson",pos:"DL",age:25,team:"KC",proj:{PPR:90,Half:90,Standard:90},adp:19.0,ktcVal:2678,note:"Week 7: Reserve DL · KC · limited snaps"},
-  {name:"Zion Tupuola-Fetui",pos:"DL",age:25,team:"CHI",proj:{PPR:90,Half:90,Standard:90},adp:19.5,ktcVal:2266,note:"Week 7: Reserve DL · CHI · limited snaps"},
-  {name:"Mykel Williams",pos:"DL",age:22.2,team:"SF",proj:{PPR:95,Half:95,Standard:95},adp:18.2,ktcVal:3605,note:"Week 7: Reserve DL · SF · limited snaps"},
-  {name:"Shemar Turner",pos:"DL",age:23.6,team:"DAL",proj:{PPR:85,Half:85,Standard:85},adp:21.0,ktcVal:2060,note:"Week 7: Reserve DL · DAL · limited snaps"},
-  {name:"Tyler Davis",pos:"DL",age:25.8,team:"HOU",proj:{PPR:80,Half:80,Standard:80},adp:22.5,ktcVal:1545,note:"Week 7: Reserve DL · HOU · limited snaps"},
+  {name:"Jared Verse",pos:"DL",age:25.8,team:"LAR",proj:{PPR:128,Half:128,Standard:128},adp:10.2,ktcVal:4635,note:"LAR edge Year 2: 11 sacks 17 TFL elite upside · 2024 Rookie DPOY"},
+  {name:"Braden Fiske",pos:"DL",age:26.6,team:"LAR",proj:{PPR:95,Half:95,Standard:95},adp:17.5,ktcVal:3090,note:"LAR IDL Year 2: 52 tackles 8 sacks"},
+  {name:"Nolan Smith Jr.",pos:"DL",age:25.6,team:"PHI",proj:{PPR:100,Half:100,Standard:100},adp:16.8,ktcVal:3296,note:"PHI edge Year 2: 9 sacks ascending"},
+  {name:"Johnny Newton",pos:"DL",age:22,team:"CHI",proj:{PPR:92,Half:92,Standard:92},adp:18.5,ktcVal:3193,note:"CHI IDL Year 2: 48 tackles 7 sacks"},
+  {name:"Darius Robinson",pos:"DL",age:25,team:"KC",proj:{PPR:90,Half:90,Standard:90},adp:19.0,ktcVal:2678,note:"KC versatile DL: 8 sacks year 2"},
+  {name:"Zion Tupuola-Fetui",pos:"DL",age:25,team:"CHI",proj:{PPR:90,Half:90,Standard:90},adp:19.5,ktcVal:2266,note:"CHI edge: 8 sacks developing"},
+  {name:"Mykel Williams",pos:"DL",age:22.2,team:"SF",proj:{PPR:95,Half:95,Standard:95},adp:18.2,ktcVal:3605,note:"SF edge Year 2: 9 sacks explosive"},
+  {name:"Shemar Turner",pos:"DL",age:23.6,team:"DAL",proj:{PPR:85,Half:85,Standard:85},adp:21.0,ktcVal:2060,note:"DAL IDL developing Year 2"},
+  {name:"Tyler Davis",pos:"DL",age:25.8,team:"HOU",proj:{PPR:80,Half:80,Standard:80},adp:22.5,ktcVal:1545,note:"HOU IDL rotational"},
   // LB Wave 4 — 2024 rookies & impact LBs
-  {name:"Payton Wilson",pos:"LB",age:26.4,team:"PIT",proj:{PPR:118,Half:118,Standard:118},adp:13.5,ktcVal:3605,note:"Week 7: Reserve LB · PIT · limited value"},
-  {name:"Edgerrin Cooper",pos:"LB",age:24.8,team:"GB",proj:{PPR:112,Half:112,Standard:112},adp:14.8,ktcVal:3296,note:"Week 7: Reserve LB · GB · limited value"},
-  {name:"Junior Colson",pos:"LB",age:23.7,team:"IND",proj:{PPR:108,Half:108,Standard:108},adp:15.5,ktcVal:3090,note:"Week 7: Reserve LB · IND · limited value"},
-  {name:"Edefuan Ulofoshio",pos:"LB",age:26.6,team:"SEA",proj:{PPR:105,Half:105,Standard:105},adp:16.2,ktcVal:2266,note:"Week 7: Reserve LB · SEA · limited value"},
-  {name:"Tanner Koziol",pos:"LB",age:22.6,team:"BUF",proj:{PPR:98,Half:98,Standard:98},adp:17.5,ktcVal:1854,note:"Week 7: Reserve LB · BUF · limited value"},
-  {name:"Nik Bonitto",pos:"LB",age:26.9,team:"DEN",proj:{PPR:105,Half:105,Standard:105},adp:16.0,ktcVal:3605,note:"Week 7: Reserve LB · DEN · limited value"},
-  {name:"Omar Speights",pos:"LB",age:25.5,team:"LAR",proj:{PPR:95,Half:95,Standard:95},adp:18.2,ktcVal:2060,note:"Week 7: Reserve LB · LAR · limited value"},
-  {name:"Isaiah Foskey",pos:"DL",age:25.8,team:"NO",proj:{PPR:92,Half:92,Standard:92},adp:18.8,ktcVal:2884,note:"Week 7: Reserve DL · NO · limited snaps"},
+  {name:"Payton Wilson",pos:"LB",age:26.4,team:"PIT",proj:{PPR:118,Half:118,Standard:118},adp:13.5,ktcVal:3605,note:"PIT LB Year 2: 130 tackles 4 sacks elite upside"},
+  {name:"Edgerrin Cooper",pos:"LB",age:24.8,team:"GB",proj:{PPR:112,Half:112,Standard:112},adp:14.8,ktcVal:3296,note:"GB LB Year 2: 125 tackles 3 sacks"},
+  {name:"Junior Colson",pos:"LB",age:23.7,team:"IND",proj:{PPR:108,Half:108,Standard:108},adp:15.5,ktcVal:3090,note:"IND LB Year 2: 120 tackles 3 sacks"},
+  {name:"Edefuan Ulofoshio",pos:"LB",age:26.6,team:"SEA",proj:{PPR:105,Half:105,Standard:105},adp:16.2,ktcVal:2266,note:"SEA LB: 115 tackles starter"},
+  {name:"Tanner Koziol",pos:"LB",age:22.6,team:"BUF",proj:{PPR:98,Half:98,Standard:98},adp:17.5,ktcVal:1854,note:"BUF LB developing"},
+  {name:"Nik Bonitto",pos:"LB",age:26.9,team:"DEN",proj:{PPR:105,Half:105,Standard:105},adp:16.0,ktcVal:3605,note:"DEN LB: 8 sacks pass rush upside"},
+  {name:"Omar Speights",pos:"LB",age:25.5,team:"LAR",proj:{PPR:95,Half:95,Standard:95},adp:18.2,ktcVal:2060,note:"LAR LB: 108 tackles ascending"},
+  {name:"Isaiah Foskey",pos:"DL",age:25.8,team:"NO",proj:{PPR:92,Half:92,Standard:92},adp:18.8,ktcVal:2884,note:"NO edge Year 2: 8 sacks upside"},
   // DB Wave 4 — 2024 rookies & ascending CBs/Ss
-  {name:"Quinyon Mitchell",pos:"DB",age:25.1,team:"PHI",proj:{PPR:125,Half:125,Standard:125},adp:12.5,ktcVal:5665,note:"Week 7: Strong defender · PHI starter · consistent snap share"},
-  {name:"Kool-Aid McKinstry",pos:"DB",age:23.9,team:"BAL",proj:{PPR:115,Half:115,Standard:115},adp:13.8,ktcVal:4120,note:"Week 7: Reserve DB · BAL · depth"},
-  {name:"Kamari Lassiter",pos:"DB",age:23.6,team:"HOU",proj:{PPR:112,Half:112,Standard:112},adp:14.5,ktcVal:3296,note:"Week 7: Reserve DB · HOU · depth"},
-  {name:"Tyler Nubin",pos:"DB",age:25.2,team:"NYG",proj:{PPR:108,Half:108,Standard:108},adp:15.5,ktcVal:2884,note:"Week 7: Reserve DB · NYG · depth"},
-  {name:"Kamren Kinchens",pos:"DB",age:23.9,team:"MIA",proj:{PPR:105,Half:105,Standard:105},adp:16.2,ktcVal:2884,note:"Week 7: Reserve DB · MIA · depth"},
-  {name:"Javon Bullard",pos:"DB",age:24,team:"GB",proj:{PPR:100,Half:100,Standard:100},adp:17.2,ktcVal:2575,note:"Week 7: Reserve DB · GB · depth"},
-  {name:"Calen Bullock",pos:"DB",age:23.3,team:"HOU",proj:{PPR:98,Half:98,Standard:98},adp:17.8,ktcVal:2472,note:"Week 7: Reserve DB · HOU · depth"},
-  {name:"Trey Amos",pos:"DB",age:24.5,team:"WAS",proj:{PPR:95,Half:95,Standard:95},adp:18.5,ktcVal:2266,note:"Week 7: Reserve DB · WAS · depth"},
-  {name:"Dwight McGlothern",pos:"DB",age:24.6,team:"ATL",proj:{PPR:92,Half:92,Standard:92},adp:19.2,ktcVal:1854,note:"Week 7: Reserve DB · ATL · depth"},
-  {name:"Evan Williams",pos:"DB",age:25.1,team:"SF",proj:{PPR:100,Half:100,Standard:100},adp:17.5,ktcVal:2575,note:"Week 7: Reserve DB · SF · depth"},
-  {name:"Dadrion Taylor-Demerson",pos:"DB",age:25.6,team:"TEN",proj:{PPR:92,Half:92,Standard:92},adp:19.0,ktcVal:2060,note:"Week 7: Reserve DB · TEN · depth"},
-  {name:"Jalen Catalon",pos:"DB",age:25,team:"NYJ",proj:{PPR:90,Half:90,Standard:90},adp:19.8,ktcVal:1854,note:"Week 7: Reserve DB · NYJ · depth"},
-  {name:"Jermod McCoy",pos:"DB",age:21,team:"CLE",proj:{PPR:88,Half:88,Standard:88},adp:20.5,ktcVal:1648,note:"Week 7: Reserve DB · CLE · depth"},
-  {name:"Sterling Shepard",pos:"WR",age:33.5,team:"NYG",proj:{PPR:95,Half:88,Standard:81},adp:22.5,ktcVal:309,note:"Week 7: Deep bench · NYG · limited value"},
+  {name:"Quinyon Mitchell",pos:"DB",age:25.1,team:"PHI",proj:{PPR:125,Half:125,Standard:125},adp:12.5,ktcVal:5665,note:"PHI CB Year 2: 70 tackles 5 INT elite upside"},
+  {name:"Kool-Aid McKinstry",pos:"DB",age:23.9,team:"BAL",proj:{PPR:115,Half:115,Standard:115},adp:13.8,ktcVal:4120,note:"BAL CB Year 2: 65 tackles 4 INT"},
+  {name:"Kamari Lassiter",pos:"DB",age:23.6,team:"HOU",proj:{PPR:112,Half:112,Standard:112},adp:14.5,ktcVal:3296,note:"HOU CB Year 2: 68 tackles 5 INT"},
+  {name:"Tyler Nubin",pos:"DB",age:25.2,team:"NYG",proj:{PPR:108,Half:108,Standard:108},adp:15.5,ktcVal:2884,note:"NYG S Year 2: 92 tackles 3 INT"},
+  {name:"Kamren Kinchens",pos:"DB",age:23.9,team:"MIA",proj:{PPR:105,Half:105,Standard:105},adp:16.2,ktcVal:2884,note:"MIA S Year 2: 88 tackles 3 INT"},
+  {name:"Javon Bullard",pos:"DB",age:24,team:"GB",proj:{PPR:100,Half:100,Standard:100},adp:17.2,ktcVal:2575,note:"GB S Year 2: 85 tackles 3 INT"},
+  {name:"Calen Bullock",pos:"DB",age:23.3,team:"HOU",proj:{PPR:98,Half:98,Standard:98},adp:17.8,ktcVal:2472,note:"HOU S Year 2: 82 tackles 3 INT"},
+  {name:"Trey Amos",pos:"DB",age:24.5,team:"WAS",proj:{PPR:95,Half:95,Standard:95},adp:18.5,ktcVal:2266,note:"WAS CB developing: 62 tackles 4 INT"},
+  {name:"Dwight McGlothern",pos:"DB",age:24.6,team:"ATL",proj:{PPR:92,Half:92,Standard:92},adp:19.2,ktcVal:1854,note:"ATL CB Year 2: 60 tackles 3 INT"},
+  {name:"Evan Williams",pos:"DB",age:25.1,team:"SF",proj:{PPR:100,Half:100,Standard:100},adp:17.5,ktcVal:2575,note:"SF S: 90 tackles 4 INT breakout"},
+  {name:"Dadrion Taylor-Demerson",pos:"DB",age:25.6,team:"TEN",proj:{PPR:92,Half:92,Standard:92},adp:19.0,ktcVal:2060,note:"TEN S Year 2: 85 tackles"},
+  {name:"Jalen Catalon",pos:"DB",age:25,team:"NYJ",proj:{PPR:90,Half:90,Standard:90},adp:19.8,ktcVal:1854,note:"NYJ S: 80 tackles 2 INT"},
+  {name:"Jermod McCoy",pos:"DB",age:21,team:"CLE",proj:{PPR:88,Half:88,Standard:88},adp:20.5,ktcVal:1648,note:"CLE CB developing"},
+  {name:"Sterling Shepard",pos:"WR",age:33.5,team:"NYG",proj:{PPR:95,Half:88,Standard:81},adp:22.5,ktcVal:309,note:"Veteran depth"},
   // QB depth
-  {name:"Dak Prescott",pos:"QB",age:33.1,team:"DAL",proj:{PPR:298,Half:298,Standard:298},adp:13.5,ktcVal:4532,note:"Week 7: Emerging QB · 2,800+ yds 20+ TD · Year 2 progression"},
-  {name:"Sam Darnold",pos:"QB",age:29.2,team:"SEA",proj:{PPR:302,Half:302,Standard:302},adp:14.2,ktcVal:3988,note:"Week 7: Backup/developmental QB · limited starting role · dynasty hold"},
-  {name:"Will Levis",pos:"QB",age:27.2,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:1030,note:"Week 7: Released before cutdown · TEN QB experiment failed, talent still present, watch for waiver claims, deep dynasty stash"},
-  {name:"Michael Penix Jr.",pos:"QB",age:26.3,team:"ATL",proj:{PPR:308,Half:308,Standard:308},adp:14.5,ktcVal:2962,note:"Week 7: Backup/developmental QB · limited starting role · dynasty hold"},
-  {name:"Aaron Rodgers",pos:"QB",age:42.7,team:"FA",proj:{PPR:268,Half:268,Standard:268},adp:9.5,ktcVal:5200,note:"Week 7: 1,600 yds 12 TD (2-5 NYJ) · age 41 decline evident · sell-high, retirement uncertainty"},
-  {name:"Sam Howell",pos:"QB",age:25.9,team:"DAL",proj:{PPR:262,Half:262,Standard:262},adp:19.8,ktcVal:2266,note:"Week 7: Backup/developmental QB · limited starting role · dynasty hold"},
-  {name:"Daniel Jones",pos:"QB",age:29.3,team:"IND",proj:{PPR:258,Half:258,Standard:258},adp:20.5,ktcVal:4321,note:"Week 7: 180 yds 1 TD (NYG Year 4 decline) · aging experiment, sell immediately, mobility declining, accuracy regressed"},
-  {name:"Russell Wilson",pos:"QB",age:37.7,team:"NYG",proj:{PPR:255,Half:255,Standard:255},adp:21.2,ktcVal:1030,note:"Week 7: Deep bench/PS · NYG · limited value"},
-  {name:"Jacoby Brissett",pos:"QB",age:33.7,team:"ARI",proj:{PPR:238,Half:238,Standard:238},adp:24.5,ktcVal:2550,note:"Week 7: Backup/developmental QB · limited starting role · dynasty hold"},
-  {name:"Deshaun Watson",pos:"QB",age:31,team:"CLE",proj:{PPR:245,Half:245,Standard:245},adp:22.5,ktcVal:824,note:"Week 7: Deep bench/PS · CLE · limited value"},
+  {name:"Dak Prescott",pos:"QB",age:33.1,team:"DAL",proj:{PPR:298,Half:298,Standard:298},adp:13.5,ktcVal:4532,note:"3,400 yds 25 TD comeback"},
+  {name:"Sam Darnold",pos:"QB",age:29.2,team:"SEA",proj:{PPR:302,Half:302,Standard:302},adp:14.2,ktcVal:3988,note:"3,600 yds 26 TD"},
+  {name:"Will Levis",pos:"QB",age:27.2,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:1030,note:"Cut by TEN Aug 30 — requested release. SF deep stash only if he finds a starting path."},
+  {name:"Michael Penix Jr.",pos:"QB",age:26.3,team:"ATL",proj:{PPR:308,Half:308,Standard:308},adp:14.5,ktcVal:2962,note:"2026 starter: 3,600 yds 27 TD Year 2"},
+  {name:"Aaron Rodgers",pos:"QB",age:42.7,team:"FA",proj:{PPR:268,Half:268,Standard:268},adp:18.5,ktcVal:1826,note:"Released PIT · unsigned FA veteran"},
+  {name:"Sam Howell",pos:"QB",age:25.9,team:"DAL",proj:{PPR:262,Half:262,Standard:262},adp:19.8,ktcVal:2266,note:"Backup/handcuff"},
+  {name:"Daniel Jones",pos:"QB",age:29.3,team:"IND",proj:{PPR:258,Half:258,Standard:258},adp:20.5,ktcVal:4321,note:"3,000 yds 18 TD"},
+  {name:"Russell Wilson",pos:"QB",age:37.7,team:"NYG",proj:{PPR:255,Half:255,Standard:255},adp:21.2,ktcVal:1030,note:"Veteran: 3,200 yds 20 TD"},
+  {name:"Jacoby Brissett",pos:"QB",age:33.7,team:"ARI",proj:{PPR:238,Half:238,Standard:238},adp:24.5,ktcVal:2550,note:"Backup/spot start"},
+  {name:"Deshaun Watson",pos:"QB",age:31,team:"CLE",proj:{PPR:245,Half:245,Standard:245},adp:22.5,ktcVal:824,note:"Return from injury"},
   // RB depth / handcuffs
-  {name:"Nick Chubb",pos:"RB",age:30.7,team:"FA",proj:{PPR:192,Half:176,Standard:160},adp:15.5,ktcVal:1545,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Najee Harris",pos:"RB",age:28.5,team:"FA",proj:{PPR:198,Half:182,Standard:166},adp:15.0,ktcVal:2266,note:"Week 7: Bench back/handcuff · FA · opportunity stash"},
-  {name:"J.K. Dobbins",pos:"RB",age:27.7,team:"DEN",proj:{PPR:188,Half:172,Standard:156},adp:16.5,ktcVal:3881,note:"Week 7: Bench back/handcuff · limited upside · hold for opportunity"},
-  {name:"Tyjae Spears",pos:"RB",age:25.2,team:"TEN",proj:{PPR:182,Half:167,Standard:152},adp:17.5,ktcVal:3605,note:"Week 7: Bench back/handcuff · limited upside · hold for opportunity"},
-  {name:"Dameon Pierce",pos:"RB",age:26.5,team:"PHI",proj:{PPR:175,Half:161,Standard:147},adp:18.5,ktcVal:2060,note:"Week 7: Bench back/handcuff · PHI · opportunity stash"},
-  {name:"Chuba Hubbard",pos:"RB",age:27.2,team:"CAR",proj:{PPR:178,Half:163,Standard:148},adp:17.8,ktcVal:4364,note:"Week 7: Emerging RB · 900+ rush 40+ rec · breakout trajectory"},
-  {name:"Jerome Ford",pos:"RB",age:27,team:"WAS",proj:{PPR:172,Half:158,Standard:144},adp:19.2,ktcVal:1950,note:"Week 7: Practice squad · WAS · no value"},
-  {name:"AJ Dillon",pos:"RB",age:28.3,team:"PHI",proj:{PPR:158,Half:145,Standard:132},adp:21.5,ktcVal:765,note:"Week 7: Practice squad · PHI · no value"},
-  {name:"Zamir White",pos:"RB",age:26.9,team:"LV",proj:{PPR:162,Half:149,Standard:136},adp:20.5,ktcVal:1236,note:"Week 7: Practice squad · LV · no value"},
-  {name:"Khalil Herbert",pos:"RB",age:28.4,team:"FA",proj:{PPR:165,Half:151,Standard:137},adp:20.8,ktcVal:1030,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Roschon Johnson",pos:"RB",age:25.6,team:"CHI",proj:{PPR:145,Half:133,Standard:121},adp:24.8,ktcVal:1889,note:"Week 7: Practice squad · CHI · no value"},
-  {name:"Justice Hill",pos:"RB",age:28.8,team:"BAL",proj:{PPR:158,Half:145,Standard:132},adp:22.2,ktcVal:1711,note:"Week 7: Practice squad · BAL · no value"},
-  {name:"Jaleel McLaughlin",pos:"RB",age:26,team:"DEN",proj:{PPR:148,Half:136,Standard:124},adp:24.2,ktcVal:824,note:"Week 7: Practice squad · DEN · no value"},
-  {name:"Tyrone Tracy Jr.",pos:"RB",age:26.8,team:"NYG",proj:{PPR:168,Half:154,Standard:140},adp:19.8,ktcVal:3914,note:"Week 7: Bench back/handcuff · limited upside · hold for opportunity"},
-  {name:"Samaje Perine",pos:"RB",age:30.9,team:"CIN",proj:{PPR:138,Half:126,Standard:114},adp:27.5,ktcVal:823,note:"Week 7: Practice squad · CIN · no value"},
-  {name:"Kareem Hunt",pos:"RB",age:31.1,team:"FA",proj:{PPR:142,Half:130,Standard:118},adp:26.5,ktcVal:1607,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Devin Singletary",pos:"RB",age:29,team:"NYG",proj:{PPR:148,Half:136,Standard:124},adp:24.8,ktcVal:1844,note:"Week 7: Practice squad · NYG · no value"},
-  {name:"Hassan Haskins",pos:"RB",age:26.8,team:"TEN",proj:{PPR:128,Half:117,Standard:106},adp:30.5,ktcVal:515,note:"Week 7: Practice squad · TEN · no value"},
-  {name:"Patrick Taylor",pos:"RB",age:28.3,team:"MIA",proj:{PPR:118,Half:108,Standard:98},adp:33.2,ktcVal:309,note:"Week 7: Practice squad · MIA · no value"},
-  {name:"Dalvin Cook",pos:"RB",age:31.1,team:"FA",proj:{PPR:125,Half:115,Standard:105},adp:31.0,ktcVal:206,note:"Week 7: Limited role, age 30 · declining, committee back, sell if offered, past prime"},
-  {name:"Josh Kelly",pos:"RB",age:25.2,team:"LAC",proj:{PPR:122,Half:112,Standard:102},adp:32.0,ktcVal:412,note:"Week 7: Practice squad · LAC · no value"},
-  {name:"Clyde Edwards-Helaire",pos:"RB",age:27.4,team:"KC",proj:{PPR:118,Half:108,Standard:98},adp:33.0,ktcVal:618,note:"Week 7: Practice squad · KC · no value"},
-  {name:"Dontrell Hilliard",pos:"RB",age:31.5,team:"TEN",proj:{PPR:112,Half:103,Standard:94},adp:34.5,ktcVal:309,note:"Week 7: Practice squad · TEN · no value"},
-  {name:"Elijah Mitchell",pos:"RB",age:28.3,team:"SF",proj:{PPR:132,Half:121,Standard:110},adp:28.5,ktcVal:721,note:"Week 7: Practice squad · SF · no value"},
-  {name:"Jordan Mason",pos:"RB",age:27.3,team:"MIN",proj:{PPR:142,Half:130,Standard:118},adp:26.0,ktcVal:3459,note:"Week 7: Bench back/handcuff · limited upside · hold for opportunity"},
+  {name:"Nick Chubb",pos:"RB",age:30.7,team:"FA",proj:{PPR:192,Half:176,Standard:160},adp:15.5,ktcVal:1545,note:"Released HOU · unsigned FA"},
+  {name:"Najee Harris",pos:"RB",age:28.5,team:"FA",proj:{PPR:198,Half:182,Standard:166},adp:15.0,ktcVal:2266,note:"Released LAC · unsigned FA"},
+  {name:"J.K. Dobbins",pos:"RB",age:27.7,team:"DEN",proj:{PPR:188,Half:172,Standard:156},adp:16.5,ktcVal:3881,note:"Handcuff to Hampton"},
+  {name:"Tyjae Spears",pos:"RB",age:25.2,team:"TEN",proj:{PPR:182,Half:167,Standard:152},adp:17.5,ktcVal:3605,note:"600 rush 55 rec handcuff"},
+  {name:"Dameon Pierce",pos:"RB",age:26.5,team:"PHI",proj:{PPR:175,Half:161,Standard:147},adp:18.5,ktcVal:2060,note:"700 rush 5 TD"},
+  {name:"Chuba Hubbard",pos:"RB",age:27.2,team:"CAR",proj:{PPR:178,Half:163,Standard:148},adp:17.8,ktcVal:4364,note:"850 rush 7 TD lead back"},
+  {name:"Jerome Ford",pos:"RB",age:27,team:"WAS",proj:{PPR:172,Half:158,Standard:144},adp:19.2,ktcVal:1950,note:"Signed WAS 1yr · 600 rush 48 rec"},
+  {name:"AJ Dillon",pos:"RB",age:28.3,team:"PHI",proj:{PPR:158,Half:145,Standard:132},adp:21.5,ktcVal:765,note:"Handcuff to Jacobs"},
+  {name:"Zamir White",pos:"RB",age:26.9,team:"LV",proj:{PPR:162,Half:149,Standard:136},adp:20.5,ktcVal:1236,note:"600 rush behind Jeanty"},
+  {name:"Khalil Herbert",pos:"RB",age:28.4,team:"FA",proj:{PPR:165,Half:151,Standard:137},adp:20.8,ktcVal:1030,note:"Released NYJ · unsigned FA"},
+  {name:"Roschon Johnson",pos:"RB",age:25.6,team:"CHI",proj:{PPR:145,Half:133,Standard:121},adp:24.8,ktcVal:1889,note:"Change-of-pace back"},
+  {name:"Justice Hill",pos:"RB",age:28.8,team:"BAL",proj:{PPR:158,Half:145,Standard:132},adp:22.2,ktcVal:1711,note:"Speed back handcuff to Henry"},
+  {name:"Jaleel McLaughlin",pos:"RB",age:26,team:"DEN",proj:{PPR:148,Half:136,Standard:124},adp:24.2,ktcVal:824,note:"Pass catcher depth"},
+  {name:"Tyrone Tracy Jr.",pos:"RB",age:26.8,team:"NYG",proj:{PPR:168,Half:154,Standard:140},adp:19.8,ktcVal:3914,note:"Year 2: 750 rush 45 rec"},
+  {name:"Samaje Perine",pos:"RB",age:30.9,team:"CIN",proj:{PPR:138,Half:126,Standard:114},adp:27.5,ktcVal:823,note:"Pass-catching depth"},
+  {name:"Kareem Hunt",pos:"RB",age:31.1,team:"FA",proj:{PPR:142,Half:130,Standard:118},adp:26.5,ktcVal:1607,note:"Unsigned FA · veteran handcuff"},
+  {name:"Devin Singletary",pos:"RB",age:29,team:"NYG",proj:{PPR:148,Half:136,Standard:124},adp:24.8,ktcVal:1844,note:"NYG RB · backup depth"},
+  {name:"Hassan Haskins",pos:"RB",age:26.8,team:"TEN",proj:{PPR:128,Half:117,Standard:106},adp:30.5,ktcVal:515,note:"Backup/power back"},
+  {name:"Patrick Taylor",pos:"RB",age:28.3,team:"MIA",proj:{PPR:118,Half:108,Standard:98},adp:33.2,ktcVal:309,note:"Backup depth"},
+  {name:"Dalvin Cook",pos:"RB",age:31.1,team:"FA",proj:{PPR:125,Half:115,Standard:105},adp:31.0,ktcVal:206,note:"Veteran free agent"},
+  {name:"Josh Kelly",pos:"RB",age:25.2,team:"LAC",proj:{PPR:122,Half:112,Standard:102},adp:32.0,ktcVal:412,note:"Handcuff depth"},
+  {name:"Clyde Edwards-Helaire",pos:"RB",age:27.4,team:"KC",proj:{PPR:118,Half:108,Standard:98},adp:33.0,ktcVal:618,note:"Handcuff"},
+  {name:"Dontrell Hilliard",pos:"RB",age:31.5,team:"TEN",proj:{PPR:112,Half:103,Standard:94},adp:34.5,ktcVal:309,note:"Veteran depth"},
+  {name:"Elijah Mitchell",pos:"RB",age:28.3,team:"SF",proj:{PPR:132,Half:121,Standard:110},adp:28.5,ktcVal:721,note:"SF handcuff to CMC"},
+  {name:"Jordan Mason",pos:"RB",age:27.3,team:"MIN",proj:{PPR:142,Half:130,Standard:118},adp:26.0,ktcVal:3459,note:"MIN lead back candidate"},
   // WR depth
-  {name:"Nico Collins",pos:"WR",age:27.4,team:"HOU",proj:{PPR:222,Half:205,Standard:188},adp:16.8,ktcVal:6411,note:"Week 7: Strong WR1 · 100+ rec 1,200+ yds 10+ TD · consistent target"},
-  {name:"Khalil Shakir",pos:"WR",age:26.6,team:"BUF",proj:{PPR:208,Half:192,Standard:176},adp:18.5,ktcVal:4120,note:"Week 7: Emerging WR · 80+ rec 900+ yds · breakout ceiling"},
-  {name:"Jerry Jeudy",pos:"WR",age:27.3,team:"CLE",proj:{PPR:195,Half:180,Standard:165},adp:20.2,ktcVal:3605,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Tyler Lockett",pos:"WR",age:33.9,team:"LV",proj:{PPR:175,Half:161,Standard:147},adp:23.5,ktcVal:361,note:"Week 7: Deep bench · LV · limited value"},
-  {name:"Christian Kirk",pos:"WR",age:29.8,team:"SF",proj:{PPR:168,Half:155,Standard:142},adp:24.8,ktcVal:618,note:"Week 7: Deep bench · SF · limited value"},
-  {name:"Wan'Dale Robinson",pos:"WR",age:25.6,team:"TEN",proj:{PPR:182,Half:168,Standard:154},adp:22.5,ktcVal:4592,note:"Week 7: Emerging WR · 80+ rec 900+ yds · breakout ceiling"},
-  {name:"Dontayvion Wicks",pos:"WR",age:25.2,team:"PHI",proj:{PPR:175,Half:161,Standard:147},adp:23.8,ktcVal:3298,note:"Week 7: Bench WR · PHI · depth play"},
-  {name:"Rashod Bateman",pos:"WR",age:26.7,team:"BAL",proj:{PPR:162,Half:149,Standard:136},adp:26.2,ktcVal:2662,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Skyy Moore",pos:"WR",age:26,team:"GB",proj:{PPR:155,Half:143,Standard:131},adp:27.8,ktcVal:721,note:"Week 7: Deep bench · GB · limited value"},
-  {name:"Tyler Boyd",pos:"WR",age:31.8,team:"FA",proj:{PPR:162,Half:149,Standard:136},adp:25.5,ktcVal:824,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Cedric Tillman",pos:"WR",age:26.4,team:"CLE",proj:{PPR:148,Half:136,Standard:124},adp:28.5,ktcVal:2618,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Tutu Atwell",pos:"WR",age:26.9,team:"MIA",proj:{PPR:152,Half:140,Standard:128},adp:28.0,ktcVal:1236,note:"Week 7: Deep bench · MIA · limited value"},
-  {name:"Diontae Johnson",pos:"WR",age:30.1,team:"FA",proj:{PPR:158,Half:146,Standard:134},adp:26.8,ktcVal:824,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Darius Slayton",pos:"WR",age:29.6,team:"NYG",proj:{PPR:148,Half:136,Standard:124},adp:29.2,ktcVal:618,note:"Week 7: Deep bench · NYG · limited value"},
-  {name:"Elijah Moore",pos:"WR",age:26.4,team:"PHI",proj:{PPR:138,Half:127,Standard:116},adp:32.0,ktcVal:1030,note:"Week 7: Deep bench · PHI · limited value"},
-  {name:"Adam Thielen",pos:"WR",age:36,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Odell Beckham Jr.",pos:"WR",age:33.8,team:"FA",proj:{PPR:135,Half:124,Standard:113},adp:32.5,ktcVal:721,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Tyquan Thornton",pos:"WR",age:26.1,team:"KC",proj:{PPR:132,Half:121,Standard:110},adp:33.5,ktcVal:824,note:"Week 7: Deep bench · KC · limited value"},
-  {name:"Darnell Mooney",pos:"WR",age:28.8,team:"NYG",proj:{PPR:138,Half:127,Standard:116},adp:31.5,ktcVal:2629,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Demarcus Robinson",pos:"WR",age:31.9,team:"LAR",proj:{PPR:128,Half:118,Standard:108},adp:34.0,ktcVal:412,note:"Week 7: Deep bench · LAR · limited value"},
-  {name:"Marquez Valdes-Scantling",pos:"WR",age:31.9,team:"KC",proj:{PPR:118,Half:109,Standard:100},adp:35.5,ktcVal:309,note:"Week 7: Deep bench · KC · limited value"},
-  {name:"John Metchie III",pos:"WR",age:26.1,team:"PHI",proj:{PPR:122,Half:112,Standard:102},adp:34.5,ktcVal:1895,note:"Week 7: Deep bench · PHI · limited value"},
-  {name:"Lil'Jordan Humphrey",pos:"WR",age:28.4,team:"NO",proj:{PPR:112,Half:103,Standard:94},adp:36.5,ktcVal:412,note:"Week 7: Deep bench · NO · limited value"},
-  {name:"Chase Claypool",pos:"WR",age:28.1,team:"FA",proj:{PPR:108,Half:99,Standard:90},adp:37.2,ktcVal:309,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Ihmir Smith-Marsette",pos:"WR",age:27,team:"DEN",proj:{PPR:105,Half:97,Standard:89},adp:38.5,ktcVal:412,note:"Week 7: Deep bench · DEN · limited value"},
+  {name:"Nico Collins",pos:"WR",age:27.4,team:"HOU",proj:{PPR:222,Half:205,Standard:188},adp:16.8,ktcVal:6411,note:"85 rec 1,050 yds 8 TD"},
+  {name:"Khalil Shakir",pos:"WR",age:26.6,team:"BUF",proj:{PPR:208,Half:192,Standard:176},adp:18.5,ktcVal:4120,note:"82 rec 900 yds 7 TD"},
+  {name:"Jerry Jeudy",pos:"WR",age:27.3,team:"CLE",proj:{PPR:195,Half:180,Standard:165},adp:20.2,ktcVal:3605,note:"78 rec 880 yds 6 TD"},
+  {name:"Tyler Lockett",pos:"WR",age:33.9,team:"LV",proj:{PPR:175,Half:161,Standard:147},adp:23.5,ktcVal:361,note:"Veteran: 72 rec 820 yds 7 TD"},
+  {name:"Christian Kirk",pos:"WR",age:29.8,team:"SF",proj:{PPR:168,Half:155,Standard:142},adp:24.8,ktcVal:618,note:"Signed with SF · 70 rec 780 yds 6 TD"},
+  {name:"Wan'Dale Robinson",pos:"WR",age:25.6,team:"TEN",proj:{PPR:182,Half:168,Standard:154},adp:22.5,ktcVal:4592,note:"80 rec 820 yds"},
+  {name:"Dontayvion Wicks",pos:"WR",age:25.2,team:"PHI",proj:{PPR:175,Half:161,Standard:147},adp:23.8,ktcVal:3298,note:"Traded to PHI · 68 rec 800 yds 6 TD"},
+  {name:"Rashod Bateman",pos:"WR",age:26.7,team:"BAL",proj:{PPR:162,Half:149,Standard:136},adp:26.2,ktcVal:2662,note:"65 rec 750 yds 5 TD"},
+  {name:"Skyy Moore",pos:"WR",age:26,team:"GB",proj:{PPR:155,Half:143,Standard:131},adp:27.8,ktcVal:721,note:"Signed GB 2026 · 60 rec 680 yds 5 TD"},
+  {name:"Tyler Boyd",pos:"WR",age:31.8,team:"FA",proj:{PPR:162,Half:149,Standard:136},adp:25.5,ktcVal:824,note:"Unsigned FA · veteran slot"},
+  {name:"Cedric Tillman",pos:"WR",age:26.4,team:"CLE",proj:{PPR:148,Half:136,Standard:124},adp:28.5,ktcVal:2618,note:"62 rec 700 yds"},
+  {name:"Tutu Atwell",pos:"WR",age:26.9,team:"MIA",proj:{PPR:152,Half:140,Standard:128},adp:28.0,ktcVal:1236,note:"Speed receiver: 58 rec 720 yds"},
+  {name:"Diontae Johnson",pos:"WR",age:30.1,team:"FA",proj:{PPR:158,Half:146,Standard:134},adp:26.8,ktcVal:824,note:"Unsigned FA · 68 rec 720 yds"},
+  {name:"Darius Slayton",pos:"WR",age:29.6,team:"NYG",proj:{PPR:148,Half:136,Standard:124},adp:29.2,ktcVal:618,note:"60 rec 720 yds 5 TD"},
+  {name:"Elijah Moore",pos:"WR",age:26.4,team:"PHI",proj:{PPR:138,Half:127,Standard:116},adp:32.0,ktcVal:1030,note:"Signed PHI 1yr · slot depth"},
+  {name:"Adam Thielen",pos:"WR",age:36,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Retired Jan 2025 after CAR/PIT stint"},
+  {name:"Odell Beckham Jr.",pos:"WR",age:33.8,team:"FA",proj:{PPR:135,Half:124,Standard:113},adp:32.5,ktcVal:721,note:"Veteran FA: 52 rec 620 yds"},
+  {name:"Tyquan Thornton",pos:"WR",age:26.1,team:"KC",proj:{PPR:132,Half:121,Standard:110},adp:33.5,ktcVal:824,note:"Signed KC · deep threat depth"},
+  {name:"Darnell Mooney",pos:"WR",age:28.8,team:"NYG",proj:{PPR:138,Half:127,Standard:116},adp:31.5,ktcVal:2629,note:"60 rec 660 yds"},
+  {name:"Demarcus Robinson",pos:"WR",age:31.9,team:"LAR",proj:{PPR:128,Half:118,Standard:108},adp:34.0,ktcVal:412,note:"Depth: 52 rec 580 yds"},
+  {name:"Marquez Valdes-Scantling",pos:"WR",age:31.9,team:"KC",proj:{PPR:118,Half:109,Standard:100},adp:35.5,ktcVal:309,note:"Deep threat depth"},
+  {name:"John Metchie III",pos:"WR",age:26.1,team:"PHI",proj:{PPR:122,Half:112,Standard:102},adp:34.5,ktcVal:1895,note:"Traded to PHI · 45 rec 540 yds"},
+  {name:"Lil'Jordan Humphrey",pos:"WR",age:28.4,team:"NO",proj:{PPR:112,Half:103,Standard:94},adp:36.5,ktcVal:412,note:"Physical WR depth"},
+  {name:"Chase Claypool",pos:"WR",age:28.1,team:"FA",proj:{PPR:108,Half:99,Standard:90},adp:37.2,ktcVal:309,note:"Physical WR reclamation"},
+  {name:"Ihmir Smith-Marsette",pos:"WR",age:27,team:"DEN",proj:{PPR:105,Half:97,Standard:89},adp:38.5,ktcVal:412,note:"Speed depth"},
   // TE depth
-  {name:"Noah Fant",pos:"TE",age:28.8,team:"NO",proj:{PPR:118,Half:108,Standard:98},adp:23.5,ktcVal:1808,note:"Week 7: Practice squad · NO · no value"},
-  {name:"Hunter Henry",pos:"TE",age:31.7,team:"NE",proj:{PPR:112,Half:103,Standard:94},adp:25.5,ktcVal:2807,note:"Week 7: Bench TE · NE · stream candidate"},
-  {name:"Tyler Conklin",pos:"TE",age:31.1,team:"DET",proj:{PPR:105,Half:96,Standard:87},adp:27.8,ktcVal:647,note:"Week 7: Practice squad · DET · no value"},
-  {name:"Greg Dulcich",pos:"TE",age:26.4,team:"DEN",proj:{PPR:108,Half:99,Standard:90},adp:27.0,ktcVal:2028,note:"Week 7: Bench TE · DEN · stream candidate"},
-  {name:"Robert Tonyan",pos:"TE",age:32.3,team:"FA",proj:{PPR:75,Half:69,Standard:63},adp:44.0,ktcVal:206,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Charlie Kolar",pos:"TE",age:27.5,team:"LAC",proj:{PPR:105,Half:96,Standard:87},adp:28.5,ktcVal:721,note:"Week 7: Practice squad · LAC · no value"},
-  {name:"Will Dissly",pos:"TE",age:30.1,team:"FA",proj:{PPR:75,Half:69,Standard:63},adp:44.0,ktcVal:206,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Taysom Hill",pos:"TE",age:36,team:"FA",proj:{PPR:80,Half:73,Standard:66},adp:38.0,ktcVal:309,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Tanner Hudson",pos:"TE",age:31.8,team:"TB",proj:{PPR:92,Half:84,Standard:76},adp:33.0,ktcVal:309,note:"Week 7: Practice squad · TB · no value"},
-  {name:"Durham Smythe",pos:"TE",age:31.1,team:"MIA",proj:{PPR:88,Half:81,Standard:74},adp:34.5,ktcVal:309,note:"Week 7: Practice squad · MIA · no value"},
+  {name:"Noah Fant",pos:"TE",age:28.8,team:"NO",proj:{PPR:118,Half:108,Standard:98},adp:23.5,ktcVal:1808,note:"50 rec 520 yds 4 TD"},
+  {name:"Hunter Henry",pos:"TE",age:31.7,team:"NE",proj:{PPR:112,Half:103,Standard:94},adp:25.5,ktcVal:2807,note:"48 rec 500 yds 5 TD"},
+  {name:"Tyler Conklin",pos:"TE",age:31.1,team:"DET",proj:{PPR:105,Half:96,Standard:87},adp:27.8,ktcVal:647,note:"45 rec 460 yds"},
+  {name:"Greg Dulcich",pos:"TE",age:26.4,team:"DEN",proj:{PPR:108,Half:99,Standard:90},adp:27.0,ktcVal:2028,note:"Year 4: 44 rec 450 yds"},
+  {name:"Robert Tonyan",pos:"TE",age:32.3,team:"FA",proj:{PPR:75,Half:69,Standard:63},adp:44.0,ktcVal:206,note:"UFA · last with KC · unsigned"},
+  {name:"Charlie Kolar",pos:"TE",age:27.5,team:"LAC",proj:{PPR:105,Half:96,Standard:87},adp:28.5,ktcVal:721,note:"LAC TE"},
+  {name:"Will Dissly",pos:"TE",age:30.1,team:"FA",proj:{PPR:75,Half:69,Standard:63},adp:44.0,ktcVal:206,note:"Released by LAC Mar 2026 · unsigned FA"},
+  {name:"Taysom Hill",pos:"TE",age:36,team:"FA",proj:{PPR:80,Half:73,Standard:66},adp:38.0,ktcVal:309,note:"UFA from NO · uncertain if playing 2026"},
+  {name:"Tanner Hudson",pos:"TE",age:31.8,team:"TB",proj:{PPR:92,Half:84,Standard:76},adp:33.0,ktcVal:309,note:"Backup TE"},
+  {name:"Durham Smythe",pos:"TE",age:31.1,team:"MIA",proj:{PPR:88,Half:81,Standard:74},adp:34.5,ktcVal:309,note:"Blocking/depth TE"},
   // RB continued
-  {name:"Brian Robinson Jr.",pos:"RB",age:27.4,team:"ATL",proj:{PPR:195,Half:179,Standard:163},adp:16.2,ktcVal:3008,note:"Week 7: Bench back/handcuff · limited upside · hold for opportunity"},
-  {name:"James Conner",pos:"RB",age:31.3,team:"ARI",proj:{PPR:100,Half:92,Standard:84},adp:31.0,ktcVal:800,note:"Week 7: Practice squad · ARI · no value"},
-  {name:"Bucky Irving",pos:"RB",age:24,team:"TB",proj:{PPR:218,Half:200,Standard:182},adp:13.5,ktcVal:5800,note:"Week 7: Emerging RB · 900+ rush 40+ rec · breakout trajectory"},
-  {name:"Jonathon Brooks",pos:"RB",age:23.1,team:"CAR",proj:{PPR:225,Half:207,Standard:189},adp:13.0,ktcVal:5000,note:"Week 7: Emerging RB · 900+ rush 40+ rec · breakout trajectory"},
-  {name:"Jaylen Wright",pos:"RB",age:23.4,team:"MIA",proj:{PPR:172,Half:158,Standard:144},adp:19.5,ktcVal:3296,note:"Week 7: Bench back/handcuff · limited upside · hold for opportunity"},
-  {name:"Isaac Guerendo",pos:"RB",age:26.2,team:"SF",proj:{PPR:168,Half:154,Standard:140},adp:20.2,ktcVal:3296,note:"Week 7: Bench back/handcuff · limited upside · hold for opportunity"},
-  {name:"Ezekiel Elliott",pos:"RB",age:31.1,team:"FA",proj:{PPR:80,Half:73,Standard:66},adp:50.0,ktcVal:103,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Eric Gray",pos:"RB",age:26.8,team:"NYG",proj:{PPR:152,Half:139,Standard:126},adp:23.5,ktcVal:824,note:"Week 7: Practice squad · NYG · no value"},
-  {name:"Chris Rodriguez Jr.",pos:"RB",age:26.9,team:"JAX",proj:{PPR:138,Half:126,Standard:114},adp:27.0,ktcVal:2562,note:"Week 7: Bench back/handcuff · JAX · opportunity stash"},
-  {name:"Cam Akers",pos:"RB",age:27.2,team:"FA",proj:{PPR:100,Half:91,Standard:82},adp:42.0,ktcVal:412,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Miles Sanders",pos:"RB",age:29.3,team:"FA",proj:{PPR:100,Half:91,Standard:82},adp:42.0,ktcVal:206,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Raheem Mostert",pos:"RB",age:34.4,team:"FA",proj:{PPR:80,Half:73,Standard:66},adp:48.0,ktcVal:103,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Jamaal Williams",pos:"RB",age:31.4,team:"FA",proj:{PPR:80,Half:73,Standard:66},adp:48.0,ktcVal:103,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Emari Demercado",pos:"RB",age:27.6,team:"KC",proj:{PPR:118,Half:108,Standard:98},adp:33.0,ktcVal:515,note:"Week 7: Practice squad · KC · no value"},
-  {name:"Gus Edwards",pos:"RB",age:31.4,team:"FA",proj:{PPR:145,Half:133,Standard:121},adp:25.2,ktcVal:309,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Jeff Wilson Jr.",pos:"RB",age:30.8,team:"MIA",proj:{PPR:112,Half:103,Standard:94},adp:35.0,ktcVal:206,note:"Week 7: Practice squad · MIA · no value"},
+  {name:"Brian Robinson Jr.",pos:"RB",age:27.4,team:"ATL",proj:{PPR:195,Half:179,Standard:163},adp:16.2,ktcVal:3008,note:"Signed ATL · 900 rush 8 TD power back"},
+  {name:"James Conner",pos:"RB",age:31.3,team:"ARI",proj:{PPR:100,Half:92,Standard:84},adp:30.0,ktcVal:1030,note:"On IR — misses first 4+ games (foot). Love + Allgeier will handle early carries. Sell in dynasty."},
+  {name:"Bucky Irving",pos:"RB",age:24,team:"TB",proj:{PPR:218,Half:200,Standard:182},adp:13.5,ktcVal:5800,note:"Wk1: 93 scrimmage yds 1 TD · Year 2 feature back: 1,050 rush 60 rec"},
+  {name:"Jonathon Brooks",pos:"RB",age:23.1,team:"CAR",proj:{PPR:225,Half:207,Standard:189},adp:13.0,ktcVal:5000,note:"Finally healthy · dominating camp · 1,100 rush 10 TD workhorse upside"},
+  {name:"Jaylen Wright",pos:"RB",age:23.4,team:"MIA",proj:{PPR:172,Half:158,Standard:144},adp:19.5,ktcVal:3296,note:"Speed back behind Achane"},
+  {name:"Isaac Guerendo",pos:"RB",age:26.2,team:"SF",proj:{PPR:168,Half:154,Standard:140},adp:20.2,ktcVal:3296,note:"SF committee back"},
+  {name:"Ezekiel Elliott",pos:"RB",age:31.1,team:"FA",proj:{PPR:80,Half:73,Standard:66},adp:50.0,ktcVal:103,note:"Effectively out of NFL since 2024 · unsigned FA"},
+  {name:"Eric Gray",pos:"RB",age:26.8,team:"NYG",proj:{PPR:152,Half:139,Standard:126},adp:23.5,ktcVal:824,note:"Pass-catcher: 55 rec 400 rush"},
+  {name:"Chris Rodriguez Jr.",pos:"RB",age:26.9,team:"JAX",proj:{PPR:138,Half:126,Standard:114},adp:27.0,ktcVal:2562,note:"Signed JAX 2yr/$10M · lead back potential"},
+  {name:"Cam Akers",pos:"RB",age:27.2,team:"FA",proj:{PPR:100,Half:91,Standard:82},adp:42.0,ktcVal:412,note:"Released by SEA Apr 2026 · unsigned FA"},
+  {name:"Miles Sanders",pos:"RB",age:29.3,team:"FA",proj:{PPR:100,Half:91,Standard:82},adp:42.0,ktcVal:206,note:"UFA from DAL · knee surgery rehab"},
+  {name:"Raheem Mostert",pos:"RB",age:34.4,team:"FA",proj:{PPR:80,Half:73,Standard:66},adp:48.0,ktcVal:103,note:"UFA from LV · aging speed back"},
+  {name:"Jamaal Williams",pos:"RB",age:31.4,team:"FA",proj:{PPR:80,Half:73,Standard:66},adp:48.0,ktcVal:103,note:"Released by NO Mar 2025 · unsigned FA"},
+  {name:"Emari Demercado",pos:"RB",age:27.6,team:"KC",proj:{PPR:118,Half:108,Standard:98},adp:33.0,ktcVal:515,note:"Signed KC 1yr/$1.25M · depth back"},
+  {name:"Gus Edwards",pos:"RB",age:31.4,team:"FA",proj:{PPR:145,Half:133,Standard:121},adp:25.2,ktcVal:309,note:"Power back handcuff"},
+  {name:"Jeff Wilson Jr.",pos:"RB",age:30.8,team:"MIA",proj:{PPR:112,Half:103,Standard:94},adp:35.0,ktcVal:206,note:"Veteran depth back"},
   // WR continued
-  {name:"Jameson Williams",pos:"WR",age:25.4,team:"DET",proj:{PPR:205,Half:189,Standard:173},adp:19.5,ktcVal:5900,note:"Week 7: Emerging WR · 80+ rec 900+ yds · breakout ceiling"},
-  {name:"Jayden Reed",pos:"WR",age:26.3,team:"GB",proj:{PPR:198,Half:183,Standard:168},adp:20.8,ktcVal:4497,note:"Week 7: Emerging WR · 80+ rec 900+ yds · breakout ceiling"},
-  {name:"Christian Watson",pos:"WR",age:27.3,team:"GB",proj:{PPR:185,Half:171,Standard:157},adp:22.5,ktcVal:4736,note:"Week 7: Emerging WR · 80+ rec 900+ yds · breakout ceiling"},
-  {name:"Rashid Shaheed",pos:"WR",age:28,team:"SEA",proj:{PPR:178,Half:164,Standard:150},adp:23.8,ktcVal:3720,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Jahan Dotson",pos:"WR",age:26.4,team:"ATL",proj:{PPR:172,Half:158,Standard:144},adp:25.0,ktcVal:2266,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Alec Pierce",pos:"WR",age:26.3,team:"IND",proj:{PPR:155,Half:143,Standard:131},adp:28.8,ktcVal:5157,note:"Week 7: Emerging WR · 80+ rec 900+ yds · breakout ceiling"},
-  {name:"Jonathan Mingo",pos:"WR",age:25.4,team:"DAL",proj:{PPR:158,Half:145,Standard:132},adp:27.8,ktcVal:1854,note:"Week 7: Deep bench · DAL · limited value"},
-  {name:"Marvin Mims Jr.",pos:"WR",age:24.4,team:"DEN",proj:{PPR:162,Half:149,Standard:136},adp:26.5,ktcVal:3090,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Michael Wilson",pos:"WR",age:26.5,team:"ARI",proj:{PPR:152,Half:140,Standard:128},adp:28.5,ktcVal:4639,note:"Week 7: Emerging WR · 80+ rec 900+ yds · breakout ceiling"},
-  {name:"Jalen Tolbert",pos:"WR",age:27.5,team:"MIA",proj:{PPR:142,Half:130,Standard:118},adp:31.0,ktcVal:2308,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Kendrick Bourne",pos:"WR",age:31.1,team:"ARI",proj:{PPR:138,Half:127,Standard:116},adp:32.2,ktcVal:721,note:"Week 7: Deep bench · ARI · limited value"},
-  {name:"Isaiah McKenzie",pos:"WR",age:31.4,team:"FA",proj:{PPR:70,Half:64,Standard:58},adp:50.0,ktcVal:103,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Andrei Iosivas",pos:"WR",age:26.9,team:"CIN",proj:{PPR:132,Half:121,Standard:110},adp:33.5,ktcVal:2020,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Bryce Ford-Wheaton",pos:"WR",age:26.5,team:"NYG",proj:{PPR:128,Half:118,Standard:108},adp:34.0,ktcVal:721,note:"Week 7: Deep bench · NYG · limited value"},
-  {name:"Javon Baker",pos:"WR",age:24.5,team:"NE",proj:{PPR:118,Half:109,Standard:100},adp:36.0,ktcVal:1366,note:"Week 7: Deep bench · NE · limited value"},
-  {name:"Jamari Thrash",pos:"WR",age:25.7,team:"CLE",proj:{PPR:122,Half:112,Standard:102},adp:35.2,ktcVal:618,note:"Week 7: Deep bench · CLE · limited value"},
-  {name:"David Bell",pos:"WR",age:25.7,team:"CLE",proj:{PPR:118,Half:109,Standard:100},adp:36.2,ktcVal:515,note:"Week 7: Deep bench · CLE · limited value"},
-  {name:"Michael Gallup",pos:"WR",age:30.5,team:"FA",proj:{PPR:70,Half:64,Standard:58},adp:50.0,ktcVal:103,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"KJ Osborn",pos:"WR",age:29.2,team:"TEN",proj:{PPR:108,Half:99,Standard:90},adp:38.0,ktcVal:412,note:"Week 7: Deep bench · TEN · limited value"},
-  {name:"Charlie Jones",pos:"WR",age:27.8,team:"CIN",proj:{PPR:125,Half:115,Standard:105},adp:35.0,ktcVal:515,note:"Week 7: Deep bench · CIN · limited value"},
-  {name:"Velus Jones Jr.",pos:"WR",age:29.3,team:"CHI",proj:{PPR:105,Half:97,Standard:89},adp:39.5,ktcVal:412,note:"Week 7: Deep bench · CHI · limited value"},
-  {name:"Elijah Higgins",pos:"WR",age:25.8,team:"SF",proj:{PPR:105,Half:97,Standard:89},adp:39.8,ktcVal:412,note:"Week 7: Deep bench · SF · limited value"},
+  {name:"Jameson Williams",pos:"WR",age:25.4,team:"DET",proj:{PPR:205,Half:189,Standard:173},adp:19.5,ktcVal:5900,note:"Deep threat: 68 rec 950 yds 8 TD"},
+  {name:"Jayden Reed",pos:"WR",age:26.3,team:"GB",proj:{PPR:198,Half:183,Standard:168},adp:20.8,ktcVal:4497,note:"Slot: 78 rec 860 yds 7 TD"},
+  {name:"Christian Watson",pos:"WR",age:27.3,team:"GB",proj:{PPR:185,Half:171,Standard:157},adp:22.5,ktcVal:4736,note:"68 rec 820 yds 7 TD"},
+  {name:"Rashid Shaheed",pos:"WR",age:28,team:"SEA",proj:{PPR:178,Half:164,Standard:150},adp:23.8,ktcVal:3720,note:"Deep threat: 60 rec 820 yds"},
+  {name:"Jahan Dotson",pos:"WR",age:26.4,team:"ATL",proj:{PPR:172,Half:158,Standard:144},adp:25.0,ktcVal:2266,note:"Signed ATL 2yr/$15M · 65 rec 760 yds 6 TD"},
+  {name:"Alec Pierce",pos:"WR",age:26.3,team:"IND",proj:{PPR:155,Half:143,Standard:131},adp:28.8,ktcVal:5157,note:"Deep threat: 55 rec 720 yds"},
+  {name:"Jonathan Mingo",pos:"WR",age:25.4,team:"DAL",proj:{PPR:158,Half:145,Standard:132},adp:27.8,ktcVal:1854,note:"DAL · Year 3: 62 rec 730 yds"},
+  {name:"Marvin Mims Jr.",pos:"WR",age:24.4,team:"DEN",proj:{PPR:162,Half:149,Standard:136},adp:26.5,ktcVal:3090,note:"Speed: 60 rec 750 yds 6 TD"},
+  {name:"Michael Wilson",pos:"WR",age:26.5,team:"ARI",proj:{PPR:152,Half:140,Standard:128},adp:28.5,ktcVal:4639,note:"Physical: 58 rec 660 yds"},
+  {name:"Jalen Tolbert",pos:"WR",age:27.5,team:"MIA",proj:{PPR:142,Half:130,Standard:118},adp:31.0,ktcVal:2308,note:"55 rec 640 yds 5 TD"},
+  {name:"Kendrick Bourne",pos:"WR",age:31.1,team:"ARI",proj:{PPR:138,Half:127,Standard:116},adp:32.2,ktcVal:721,note:"Veteran slot: 55 rec 600 yds"},
+  {name:"Isaiah McKenzie",pos:"WR",age:31.4,team:"FA",proj:{PPR:70,Half:64,Standard:58},adp:50.0,ktcVal:103,note:"Last with MIA PS · unsigned FA"},
+  {name:"Andrei Iosivas",pos:"WR",age:26.9,team:"CIN",proj:{PPR:132,Half:121,Standard:110},adp:33.5,ktcVal:2020,note:"Deep threat: 48 rec 600 yds"},
+  {name:"Bryce Ford-Wheaton",pos:"WR",age:26.5,team:"NYG",proj:{PPR:128,Half:118,Standard:108},adp:34.0,ktcVal:721,note:"Big body: 50 rec 580 yds"},
+  {name:"Javon Baker",pos:"WR",age:24.5,team:"NE",proj:{PPR:118,Half:109,Standard:100},adp:36.0,ktcVal:1366,note:"Year 2: 44 rec 520 yds"},
+  {name:"Jamari Thrash",pos:"WR",age:25.7,team:"CLE",proj:{PPR:122,Half:112,Standard:102},adp:35.2,ktcVal:618,note:"Speed: 45 rec 550 yds"},
+  {name:"David Bell",pos:"WR",age:25.7,team:"CLE",proj:{PPR:118,Half:109,Standard:100},adp:36.2,ktcVal:515,note:"Slot: 48 rec 510 yds"},
+  {name:"Michael Gallup",pos:"WR",age:30.5,team:"FA",proj:{PPR:70,Half:64,Standard:58},adp:50.0,ktcVal:103,note:"Released by WAS · barely active"},
+  {name:"KJ Osborn",pos:"WR",age:29.2,team:"TEN",proj:{PPR:108,Half:99,Standard:90},adp:38.0,ktcVal:412,note:"Signed TEN Apr 2026 · slot depth"},
+  {name:"Charlie Jones",pos:"WR",age:27.8,team:"CIN",proj:{PPR:125,Half:115,Standard:105},adp:35.0,ktcVal:515,note:"Slot: 50 rec 530 yds"},
+  {name:"Velus Jones Jr.",pos:"WR",age:29.3,team:"CHI",proj:{PPR:105,Half:97,Standard:89},adp:39.5,ktcVal:412,note:"Speed: 38 rec 460 yds"},
+  {name:"Elijah Higgins",pos:"WR",age:25.8,team:"SF",proj:{PPR:105,Half:97,Standard:89},adp:39.8,ktcVal:412,note:"Slot/TE hybrid depth"},
   // TE continued
-  {name:"Tucker Kraft",pos:"TE",age:25.8,team:"GB",proj:{PPR:118,Half:108,Standard:98},adp:24.2,ktcVal:5900,note:"Week 7: Emerging TE · 70+ rec 750+ yds · breakout potential"},
-  {name:"Luke Musgrave",pos:"TE",age:26,team:"GB",proj:{PPR:105,Half:96,Standard:87},adp:28.2,ktcVal:2575,note:"Week 7: Bench TE · GB · stream candidate"},
-  {name:"Isaiah Likely",pos:"TE",age:26.4,team:"NYG",proj:{PPR:115,Half:105,Standard:95},adp:25.8,ktcVal:4271,note:"Week 7: Emerging TE · 70+ rec 750+ yds · breakout potential"},
-  {name:"Juwan Johnson",pos:"TE",age:30,team:"NO",proj:{PPR:102,Half:93,Standard:84},adp:30.2,ktcVal:3000,note:"Week 7: TE2/bench · limited role · streaming option"},
-  {name:"Zach Ertz",pos:"TE",age:35.8,team:"FA",proj:{PPR:80,Half:73,Standard:66},adp:42.0,ktcVal:309,note:"Week 7: Practice squad · FA · no value"},
-  {name:"George Kittle",pos:"TE",age:32.9,team:"SF",proj:{PPR:195,Half:179,Standard:163},adp:9.5,ktcVal:4700,note:"Week 7: TE2/bench · limited role · streaming option"},
-  {name:"Oronde Gadsden II",pos:"TE",age:23.2,team:"LAC",proj:{PPR:138,Half:126,Standard:114},adp:19.0,ktcVal:4335,note:"Week 7: Emerging TE · 70+ rec 750+ yds · breakout potential"},
-  {name:"Terrance Ferguson",pos:"TE",age:23.5,team:"LAR",proj:{PPR:118,Half:108,Standard:98},adp:23.5,ktcVal:3494,note:"Week 7: TE2/bench · limited role · streaming option"},
-  {name:"AJ Barner",pos:"TE",age:24.3,team:"SEA",proj:{PPR:108,Half:99,Standard:90},adp:27.0,ktcVal:3615,note:"Week 7: TE2/bench · limited role · streaming option"},
-  {name:"Gerald Everett",pos:"TE",age:32.2,team:"FA",proj:{PPR:75,Half:69,Standard:63},adp:44.0,ktcVal:206,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Foster Moreau",pos:"TE",age:29.3,team:"HOU",proj:{PPR:88,Half:81,Standard:74},adp:36.5,ktcVal:515,note:"Week 7: Practice squad · HOU · no value"},
-  {name:"Ian Thomas",pos:"TE",age:30.2,team:"LV",proj:{PPR:85,Half:78,Standard:71},adp:37.8,ktcVal:412,note:"Week 7: Practice squad · LV · no value"},
-  {name:"Austin Hooper",pos:"TE",age:31.8,team:"ATL",proj:{PPR:88,Half:81,Standard:74},adp:36.2,ktcVal:309,note:"Week 7: Practice squad · ATL · no value"},
-  {name:"Theo Johnson",pos:"TE",age:25.5,team:"NYG",proj:{PPR:102,Half:93,Standard:84},adp:30.5,ktcVal:2958,note:"Week 7: Bench TE · NYG · stream candidate"},
-  {name:"Brayden Willis",pos:"TE",age:26.8,team:"PHI",proj:{PPR:85,Half:78,Standard:71},adp:38.0,ktcVal:515,note:"Week 7: Practice squad · PHI · no value"},
-  {name:"Tommy Tremble",pos:"TE",age:26.2,team:"CAR",proj:{PPR:82,Half:75,Standard:68},adp:39.0,ktcVal:412,note:"Week 7: Practice squad · CAR · no value"},
+  {name:"Tucker Kraft",pos:"TE",age:25.8,team:"GB",proj:{PPR:118,Half:108,Standard:98},adp:24.2,ktcVal:5900,note:"Year 3: 50 rec 530 yds 5 TD"},
+  {name:"Luke Musgrave",pos:"TE",age:26,team:"GB",proj:{PPR:105,Half:96,Standard:87},adp:28.2,ktcVal:2575,note:"Athletic: 42 rec 440 yds"},
+  {name:"Isaiah Likely",pos:"TE",age:26.4,team:"NYG",proj:{PPR:115,Half:105,Standard:95},adp:25.8,ktcVal:4271,note:"NYG TE1: 46 rec 480 yds"},
+  {name:"Juwan Johnson",pos:"TE",age:30,team:"NO",proj:{PPR:102,Half:93,Standard:84},adp:30.2,ktcVal:3000,note:"Red zone: 38 rec 380 yds 6 TD"},
+  {name:"Zach Ertz",pos:"TE",age:35.8,team:"FA",proj:{PPR:80,Half:73,Standard:66},adp:42.0,ktcVal:309,note:"UFA from WAS · rehabbing torn ACL · plans to play 2026"},
+  {name:"George Kittle",pos:"TE",age:32.9,team:"SF",proj:{PPR:195,Half:179,Standard:163},adp:9.5,ktcVal:4259,note:"Activated off PUP · ahead of schedule on Achilles rehab · legit Week 1 shot · sell to contenders in dynasty"},
+  {name:"Oronde Gadsden II",pos:"TE",age:23.2,team:"LAC",proj:{PPR:138,Half:126,Standard:114},adp:19.0,ktcVal:4335,note:"Year 2: 55 rec 600 yds 5 TD elite athletic profile"},
+  {name:"Terrance Ferguson",pos:"TE",age:23.5,team:"LAR",proj:{PPR:118,Half:108,Standard:98},adp:23.5,ktcVal:3494,note:"Year 2: 46 rec 490 yds 4 TD developing dynasty TE"},
+  {name:"AJ Barner",pos:"TE",age:24.3,team:"SEA",proj:{PPR:108,Half:99,Standard:90},adp:27.0,ktcVal:3615,note:"Year 2: 42 rec 450 yds dynasty handcuff potential"},
+  {name:"Gerald Everett",pos:"TE",age:32.2,team:"FA",proj:{PPR:75,Half:69,Standard:63},adp:44.0,ktcVal:206,note:"Released by CHI · unsigned FA"},
+  {name:"Foster Moreau",pos:"TE",age:29.3,team:"HOU",proj:{PPR:88,Half:81,Standard:74},adp:36.5,ktcVal:515,note:"Signed HOU 2yr/$7M · 38 rec 360 yds"},
+  {name:"Ian Thomas",pos:"TE",age:30.2,team:"LV",proj:{PPR:85,Half:78,Standard:71},adp:37.8,ktcVal:412,note:"Re-signed LV Apr 2026 · blocking/depth"},
+  {name:"Austin Hooper",pos:"TE",age:31.8,team:"ATL",proj:{PPR:88,Half:81,Standard:74},adp:36.2,ktcVal:309,note:"Signed 1yr/$3.25M with ATL · 35 rec 350 yds"},
+  {name:"Theo Johnson",pos:"TE",age:25.5,team:"NYG",proj:{PPR:102,Half:93,Standard:84},adp:30.5,ktcVal:2958,note:"Year 2: 40 rec 420 yds 4 TD"},
+  {name:"Brayden Willis",pos:"TE",age:26.8,team:"PHI",proj:{PPR:85,Half:78,Standard:71},adp:38.0,ktcVal:515,note:"Backup: 32 rec 320 yds"},
+  {name:"Tommy Tremble",pos:"TE",age:26.2,team:"CAR",proj:{PPR:82,Half:75,Standard:68},adp:39.0,ktcVal:412,note:"Blocking/depth TE"},
   // QB continued
-  {name:"Gardner Minshew",pos:"QB",age:30.3,team:"ARI",proj:{PPR:248,Half:248,Standard:248},adp:22.5,ktcVal:618,note:"Week 7: Deep bench/PS · ARI · limited value"},
-  {name:"Kenny Pickett",pos:"QB",age:28.2,team:"CAR",proj:{PPR:242,Half:242,Standard:242},adp:23.8,ktcVal:1545,note:"Week 7: Deep bench/PS · CAR · limited value"},
-  {name:"Tyson Bagent",pos:"QB",age:26.2,team:"CHI",proj:{PPR:235,Half:235,Standard:235},adp:25.5,ktcVal:618,note:"Week 7: Deep bench/PS · CHI · limited value"},
-  {name:"Tommy DeVito",pos:"QB",age:28.1,team:"NYG",proj:{PPR:228,Half:228,Standard:228},adp:26.8,ktcVal:412,note:"Week 7: Deep bench/PS · NYG · limited value"},
-  {name:"Hendon Hooker",pos:"QB",age:28.6,team:"TEN",proj:{PPR:225,Half:225,Standard:225},adp:27.5,ktcVal:1545,note:"Week 7: Deep bench/PS · TEN · limited value"},
-  {name:"Jake Haener",pos:"QB",age:27.5,team:"NO",proj:{PPR:218,Half:218,Standard:218},adp:29.2,ktcVal:412,note:"Week 7: Deep bench/PS · NO · limited value"},
-  {name:"Dorian Thompson-Robinson",pos:"QB",age:26.8,team:"CLE",proj:{PPR:228,Half:228,Standard:228},adp:26.5,ktcVal:824,note:"Week 7: Deep bench/PS · CLE · limited value"},
-  {name:"Tanner McKee",pos:"QB",age:26.3,team:"PHI",proj:{PPR:208,Half:208,Standard:208},adp:31.5,ktcVal:515,note:"Week 7: Deep bench/PS · PHI · limited value"},
+  {name:"Gardner Minshew",pos:"QB",age:30.3,team:"ARI",proj:{PPR:248,Half:248,Standard:248},adp:22.5,ktcVal:618,note:"Signed ARI 1yr/$5.75M · backup"},
+  {name:"Kenny Pickett",pos:"QB",age:28.2,team:"CAR",proj:{PPR:242,Half:242,Standard:242},adp:23.8,ktcVal:1545,note:"Signed CAR 1yr/$7.5M · backup to Bryce Young"},
+  {name:"Tyson Bagent",pos:"QB",age:26.2,team:"CHI",proj:{PPR:235,Half:235,Standard:235},adp:25.5,ktcVal:618,note:"Handcuff to Williams"},
+  {name:"Tommy DeVito",pos:"QB",age:28.1,team:"NYG",proj:{PPR:228,Half:228,Standard:228},adp:26.8,ktcVal:412,note:"Backup: 2,400 yds 16 TD"},
+  {name:"Hendon Hooker",pos:"QB",age:28.6,team:"TEN",proj:{PPR:225,Half:225,Standard:225},adp:27.5,ktcVal:1545,note:"Signed TEN Apr 2026 · backup"},
+  {name:"Jake Haener",pos:"QB",age:27.5,team:"NO",proj:{PPR:218,Half:218,Standard:218},adp:29.2,ktcVal:412,note:"Backup/potential starter"},
+  {name:"Dorian Thompson-Robinson",pos:"QB",age:26.8,team:"CLE",proj:{PPR:228,Half:228,Standard:228},adp:26.5,ktcVal:824,note:"Handcuff to Sanders"},
+  {name:"Tanner McKee",pos:"QB",age:26.3,team:"PHI",proj:{PPR:208,Half:208,Standard:208},adp:31.5,ktcVal:515,note:"Deep backup"},
   // RB wave 3
-  {name:"Tyler Allgeier",pos:"RB",age:26.4,team:"ARI",proj:{PPR:165,Half:151,Standard:137},adp:21.2,ktcVal:3647,note:"Week 7: Bench back/handcuff · limited upside · hold for opportunity"},
-  {name:"Kendre Miller",pos:"RB",age:24.2,team:"NO",proj:{PPR:168,Half:154,Standard:140},adp:20.8,ktcVal:2950,note:"Week 7: Bench back/handcuff · NO · opportunity stash"},
-  {name:"Zack Moss",pos:"RB",age:28.7,team:"FA",proj:{PPR:100,Half:91,Standard:82},adp:42.0,ktcVal:412,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Antonio Gibson",pos:"RB",age:28.2,team:"FA",proj:{PPR:152,Half:139,Standard:126},adp:24.0,ktcVal:618,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Charbel Dabire",pos:"RB",age:24,team:"DET",proj:{PPR:128,Half:117,Standard:106},adp:30.8,ktcVal:1236,note:"Week 7: Practice squad · DET · no value"},
-  {name:"Isaiah Spiller",pos:"RB",age:25.1,team:"LAC",proj:{PPR:112,Half:103,Standard:94},adp:35.5,ktcVal:824,note:"Week 7: Practice squad · LAC · no value"},
-  {name:"Chase Brown",pos:"RB",age:26.4,team:"CIN",proj:{PPR:195,Half:179,Standard:163},adp:15.5,ktcVal:6355,note:"Week 7: Strong RB1 · 1,200+ rush 50+ rec 10+ TD"},
-  {name:"Rico Dowdle",pos:"RB",age:28.2,team:"PIT",proj:{PPR:215,Half:198,Standard:181},adp:13.8,ktcVal:4107,note:"Week 7: Emerging RB · 900+ rush 40+ rec · breakout trajectory"},
-  {name:"Alvin Kamara",pos:"RB",age:31.1,team:"NO",proj:{PPR:198,Half:182,Standard:166},adp:16.2,ktcVal:2612,note:"Week 7: Bench back/handcuff · NO · opportunity stash"},
-  {name:"Kenneth Gainwell",pos:"RB",age:26,team:"TB",proj:{PPR:148,Half:136,Standard:124},adp:24.0,ktcVal:3562,note:"Week 7: Bench back/handcuff · limited upside · hold for opportunity"},
-  {name:"Kyle Monangai",pos:"RB",age:24.2,team:"CHI",proj:{PPR:158,Half:145,Standard:132},adp:22.5,ktcVal:4766,note:"Week 7: Emerging RB · 900+ rush 40+ rec · breakout trajectory"},
-  {name:"Eno Benjamin",pos:"RB",age:27.4,team:"ARI",proj:{PPR:108,Half:99,Standard:90},adp:37.0,ktcVal:618,note:"Week 7: Practice squad · ARI · no value"},
-  {name:"D'Onta Foreman",pos:"RB",age:30.3,team:"FA",proj:{PPR:80,Half:73,Standard:66},adp:48.0,ktcVal:206,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Boston Scott",pos:"RB",age:31.3,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Kene Nwangwu",pos:"RB",age:28.5,team:"MIN",proj:{PPR:102,Half:93,Standard:84},adp:38.2,ktcVal:412,note:"Week 7: Practice squad · MIN · no value"},
-  {name:"Salvon Ahmed",pos:"RB",age:27.7,team:"MIA",proj:{PPR:98,Half:90,Standard:82},adp:40.0,ktcVal:412,note:"Week 7: Practice squad · MIA · no value"},
-  {name:"Ronnie Rivers",pos:"RB",age:27.6,team:"LAR",proj:{PPR:98,Half:90,Standard:82},adp:40.5,ktcVal:412,note:"Week 7: Practice squad · LAR · no value"},
+  {name:"Tyler Allgeier",pos:"RB",age:26.4,team:"ARI",proj:{PPR:165,Half:151,Standard:137},adp:21.2,ktcVal:3647,note:"Handcuff to Robinson: 700 rush 6 TD"},
+  {name:"Kendre Miller",pos:"RB",age:24.2,team:"NO",proj:{PPR:168,Half:154,Standard:140},adp:20.8,ktcVal:2950,note:"Year 3: 720 rush 7 TD featured"},
+  {name:"Zack Moss",pos:"RB",age:28.7,team:"FA",proj:{PPR:100,Half:91,Standard:82},adp:42.0,ktcVal:412,note:"Released by CIN Jul 2025 · neck injury · unsigned"},
+  {name:"Antonio Gibson",pos:"RB",age:28.2,team:"FA",proj:{PPR:152,Half:139,Standard:126},adp:24.0,ktcVal:618,note:"Pass-catching back: 52 rec 480 rush"},
+  {name:"Charbel Dabire",pos:"RB",age:24,team:"DET",proj:{PPR:128,Half:117,Standard:106},adp:30.8,ktcVal:1236,note:"Developmental back"},
+  {name:"Isaiah Spiller",pos:"RB",age:25.1,team:"LAC",proj:{PPR:112,Half:103,Standard:94},adp:35.5,ktcVal:824,note:"Depth behind Hampton/Vidal"},
+  {name:"Chase Brown",pos:"RB",age:26.4,team:"CIN",proj:{PPR:195,Half:179,Standard:163},adp:15.5,ktcVal:6355,note:"Year 3 breakout: 950 rush 55 rec"},
+  {name:"Rico Dowdle",pos:"RB",age:28.2,team:"PIT",proj:{PPR:215,Half:198,Standard:181},adp:13.8,ktcVal:4107,note:"Lead back: 1,050 rush 7 TD"},
+  {name:"Alvin Kamara",pos:"RB",age:31.1,team:"NO",proj:{PPR:198,Half:182,Standard:166},adp:16.2,ktcVal:2612,note:"Veteran: 750 rush 65 rec"},
+  {name:"Kenneth Gainwell",pos:"RB",age:26,team:"TB",proj:{PPR:148,Half:136,Standard:124},adp:24.0,ktcVal:3562,note:"Committee back: 500 rush 45 rec"},
+  {name:"Kyle Monangai",pos:"RB",age:24.2,team:"CHI",proj:{PPR:158,Half:145,Standard:132},adp:22.5,ktcVal:4766,note:"Year 2: 650 rush 5 TD"},
+  {name:"Eno Benjamin",pos:"RB",age:27.4,team:"ARI",proj:{PPR:108,Half:99,Standard:90},adp:37.0,ktcVal:618,note:"Pass-catching depth"},
+  {name:"D'Onta Foreman",pos:"RB",age:30.3,team:"FA",proj:{PPR:80,Half:73,Standard:66},adp:48.0,ktcVal:206,note:"Last with CLE · unsigned FA"},
+  {name:"Boston Scott",pos:"RB",age:31.3,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Retired March 2026"},
+  {name:"Kene Nwangwu",pos:"RB",age:28.5,team:"MIN",proj:{PPR:102,Half:93,Standard:84},adp:38.2,ktcVal:412,note:"Return specialist/depth"},
+  {name:"Salvon Ahmed",pos:"RB",age:27.7,team:"MIA",proj:{PPR:98,Half:90,Standard:82},adp:40.0,ktcVal:412,note:"Speed depth back"},
+  {name:"Ronnie Rivers",pos:"RB",age:27.6,team:"LAR",proj:{PPR:98,Half:90,Standard:82},adp:40.5,ktcVal:412,note:"Pass-catching depth"},
   // WR wave 3
-  {name:"Parker Washington",pos:"WR",age:24.4,team:"JAX",proj:{PPR:155,Half:143,Standard:131},adp:28.2,ktcVal:4532,note:"Week 7: Emerging WR · 80+ rec 900+ yds · breakout ceiling"},
-  {name:"Jalin Hyatt",pos:"WR",age:24.9,team:"NYG",proj:{PPR:148,Half:136,Standard:124},adp:29.5,ktcVal:1854,note:"Week 7: Deep bench · NYG · limited value"},
-  {name:"Keenan Allen",pos:"WR",age:34.3,team:"FA",proj:{PPR:162,Half:149,Standard:136},adp:27.0,ktcVal:2117,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Zay Jones",pos:"WR",age:31.4,team:"FA",proj:{PPR:128,Half:118,Standard:108},adp:34.5,ktcVal:309,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Allen Lazard",pos:"WR",age:30.7,team:"FA",proj:{PPR:122,Half:112,Standard:102},adp:35.8,ktcVal:206,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"DJ Chark",pos:"WR",age:29.9,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Josh Reynolds",pos:"WR",age:31.5,team:"FA",proj:{PPR:90,Half:83,Standard:76},adp:44.0,ktcVal:309,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Kyle Philips",pos:"WR",age:27.2,team:"FA",proj:{PPR:70,Half:64,Standard:58},adp:50.0,ktcVal:206,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Ja'Lynn Polk",pos:"WR",age:24.4,team:"NE",proj:{PPR:148,Half:136,Standard:124},adp:29.8,ktcVal:2884,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"KJ Hamler",pos:"WR",age:27.1,team:"DEN",proj:{PPR:108,Half:99,Standard:90},adp:38.2,ktcVal:412,note:"Week 7: Deep bench · DEN · limited value"},
-  {name:"Parris Campbell",pos:"WR",age:29.1,team:"DAL",proj:{PPR:90,Half:83,Standard:76},adp:43.0,ktcVal:206,note:"Week 7: Deep bench · DAL · limited value"},
-  {name:"Nelson Agholor",pos:"WR",age:33.3,team:"FA",proj:{PPR:70,Half:64,Standard:58},adp:50.0,ktcVal:103,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Kadarius Toney",pos:"WR",age:27.6,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Danny Gray",pos:"WR",age:27.4,team:"PHI",proj:{PPR:112,Half:103,Standard:94},adp:37.5,ktcVal:412,note:"Week 7: Deep bench · PHI · limited value"},
-  {name:"Javon Wims",pos:"WR",age:32,team:"NO",proj:{PPR:95,Half:87,Standard:79},adp:42.0,ktcVal:206,note:"Week 7: Deep bench · NO · limited value"},
-  {name:"Bo Melton",pos:"WR",age:27.3,team:"GB",proj:{PPR:98,Half:90,Standard:82},adp:41.0,ktcVal:412,note:"Week 7: Deep bench · GB · limited value"},
-  {name:"Equanimeous St. Brown",pos:"WR",age:29.9,team:"FA",proj:{PPR:60,Half:55,Standard:50},adp:52.0,ktcVal:103,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Justyn Ross",pos:"WR",age:26.7,team:"KC",proj:{PPR:95,Half:87,Standard:79},adp:43.0,ktcVal:412,note:"Week 7: Deep bench · KC · limited value"},
-  {name:"Simi Fehoko",pos:"WR",age:28.8,team:"DAL",proj:{PPR:92,Half:84,Standard:76},adp:43.5,ktcVal:309,note:"Week 7: Deep bench · DAL · limited value"},
-  {name:"Russell Gage",pos:"WR",age:30.6,team:"TB",proj:{PPR:98,Half:90,Standard:82},adp:41.8,ktcVal:309,note:"Week 7: Deep bench · TB · limited value"},
+  {name:"Parker Washington",pos:"WR",age:24.4,team:"JAX",proj:{PPR:155,Half:143,Standard:131},adp:28.2,ktcVal:4532,note:"Slot: 60 rec 660 yds"},
+  {name:"Jalin Hyatt",pos:"WR",age:24.9,team:"NYG",proj:{PPR:148,Half:136,Standard:124},adp:29.5,ktcVal:1854,note:"Deep threat: 55 rec 680 yds"},
+  {name:"Keenan Allen",pos:"WR",age:34.3,team:"FA",proj:{PPR:162,Half:149,Standard:136},adp:27.0,ktcVal:2117,note:"Released LAC · unsigned FA veteran"},
+  {name:"Zay Jones",pos:"WR",age:31.4,team:"FA",proj:{PPR:128,Half:118,Standard:108},adp:34.5,ktcVal:309,note:"Released ARI · unsigned FA"},
+  {name:"Allen Lazard",pos:"WR",age:30.7,team:"FA",proj:{PPR:122,Half:112,Standard:102},adp:35.8,ktcVal:206,note:"Physical: 45 rec 500 yds 5 TD"},
+  {name:"DJ Chark",pos:"WR",age:29.9,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Retired March 2026 after 7 seasons"},
+  {name:"Josh Reynolds",pos:"WR",age:31.5,team:"FA",proj:{PPR:90,Half:83,Standard:76},adp:44.0,ktcVal:309,note:"UFA from NYJ · veteran depth"},
+  {name:"Kyle Philips",pos:"WR",age:27.2,team:"FA",proj:{PPR:70,Half:64,Standard:58},adp:50.0,ktcVal:206,note:"Waived by LV Aug 2025 · unsigned"},
+  {name:"Ja'Lynn Polk",pos:"WR",age:24.4,team:"NE",proj:{PPR:148,Half:136,Standard:124},adp:29.8,ktcVal:2884,note:"Year 2: 58 rec 680 yds"},
+  {name:"KJ Hamler",pos:"WR",age:27.1,team:"DEN",proj:{PPR:108,Half:99,Standard:90},adp:38.2,ktcVal:412,note:"Speed: 38 rec 480 yds"},
+  {name:"Parris Campbell",pos:"WR",age:29.1,team:"DAL",proj:{PPR:90,Half:83,Standard:76},adp:43.0,ktcVal:206,note:"Signed DAL futures · slot depth"},
+  {name:"Nelson Agholor",pos:"WR",age:33.3,team:"FA",proj:{PPR:70,Half:64,Standard:58},adp:50.0,ktcVal:103,note:"UFA from BAL · unsigned veteran"},
+  {name:"Kadarius Toney",pos:"WR",age:27.6,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Retired 2025 · no longer active"},
+  {name:"Danny Gray",pos:"WR",age:27.4,team:"PHI",proj:{PPR:112,Half:103,Standard:94},adp:37.5,ktcVal:412,note:"PHI · deep threat depth"},
+  {name:"Javon Wims",pos:"WR",age:32,team:"NO",proj:{PPR:95,Half:87,Standard:79},adp:42.0,ktcVal:206,note:"Physical depth WR"},
+  {name:"Bo Melton",pos:"WR",age:27.3,team:"GB",proj:{PPR:98,Half:90,Standard:82},adp:41.0,ktcVal:412,note:"Speed: 36 rec 440 yds"},
+  {name:"Equanimeous St. Brown",pos:"WR",age:29.9,team:"FA",proj:{PPR:60,Half:55,Standard:50},adp:52.0,ktcVal:103,note:"Bounced NO/SF/waivers · unsigned FA"},
+  {name:"Justyn Ross",pos:"WR",age:26.7,team:"KC",proj:{PPR:95,Half:87,Standard:79},adp:43.0,ktcVal:412,note:"Developmental depth"},
+  {name:"Simi Fehoko",pos:"WR",age:28.8,team:"DAL",proj:{PPR:92,Half:84,Standard:76},adp:43.5,ktcVal:309,note:"Deep threat depth"},
+  {name:"Russell Gage",pos:"WR",age:30.6,team:"TB",proj:{PPR:98,Half:90,Standard:82},adp:41.8,ktcVal:309,note:"Veteran slot depth"},
   // TE wave 3
-  {name:"Dalton Schultz",pos:"TE",age:30.1,team:"HOU",proj:{PPR:112,Half:103,Standard:94},adp:26.8,ktcVal:2706,note:"Week 7: Bench TE · HOU · stream candidate"},
-  {name:"Tyler Higbee",pos:"TE",age:33.7,team:"LAR",proj:{PPR:102,Half:93,Standard:84},adp:30.8,ktcVal:1236,note:"Week 7: Practice squad · LAR · no value"},
-  {name:"Jonnu Smith",pos:"TE",age:31,team:"FA",proj:{PPR:108,Half:99,Standard:90},adp:28.8,ktcVal:1497,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Mo Alie-Cox",pos:"TE",age:32.9,team:"IND",proj:{PPR:88,Half:81,Standard:74},adp:36.8,ktcVal:309,note:"Week 7: Practice squad · IND · no value"},
-  {name:"Marcedes Lewis",pos:"TE",age:42.3,team:"GB",proj:{PPR:75,Half:69,Standard:63},adp:42.0,ktcVal:206,note:"Week 7: Practice squad · GB · no value"},
-  {name:"CJ Uzomah",pos:"TE",age:33.6,team:"NYJ",proj:{PPR:82,Half:75,Standard:68},adp:38.5,ktcVal:309,note:"Week 7: Practice squad · NYJ · no value"},
-  {name:"Jordan Akins",pos:"TE",age:34.4,team:"LV",proj:{PPR:88,Half:81,Standard:74},adp:36.0,ktcVal:309,note:"Week 7: Practice squad · LV · no value"},
-  {name:"Tre' McKitty",pos:"TE",age:27.6,team:"LAC",proj:{PPR:82,Half:75,Standard:68},adp:38.8,ktcVal:515,note:"Week 7: Practice squad · LAC · no value"},
-  {name:"Cole Turner",pos:"TE",age:26.5,team:"WAS",proj:{PPR:88,Half:81,Standard:74},adp:36.5,ktcVal:515,note:"Week 7: Practice squad · WAS · no value"},
-  {name:"Kylen Granson",pos:"TE",age:28.4,team:"TEN",proj:{PPR:85,Half:78,Standard:71},adp:37.5,ktcVal:515,note:"Week 7: Practice squad · TEN · no value"},
-  {name:"Luke Farrell",pos:"TE",age:28.9,team:"JAX",proj:{PPR:78,Half:72,Standard:66},adp:40.0,ktcVal:412,note:"Week 7: Practice squad · JAX · no value"},
-  {name:"Jody Fortson",pos:"TE",age:30.7,team:"KC",proj:{PPR:85,Half:78,Standard:71},adp:37.8,ktcVal:515,note:"Week 7: Practice squad · KC · no value"},
-  {name:"Geoff Swaim",pos:"TE",age:32.9,team:"TEN",proj:{PPR:75,Half:69,Standard:63},adp:42.5,ktcVal:206,note:"Week 7: Practice squad · TEN · no value"},
-  {name:"Adam Trautman",pos:"TE",age:29.6,team:"DEN",proj:{PPR:78,Half:72,Standard:66},adp:41.0,ktcVal:412,note:"Week 7: Practice squad · DEN · no value"},
-  {name:"Brevin Jordan",pos:"TE",age:26.1,team:"HOU",proj:{PPR:92,Half:84,Standard:76},adp:34.2,ktcVal:1236,note:"Week 7: Practice squad · HOU · no value"},
+  {name:"Dalton Schultz",pos:"TE",age:30.1,team:"HOU",proj:{PPR:112,Half:103,Standard:94},adp:26.8,ktcVal:2706,note:"Veteran: 46 rec 470 yds 4 TD"},
+  {name:"Tyler Higbee",pos:"TE",age:33.7,team:"LAR",proj:{PPR:102,Half:93,Standard:84},adp:30.8,ktcVal:1236,note:"42 rec 430 yds 4 TD"},
+  {name:"Jonnu Smith",pos:"TE",age:31,team:"FA",proj:{PPR:108,Half:99,Standard:90},adp:28.8,ktcVal:1497,note:"42 rec 440 yds 5 TD · released PIT 2026"},
+  {name:"Mo Alie-Cox",pos:"TE",age:32.9,team:"IND",proj:{PPR:88,Half:81,Standard:74},adp:36.8,ktcVal:309,note:"Blocking/red zone depth"},
+  {name:"Marcedes Lewis",pos:"TE",age:42.3,team:"GB",proj:{PPR:75,Half:69,Standard:63},adp:42.0,ktcVal:206,note:"Veteran blocker"},
+  {name:"CJ Uzomah",pos:"TE",age:33.6,team:"NYJ",proj:{PPR:82,Half:75,Standard:68},adp:38.5,ktcVal:309,note:"Veteran blocking TE"},
+  {name:"Jordan Akins",pos:"TE",age:34.4,team:"LV",proj:{PPR:88,Half:81,Standard:74},adp:36.0,ktcVal:309,note:"42 rec 420 yds"},
+  {name:"Tre' McKitty",pos:"TE",age:27.6,team:"LAC",proj:{PPR:82,Half:75,Standard:68},adp:38.8,ktcVal:515,note:"Handcuff TE depth"},
+  {name:"Cole Turner",pos:"TE",age:26.5,team:"WAS",proj:{PPR:88,Half:81,Standard:74},adp:36.5,ktcVal:515,note:"38 rec 390 yds 4 TD"},
+  {name:"Kylen Granson",pos:"TE",age:28.4,team:"TEN",proj:{PPR:85,Half:78,Standard:71},adp:37.5,ktcVal:515,note:"32 rec 340 yds"},
+  {name:"Luke Farrell",pos:"TE",age:28.9,team:"JAX",proj:{PPR:78,Half:72,Standard:66},adp:40.0,ktcVal:412,note:"Blocking/depth"},
+  {name:"Jody Fortson",pos:"TE",age:30.7,team:"KC",proj:{PPR:85,Half:78,Standard:71},adp:37.8,ktcVal:515,note:"Red zone: 28 rec 300 yds 5 TD"},
+  {name:"Geoff Swaim",pos:"TE",age:32.9,team:"TEN",proj:{PPR:75,Half:69,Standard:63},adp:42.5,ktcVal:206,note:"Veteran blocker"},
+  {name:"Adam Trautman",pos:"TE",age:29.6,team:"DEN",proj:{PPR:78,Half:72,Standard:66},adp:41.0,ktcVal:412,note:"Depth TE"},
+  {name:"Brevin Jordan",pos:"TE",age:26.1,team:"HOU",proj:{PPR:92,Half:84,Standard:76},adp:34.2,ktcVal:1236,note:"Handcuff: 38 rec 380 yds"},
   // Bhayshul Tuten — 2026 rookie not in main rookies section
-  {name:"Bhayshul Tuten",pos:"RB",age:23.5,team:"JAX",proj:{PPR:250,Half:230,Standard:210},adp:7.5,ktcVal:5800,note:"Week 7: Emerging RB · 900+ rush 40+ rec · breakout trajectory"},
+  {name:"Bhayshul Tuten",pos:"RB",age:23.5,team:"JAX",proj:{PPR:250,Half:230,Standard:210},adp:7.5,ktcVal:5800,note:"2026 draft · JAX RB1 — Etienne gone to NO. Three-down bellcow role at 23 with massive dynasty upside"},
   // 2025 NFL Draft class — Year 2 in 2026
-  {name:"Kaleb Johnson",pos:"RB",age:23,team:"GB",proj:{PPR:175,Half:160,Standard:145},adp:16.0,ktcVal:3193,note:"Week 7: Bench back/handcuff · GB · opportunity stash"},
-  {name:"Quinshon Judkins",pos:"RB",age:22.8,team:"CLE",proj:{PPR:232,Half:213,Standard:194},adp:6.5,ktcVal:5900,note:"Week 7: Emerging RB · 900+ rush 40+ rec · breakout trajectory"},
-  {name:"TreVeyon Henderson",pos:"RB",age:23.8,team:"NE",proj:{PPR:178,Half:163,Standard:148},adp:18.2,ktcVal:6248,note:"Week 7: Strong RB1 · 1,200+ rush 50+ rec 10+ TD"},
-  {name:"RJ Harvey",pos:"RB",age:25.6,team:"DEN",proj:{PPR:162,Half:148,Standard:134},adp:21.8,ktcVal:4670,note:"Week 7: Emerging RB · 900+ rush 40+ rec · breakout trajectory"},
-  {name:"Tahj Brooks",pos:"RB",age:24.3,team:"CIN",proj:{PPR:148,Half:135,Standard:122},adp:24.8,ktcVal:2136,note:"Week 7: Bench back/handcuff · CIN · opportunity stash"},
-  {name:"Dylan Sampson",pos:"RB",age:22,team:"CLE",proj:{PPR:155,Half:142,Standard:129},adp:23.2,ktcVal:3605,note:"Week 7: Bench back/handcuff · limited upside · hold for opportunity"},
-  {name:"Damien Martinez",pos:"RB",age:22.6,team:"MIA",proj:{PPR:145,Half:133,Standard:121},adp:25.8,ktcVal:2575,note:"Week 7: Bench back/handcuff · MIA · opportunity stash"},
-  {name:"Emeka Egbuka",pos:"WR",age:23.9,team:"TB",proj:{PPR:215,Half:199,Standard:183},adp:17.5,ktcVal:6930,note:"Week 7: Strong WR1 · 100+ rec 1,200+ yds 10+ TD · consistent target"},
-  {name:"Luther Burden III",pos:"WR",age:22.7,team:"CHI",proj:{PPR:218,Half:201,Standard:184},adp:17.5,ktcVal:6000,note:"Week 7: Strong WR1 · 100+ rec 1,200+ yds 10+ TD · consistent target"},
-  {name:"Jayden Higgins",pos:"WR",age:23.7,team:"HOU",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:1200,note:"Torn ACL season-ending (Week 7) · dynasty stash 2027 age 23 · boosts Nico Collins targets now"},
-  {name:"Jack Bech",pos:"WR",age:23.7,team:"LV",proj:{PPR:172,Half:158,Standard:144},adp:24.2,ktcVal:3145,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Kyle Williams",pos:"WR",age:23.8,team:"ARI",proj:{PPR:165,Half:152,Standard:139},adp:26.2,ktcVal:3565,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Savion Williams",pos:"WR",age:24.8,team:"GB",proj:{PPR:148,Half:136,Standard:124},adp:29.8,ktcVal:2177,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Chimere Dike",pos:"WR",age:24.7,team:"NYJ",proj:{PPR:138,Half:127,Standard:116},adp:32.0,ktcVal:3254,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Jaylin Noel",pos:"WR",age:24,team:"HOU",proj:{PPR:128,Half:118,Standard:108},adp:34.8,ktcVal:3567,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Colston Loveland",pos:"TE",age:22.4,team:"CHI",proj:{PPR:195,Half:179,Standard:163},adp:7.0,ktcVal:6500,note:"Week 7: Strong TE1 · 85+ rec 950+ yds 8+ TD · consistent target"},
-  {name:"Mason Taylor",pos:"TE",age:22.3,team:"NYJ",proj:{PPR:158,Half:145,Standard:132},adp:16.5,ktcVal:2873,note:"Week 7: Bench TE · NYJ · stream candidate"},
+  {name:"Kaleb Johnson",pos:"RB",age:23,team:"GB",proj:{PPR:175,Half:160,Standard:145},adp:16.0,ktcVal:3193,note:"Traded from PIT to GB for 2028 6th. Committee behind MarShawn Lloyd with Jacobs on exempt list. Dynasty hold with upside"},
+  {name:"Quinshon Judkins",pos:"RB",age:22.8,team:"CLE",proj:{PPR:232,Half:213,Standard:194},adp:6.5,ktcVal:5900,note:"Wk1: 12 carries 33 yds 2.8 YPC in 34-10 blowout loss · Year 2: 1,100 rush 9 TD"},
+  {name:"TreVeyon Henderson",pos:"RB",age:23.8,team:"NE",proj:{PPR:178,Half:163,Standard:148},adp:18.2,ktcVal:6248,note:"2025 pick 2-38 · Year 2: 750 rush 55 rec"},
+  {name:"RJ Harvey",pos:"RB",age:25.6,team:"DEN",proj:{PPR:162,Half:148,Standard:134},adp:21.8,ktcVal:4670,note:"2025 pick 2-60 · Year 2: 680 rush 48 rec"},
+  {name:"Tahj Brooks",pos:"RB",age:24.3,team:"CIN",proj:{PPR:148,Half:135,Standard:122},adp:24.8,ktcVal:2136,note:"2025 pick 6-193 · Year 2: 620 rush 5 TD"},
+  {name:"Dylan Sampson",pos:"RB",age:22,team:"CLE",proj:{PPR:155,Half:142,Standard:129},adp:23.2,ktcVal:3605,note:"2025 pick 4-126 · Year 2: 650 rush 6 TD"},
+  {name:"Damien Martinez",pos:"RB",age:22.6,team:"MIA",proj:{PPR:145,Half:133,Standard:121},adp:25.8,ktcVal:2575,note:"2025 pick 7-223 · Year 2: 580 rush 5 TD"},
+  {name:"Emeka Egbuka",pos:"WR",age:23.9,team:"TB",proj:{PPR:215,Half:199,Standard:183},adp:17.5,ktcVal:6930,note:"2025 pick 1-19 · Year 2: 85 rec 970 yds 8 TD"},
+  {name:"Luther Burden III",pos:"WR",age:22.7,team:"CHI",proj:{PPR:218,Half:201,Standard:184},adp:17.5,ktcVal:6000,note:"2025 pick 2-39 · Year 2 · returned to practice from groin injury · trending toward Week 1 · 85 rec 950 yds 7 TD"},
+  {name:"Jayden Higgins",pos:"WR",age:23.7,team:"HOU",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:2575,note:"2025 pick 2-34 · TORN ACL — out for 2026. Dynasty stash for 2027, only 23. Boosts Nico Collins + Tank Dell targets."},
+  {name:"Jack Bech",pos:"WR",age:23.7,team:"LV",proj:{PPR:172,Half:158,Standard:144},adp:24.2,ktcVal:3145,note:"2025 pick 2-58 · Year 2: 68 rec 780 yds"},
+  {name:"Kyle Williams",pos:"WR",age:23.8,team:"ARI",proj:{PPR:165,Half:152,Standard:139},adp:26.2,ktcVal:3565,note:"2025 pick 3-69 · Year 2: 62 rec 740 yds"},
+  {name:"Savion Williams",pos:"WR",age:24.8,team:"GB",proj:{PPR:148,Half:136,Standard:124},adp:29.8,ktcVal:2177,note:"2025 pick 3-87 · Year 2 big body: 55 rec 660 yds"},
+  {name:"Chimere Dike",pos:"WR",age:24.7,team:"NYJ",proj:{PPR:138,Half:127,Standard:116},adp:32.0,ktcVal:3254,note:"2025 pick 4-103 · Year 2 slot: 52 rec 580 yds"},
+  {name:"Jaylin Noel",pos:"WR",age:24,team:"HOU",proj:{PPR:128,Half:118,Standard:108},adp:34.8,ktcVal:3567,note:"2025 pick 3-79 · Year 2: 46 rec 540 yds"},
+  {name:"Colston Loveland",pos:"TE",age:22.4,team:"CHI",proj:{PPR:195,Half:179,Standard:163},adp:7.0,ktcVal:6500,note:"Wk1: 0 catches on 2 targets despite CHI scoring 59 · Year 2: 78 rec 820 yds 7 TD"},
+  {name:"Mason Taylor",pos:"TE",age:22.3,team:"NYJ",proj:{PPR:158,Half:145,Standard:132},adp:16.5,ktcVal:2873,note:"2025 pick 2-42 · Year 2: 65 rec 680 yds 5 TD elite receiving prospect"},
   // Veterans still missing
-  {name:"Amari Cooper",pos:"WR",age:32.2,team:"FA",proj:{PPR:172,Half:158,Standard:144},adp:25.5,ktcVal:412,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"JuJu Smith-Schuster",pos:"WR",age:29.8,team:"FA",proj:{PPR:100,Half:92,Standard:84},adp:45.0,ktcVal:206,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Van Jefferson",pos:"WR",age:30.1,team:"WAS",proj:{PPR:118,Half:108,Standard:98},adp:36.0,ktcVal:309,note:"Week 7: Deep bench · WAS · limited value"},
-  {name:"Greg Dortch",pos:"WR",age:28.2,team:"DET",proj:{PPR:132,Half:121,Standard:110},adp:33.2,ktcVal:515,note:"Week 7: Deep bench · DET · limited value"},
-  {name:"Quez Watkins",pos:"WR",age:28.2,team:"PHI",proj:{PPR:108,Half:99,Standard:90},adp:38.8,ktcVal:412,note:"Week 7: Deep bench · PHI · limited value"},
-  {name:"Scotty Miller",pos:"WR",age:29.1,team:"TB",proj:{PPR:102,Half:93,Standard:84},adp:40.8,ktcVal:309,note:"Week 7: Deep bench · TB · limited value"},
-  {name:"Shi Smith",pos:"WR",age:27.8,team:"CAR",proj:{PPR:108,Half:99,Standard:90},adp:38.5,ktcVal:412,note:"Week 7: Deep bench · CAR · limited value"},
-  {name:"Tyler Johnson",pos:"WR",age:28,team:"TB",proj:{PPR:95,Half:87,Standard:79},adp:42.2,ktcVal:309,note:"Week 7: Deep bench · TB · limited value"},
-  {name:"Dez Fitzpatrick",pos:"WR",age:28.7,team:"TEN",proj:{PPR:92,Half:84,Standard:76},adp:43.8,ktcVal:309,note:"Week 7: Deep bench · TEN · limited value"},
-  {name:"Laquon Treadwell",pos:"WR",age:31.2,team:"NO",proj:{PPR:88,Half:81,Standard:74},adp:44.0,ktcVal:206,note:"Week 7: Deep bench · NO · limited value"},
-  {name:"Phillip Dorsett",pos:"WR",age:33.6,team:"FA",proj:{PPR:82,Half:75,Standard:68},adp:46.0,ktcVal:155,note:"Week 7: Deep bench · FA · limited value"},
+  {name:"Amari Cooper",pos:"WR",age:32.2,team:"FA",proj:{PPR:172,Half:158,Standard:144},adp:25.5,ktcVal:412,note:"Retired after brief LV stint 2025"},
+  {name:"JuJu Smith-Schuster",pos:"WR",age:29.8,team:"FA",proj:{PPR:100,Half:92,Standard:84},adp:45.0,ktcVal:206,note:"Released by KC · unsigned FA"},
+  {name:"Van Jefferson",pos:"WR",age:30.1,team:"WAS",proj:{PPR:118,Half:108,Standard:98},adp:36.0,ktcVal:309,note:"Signed WAS · deep threat depth"},
+  {name:"Greg Dortch",pos:"WR",age:28.2,team:"DET",proj:{PPR:132,Half:121,Standard:110},adp:33.2,ktcVal:515,note:"Traded to DET · slot depth"},
+  {name:"Quez Watkins",pos:"WR",age:28.2,team:"PHI",proj:{PPR:108,Half:99,Standard:90},adp:38.8,ktcVal:412,note:"Deep threat: 38 rec 480 yds"},
+  {name:"Scotty Miller",pos:"WR",age:29.1,team:"TB",proj:{PPR:102,Half:93,Standard:84},adp:40.8,ktcVal:309,note:"Speed: 35 rec 440 yds"},
+  {name:"Shi Smith",pos:"WR",age:27.8,team:"CAR",proj:{PPR:108,Half:99,Standard:90},adp:38.5,ktcVal:412,note:"Slot: 42 rec 450 yds"},
+  {name:"Tyler Johnson",pos:"WR",age:28,team:"TB",proj:{PPR:95,Half:87,Standard:79},adp:42.2,ktcVal:309,note:"Physical depth WR"},
+  {name:"Dez Fitzpatrick",pos:"WR",age:28.7,team:"TEN",proj:{PPR:92,Half:84,Standard:76},adp:43.8,ktcVal:309,note:"Deep threat depth"},
+  {name:"Laquon Treadwell",pos:"WR",age:31.2,team:"NO",proj:{PPR:88,Half:81,Standard:74},adp:44.0,ktcVal:206,note:"Physical depth"},
+  {name:"Phillip Dorsett",pos:"WR",age:33.6,team:"FA",proj:{PPR:82,Half:75,Standard:68},adp:46.0,ktcVal:155,note:"Speed veteran FA"},
   // RBs still missing
-  {name:"JaMycal Hasty",pos:"RB",age:30,team:"JAX",proj:{PPR:102,Half:93,Standard:84},adp:38.5,ktcVal:412,note:"Week 7: Practice squad · JAX · no value"},
-  {name:"Hassan Hall",pos:"RB",age:26,team:"ATL",proj:{PPR:95,Half:87,Standard:79},adp:41.2,ktcVal:824,note:"Week 7: Practice squad · ATL · no value"},
-  {name:"Mataeo Durant",pos:"RB",age:26.7,team:"DAL",proj:{PPR:105,Half:96,Standard:87},adp:37.5,ktcVal:927,note:"Week 7: Practice squad · DAL · no value"},
-  {name:"Dwayne Washington",pos:"RB",age:32.3,team:"NO",proj:{PPR:85,Half:78,Standard:71},adp:44.0,ktcVal:206,note:"Week 7: Practice squad · NO · no value"},
-  {name:"Tavion Thomas",pos:"RB",age:25,team:"CIN",proj:{PPR:92,Half:84,Standard:76},adp:42.0,ktcVal:515,note:"Week 7: Practice squad · CIN · no value"},
-  {name:"Dare Ogunbowale",pos:"RB",age:32.3,team:"HOU",proj:{PPR:88,Half:81,Standard:74},adp:43.5,ktcVal:309,note:"Week 7: Practice squad · HOU · no value"},
-  {name:"C.J. Ham",pos:"RB",age:33.1,team:"MIN",proj:{PPR:72,Half:66,Standard:60},adp:48.0,ktcVal:206,note:"Week 7: Practice squad · MIN · no value"},
-  {name:"Patrick Ricard",pos:"RB",age:32.3,team:"BAL",proj:{PPR:68,Half:62,Standard:56},adp:50.0,ktcVal:206,note:"Week 7: Practice squad · BAL · no value"},
-  {name:"Ty Montgomery",pos:"RB",age:33.6,team:"NO",proj:{PPR:78,Half:72,Standard:66},adp:46.0,ktcVal:155,note:"Week 7: Practice squad · NO · no value"},
+  {name:"JaMycal Hasty",pos:"RB",age:30,team:"JAX",proj:{PPR:102,Half:93,Standard:84},adp:38.5,ktcVal:412,note:"Pass-catching depth"},
+  {name:"Hassan Hall",pos:"RB",age:26,team:"ATL",proj:{PPR:95,Half:87,Standard:79},adp:41.2,ktcVal:824,note:"Speed depth back"},
+  {name:"Mataeo Durant",pos:"RB",age:26.7,team:"DAL",proj:{PPR:105,Half:96,Standard:87},adp:37.5,ktcVal:927,note:"Handcuff depth"},
+  {name:"Dwayne Washington",pos:"RB",age:32.3,team:"NO",proj:{PPR:85,Half:78,Standard:71},adp:44.0,ktcVal:206,note:"Veteran depth back"},
+  {name:"Tavion Thomas",pos:"RB",age:25,team:"CIN",proj:{PPR:92,Half:84,Standard:76},adp:42.0,ktcVal:515,note:"Developmental depth"},
+  {name:"Dare Ogunbowale",pos:"RB",age:32.3,team:"HOU",proj:{PPR:88,Half:81,Standard:74},adp:43.5,ktcVal:309,note:"Pass-catching veteran"},
+  {name:"C.J. Ham",pos:"RB",age:33.1,team:"MIN",proj:{PPR:72,Half:66,Standard:60},adp:48.0,ktcVal:206,note:"FB/depth role"},
+  {name:"Patrick Ricard",pos:"RB",age:32.3,team:"BAL",proj:{PPR:68,Half:62,Standard:56},adp:50.0,ktcVal:206,note:"FB blocker"},
+  {name:"Ty Montgomery",pos:"RB",age:33.6,team:"NO",proj:{PPR:78,Half:72,Standard:66},adp:46.0,ktcVal:155,note:"Veteran utility back"},
   // More TEs
-  {name:"Davis Allen",pos:"TE",age:25.6,team:"LAR",proj:{PPR:92,Half:84,Standard:76},adp:34.5,ktcVal:1236,note:"Week 7: Practice squad · LAR · no value"},
-  {name:"Donald Parham Jr.",pos:"TE",age:29,team:"LAC",proj:{PPR:82,Half:75,Standard:68},adp:39.5,ktcVal:515,note:"Week 7: Practice squad · LAC · no value"},
-  {name:"Jeremy Ruckert",pos:"TE",age:26,team:"NYJ",proj:{PPR:78,Half:72,Standard:66},adp:41.5,ktcVal:618,note:"Week 7: Practice squad · NYJ · no value"},
-  {name:"Hunter Long",pos:"TE",age:28,team:"LAR",proj:{PPR:75,Half:69,Standard:63},adp:43.0,ktcVal:412,note:"Week 7: Practice squad · LAR · no value"},
-  {name:"Noah Gray",pos:"TE",age:27.3,team:"KC",proj:{PPR:88,Half:81,Standard:74},adp:36.8,ktcVal:1875,note:"Week 7: Practice squad · KC · no value"},
-  {name:"Josiah Deguara",pos:"TE",age:29.5,team:"GB",proj:{PPR:72,Half:66,Standard:60},adp:44.5,ktcVal:309,note:"Week 7: Practice squad · GB · no value"},
-  {name:"Andrew Beck",pos:"TE",age:30.3,team:"HOU",proj:{PPR:68,Half:62,Standard:56},adp:46.5,ktcVal:206,note:"Week 7: Practice squad · HOU · no value"},
-  {name:"Ryan Becker",pos:"TE",age:28.7,team:"WAS",proj:{PPR:75,Half:69,Standard:63},adp:43.5,ktcVal:515,note:"Week 7: Practice squad · WAS · no value"},
-  {name:"Mustapha Mara",pos:"TE",age:26,team:"NO",proj:{PPR:72,Half:66,Standard:60},adp:45.0,ktcVal:412,note:"Week 7: Practice squad · NO · no value"},
+  {name:"Davis Allen",pos:"TE",age:25.6,team:"LAR",proj:{PPR:92,Half:84,Standard:76},adp:34.5,ktcVal:1236,note:"Year 3 developmental TE"},
+  {name:"Donald Parham Jr.",pos:"TE",age:29,team:"LAC",proj:{PPR:82,Half:75,Standard:68},adp:39.5,ktcVal:515,note:"Red zone target: 28 rec 280 yds 4 TD"},
+  {name:"Jeremy Ruckert",pos:"TE",age:26,team:"NYJ",proj:{PPR:78,Half:72,Standard:66},adp:41.5,ktcVal:618,note:"Developmental TE"},
+  {name:"Hunter Long",pos:"TE",age:28,team:"LAR",proj:{PPR:75,Half:69,Standard:63},adp:43.0,ktcVal:412,note:"Blocking/depth"},
+  {name:"Noah Gray",pos:"TE",age:27.3,team:"KC",proj:{PPR:88,Half:81,Standard:74},adp:36.8,ktcVal:1875,note:"38 rec 380 yds"},
+  {name:"Josiah Deguara",pos:"TE",age:29.5,team:"GB",proj:{PPR:72,Half:66,Standard:60},adp:44.5,ktcVal:309,note:"FB/TE hybrid"},
+  {name:"Andrew Beck",pos:"TE",age:30.3,team:"HOU",proj:{PPR:68,Half:62,Standard:56},adp:46.5,ktcVal:206,note:"FB/depth"},
+  {name:"Ryan Becker",pos:"TE",age:28.7,team:"WAS",proj:{PPR:75,Half:69,Standard:63},adp:43.5,ktcVal:515,note:"Developmental TE"},
+  {name:"Mustapha Mara",pos:"TE",age:26,team:"NO",proj:{PPR:72,Half:66,Standard:60},adp:45.0,ktcVal:412,note:"Depth TE"},
   // More IDP if dynasty leagues use them
-  {name:"Jaelon Darden",pos:"WR",age:27.6,team:"NO",proj:{PPR:88,Half:81,Standard:74},adp:44.5,ktcVal:309,note:"Week 7: Deep bench · NO · limited value"},
-  {name:"David Moore",pos:"WR",age:28.3,team:"CHI",proj:{PPR:92,Half:84,Standard:76},adp:43.2,ktcVal:309,note:"Week 7: Deep bench · CHI · limited value"},
-  {name:"Ty Fryfogle",pos:"WR",age:27.6,team:"IND",proj:{PPR:82,Half:75,Standard:68},adp:45.5,ktcVal:309,note:"Week 7: Deep bench · IND · limited value"},
-  {name:"Isaiah Hodgins",pos:"WR",age:27.9,team:"NYG",proj:{PPR:105,Half:97,Standard:89},adp:39.2,ktcVal:515,note:"Week 7: Deep bench · NYG · limited value"},
-  {name:"Kalil Pimpleton",pos:"WR",age:27.7,team:"DET",proj:{PPR:85,Half:78,Standard:71},adp:44.8,ktcVal:309,note:"Week 7: Deep bench · DET · limited value"},
-  {name:"Trent Sherfield",pos:"WR",age:30.5,team:"SF",proj:{PPR:95,Half:87,Standard:79},adp:42.8,ktcVal:309,note:"Week 7: Deep bench · SF · limited value"},
-  {name:"Michael Bandy",pos:"WR",age:28.7,team:"LAC",proj:{PPR:82,Half:75,Standard:68},adp:45.2,ktcVal:309,note:"Week 7: Deep bench · LAC · limited value"},
-  {name:"Nsimba Webster",pos:"WR",age:30.6,team:"ARI",proj:{PPR:78,Half:72,Standard:66},adp:46.8,ktcVal:206,note:"Week 7: Deep bench · ARI · limited value"},
+  {name:"Jaelon Darden",pos:"WR",age:27.6,team:"NO",proj:{PPR:88,Half:81,Standard:74},adp:44.5,ktcVal:309,note:"Return/depth WR"},
+  {name:"David Moore",pos:"WR",age:28.3,team:"CHI",proj:{PPR:92,Half:84,Standard:76},adp:43.2,ktcVal:309,note:"Veteran deep threat"},
+  {name:"Ty Fryfogle",pos:"WR",age:27.6,team:"IND",proj:{PPR:82,Half:75,Standard:68},adp:45.5,ktcVal:309,note:"Physical depth WR"},
+  {name:"Isaiah Hodgins",pos:"WR",age:27.9,team:"NYG",proj:{PPR:105,Half:97,Standard:89},adp:39.2,ktcVal:515,note:"Physical: 40 rec 460 yds"},
+  {name:"Kalil Pimpleton",pos:"WR",age:27.7,team:"DET",proj:{PPR:85,Half:78,Standard:71},adp:44.8,ktcVal:309,note:"Slot/return depth"},
+  {name:"Trent Sherfield",pos:"WR",age:30.5,team:"SF",proj:{PPR:95,Half:87,Standard:79},adp:42.8,ktcVal:309,note:"Veteran slot: 38 rec 400 yds"},
+  {name:"Michael Bandy",pos:"WR",age:28.7,team:"LAC",proj:{PPR:82,Half:75,Standard:68},adp:45.2,ktcVal:309,note:"Speed depth WR"},
+  {name:"Nsimba Webster",pos:"WR",age:30.6,team:"ARI",proj:{PPR:78,Half:72,Standard:66},adp:46.8,ktcVal:206,note:"Return/depth WR"},
   // Major missing vets
-  {name:"Cooper Kupp",pos:"WR",age:33.2,team:"SEA",proj:{PPR:218,Half:201,Standard:184},adp:17.2,ktcVal:2060,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Chris Godwin",pos:"WR",age:30.5,team:"TB",proj:{PPR:195,Half:180,Standard:165},adp:20.5,ktcVal:3665,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Michael Thomas",pos:"WR",age:33.5,team:"FA",proj:{PPR:148,Half:136,Standard:124},adp:29.5,ktcVal:412,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Robert Woods",pos:"WR",age:34.4,team:"FA",proj:{PPR:92,Half:84,Standard:76},adp:43.0,ktcVal:155,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Braxton Berrios",pos:"WR",age:30.9,team:"FA",proj:{PPR:80,Half:73,Standard:66},adp:46.0,ktcVal:206,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Richie James",pos:"WR",age:31,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Mack Hollins",pos:"WR",age:32.9,team:"NE",proj:{PPR:88,Half:81,Standard:74},adp:44.2,ktcVal:206,note:"Week 7: Deep bench · NE · limited value"},
-  {name:"Terrace Marshall Jr.",pos:"WR",age:26.2,team:"MIA",proj:{PPR:108,Half:99,Standard:90},adp:39.0,ktcVal:412,note:"Week 7: Deep bench · MIA · limited value"},
-  {name:"Deven Thompkins",pos:"WR",age:26.7,team:"TB",proj:{PPR:98,Half:90,Standard:82},adp:41.8,ktcVal:309,note:"Week 7: Deep bench · TB · limited value"},
-  {name:"Dee Eskridge",pos:"WR",age:29.4,team:"FA",proj:{PPR:60,Half:55,Standard:50},adp:50.0,ktcVal:103,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Marvin Jones Jr.",pos:"WR",age:36.5,team:"FA",proj:{PPR:78,Half:72,Standard:66},adp:47.0,ktcVal:103,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"James Proche",pos:"WR",age:29.9,team:"BAL",proj:{PPR:82,Half:75,Standard:68},adp:46.2,ktcVal:206,note:"Week 7: Deep bench · BAL · limited value"},
-  {name:"N'Keal Harry",pos:"WR",age:28.7,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Reggie Roberson Jr.",pos:"WR",age:27.9,team:"DAL",proj:{PPR:82,Half:75,Standard:68},adp:46.5,ktcVal:206,note:"Week 7: Deep bench · DAL · limited value"},
-  {name:"Cade Johnson",pos:"WR",age:28.4,team:"SEA",proj:{PPR:78,Half:72,Standard:66},adp:47.5,ktcVal:206,note:"Week 7: Deep bench · SEA · limited value"},
-  {name:"Lynn Bowden Jr.",pos:"WR",age:28.9,team:"LV",proj:{PPR:82,Half:75,Standard:68},adp:46.8,ktcVal:206,note:"Week 7: Deep bench · LV · limited value"},
-  {name:"Davion Davis",pos:"WR",age:29.8,team:"PHI",proj:{PPR:75,Half:69,Standard:63},adp:48.0,ktcVal:206,note:"Week 7: Deep bench · PHI · limited value"},
-  {name:"Malachi Corley",pos:"WR",age:24.4,team:"CLE",proj:{PPR:148,Half:136,Standard:124},adp:29.0,ktcVal:2884,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Calvin Austin III",pos:"WR",age:27.4,team:"NYG",proj:{PPR:118,Half:108,Standard:98},adp:37.0,ktcVal:1931,note:"Week 7: Deep bench · NYG · limited value"},
-  {name:"Treylon Burks",pos:"WR",age:26.4,team:"WAS",proj:{PPR:112,Half:103,Standard:94},adp:39.0,ktcVal:1875,note:"Week 7: Deep bench · WAS · limited value"},
-  {name:"Nick Cross",pos:"DB",age:25,team:"WAS",proj:{PPR:88,Half:88,Standard:88},adp:26.0,ktcVal:1648,note:"Week 7: Reserve DB · WAS · depth"},
-  {name:"Ricky Pearsall",pos:"WR",age:26,team:"SF",proj:{PPR:165,Half:152,Standard:139},adp:26.0,ktcVal:3495,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Roman Wilson",pos:"WR",age:25.2,team:"PIT",proj:{PPR:142,Half:130,Standard:118},adp:31.2,ktcVal:2884,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Devaughn Vele",pos:"WR",age:28.7,team:"DEN",proj:{PPR:132,Half:121,Standard:110},adp:33.8,ktcVal:2053,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Troy Franklin",pos:"WR",age:23.6,team:"DEN",proj:{PPR:145,Half:133,Standard:121},adp:30.8,ktcVal:3943,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Jalen McMillan",pos:"WR",age:24.7,team:"TB",proj:{PPR:138,Half:127,Standard:116},adp:32.5,ktcVal:3900,note:"Week 7: Bench WR · limited targets · roster depth stash"},
+  {name:"Cooper Kupp",pos:"WR",age:33.2,team:"SEA",proj:{PPR:218,Half:201,Standard:184},adp:17.2,ktcVal:2060,note:"Elite route runner: 88 rec 1,020 yds if healthy"},
+  {name:"Chris Godwin",pos:"WR",age:30.5,team:"TB",proj:{PPR:195,Half:180,Standard:165},adp:20.5,ktcVal:3665,note:"Return from injury: 76 rec 880 yds"},
+  {name:"Michael Thomas",pos:"WR",age:33.5,team:"FA",proj:{PPR:148,Half:136,Standard:124},adp:29.5,ktcVal:412,note:"Injury reclamation: 55 rec 620 yds if healthy"},
+  {name:"Robert Woods",pos:"WR",age:34.4,team:"FA",proj:{PPR:92,Half:84,Standard:76},adp:43.0,ktcVal:155,note:"Veteran slot depth"},
+  {name:"Braxton Berrios",pos:"WR",age:30.9,team:"FA",proj:{PPR:80,Half:73,Standard:66},adp:46.0,ktcVal:206,note:"UFA from HOU · unsigned"},
+  {name:"Richie James",pos:"WR",age:31,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Retired · knee injury"},
+  {name:"Mack Hollins",pos:"WR",age:32.9,team:"NE",proj:{PPR:88,Half:81,Standard:74},adp:44.2,ktcVal:206,note:"Under contract NE · deep threat veteran"},
+  {name:"Terrace Marshall Jr.",pos:"WR",age:26.2,team:"MIA",proj:{PPR:108,Half:99,Standard:90},adp:39.0,ktcVal:412,note:"Signed MIA futures · depth WR"},
+  {name:"Deven Thompkins",pos:"WR",age:26.7,team:"TB",proj:{PPR:98,Half:90,Standard:82},adp:41.8,ktcVal:309,note:"Speed: 38 rec 450 yds"},
+  {name:"Dee Eskridge",pos:"WR",age:29.4,team:"FA",proj:{PPR:60,Half:55,Standard:50},adp:50.0,ktcVal:103,note:"UFA from MIA · unsigned"},
+  {name:"Marvin Jones Jr.",pos:"WR",age:36.5,team:"FA",proj:{PPR:78,Half:72,Standard:66},adp:47.0,ktcVal:103,note:"Veteran if signed"},
+  {name:"James Proche",pos:"WR",age:29.9,team:"BAL",proj:{PPR:82,Half:75,Standard:68},adp:46.2,ktcVal:206,note:"Slot/return depth"},
+  {name:"N'Keal Harry",pos:"WR",age:28.7,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Out of NFL since 2024 · waived by SEA"},
+  {name:"Reggie Roberson Jr.",pos:"WR",age:27.9,team:"DAL",proj:{PPR:82,Half:75,Standard:68},adp:46.5,ktcVal:206,note:"Deep threat depth"},
+  {name:"Cade Johnson",pos:"WR",age:28.4,team:"SEA",proj:{PPR:78,Half:72,Standard:66},adp:47.5,ktcVal:206,note:"Slot depth"},
+  {name:"Lynn Bowden Jr.",pos:"WR",age:28.9,team:"LV",proj:{PPR:82,Half:75,Standard:68},adp:46.8,ktcVal:206,note:"Versatile depth"},
+  {name:"Davion Davis",pos:"WR",age:29.8,team:"PHI",proj:{PPR:75,Half:69,Standard:63},adp:48.0,ktcVal:206,note:"Physical depth WR"},
+  {name:"Malachi Corley",pos:"WR",age:24.4,team:"CLE",proj:{PPR:148,Half:136,Standard:124},adp:29.0,ktcVal:2884,note:"Signed CLE · 58 rec 650 yds YAC machine"},
+  {name:"Calvin Austin III",pos:"WR",age:27.4,team:"NYG",proj:{PPR:118,Half:108,Standard:98},adp:37.0,ktcVal:1931,note:"Speed threat: 45 rec 560 yds deep ball"},
+  {name:"Treylon Burks",pos:"WR",age:26.4,team:"WAS",proj:{PPR:112,Half:103,Standard:94},adp:39.0,ktcVal:1875,note:"Physical: 42 rec 500 yds reclamation candidate"},
+  {name:"Nick Cross",pos:"DB",age:25,team:"WAS",proj:{PPR:88,Half:88,Standard:88},adp:26.0,ktcVal:1648,note:"Signed WAS 2yr/$14M · S: 120 tackles elite volume"},
+  {name:"Ricky Pearsall",pos:"WR",age:26,team:"SF",proj:{PPR:165,Half:152,Standard:139},adp:26.0,ktcVal:3495,note:"PCL injury · return Feb 2027 · dynasty hold at reduced price"},
+  {name:"Roman Wilson",pos:"WR",age:25.2,team:"PIT",proj:{PPR:142,Half:130,Standard:118},adp:31.2,ktcVal:2884,note:"2026 Year 2 deep threat: 52 rec 660 yds"},
+  {name:"Devaughn Vele",pos:"WR",age:28.7,team:"DEN",proj:{PPR:132,Half:121,Standard:110},adp:33.8,ktcVal:2053,note:"2026 Year 2: 50 rec 600 yds"},
+  {name:"Troy Franklin",pos:"WR",age:23.6,team:"DEN",proj:{PPR:145,Half:133,Standard:121},adp:30.8,ktcVal:3943,note:"2026 Year 2: 56 rec 680 yds"},
+  {name:"Jalen McMillan",pos:"WR",age:24.7,team:"TB",proj:{PPR:138,Half:127,Standard:116},adp:32.5,ktcVal:3900,note:"2026 Year 2: 52 rec 620 yds"},
   // More 2025 rookies (Year 2 in 2026)
-  {name:"Amorion Walker",pos:"WR",age:23,team:"DAL",proj:{PPR:118,Half:109,Standard:100},adp:37.0,ktcVal:2060,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Isaac TeSlaa",pos:"WR",age:24.5,team:"GB",proj:{PPR:112,Half:103,Standard:94},adp:38.5,ktcVal:3547,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Jalen Coker",pos:"WR",age:24.8,team:"CAR",proj:{PPR:158,Half:145,Standard:132},adp:28.5,ktcVal:4021,note:"Week 7: Emerging WR · 80+ rec 900+ yds · breakout ceiling"},
-  {name:"Tre' Harris",pos:"WR",age:24.5,team:"LAC",proj:{PPR:152,Half:140,Standard:128},adp:29.5,ktcVal:3671,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Tory Horton",pos:"WR",age:23.7,team:"NE",proj:{PPR:132,Half:121,Standard:110},adp:34.0,ktcVal:3645,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Ryan Flournoy",pos:"WR",age:26.8,team:"SEA",proj:{PPR:118,Half:108,Standard:98},adp:38.0,ktcVal:2380,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Konata Mumpfield",pos:"WR",age:23.8,team:"PIT",proj:{PPR:98,Half:90,Standard:82},adp:44.0,ktcVal:1843,note:"Week 7: Deep bench · PIT · limited value"},
-  {name:"Emanuel Wilson",pos:"RB",age:27.3,team:"SEA",proj:{PPR:128,Half:117,Standard:106},adp:31.5,ktcVal:2591,note:"Week 7: Bench back/handcuff · SEA · opportunity stash"},
+  {name:"Amorion Walker",pos:"WR",age:23,team:"DAL",proj:{PPR:118,Half:109,Standard:100},adp:37.0,ktcVal:2060,note:"2026 Year 2 developmental"},
+  {name:"Isaac TeSlaa",pos:"WR",age:24.5,team:"GB",proj:{PPR:112,Half:103,Standard:94},adp:38.5,ktcVal:3547,note:"2025 pick 3-70 · Year 2: 42 rec 500 yds"},
+  {name:"Jalen Coker",pos:"WR",age:24.8,team:"CAR",proj:{PPR:158,Half:145,Standard:132},adp:28.5,ktcVal:4021,note:"2026 Year 2: 60 rec 720 yds 6 TD ascending receiver"},
+  {name:"Tre' Harris",pos:"WR",age:24.5,team:"LAC",proj:{PPR:152,Half:140,Standard:128},adp:29.5,ktcVal:3671,note:"Year 2: 56 rec 680 yds as rookie · elite size/speed profile"},
+  {name:"Tory Horton",pos:"WR",age:23.7,team:"NE",proj:{PPR:132,Half:121,Standard:110},adp:34.0,ktcVal:3645,note:"2025 pick 5-166 · Year 2: 50 rec 620 yds developing WR2"},
+  {name:"Ryan Flournoy",pos:"WR",age:26.8,team:"SEA",proj:{PPR:118,Half:108,Standard:98},adp:38.0,ktcVal:2380,note:"2026 Year 2: 44 rec 520 yds developmental WR"},
+  {name:"Konata Mumpfield",pos:"WR",age:23.8,team:"PIT",proj:{PPR:98,Half:90,Standard:82},adp:44.0,ktcVal:1843,note:"Speed receiver depth: 34 rec 420 yds"},
+  {name:"Emanuel Wilson",pos:"RB",age:27.3,team:"SEA",proj:{PPR:128,Half:117,Standard:106},adp:31.5,ktcVal:2591,note:"Traded to SEA · 480 rush 38 rec"},
   // RB wave 4
-  {name:"Ke'Shawn Vaughn",pos:"RB",age:29.3,team:"SF",proj:{PPR:108,Half:99,Standard:90},adp:37.8,ktcVal:412,note:"Week 7: Practice squad · SF · no value"},
-  {name:"Deon Jackson",pos:"RB",age:27.5,team:"IND",proj:{PPR:102,Half:93,Standard:84},adp:39.5,ktcVal:515,note:"Week 7: Practice squad · IND · no value"},
-  {name:"Keaontay Ingram",pos:"RB",age:26.8,team:"LAR",proj:{PPR:95,Half:87,Standard:79},adp:42.5,ktcVal:515,note:"Week 7: Practice squad · LAR · no value"},
-  {name:"Mike Boone",pos:"RB",age:31.2,team:"ATL",proj:{PPR:88,Half:81,Standard:74},adp:44.8,ktcVal:309,note:"Week 7: Practice squad · ATL · no value"},
-  {name:"Trayveon Williams",pos:"RB",age:28.9,team:"CIN",proj:{PPR:92,Half:84,Standard:76},adp:43.2,ktcVal:412,note:"Week 7: Practice squad · CIN · no value"},
-  {name:"Pooka Williams Jr.",pos:"RB",age:27.2,team:"CIN",proj:{PPR:88,Half:81,Standard:74},adp:44.2,ktcVal:618,note:"Week 7: Practice squad · CIN · no value"},
-  {name:"Larry Rountree III",pos:"RB",age:27.5,team:"LAC",proj:{PPR:82,Half:75,Standard:68},adp:46.5,ktcVal:515,note:"Week 7: Practice squad · LAC · no value"},
-  {name:"Phillip Lindsay",pos:"RB",age:32.1,team:"FA",proj:{PPR:78,Half:72,Standard:66},adp:48.5,ktcVal:206,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Cordarrelle Patterson",pos:"RB",age:35.5,team:"FA",proj:{PPR:60,Half:55,Standard:50},adp:50.0,ktcVal:103,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Spencer Sanders",pos:"RB",age:26.7,team:"LAR",proj:{PPR:82,Half:75,Standard:68},adp:46.0,ktcVal:515,note:"Week 7: Practice squad · LAR · no value"},
-  {name:"Keith Smith",pos:"RB",age:34.4,team:"ATL",proj:{PPR:62,Half:57,Standard:52},adp:52.0,ktcVal:155,note:"Week 7: Practice squad · ATL · no value"},
-  {name:"Joshua Kelley",pos:"RB",age:28.8,team:"LAC",proj:{PPR:95,Half:87,Standard:79},adp:42.8,ktcVal:412,note:"Week 7: Practice squad · LAC · no value"},
+  {name:"Ke'Shawn Vaughn",pos:"RB",age:29.3,team:"SF",proj:{PPR:108,Half:99,Standard:90},adp:37.8,ktcVal:412,note:"Re-signed SF · veteran depth back"},
+  {name:"Deon Jackson",pos:"RB",age:27.5,team:"IND",proj:{PPR:102,Half:93,Standard:84},adp:39.5,ktcVal:515,note:"Pass-catching depth: 38 rec"},
+  {name:"Keaontay Ingram",pos:"RB",age:26.8,team:"LAR",proj:{PPR:95,Half:87,Standard:79},adp:42.5,ktcVal:515,note:"Depth handcuff"},
+  {name:"Mike Boone",pos:"RB",age:31.2,team:"ATL",proj:{PPR:88,Half:81,Standard:74},adp:44.8,ktcVal:309,note:"Veteran depth back"},
+  {name:"Trayveon Williams",pos:"RB",age:28.9,team:"CIN",proj:{PPR:92,Half:84,Standard:76},adp:43.2,ktcVal:412,note:"Speed: 35 rec depth"},
+  {name:"Pooka Williams Jr.",pos:"RB",age:27.2,team:"CIN",proj:{PPR:88,Half:81,Standard:74},adp:44.2,ktcVal:618,note:"Elusive pass-catcher"},
+  {name:"Larry Rountree III",pos:"RB",age:27.5,team:"LAC",proj:{PPR:82,Half:75,Standard:68},adp:46.5,ktcVal:515,note:"Power depth back"},
+  {name:"Phillip Lindsay",pos:"RB",age:32.1,team:"FA",proj:{PPR:78,Half:72,Standard:66},adp:48.5,ktcVal:206,note:"Veteran FA depth"},
+  {name:"Cordarrelle Patterson",pos:"RB",age:35.5,team:"FA",proj:{PPR:60,Half:55,Standard:50},adp:50.0,ktcVal:103,note:"Released by PIT · unsigned FA"},
+  {name:"Spencer Sanders",pos:"RB",age:26.7,team:"LAR",proj:{PPR:82,Half:75,Standard:68},adp:46.0,ktcVal:515,note:"Developmental depth"},
+  {name:"Keith Smith",pos:"RB",age:34.4,team:"ATL",proj:{PPR:62,Half:57,Standard:52},adp:52.0,ktcVal:155,note:"FB role"},
+  {name:"Joshua Kelley",pos:"RB",age:28.8,team:"LAC",proj:{PPR:95,Half:87,Standard:79},adp:42.8,ktcVal:412,note:"Handcuff depth"},
   // TE wave 4
-  {name:"Daniel Bellinger",pos:"TE",age:25.9,team:"TEN",proj:{PPR:95,Half:87,Standard:79},adp:34.0,ktcVal:1913,note:"Week 7: Practice squad · TEN · no value"},
-  {name:"Hayden Hurst",pos:"TE",age:33,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Nick Vannett",pos:"TE",age:33.5,team:"NO",proj:{PPR:72,Half:66,Standard:60},adp:46.0,ktcVal:206,note:"Week 7: Practice squad · NO · no value"},
-  {name:"MyCole Pruitt",pos:"TE",age:34.4,team:"ATL",proj:{PPR:65,Half:60,Standard:55},adp:50.0,ktcVal:206,note:"Week 7: Practice squad · ATL · no value"},
-  {name:"Eric Saubert",pos:"TE",age:32.3,team:"DEN",proj:{PPR:68,Half:62,Standard:56},adp:48.0,ktcVal:206,note:"Week 7: Practice squad · DEN · no value"},
-  {name:"Pharaoh Brown",pos:"TE",age:32.3,team:"HOU",proj:{PPR:65,Half:60,Standard:55},adp:50.5,ktcVal:206,note:"Week 7: Practice squad · HOU · no value"},
-  {name:"Ross Dwelley",pos:"TE",age:31.6,team:"SF",proj:{PPR:72,Half:66,Standard:60},adp:47.0,ktcVal:206,note:"Week 7: Practice squad · SF · no value"},
-  {name:"Tanner McLachlan",pos:"TE",age:27.5,team:"ARI",proj:{PPR:82,Half:75,Standard:68},adp:40.5,ktcVal:515,note:"Week 7: Practice squad · ARI · no value"},
-  {name:"Will Mallory",pos:"TE",age:27.2,team:"MIA",proj:{PPR:75,Half:69,Standard:63},adp:44.5,ktcVal:412,note:"Week 7: Practice squad · MIA · no value"},
-  {name:"Slade Bolden",pos:"TE",age:27.6,team:"NE",proj:{PPR:68,Half:62,Standard:56},adp:49.0,ktcVal:309,note:"Week 7: Practice squad · NE · no value"},
+  {name:"Daniel Bellinger",pos:"TE",age:25.9,team:"TEN",proj:{PPR:95,Half:87,Standard:79},adp:34.0,ktcVal:1913,note:"TEN TE: 38 rec 390 yds"},
+  {name:"Hayden Hurst",pos:"TE",age:33,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Retired March 2026"},
+  {name:"Nick Vannett",pos:"TE",age:33.5,team:"NO",proj:{PPR:72,Half:66,Standard:60},adp:46.0,ktcVal:206,note:"Blocking TE depth"},
+  {name:"MyCole Pruitt",pos:"TE",age:34.4,team:"ATL",proj:{PPR:65,Half:60,Standard:55},adp:50.0,ktcVal:206,note:"Veteran blocker"},
+  {name:"Eric Saubert",pos:"TE",age:32.3,team:"DEN",proj:{PPR:68,Half:62,Standard:56},adp:48.0,ktcVal:206,note:"Depth/blocking TE"},
+  {name:"Pharaoh Brown",pos:"TE",age:32.3,team:"HOU",proj:{PPR:65,Half:60,Standard:55},adp:50.5,ktcVal:206,note:"Blocking TE"},
+  {name:"Ross Dwelley",pos:"TE",age:31.6,team:"SF",proj:{PPR:72,Half:66,Standard:60},adp:47.0,ktcVal:206,note:"Blocking/depth behind Fant"},
+  {name:"Tanner McLachlan",pos:"TE",age:27.5,team:"ARI",proj:{PPR:82,Half:75,Standard:68},adp:40.5,ktcVal:515,note:"Developmental: 30 rec 310 yds"},
+  {name:"Will Mallory",pos:"TE",age:27.2,team:"MIA",proj:{PPR:75,Half:69,Standard:63},adp:44.5,ktcVal:412,note:"Depth TE"},
+  {name:"Slade Bolden",pos:"TE",age:27.6,team:"NE",proj:{PPR:68,Half:62,Standard:56},adp:49.0,ktcVal:309,note:"Hybrid/depth"},
   // More notable QBs
-  {name:"Aidan O'Connell",pos:"QB",age:28,team:"LV",proj:{PPR:232,Half:232,Standard:232},adp:25.8,ktcVal:824,note:"Week 7: Deep bench/PS · LV · limited value"},
-  {name:"Mac Jones",pos:"QB",age:28,team:"SF",proj:{PPR:228,Half:228,Standard:228},adp:26.5,ktcVal:2321,note:"Week 7: Backup/developmental QB · limited starting role · dynasty hold"},
-  {name:"Davis Mills",pos:"QB",age:27.9,team:"HOU",proj:{PPR:218,Half:218,Standard:218},adp:28.5,ktcVal:309,note:"Week 7: Backup role · HOU depth · no dynasty value"},
-  {name:"Bailey Zappe",pos:"QB",age:27.3,team:"NYJ",proj:{PPR:222,Half:222,Standard:222},adp:27.8,ktcVal:412,note:"Week 7: Backup role · LV development · hold for opportunity"},
-  {name:"Malik Willis",pos:"QB",age:27.3,team:"MIA",proj:{PPR:215,Half:215,Standard:215},adp:29.5,ktcVal:3687,note:"Week 7: Backup/developmental QB · limited starting role · dynasty hold"},
-  {name:"Josh Dobbs",pos:"QB",age:30,team:"NE",proj:{PPR:208,Half:208,Standard:208},adp:31.2,ktcVal:412,note:"Week 7: Deep bench/PS · NE · limited value"},
-  {name:"Easton Stick",pos:"QB",age:31,team:"FA",proj:{PPR:195,Half:195,Standard:195},adp:34.0,ktcVal:309,note:"Week 7: Deep bench/PS · FA · limited value"},
-  {name:"Joe Flacco",pos:"QB",age:41.6,team:"CIN",proj:{PPR:195,Half:195,Standard:195},adp:34.0,ktcVal:309,note:"Week 7: Deep bench/PS · CIN · limited value"},
-  {name:"Nathan Rourke",pos:"QB",age:28.3,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Week 7: Deep bench/PS · FA · limited value"},
-  {name:"Zach Wilson",pos:"QB",age:27.1,team:"NO",proj:{PPR:215,Half:215,Standard:215},adp:29.8,ktcVal:309,note:"Week 7: Deep bench/PS · NO · limited value"},
-  {name:"Tyler Huntley",pos:"QB",age:28.6,team:"BAL",proj:{PPR:218,Half:218,Standard:218},adp:28.8,ktcVal:618,note:"Week 7: Deep bench/PS · BAL · limited value"},
-  {name:"Brett Rypien",pos:"QB",age:30.1,team:"LAR",proj:{PPR:198,Half:198,Standard:198},adp:33.5,ktcVal:309,note:"Week 7: Deep bench/PS · LAR · limited value"},
+  {name:"Aidan O'Connell",pos:"QB",age:28,team:"LV",proj:{PPR:232,Half:232,Standard:232},adp:25.8,ktcVal:824,note:"Backup starter: 2,800 yds 20 TD"},
+  {name:"Mac Jones",pos:"QB",age:28,team:"SF",proj:{PPR:228,Half:228,Standard:228},adp:26.5,ktcVal:2321,note:"Signed SF · backup/competitor"},
+  {name:"Davis Mills",pos:"QB",age:27.9,team:"HOU",proj:{PPR:218,Half:218,Standard:218},adp:28.5,ktcVal:309,note:"Handcuff backup"},
+  {name:"Bailey Zappe",pos:"QB",age:27.3,team:"NYJ",proj:{PPR:222,Half:222,Standard:222},adp:27.8,ktcVal:412,note:"Signed NYJ futures contract · backup"},
+  {name:"Malik Willis",pos:"QB",age:27.3,team:"MIA",proj:{PPR:215,Half:215,Standard:215},adp:29.5,ktcVal:3687,note:"Athletic backup: 2,200 yds 500 rush"},
+  {name:"Josh Dobbs",pos:"QB",age:30,team:"NE",proj:{PPR:208,Half:208,Standard:208},adp:31.2,ktcVal:412,note:"Signed NE 2yr/$8M · mobile backup"},
+  {name:"Easton Stick",pos:"QB",age:31,team:"FA",proj:{PPR:195,Half:195,Standard:195},adp:34.0,ktcVal:309,note:"UFA from ATL · unsigned"},
+  {name:"Joe Flacco",pos:"QB",age:41.6,team:"CIN",proj:{PPR:195,Half:195,Standard:195},adp:34.0,ktcVal:309,note:"Re-signed CIN 1yr/$6M · veteran backup"},
+  {name:"Nathan Rourke",pos:"QB",age:28.3,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Returned to CFL (BC Lions) · not in NFL"},
+  {name:"Zach Wilson",pos:"QB",age:27.1,team:"NO",proj:{PPR:215,Half:215,Standard:215},adp:29.8,ktcVal:309,note:"Traded to NO · backup"},
+  {name:"Tyler Huntley",pos:"QB",age:28.6,team:"BAL",proj:{PPR:218,Half:218,Standard:218},adp:28.8,ktcVal:618,note:"Mobile handcuff to Jackson"},
+  {name:"Brett Rypien",pos:"QB",age:30.1,team:"LAR",proj:{PPR:198,Half:198,Standard:198},adp:33.5,ktcVal:309,note:"Emergency backup"},
   // Wave 7 — IDP CBs, more DL/LB, QB/skill depth
   // IDP Wave 7 — CBs
-  {name:"Jaire Alexander",pos:"DB",age:29.5,team:"PHI",proj:{PPR:105,Half:105,Standard:105},adp:17.5,ktcVal:2884,note:"Week 7: Reserve DB · PHI · depth"},
-  {name:"Carlton Davis III",pos:"DB",age:29.7,team:"NE",proj:{PPR:98,Half:98,Standard:98},adp:20.5,ktcVal:2266,note:"Week 7: Reserve DB · NE · depth"},
-  {name:"Christian Gonzalez",pos:"DB",age:24.2,team:"NE",proj:{PPR:102,Half:102,Standard:102},adp:19.0,ktcVal:4635,note:"Week 7: Reserve DB · NE · depth"},
-  {name:"DJ Reed",pos:"DB",age:29.8,team:"DET",proj:{PPR:90,Half:90,Standard:90},adp:26.0,ktcVal:2266,note:"Week 7: Reserve DB · DET · depth"},
-  {name:"Cam Smith",pos:"DB",age:25.7,team:"MIA",proj:{PPR:85,Half:85,Standard:85},adp:29.5,ktcVal:2266,note:"Week 7: Reserve DB · MIA · depth"},
-  {name:"Chidobe Awuzie",pos:"DB",age:31.3,team:"BAL",proj:{PPR:88,Half:88,Standard:88},adp:27.5,ktcVal:1030,note:"Week 7: Reserve DB · BAL · depth"},
-  {name:"Jaycee Horn",pos:"DB",age:26.8,team:"CAR",proj:{PPR:92,Half:92,Standard:92},adp:24.5,ktcVal:3296,note:"Week 7: Reserve DB · CAR · depth"},
-  {name:"Kaiir Elam",pos:"DB",age:25.3,team:"KC",proj:{PPR:78,Half:78,Standard:78},adp:34.5,ktcVal:2060,note:"Week 7: Reserve DB · KC · depth"},
-  {name:"Tyson Campbell",pos:"DB",age:26.4,team:"CLE",proj:{PPR:88,Half:88,Standard:88},adp:27.0,ktcVal:2266,note:"Week 7: Reserve DB · CLE · depth"},
-  {name:"Jeremy Chinn",pos:"DB",age:28.5,team:"LV",proj:{PPR:92,Half:92,Standard:92},adp:24.0,ktcVal:1545,note:"Week 7: Reserve DB · LV · depth"},
-  {name:"Jourdan Lewis",pos:"DB",age:31,team:"JAX",proj:{PPR:80,Half:80,Standard:80},adp:32.0,ktcVal:721,note:"Week 7: Reserve DB · JAX · depth"},
-  {name:"Damontae Kazee",pos:"DB",age:33.2,team:"FA",proj:{PPR:65,Half:65,Standard:65},adp:42.0,ktcVal:412,note:"Week 7: Reserve DB · FA · depth"},
-  {name:"Darious Williams",pos:"DB",age:33.5,team:"LAR",proj:{PPR:72,Half:72,Standard:72},adp:38.0,ktcVal:721,note:"Week 7: Reserve DB · LAR · depth"},
+  {name:"Jaire Alexander",pos:"DB",age:29.5,team:"PHI",proj:{PPR:105,Half:105,Standard:105},adp:17.5,ktcVal:2884,note:"Traded to PHI via BAL · elite CB: 52 tackles 4 INT"},
+  {name:"Carlton Davis III",pos:"DB",age:29.7,team:"NE",proj:{PPR:98,Half:98,Standard:98},adp:20.5,ktcVal:2266,note:"Signed NE 3yr/$60M · CB1: 58 tackles 3 INT"},
+  {name:"Christian Gonzalez",pos:"DB",age:24.2,team:"NE",proj:{PPR:102,Half:102,Standard:102},adp:19.0,ktcVal:4635,note:"Year 3 CB: 62 tackles 4 INT"},
+  {name:"DJ Reed",pos:"DB",age:29.8,team:"DET",proj:{PPR:90,Half:90,Standard:90},adp:26.0,ktcVal:2266,note:"Signed DET 3yr/$48M · CB: 58 tackles 3 INT"},
+  {name:"Cam Smith",pos:"DB",age:25.7,team:"MIA",proj:{PPR:85,Half:85,Standard:85},adp:29.5,ktcVal:2266,note:"Year 3 CB: 55 tackles 2 INT"},
+  {name:"Chidobe Awuzie",pos:"DB",age:31.3,team:"BAL",proj:{PPR:88,Half:88,Standard:88},adp:27.5,ktcVal:1030,note:"Re-signed BAL 1yr/$5M · veteran CB: 60 tackles 2 INT"},
+  {name:"Jaycee Horn",pos:"DB",age:26.8,team:"CAR",proj:{PPR:92,Half:92,Standard:92},adp:24.5,ktcVal:3296,note:"CB1 when healthy: 60 tackles 3 INT"},
+  {name:"Kaiir Elam",pos:"DB",age:25.3,team:"KC",proj:{PPR:78,Half:78,Standard:78},adp:34.5,ktcVal:2060,note:"Signed KC 1yr Apr 2026 · CB: 52 tackles 2 INT"},
+  {name:"Tyson Campbell",pos:"DB",age:26.4,team:"CLE",proj:{PPR:88,Half:88,Standard:88},adp:27.0,ktcVal:2266,note:"Traded to CLE Oct 2025 · CB1: 60 tackles 3 INT"},
+  {name:"Jeremy Chinn",pos:"DB",age:28.5,team:"LV",proj:{PPR:92,Half:92,Standard:92},adp:24.0,ktcVal:1545,note:"Signed LV Mar 2025 · S/LB hybrid: 85 tackles 2 sacks"},
+  {name:"Jourdan Lewis",pos:"DB",age:31,team:"JAX",proj:{PPR:80,Half:80,Standard:80},adp:32.0,ktcVal:721,note:"Signed JAX 3yr/$30M · slot CB: 55 tackles 2 INT"},
+  {name:"Damontae Kazee",pos:"DB",age:33.2,team:"FA",proj:{PPR:65,Half:65,Standard:65},adp:42.0,ktcVal:412,note:"Released by CLE Nov 2025 · unsigned FA"},
+  {name:"Darious Williams",pos:"DB",age:33.5,team:"LAR",proj:{PPR:72,Half:72,Standard:72},adp:38.0,ktcVal:721,note:"CB slot: 48 tackles 2 INT"},
   // IDP Wave 7 — more DL depth
-  {name:"George Karlaftis",pos:"DL",age:25.4,team:"KC",proj:{PPR:95,Half:95,Standard:95},adp:22.0,ktcVal:3914,note:"Week 7: Reserve DL · KC · limited snaps"},
-  {name:"Tyree Wilson",pos:"DL",age:26.3,team:"NO",proj:{PPR:88,Half:88,Standard:88},adp:28.0,ktcVal:3090,note:"Week 7: Reserve DL · NO · limited snaps"},
-  {name:"Foley Fatukasi",pos:"DL",age:31,team:"HOU",proj:{PPR:82,Half:82,Standard:82},adp:31.5,ktcVal:1030,note:"Week 7: Reserve DL · HOU · limited snaps"},
-  {name:"Dalvin Tomlinson",pos:"DL",age:32.5,team:"LAC",proj:{PPR:78,Half:78,Standard:78},adp:34.0,ktcVal:824,note:"Week 7: Reserve DL · LAC · limited snaps"},
-  {name:"Solomon Thomas",pos:"DL",age:30.7,team:"TEN",proj:{PPR:72,Half:72,Standard:72},adp:38.5,ktcVal:721,note:"Week 7: Reserve DL · TEN · limited snaps"},
-  {name:"Carl Granderson",pos:"DL",age:29.7,team:"NO",proj:{PPR:82,Half:82,Standard:82},adp:30.5,ktcVal:1236,note:"Week 7: Reserve DL · NO · limited snaps"},
-  {name:"Sam Williams",pos:"DL",age:27.4,team:"DAL",proj:{PPR:78,Half:78,Standard:78},adp:33.0,ktcVal:1854,note:"Week 7: Reserve DL · DAL · limited snaps"},
-  {name:"Sheldon Rankins",pos:"DL",age:32.4,team:"HOU",proj:{PPR:70,Half:70,Standard:70},adp:40.0,ktcVal:824,note:"Week 7: Reserve DL · HOU · limited snaps"},
-  {name:"Shelby Harris",pos:"DL",age:35,team:"NYG",proj:{PPR:68,Half:68,Standard:68},adp:42.0,ktcVal:618,note:"Week 7: Reserve DL · NYG · limited snaps"},
-  {name:"Aaron Donald",pos:"DL",age:35.3,team:"LAR",proj:{PPR:85,Half:85,Standard:85},adp:22.0,ktcVal:824,note:"Week 7: Reserve DL · LAR · limited snaps"},
+  {name:"George Karlaftis",pos:"DL",age:25.4,team:"KC",proj:{PPR:95,Half:95,Standard:95},adp:22.0,ktcVal:3914,note:"EDGE: 9 sacks 14 TFL Year 4"},
+  {name:"Tyree Wilson",pos:"DL",age:26.3,team:"NO",proj:{PPR:88,Half:88,Standard:88},adp:28.0,ktcVal:3090,note:"Traded to NO · signed 3yr/$50.3M · EDGE 8 sacks"},
+  {name:"Foley Fatukasi",pos:"DL",age:31,team:"HOU",proj:{PPR:82,Half:82,Standard:82},adp:31.5,ktcVal:1030,note:"Signed HOU 1yr/$3M · IDL: 50 tackles 6 sacks"},
+  {name:"Dalvin Tomlinson",pos:"DL",age:32.5,team:"LAC",proj:{PPR:78,Half:78,Standard:78},adp:34.0,ktcVal:824,note:"Signed LAC 1yr · NT: 42 tackles 4 sacks"},
+  {name:"Solomon Thomas",pos:"DL",age:30.7,team:"TEN",proj:{PPR:72,Half:72,Standard:72},adp:38.5,ktcVal:721,note:"Traded to TEN · DT: 38 tackles 3 sacks"},
+  {name:"Carl Granderson",pos:"DL",age:29.7,team:"NO",proj:{PPR:82,Half:82,Standard:82},adp:30.5,ktcVal:1236,note:"EDGE: 8 sacks rotational"},
+  {name:"Sam Williams",pos:"DL",age:27.4,team:"DAL",proj:{PPR:78,Half:78,Standard:78},adp:33.0,ktcVal:1854,note:"EDGE: 7 sacks pass rush specialist"},
+  {name:"Sheldon Rankins",pos:"DL",age:32.4,team:"HOU",proj:{PPR:70,Half:70,Standard:70},adp:40.0,ktcVal:824,note:"IDL veteran: 35 tackles 3 sacks"},
+  {name:"Shelby Harris",pos:"DL",age:35,team:"NYG",proj:{PPR:68,Half:68,Standard:68},adp:42.0,ktcVal:618,note:"Signed NYG 1yr Apr 2026 · IDL depth: 30 tackles 2.5 sacks"},
+  {name:"Aaron Donald",pos:"DL",age:35.3,team:"LAR",proj:{PPR:85,Half:85,Standard:85},adp:22.0,ktcVal:824,note:"UN-RETIRED · 1yr/$20M with Rams. Rotational pass-rush role alongside Myles Garrett. IDP DL3 with upside."},
   // IDP Wave 7 — more LB depth
-  {name:"Leighton Vander Esch",pos:"LB",age:30.6,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Week 7: Reserve LB · FA · limited value"},
-  {name:"Jack Campbell",pos:"LB",age:26,team:"DET",proj:{PPR:108,Half:108,Standard:108},adp:17.5,ktcVal:2884,note:"Week 7: Reserve LB · DET · limited value"},
-  {name:"Ivan Pace Jr.",pos:"LB",age:25.7,team:"MIN",proj:{PPR:98,Half:98,Standard:98},adp:21.5,ktcVal:2575,note:"Week 7: Reserve LB · MIN · limited value"},
-  {name:"Mykal Walker",pos:"LB",age:29,team:"NYJ",proj:{PPR:82,Half:82,Standard:82},adp:31.5,ktcVal:927,note:"Week 7: Reserve LB · NYJ · limited value"},
+  {name:"Leighton Vander Esch",pos:"LB",age:30.6,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Retired March 2024 · neck injuries"},
+  {name:"Jack Campbell",pos:"LB",age:26,team:"DET",proj:{PPR:108,Half:108,Standard:108},adp:17.5,ktcVal:2884,note:"Year 3 ILB: 115 tackles 3 sacks"},
+  {name:"Ivan Pace Jr.",pos:"LB",age:25.7,team:"MIN",proj:{PPR:98,Half:98,Standard:98},adp:21.5,ktcVal:2575,note:"Thumper: 100 tackles 3 sacks"},
+  {name:"Mykal Walker",pos:"LB",age:29,team:"NYJ",proj:{PPR:82,Half:82,Standard:82},adp:31.5,ktcVal:927,note:"Re-signed NYJ 1yr/$1.4M · coverage: 72 tackles 2 INT"},
   // QB Wave 7
-  {name:"Trey Lance",pos:"QB",age:26.3,team:"LAC",proj:{PPR:235,Half:235,Standard:235},adp:25.5,ktcVal:1236,note:"Week 7: Deep bench/PS · LAC · limited value"},
-  {name:"Marcus Mariota",pos:"QB",age:32.8,team:"WAS",proj:{PPR:218,Half:218,Standard:218},adp:29.5,ktcVal:1602,note:"Week 7: Limited role, injury risk · ATL backup · dynasty deep stash only"},
-  {name:"Carson Wentz",pos:"QB",age:33.7,team:"MIN",proj:{PPR:225,Half:225,Standard:225},adp:28.0,ktcVal:412,note:"Week 7: Deep bench/PS · MIN · limited value"},
+  {name:"Trey Lance",pos:"QB",age:26.3,team:"LAC",proj:{PPR:235,Half:235,Standard:235},adp:25.5,ktcVal:1236,note:"Mobile backup: upside arm"},
+  {name:"Marcus Mariota",pos:"QB",age:32.8,team:"WAS",proj:{PPR:218,Half:218,Standard:218},adp:29.5,ktcVal:1602,note:"WAS backup QB"},
+  {name:"Carson Wentz",pos:"QB",age:33.7,team:"MIN",proj:{PPR:225,Half:225,Standard:225},adp:28.0,ktcVal:412,note:"MIN backup QB"},
   // WR Wave 7
-  {name:"Robbie Anderson",pos:"WR",age:31,team:"FA",proj:{PPR:88,Half:81,Standard:74},adp:44.5,ktcVal:206,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Brandin Cooks",pos:"WR",age:32.9,team:"FA",proj:{PPR:80,Half:73,Standard:66},adp:46.0,ktcVal:206,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Marquise Brown",pos:"WR",age:29.2,team:"PHI",proj:{PPR:112,Half:103,Standard:94},adp:35.5,ktcVal:1030,note:"Week 7: Deep bench · PHI · limited value"},
-  {name:"Mecole Hardman Jr.",pos:"WR",age:28.5,team:"FA",proj:{PPR:95,Half:87,Standard:79},adp:42.0,ktcVal:309,note:"Week 7: Deep bench · FA · limited value"},
+  {name:"Robbie Anderson",pos:"WR",age:31,team:"FA",proj:{PPR:88,Half:81,Standard:74},adp:44.5,ktcVal:206,note:"Veteran deep threat"},
+  {name:"Brandin Cooks",pos:"WR",age:32.9,team:"FA",proj:{PPR:80,Half:73,Standard:66},adp:46.0,ktcVal:206,note:"UFA from BUF · in talks to re-sign · veteran deep threat"},
+  {name:"Marquise Brown",pos:"WR",age:29.2,team:"PHI",proj:{PPR:112,Half:103,Standard:94},adp:35.5,ktcVal:1030,note:"Speed slot: 45 rec 540 yds"},
+  {name:"Mecole Hardman Jr.",pos:"WR",age:28.5,team:"FA",proj:{PPR:95,Half:87,Standard:79},adp:42.0,ktcVal:309,note:"Speed: 38 rec 450 yds 4 TD"},
   // TE Wave 7
-  {name:"Kyle Pitts",pos:"TE",age:25.9,team:"ATL",proj:{PPR:215,Half:198,Standard:181},adp:12.5,ktcVal:5218,note:"Week 7: Emerging TE · 70+ rec 750+ yds · breakout potential"},
-  {name:"Mike Gesicki",pos:"TE",age:30.9,team:"CIN",proj:{PPR:115,Half:105,Standard:95},adp:24.5,ktcVal:1708,note:"Week 7: Practice squad · CIN · no value"},
+  {name:"Kyle Pitts",pos:"TE",age:25.9,team:"ATL",proj:{PPR:215,Half:198,Standard:181},adp:12.5,ktcVal:5218,note:"Elite athletic TE: 84 rec 920 yds 7 TD breakout"},
+  {name:"Mike Gesicki",pos:"TE",age:30.9,team:"CIN",proj:{PPR:115,Half:105,Standard:95},adp:24.5,ktcVal:1708,note:"Receiving TE: 46 rec 490 yds 4 TD"},
   // Wave 10 — 2025 NFL Draft rookies: skill + IDP
   // 2025 RB Rookies
-  {name:"Trevor Etienne",pos:"RB",age:22.1,team:"CAR",proj:{PPR:182,Half:167,Standard:152},adp:15.0,ktcVal:4326,note:"Week 7: Emerging RB · 900+ rush 40+ rec · breakout trajectory"},
-  {name:"Nicholas Singleton",pos:"RB",age:22.6,team:"TEN",proj:{PPR:168,Half:154,Standard:140},adp:18.5,ktcVal:3639,note:"Week 7: Bench back/handcuff · limited upside · hold for opportunity"},
-  {name:"Ollie Gordon II",pos:"RB",age:22.6,team:"MIA",proj:{PPR:175,Half:161,Standard:147},adp:17.0,ktcVal:3335,note:"Week 7: Bench back/handcuff · limited upside · hold for opportunity"},
+  {name:"Trevor Etienne",pos:"RB",age:22.1,team:"CAR",proj:{PPR:182,Half:167,Standard:152},adp:15.0,ktcVal:4326,note:"2025 pick 4-114 · CAR feature back: 800 rush 55 rec age 22"},
+  {name:"Nicholas Singleton",pos:"RB",age:22.6,team:"TEN",proj:{PPR:168,Half:154,Standard:140},adp:18.5,ktcVal:3639,note:"2026 draft pick · TEN Titans · power speed combo"},
+  {name:"Ollie Gordon II",pos:"RB",age:22.6,team:"MIA",proj:{PPR:175,Half:161,Standard:147},adp:17.0,ktcVal:3335,note:"Big back: 800 rush 40 rec"},
   // 2025 QB Rookies
-  {name:"Jaxson Dart",pos:"QB",age:23.3,team:"NYG",proj:{PPR:318,Half:318,Standard:318},adp:8.5,ktcVal:7300,note:"Week 7: 230 yds 2 TD upset vs Cowboys · OROY +120 favorite at 22 · Dallas native breakout, elite arm talent"},
-  {name:"Will Howard",pos:"QB",age:24.9,team:"PIT",proj:{PPR:272,Half:272,Standard:272},adp:19.5,ktcVal:2192,note:"Week 7: Backup/developmental QB · limited starting role · dynasty hold"},
-  {name:"Tyler Shough",pos:"QB",age:26.9,team:"NO",proj:{PPR:255,Half:255,Standard:255},adp:22.5,ktcVal:5200,note:"Week 7: Emerging QB · 2,800+ yds 20+ TD · Year 2 progression"},
+  {name:"Jaxson Dart",pos:"QB",age:23.3,team:"NYG",proj:{PPR:318,Half:318,Standard:318},adp:9.0,ktcVal:6000,note:"Wk1: 230 yds 3 TD + 54 rush · Year 2 breakout · elite dual-threat"},
+  {name:"Will Howard",pos:"QB",age:24.9,team:"PIT",proj:{PPR:272,Half:272,Standard:272},adp:19.5,ktcVal:2192,note:"2025 mid-round: 3,000 yds 22 TD"},
+  {name:"Tyler Shough",pos:"QB",age:26.9,team:"NO",proj:{PPR:255,Half:255,Standard:255},adp:22.5,ktcVal:5200,note:"Wk1: 410 yds 3 TD · SF waiver add · veteran passer"},
   // 2025 WR Rookies
-  {name:"Tez Johnson",pos:"WR",age:24.3,team:"PIT",proj:{PPR:128,Half:118,Standard:108},adp:34.0,ktcVal:2872,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Elic Ayomanor",pos:"WR",age:23.2,team:"TEN",proj:{PPR:168,Half:155,Standard:142},adp:23.5,ktcVal:3490,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Dont'e Thornton Jr.",pos:"WR",age:23.7,team:"NE",proj:{PPR:138,Half:127,Standard:116},adp:32.5,ktcVal:1545,note:"Week 7: Deep bench · NE · limited value"},
+  {name:"Tez Johnson",pos:"WR",age:24.3,team:"PIT",proj:{PPR:128,Half:118,Standard:108},adp:34.0,ktcVal:2872,note:"2025 5th round Oregon: 50 rec 560 yds 4 TD slot"},
+  {name:"Elic Ayomanor",pos:"WR",age:23.2,team:"TEN",proj:{PPR:168,Half:155,Standard:142},adp:23.5,ktcVal:3490,note:"2025 pick 4-136 · 62 rec 740 yds 6 TD"},
+  {name:"Dont'e Thornton Jr.",pos:"WR",age:23.7,team:"NE",proj:{PPR:138,Half:127,Standard:116},adp:32.5,ktcVal:1545,note:"Deep threat: 48 rec 620 yds"},
   // 2025 TE Rookies
-  {name:"Elijah Arroyo",pos:"TE",age:23.4,team:"SEA",proj:{PPR:125,Half:114,Standard:103},adp:21.5,ktcVal:3120,note:"Week 7: TE2/bench · limited role · streaming option"},
-  {name:"Landen King",pos:"TE",age:22,team:"LV",proj:{PPR:108,Half:98,Standard:88},adp:27.5,ktcVal:1236,note:"Week 7: Practice squad · LV · no value"},
-  {name:"Jalen Berger",pos:"TE",age:23,team:"DEN",proj:{PPR:95,Half:86,Standard:77},adp:33.5,ktcVal:927,note:"Week 7: Practice squad · DEN · no value"},
+  {name:"Elijah Arroyo",pos:"TE",age:23.4,team:"SEA",proj:{PPR:125,Half:114,Standard:103},adp:21.5,ktcVal:3120,note:"2025 pick 2-50 · 48 rec 520 yds 5 TD"},
+  {name:"Landen King",pos:"TE",age:22,team:"LV",proj:{PPR:108,Half:98,Standard:88},adp:27.5,ktcVal:1236,note:"2025 pick UDFA · 42 rec 460 yds 4 TD"},
+  {name:"Jalen Berger",pos:"TE",age:23,team:"DEN",proj:{PPR:95,Half:86,Standard:77},adp:33.5,ktcVal:927,note:"Hybrid TE: 36 rec 380 yds"},
   // 2025 IDP Rookies — DL
-  {name:"Abdul Carter",pos:"DL",age:22.7,team:"NYG",proj:{PPR:115,Half:115,Standard:115},adp:10.5,ktcVal:5665,note:"Week 7: Strong defender · NYG starter · consistent snap share"},
-  {name:"Mason Graham",pos:"DL",age:23,team:"CLE",proj:{PPR:88,Half:88,Standard:88},adp:27.5,ktcVal:4326,note:"Week 7: Reserve DL · CLE · limited snaps"},
-  {name:"James Pearce Jr.",pos:"DL",age:22.9,team:"KC",proj:{PPR:95,Half:95,Standard:95},adp:22.5,ktcVal:3914,note:"Week 7: Reserve DL · KC · limited snaps"},
-  {name:"Walter Nolen",pos:"DL",age:22.9,team:"PHI",proj:{PPR:82,Half:82,Standard:82},adp:31.0,ktcVal:2575,note:"Week 7: Reserve DL · PHI · limited snaps"},
-  {name:"Derrick Harmon",pos:"DL",age:23.1,team:"GB",proj:{PPR:78,Half:78,Standard:78},adp:34.0,ktcVal:2266,note:"Week 7: Reserve DL · GB · limited snaps"},
-  {name:"Will Campbell",pos:"DL",age:22.6,team:"NE",proj:{PPR:75,Half:75,Standard:75},adp:36.0,ktcVal:2060,note:"Week 7: Reserve DL · NE · limited snaps"},
+  {name:"Abdul Carter",pos:"DL",age:22.7,team:"NYG",proj:{PPR:115,Half:115,Standard:115},adp:10.5,ktcVal:5665,note:"2025 pick 1-3 · elite EDGE 12 sacks upside"},
+  {name:"Mason Graham",pos:"DL",age:23,team:"CLE",proj:{PPR:88,Half:88,Standard:88},adp:27.5,ktcVal:4326,note:"2025 pick 1-5 · IDL 40 tackles 5 sacks"},
+  {name:"James Pearce Jr.",pos:"DL",age:22.9,team:"KC",proj:{PPR:95,Half:95,Standard:95},adp:22.5,ktcVal:3914,note:"2025 pick 1-26 · EDGE 9 sacks explosive"},
+  {name:"Walter Nolen",pos:"DL",age:22.9,team:"PHI",proj:{PPR:82,Half:82,Standard:82},adp:31.0,ktcVal:2575,note:"2025 IDL: 35 tackles 4 sacks"},
+  {name:"Derrick Harmon",pos:"DL",age:23.1,team:"GB",proj:{PPR:78,Half:78,Standard:78},adp:34.0,ktcVal:2266,note:"2025 IDL: 32 tackles 3 sacks"},
+  {name:"Will Campbell",pos:"DL",age:22.6,team:"NE",proj:{PPR:75,Half:75,Standard:75},adp:36.0,ktcVal:2060,note:"2025 OL/DL convert: developmental"},
   // Wave 25 — IDP DB/LB depth + safety tier
   // IDP Safety/DB Wave 25
-  {name:"Jalen Pitre",pos:"DB",age:27.2,team:"HOU",proj:{PPR:92,Half:92,Standard:92},adp:24.5,ktcVal:2884,note:"Week 7: Reserve DB · HOU · depth"},
-  {name:"Kareem Jackson",pos:"DB",age:38.4,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Week 7: Reserve DB · FA · depth"},
-  {name:"Adrian Amos",pos:"DB",age:33.3,team:"FA",proj:{PPR:68,Half:68,Standard:68},adp:41.5,ktcVal:515,note:"Week 7: Reserve DB · FA · depth"},
-  {name:"Rodney McLeod",pos:"DB",age:36.2,team:"FA",proj:{PPR:55,Half:55,Standard:55},adp:54.0,ktcVal:309,note:"Week 7: Reserve DB · FA · depth"},
-  {name:"Tycen Anderson",pos:"DB",age:27.2,team:"DEN",proj:{PPR:72,Half:72,Standard:72},adp:38.5,ktcVal:1545,note:"Week 7: Reserve DB · DEN · depth"},
-  {name:"Deionte Thompson",pos:"DB",age:29.5,team:"JAX",proj:{PPR:68,Half:68,Standard:68},adp:41.5,ktcVal:721,note:"Week 7: Reserve DB · JAX · depth"},
-  {name:"JL Skinner",pos:"DB",age:25.4,team:"DEN",proj:{PPR:75,Half:75,Standard:75},adp:36.5,ktcVal:1854,note:"Week 7: Reserve DB · DEN · depth"},
-  {name:"Quentin Lake",pos:"DB",age:27.6,team:"LAR",proj:{PPR:70,Half:70,Standard:70},adp:40.0,ktcVal:721,note:"Week 7: Reserve DB · LAR · depth"},
-  {name:"Elijah Riley",pos:"DB",age:28.2,team:"MIN",proj:{PPR:65,Half:65,Standard:65},adp:44.5,ktcVal:515,note:"Week 7: Reserve DB · MIN · depth"},
-  {name:"Keenan Isaac",pos:"DB",age:26.5,team:"JAX",proj:{PPR:62,Half:62,Standard:62},adp:46.0,ktcVal:824,note:"Week 7: Reserve DB · JAX · depth"},
-  {name:"Josh Jobe",pos:"DB",age:28.4,team:"SEA",proj:{PPR:68,Half:68,Standard:68},adp:41.0,ktcVal:824,note:"Week 7: Reserve DB · SEA · depth"},
-  {name:"Coby Bryant",pos:"DB",age:27.4,team:"CHI",proj:{PPR:72,Half:72,Standard:72},adp:38.5,ktcVal:824,note:"Week 7: Reserve DB · CHI · depth"},
+  {name:"Jalen Pitre",pos:"DB",age:27.2,team:"HOU",proj:{PPR:92,Half:92,Standard:92},adp:24.5,ktcVal:2884,note:"S: 88 tackles 3 INT versatile"},
+  {name:"Kareem Jackson",pos:"DB",age:38.4,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Retired · now DEN area scout"},
+  {name:"Adrian Amos",pos:"DB",age:33.3,team:"FA",proj:{PPR:68,Half:68,Standard:68},adp:41.5,ktcVal:515,note:"Veteran FS: 60 tackles 3 INT"},
+  {name:"Rodney McLeod",pos:"DB",age:36.2,team:"FA",proj:{PPR:55,Half:55,Standard:55},adp:54.0,ktcVal:309,note:"Veteran S depth"},
+  {name:"Tycen Anderson",pos:"DB",age:27.2,team:"DEN",proj:{PPR:72,Half:72,Standard:72},adp:38.5,ktcVal:1545,note:"Signed DEN 1yr/$1.5M · FS: 65 tackles 2 INT"},
+  {name:"Deionte Thompson",pos:"DB",age:29.5,team:"JAX",proj:{PPR:68,Half:68,Standard:68},adp:41.5,ktcVal:721,note:"Signed JAX 1yr · S: 62 tackles 2 INT"},
+  {name:"JL Skinner",pos:"DB",age:25.4,team:"DEN",proj:{PPR:75,Half:75,Standard:75},adp:36.5,ktcVal:1854,note:"S Year 3: 70 tackles 2 INT physical"},
+  {name:"Quentin Lake",pos:"DB",age:27.6,team:"LAR",proj:{PPR:70,Half:70,Standard:70},adp:40.0,ktcVal:721,note:"S: 65 tackles 1 INT"},
+  {name:"Elijah Riley",pos:"DB",age:28.2,team:"MIN",proj:{PPR:65,Half:65,Standard:65},adp:44.5,ktcVal:515,note:"S depth: 58 tackles 1 INT"},
+  {name:"Keenan Isaac",pos:"DB",age:26.5,team:"JAX",proj:{PPR:62,Half:62,Standard:62},adp:46.0,ktcVal:824,note:"CB depth: 50 tackles 1 INT"},
+  {name:"Josh Jobe",pos:"DB",age:28.4,team:"SEA",proj:{PPR:68,Half:68,Standard:68},adp:41.0,ktcVal:824,note:"CB: 55 tackles 2 INT slot"},
+  {name:"Coby Bryant",pos:"DB",age:27.4,team:"CHI",proj:{PPR:72,Half:72,Standard:72},adp:38.5,ktcVal:824,note:"CB: 60 tackles 2 INT solid"},
   // IDP LB Wave 25
-  {name:"Ja'Whaun Bentley",pos:"LB",age:30,team:"PIT",proj:{PPR:88,Half:88,Standard:88},adp:27.5,ktcVal:1236,note:"Week 7: Reserve LB · PIT · limited value"},
-  {name:"Sam Eguavoen",pos:"LB",age:33.5,team:"MIA",proj:{PPR:75,Half:75,Standard:75},adp:36.0,ktcVal:721,note:"Week 7: Reserve LB · MIA · limited value"},
-  {name:"Mack Wilson Sr.",pos:"LB",age:28.5,team:"ARI",proj:{PPR:90,Half:90,Standard:90},adp:22.0,ktcVal:721,note:"Week 7: Reserve LB · ARI · limited value"},
-  {name:"Damien Wilson",pos:"LB",age:33.3,team:"FA",proj:{PPR:65,Half:65,Standard:65},adp:44.5,ktcVal:412,note:"Week 7: Reserve LB · FA · limited value"},
-  {name:"Devion Cunningham",pos:"LB",age:26,team:"ATL",proj:{PPR:68,Half:68,Standard:68},adp:41.5,ktcVal:721,note:"Week 7: Reserve LB · ATL · limited value"},
+  {name:"Ja'Whaun Bentley",pos:"LB",age:30,team:"PIT",proj:{PPR:88,Half:88,Standard:88},adp:27.5,ktcVal:1236,note:"Signed PIT · ILB: 85 tackles 2 sacks veteran"},
+  {name:"Sam Eguavoen",pos:"LB",age:33.5,team:"MIA",proj:{PPR:75,Half:75,Standard:75},adp:36.0,ktcVal:721,note:"LB: 70 tackles 2 INT coverage"},
+  {name:"Mack Wilson Sr.",pos:"LB",age:28.5,team:"ARI",proj:{PPR:90,Half:90,Standard:90},adp:22.0,ktcVal:721,note:"Under contract ARI · ILB: 75 tackles 2 sacks"},
+  {name:"Damien Wilson",pos:"LB",age:33.3,team:"FA",proj:{PPR:65,Half:65,Standard:65},adp:44.5,ktcVal:412,note:"Veteran ILB: 65 tackles depth"},
+  {name:"Devion Cunningham",pos:"LB",age:26,team:"ATL",proj:{PPR:68,Half:68,Standard:68},adp:41.5,ktcVal:721,note:"LB depth: 62 tackles 1 sack"},
   // Wave 26 — missing players + value corrections
   // RBs
-  {name:"Phil Mafah",pos:"RB",age:23.8,team:"SF",proj:{PPR:195,Half:179,Standard:163},adp:14.5,ktcVal:3914,note:"Week 7: Bench back/handcuff · limited upside · hold for opportunity"},
-  {name:"Jarquez Hunter",pos:"RB",age:23.7,team:"ATL",proj:{PPR:178,Half:163,Standard:148},adp:18.5,ktcVal:2884,note:"Week 7: Bench back/handcuff · ATL · opportunity stash"},
-  {name:"Kalel Mullings",pos:"RB",age:23.9,team:"MIA",proj:{PPR:165,Half:151,Standard:137},adp:22.0,ktcVal:2575,note:"Week 7: Bench back/handcuff · MIA · opportunity stash"},
-  {name:"DJ Giddens",pos:"RB",age:23,team:"KC",proj:{PPR:158,Half:145,Standard:132},adp:24.5,ktcVal:2678,note:"Week 7: Bench back/handcuff · KC · opportunity stash"},
-  {name:"LeQuint Allen",pos:"RB",age:22.1,team:"CHI",proj:{PPR:148,Half:135,Standard:122},adp:27.0,ktcVal:2725,note:"Week 7: Bench back/handcuff · CHI · opportunity stash"},
-  {name:"Rasheen Ali",pos:"RB",age:25.5,team:"BAL",proj:{PPR:152,Half:139,Standard:126},adp:26.0,ktcVal:2369,note:"Week 7: Bench back/handcuff · BAL · opportunity stash"},
-  {name:"Jawhar Jordan",pos:"RB",age:27,team:"ARI",proj:{PPR:142,Half:130,Standard:118},adp:29.0,ktcVal:1854,note:"Week 7: Practice squad · ARI · no value"},
-  {name:"Austin Ekeler",pos:"RB",age:31.3,team:"FA",proj:{PPR:148,Half:136,Standard:124},adp:28.5,ktcVal:824,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Jeremy McNichols",pos:"RB",age:30.7,team:"FA",proj:{PPR:98,Half:90,Standard:82},adp:42.0,ktcVal:206,note:"Week 7: Practice squad · FA · no value"},
+  {name:"Phil Mafah",pos:"RB",age:23.8,team:"SF",proj:{PPR:195,Half:179,Standard:163},adp:14.5,ktcVal:3914,note:"SF starter: 1,000 rush 4 TD young workhorse"},
+  {name:"Jarquez Hunter",pos:"RB",age:23.7,team:"ATL",proj:{PPR:178,Half:163,Standard:148},adp:18.5,ktcVal:2884,note:"ATL RB: 850 rush 45 rec 6 TD"},
+  {name:"Kalel Mullings",pos:"RB",age:23.9,team:"MIA",proj:{PPR:165,Half:151,Standard:137},adp:22.0,ktcVal:2575,note:"MIA RB: power runner 800 rush 5 TD"},
+  {name:"DJ Giddens",pos:"RB",age:23,team:"KC",proj:{PPR:158,Half:145,Standard:132},adp:24.5,ktcVal:2678,note:"KC RB: 750 rush 50 rec 5 TD"},
+  {name:"LeQuint Allen",pos:"RB",age:22.1,team:"CHI",proj:{PPR:148,Half:135,Standard:122},adp:27.0,ktcVal:2725,note:"CHI RB: pass-catcher 600 rush 55 rec"},
+  {name:"Rasheen Ali",pos:"RB",age:25.5,team:"BAL",proj:{PPR:152,Half:139,Standard:126},adp:26.0,ktcVal:2369,note:"BAL RB: 700 rush 40 rec 6 TD"},
+  {name:"Jawhar Jordan",pos:"RB",age:27,team:"ARI",proj:{PPR:142,Half:130,Standard:118},adp:29.0,ktcVal:1854,note:"ARI RB: speed back 600 rush 45 rec"},
+  {name:"Austin Ekeler",pos:"RB",age:31.3,team:"FA",proj:{PPR:148,Half:136,Standard:124},adp:28.5,ktcVal:824,note:"Veteran: pass-catcher 500 rush 60 rec"},
+  {name:"Jeremy McNichols",pos:"RB",age:30.7,team:"FA",proj:{PPR:98,Half:90,Standard:82},adp:42.0,ktcVal:206,note:"RB depth: pass-catcher role"},
   // WRs
-  {name:"Raheim Sanders",pos:"WR",age:24.2,team:"BUF",proj:{PPR:165,Half:151,Standard:137},adp:23.5,ktcVal:2575,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Jordan Whittington",pos:"WR",age:25.9,team:"LAR",proj:{PPR:158,Half:145,Standard:132},adp:26.0,ktcVal:1854,note:"Week 7: Deep bench · LAR · limited value"},
-  {name:"Lucky Jackson",pos:"WR",age:24,team:"CHI",proj:{PPR:155,Half:142,Standard:129},adp:27.0,ktcVal:2266,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Devontez Walker",pos:"WR",age:25.2,team:"BAL",proj:{PPR:152,Half:139,Standard:126},adp:28.0,ktcVal:2060,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Olamide Zaccheaus",pos:"WR",age:29.1,team:"ATL",proj:{PPR:132,Half:121,Standard:110},adp:34.0,ktcVal:721,note:"Week 7: Deep bench · ATL · limited value"},
-  {name:"Mitch Tinsley",pos:"WR",age:27,team:"IND",proj:{PPR:128,Half:117,Standard:106},adp:36.0,ktcVal:927,note:"Week 7: Deep bench · IND · limited value"},
-  {name:"Rondale Moore",pos:"WR",age:26.2,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Jaylin Lane",pos:"WR",age:24.3,team:"PHI",proj:{PPR:145,Half:133,Standard:121},adp:30.0,ktcVal:1854,note:"Week 7: Deep bench · PHI · limited value"},
-  {name:"Arian Smith",pos:"WR",age:24.9,team:"CHI",proj:{PPR:148,Half:136,Standard:124},adp:29.5,ktcVal:2163,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Xavier Hutchinson",pos:"WR",age:26.2,team:"HOU",proj:{PPR:142,Half:130,Standard:118},adp:31.5,ktcVal:1545,note:"Week 7: Deep bench · HOU · limited value"},
-  {name:"Joshua Palmer",pos:"WR",age:26.9,team:"LAC",proj:{PPR:162,Half:149,Standard:136},adp:27.2,ktcVal:1984,note:"Week 7: Deep bench · LAC · limited value"},
+  {name:"Raheim Sanders",pos:"WR",age:24.2,team:"BUF",proj:{PPR:165,Half:151,Standard:137},adp:23.5,ktcVal:2575,note:"BUF WR: 62 rec 780 yds 6 TD big-body"},
+  {name:"Jordan Whittington",pos:"WR",age:25.9,team:"LAR",proj:{PPR:158,Half:145,Standard:132},adp:26.0,ktcVal:1854,note:"LAR slot: 65 rec 720 yds 5 TD"},
+  {name:"Lucky Jackson",pos:"WR",age:24,team:"CHI",proj:{PPR:155,Half:142,Standard:129},adp:27.0,ktcVal:2266,note:"CHI WR: 58 rec 750 yds 5 TD"},
+  {name:"Devontez Walker",pos:"WR",age:25.2,team:"BAL",proj:{PPR:152,Half:139,Standard:126},adp:28.0,ktcVal:2060,note:"BAL WR: speed 55 rec 700 yds 5 TD"},
+  {name:"Olamide Zaccheaus",pos:"WR",age:29.1,team:"ATL",proj:{PPR:132,Half:121,Standard:110},adp:34.0,ktcVal:721,note:"ATL slot: 50 rec 580 yds 4 TD"},
+  {name:"Mitch Tinsley",pos:"WR",age:27,team:"IND",proj:{PPR:128,Half:117,Standard:106},adp:36.0,ktcVal:927,note:"IND WR: 48 rec 550 yds 4 TD"},
+  {name:"Rondale Moore",pos:"WR",age:26.2,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Passed away Feb 2026 · RIP"},
+  {name:"Jaylin Lane",pos:"WR",age:24.3,team:"PHI",proj:{PPR:145,Half:133,Standard:121},adp:30.0,ktcVal:1854,note:"PHI WR: 50 rec 620 yds 5 TD upside"},
+  {name:"Arian Smith",pos:"WR",age:24.9,team:"CHI",proj:{PPR:148,Half:136,Standard:124},adp:29.5,ktcVal:2163,note:"CHI speed WR: 52 rec 680 yds 5 TD"},
+  {name:"Xavier Hutchinson",pos:"WR",age:26.2,team:"HOU",proj:{PPR:142,Half:130,Standard:118},adp:31.5,ktcVal:1545,note:"HOU slot: 58 rec 610 yds 4 TD"},
+  {name:"Joshua Palmer",pos:"WR",age:26.9,team:"LAC",proj:{PPR:162,Half:149,Standard:136},adp:27.2,ktcVal:1984,note:"LAC WR: 60 rec 700 yds 5 TD"},
   // TEs
-  {name:"Gunnar Helm",pos:"TE",age:24,team:"TEN",proj:{PPR:148,Half:136,Standard:124},adp:16.5,ktcVal:3399,note:"Week 7: TE2/bench · limited role · streaming option"},
-  {name:"Darnell Washington",pos:"TE",age:25,team:"PIT",proj:{PPR:138,Half:126,Standard:114},adp:19.0,ktcVal:3090,note:"Week 7: TE2/bench · limited role · streaming option"},
-  {name:"Ja'Tavion Sanders",pos:"TE",age:23.4,team:"CAR",proj:{PPR:132,Half:121,Standard:110},adp:21.5,ktcVal:3090,note:"Week 7: TE2/bench · limited role · streaming option"},
-  {name:"Ben Sinnott",pos:"TE",age:24.2,team:"WAS",proj:{PPR:128,Half:117,Standard:106},adp:23.0,ktcVal:2575,note:"Week 7: Bench TE · WAS · stream candidate"},
-  {name:"Jake Tonges",pos:"TE",age:27.1,team:"BAL",proj:{PPR:118,Half:108,Standard:98},adp:27.0,ktcVal:2854,note:"Week 7: Bench TE · BAL · stream candidate"},
-  {name:"Erick All",pos:"TE",age:26,team:"CIN",proj:{PPR:122,Half:112,Standard:102},adp:25.5,ktcVal:1751,note:"Week 7: Practice squad · CIN · no value"},
-  {name:"Brock Wright",pos:"TE",age:27.8,team:"DET",proj:{PPR:118,Half:108,Standard:98},adp:25.0,ktcVal:1854,note:"Week 7: Practice squad · DET · no value"},
-  {name:"Darren Waller",pos:"TE",age:34,team:"MIA",proj:{PPR:112,Half:103,Standard:94},adp:32.0,ktcVal:721,note:"Week 7: Practice squad · MIA · no value"},
+  {name:"Gunnar Helm",pos:"TE",age:24,team:"TEN",proj:{PPR:148,Half:136,Standard:124},adp:16.5,ktcVal:3399,note:"2025 pick 4-120 · TEN TE1: 62 rec 680 yds 5 TD ascending"},
+  {name:"Darnell Washington",pos:"TE",age:25,team:"PIT",proj:{PPR:138,Half:126,Standard:114},adp:19.0,ktcVal:3090,note:"PIT TE: 52 rec 590 yds 5 TD athletic"},
+  {name:"Ja'Tavion Sanders",pos:"TE",age:23.4,team:"CAR",proj:{PPR:132,Half:121,Standard:110},adp:21.5,ktcVal:3090,note:"CAR TE: 48 rec 530 yds 4 TD"},
+  {name:"Ben Sinnott",pos:"TE",age:24.2,team:"WAS",proj:{PPR:128,Half:117,Standard:106},adp:23.0,ktcVal:2575,note:"WAS TE: 46 rec 510 yds 4 TD"},
+  {name:"Jake Tonges",pos:"TE",age:27.1,team:"BAL",proj:{PPR:118,Half:108,Standard:98},adp:27.0,ktcVal:2854,note:"BAL TE: 42 rec 460 yds 3 TD"},
+  {name:"Erick All",pos:"TE",age:26,team:"CIN",proj:{PPR:122,Half:112,Standard:102},adp:25.5,ktcVal:1751,note:"CIN TE: 45 rec 490 yds 4 TD"},
+  {name:"Brock Wright",pos:"TE",age:27.8,team:"DET",proj:{PPR:118,Half:108,Standard:98},adp:25.0,ktcVal:1854,note:"DET TE: 45 rec 480 yds 4 TD"},
+  {name:"Darren Waller",pos:"TE",age:34,team:"MIA",proj:{PPR:112,Half:103,Standard:94},adp:32.0,ktcVal:721,note:"Traded NYG→MIA · 24 rec 283 yds 6 TD in 9 games"},
   // QBs
-  {name:"Riley Leonard",pos:"QB",age:24,team:"NO",proj:{PPR:265,Half:265,Standard:265},adp:22.5,ktcVal:2266,note:"Week 7: Backup/developmental QB · limited starting role · dynasty hold"},
-  {name:"Joe Milton",pos:"QB",age:26.5,team:"NE",proj:{PPR:252,Half:252,Standard:252},adp:24.5,ktcVal:1545,note:"Week 7: Deep bench/PS · NE · limited value"},
-  {name:"Quinn Ewers",pos:"QB",age:23.5,team:"JAX",proj:{PPR:198,Half:198,Standard:198},adp:28.0,ktcVal:2400,note:"Week 7: Deep bench/PS · JAX · limited value"},
-  {name:"Max Brosmer",pos:"QB",age:25.4,team:"MIN",proj:{PPR:238,Half:238,Standard:238},adp:27.0,ktcVal:1442,note:"Week 7: Deep bench/PS · MIN · limited value"},
-  {name:"Brady Cook",pos:"QB",age:24.9,team:"NYJ",proj:{PPR:228,Half:228,Standard:228},adp:28.5,ktcVal:618,note:"Week 7: Deep bench/PS · NYJ · limited value"},
-  {name:"Jameis Winston",pos:"QB",age:32.6,team:"NYG",proj:{PPR:232,Half:232,Standard:232},adp:28.0,ktcVal:361,note:"Week 7: Deep bench/PS · NYG · limited value"},
-  {name:"Tyrod Taylor",pos:"QB",age:37.1,team:"GB",proj:{PPR:195,Half:195,Standard:195},adp:35.0,ktcVal:103,note:"Week 7: Deep bench/PS · GB · limited value"},
+  {name:"Riley Leonard",pos:"QB",age:24,team:"NO",proj:{PPR:265,Half:265,Standard:265},adp:22.5,ktcVal:2266,note:"NO QB: mobile 3,200 yds 22 TD dual-threat"},
+  {name:"Joe Milton",pos:"QB",age:26.5,team:"NE",proj:{PPR:252,Half:252,Standard:252},adp:24.5,ktcVal:1545,note:"NE QB: big arm 3,000 yds 20 TD upside"},
+  {name:"Quinn Ewers",pos:"QB",age:23.5,team:"JAX",proj:{PPR:198,Half:198,Standard:198},adp:28.0,ktcVal:2400,note:"Traded from MIA to JAX for future 6th. Backup behind Trevor Lawrence — deep SF stash only"},
+  {name:"Max Brosmer",pos:"QB",age:25.4,team:"MIN",proj:{PPR:238,Half:238,Standard:238},adp:27.0,ktcVal:1442,note:"MIN QB: 2,700 yds 18 TD"},
+  {name:"Brady Cook",pos:"QB",age:24.9,team:"NYJ",proj:{PPR:228,Half:228,Standard:228},adp:28.5,ktcVal:618,note:"Backup QB: 2,000 yds handcuff"},
+  {name:"Jameis Winston",pos:"QB",age:32.6,team:"NYG",proj:{PPR:232,Half:232,Standard:232},adp:28.0,ktcVal:361,note:"Signed NYG 2yr/$8M · veteran backup"},
+  {name:"Tyrod Taylor",pos:"QB",age:37.1,team:"GB",proj:{PPR:195,Half:195,Standard:195},adp:35.0,ktcVal:103,note:"Signed GB May 2026 · veteran backup to Love"},
   // IDP — DL
-  {name:"Josh Sweat",pos:"DL",age:29.4,team:"ARI",proj:{PPR:105,Half:105,Standard:105},adp:18.0,ktcVal:1854,note:"Week 7: Reserve DL · ARI · limited snaps"},
-  {name:"Tuli Tuipulotu",pos:"DL",age:24,team:"LAC",proj:{PPR:98,Half:98,Standard:98},adp:20.5,ktcVal:3605,note:"Week 7: Reserve DL · LAC · limited snaps"},
-  {name:"Alim McNeill",pos:"DL",age:26.3,team:"DET",proj:{PPR:88,Half:88,Standard:88},adp:26.0,ktcVal:2060,note:"Week 7: Reserve DL · DET · limited snaps"},
+  {name:"Josh Sweat",pos:"DL",age:29.4,team:"ARI",proj:{PPR:105,Half:105,Standard:105},adp:18.0,ktcVal:1854,note:"Signed ARI 4yr/$76.4M · EDGE: 10 sacks 14 TFL"},
+  {name:"Tuli Tuipulotu",pos:"DL",age:24,team:"LAC",proj:{PPR:98,Half:98,Standard:98},adp:20.5,ktcVal:3605,note:"LAC DL: 9 sacks 12 TFL explosive"},
+  {name:"Alim McNeill",pos:"DL",age:26.3,team:"DET",proj:{PPR:88,Half:88,Standard:88},adp:26.0,ktcVal:2060,note:"DET IDL: 7 sacks 48 tackles interior"},
   // IDP — LB
-  {name:"Nick Bolton",pos:"LB",age:26.5,team:"KC",proj:{PPR:135,Half:135,Standard:135},adp:11.5,ktcVal:2266,note:"Week 7: Reserve LB · KC · limited value"},
-  {name:"Jalon Walker",pos:"LB",age:22.5,team:"ATL",proj:{PPR:105,Half:105,Standard:105},adp:17.5,ktcVal:3605,note:"Week 7: Reserve LB · ATL · limited value"},
-  {name:"Daiyan Henley",pos:"LB",age:26.8,team:"LAC",proj:{PPR:118,Half:118,Standard:118},adp:14.5,ktcVal:1854,note:"Week 7: Reserve LB · LAC · limited value"},
-  {name:"Ernest Jones",pos:"LB",age:26.8,team:"SEA",proj:{PPR:122,Half:122,Standard:122},adp:13.5,ktcVal:2060,note:"Week 7: Reserve LB · SEA · limited value"},
-  {name:"Andrew Van Ginkel",pos:"LB",age:31.2,team:"MIN",proj:{PPR:108,Half:108,Standard:108},adp:16.5,ktcVal:1236,note:"Week 7: Reserve LB · MIN · limited value"},
-  {name:"Cedric Gray",pos:"LB",age:23.8,team:"CAR",proj:{PPR:112,Half:112,Standard:112},adp:15.5,ktcVal:2060,note:"Week 7: Reserve LB · CAR · limited value"},
-  {name:"SirVocea Dennis",pos:"LB",age:26.5,team:"PIT",proj:{PPR:102,Half:102,Standard:102},adp:18.5,ktcVal:1648,note:"Week 7: Reserve LB · PIT · limited value"},
-  {name:"Tyrice Knight",pos:"LB",age:25.7,team:"LAC",proj:{PPR:98,Half:98,Standard:98},adp:20.0,ktcVal:1545,note:"Week 7: Reserve LB · LAC · limited value"},
+  {name:"Nick Bolton",pos:"LB",age:26.5,team:"KC",proj:{PPR:135,Half:135,Standard:135},adp:11.5,ktcVal:2266,note:"KC ILB: 140 tackles 3 sacks elite volume"},
+  {name:"Jalon Walker",pos:"LB",age:22.5,team:"ATL",proj:{PPR:105,Half:105,Standard:105},adp:17.5,ktcVal:3605,note:"2025 pick 1-15 · ATL LB 10 sacks upside"},
+  {name:"Daiyan Henley",pos:"LB",age:26.8,team:"LAC",proj:{PPR:118,Half:118,Standard:118},adp:14.5,ktcVal:1854,note:"LAC LB: 103 tackles 3.5 sacks 2 INT"},
+  {name:"Ernest Jones",pos:"LB",age:26.8,team:"SEA",proj:{PPR:122,Half:122,Standard:122},adp:13.5,ktcVal:2060,note:"Traded to SEA Oct 2024 · ILB: 130 tackles 2 sacks"},
+  {name:"Andrew Van Ginkel",pos:"LB",age:31.2,team:"MIN",proj:{PPR:108,Half:108,Standard:108},adp:16.5,ktcVal:1236,note:"Extended MIN 1yr/$23M · LB: 8.5 sacks 15 TFL"},
+  {name:"Cedric Gray",pos:"LB",age:23.8,team:"CAR",proj:{PPR:112,Half:112,Standard:112},adp:15.5,ktcVal:2060,note:"CAR LB: 120 tackles 3 sacks in Year 1"},
+  {name:"SirVocea Dennis",pos:"LB",age:26.5,team:"PIT",proj:{PPR:102,Half:102,Standard:102},adp:18.5,ktcVal:1648,note:"PIT LB: 108 tackles 2 sacks"},
+  {name:"Tyrice Knight",pos:"LB",age:25.7,team:"LAC",proj:{PPR:98,Half:98,Standard:98},adp:20.0,ktcVal:1545,note:"LAC LB: 102 tackles 2 sacks ascending"},
   // IDP — DB
-  {name:"Kerby Joseph",pos:"DB",age:25.8,team:"DET",proj:{PPR:108,Half:108,Standard:108},adp:15.5,ktcVal:3296,note:"Week 7: Reserve DB · DET · depth"},
-  {name:"Malaki Starks",pos:"DB",age:22.8,team:"GB",proj:{PPR:102,Half:102,Standard:102},adp:18.0,ktcVal:3605,note:"Week 7: Reserve DB · GB · depth"},
-  {name:"Jamien Sherwood",pos:"DB",age:26.6,team:"NYJ",proj:{PPR:95,Half:95,Standard:95},adp:20.5,ktcVal:1854,note:"Week 7: Reserve DB · NYJ · depth"},
-  {name:"Jordan Battle",pos:"DB",age:25.7,team:"CIN",proj:{PPR:92,Half:92,Standard:92},adp:22.5,ktcVal:1854,note:"Week 7: Reserve DB · CIN · depth"},
-  {name:"Taron Johnson",pos:"DB",age:30.1,team:"LV",proj:{PPR:95,Half:95,Standard:95},adp:21.5,ktcVal:1545,note:"Week 7: Reserve DB · LV · depth"},
-  {name:"Tykee Smith",pos:"DB",age:25.5,team:"PHI",proj:{PPR:88,Half:88,Standard:88},adp:25.0,ktcVal:1854,note:"Week 7: Reserve DB · PHI · depth"},
-  {name:"Alohi Gilman",pos:"DB",age:28.9,team:"BAL",proj:{PPR:88,Half:88,Standard:88},adp:26.0,ktcVal:1030,note:"Week 7: Reserve DB · BAL · depth"},
+  {name:"Kerby Joseph",pos:"DB",age:25.8,team:"DET",proj:{PPR:108,Half:108,Standard:108},adp:15.5,ktcVal:3296,note:"DET S: 4 INT 90 tackles ball-hawk elite"},
+  {name:"Malaki Starks",pos:"DB",age:22.8,team:"GB",proj:{PPR:102,Half:102,Standard:102},adp:18.0,ktcVal:3605,note:"2025 pick 1-27 · S elite athleticism"},
+  {name:"Jamien Sherwood",pos:"DB",age:26.6,team:"NYJ",proj:{PPR:95,Half:95,Standard:95},adp:20.5,ktcVal:1854,note:"NYJ S: 88 tackles 3 INT"},
+  {name:"Jordan Battle",pos:"DB",age:25.7,team:"CIN",proj:{PPR:92,Half:92,Standard:92},adp:22.5,ktcVal:1854,note:"CIN S: 85 tackles 2 INT ascending"},
+  {name:"Taron Johnson",pos:"DB",age:30.1,team:"LV",proj:{PPR:95,Half:95,Standard:95},adp:21.5,ktcVal:1545,note:"LV CB: 3 INT 75 tackles slot cover"},
+  {name:"Tykee Smith",pos:"DB",age:25.5,team:"PHI",proj:{PPR:88,Half:88,Standard:88},adp:25.0,ktcVal:1854,note:"PHI S: 82 tackles 2 INT versatile"},
+  {name:"Alohi Gilman",pos:"DB",age:28.9,team:"BAL",proj:{PPR:88,Half:88,Standard:88},adp:26.0,ktcVal:1030,note:"Traded to BAL (Oweh deal) · S: 80 tackles 2 INT"},
   // Wave 28 — additional missing + value corrections
-  {name:"KeAndre Lambert-Smith",pos:"WR",age:24.9,team:"PHI",proj:{PPR:158,Half:145,Standard:132},adp:25.0,ktcVal:2884,note:"Week 7: Bench WR · limited targets · roster depth stash"},
+  {name:"KeAndre Lambert-Smith",pos:"WR",age:24.9,team:"PHI",proj:{PPR:158,Half:145,Standard:132},adp:25.0,ktcVal:2884,note:"PHI WR: 58 rec 720 yds 5 TD speed"},
   // Wave 27 — additional missing players
-  {name:"Nathan Carter",pos:"RB",age:24.3,team:"LV",proj:{PPR:165,Half:151,Standard:137},adp:22.5,ktcVal:2678,note:"Week 7: Bench back/handcuff · LV · opportunity stash"},
-  {name:"Sione Vaki",pos:"RB",age:25.1,team:"ATL",proj:{PPR:148,Half:135,Standard:122},adp:27.0,ktcVal:2884,note:"Week 7: Bench back/handcuff · ATL · opportunity stash"},
-  {name:"Chris Brooks",pos:"RB",age:26.6,team:"GB",proj:{PPR:132,Half:121,Standard:110},adp:32.0,ktcVal:1030,note:"Week 7: Practice squad · GB · no value"},
-  {name:"Malik Davis",pos:"RB",age:27.8,team:"DAL",proj:{PPR:118,Half:108,Standard:98},adp:36.0,ktcVal:824,note:"Week 7: Practice squad · DAL · no value"},
-  {name:"Frank Gore",pos:"RB",age:24.5,team:"BUF",proj:{PPR:138,Half:126,Standard:114},adp:29.5,ktcVal:1648,note:"Week 7: Practice squad · BUF · no value"},
-  {name:"Zavier Scott",pos:"WR",age:23,team:"LAC",proj:{PPR:145,Half:133,Standard:121},adp:30.0,ktcVal:1957,note:"Week 7: Deep bench · LAC · limited value"},
+  {name:"Nathan Carter",pos:"RB",age:24.3,team:"LV",proj:{PPR:165,Half:151,Standard:137},adp:22.5,ktcVal:2678,note:"LV RB: speed back 800 rush 50 rec 5 TD"},
+  {name:"Sione Vaki",pos:"RB",age:25.1,team:"ATL",proj:{PPR:148,Half:135,Standard:122},adp:27.0,ktcVal:2884,note:"ATL RB: versatile 600 rush 55 rec 4 TD"},
+  {name:"Chris Brooks",pos:"RB",age:26.6,team:"GB",proj:{PPR:132,Half:121,Standard:110},adp:32.0,ktcVal:1030,note:"GB RB: committee 550 rush 40 rec 4 TD"},
+  {name:"Malik Davis",pos:"RB",age:27.8,team:"DAL",proj:{PPR:118,Half:108,Standard:98},adp:36.0,ktcVal:824,note:"DAL RB: depth 450 rush 35 rec 3 TD"},
+  {name:"Frank Gore",pos:"RB",age:24.5,team:"BUF",proj:{PPR:138,Half:126,Standard:114},adp:29.5,ktcVal:1648,note:"BUF RB: powerful runner 650 rush 40 rec"},
+  {name:"Zavier Scott",pos:"WR",age:23,team:"LAC",proj:{PPR:145,Half:133,Standard:121},adp:30.0,ktcVal:1957,note:"LAC WR: 52 rec 640 yds 5 TD speed"},
   // Wave 24 — missing starters + IDP depth sweep
   // Missing starters
-  {name:"DeAndre Hopkins",pos:"WR",age:34.2,team:"FA",proj:{PPR:148,Half:136,Standard:124},adp:30.0,ktcVal:412,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Evan Engram",pos:"TE",age:32,team:"DEN",proj:{PPR:195,Half:179,Standard:163},adp:11.5,ktcVal:2224,note:"Week 7: Bench TE · DEN · stream candidate"},
+  {name:"DeAndre Hopkins",pos:"WR",age:34.2,team:"FA",proj:{PPR:148,Half:136,Standard:124},adp:30.0,ktcVal:412,note:"UFA from BAL · 22 rec 330 yds in 2025 · aging veteran"},
+  {name:"Evan Engram",pos:"TE",age:32,team:"DEN",proj:{PPR:195,Half:179,Standard:163},adp:11.5,ktcVal:2224,note:"Volume: 88 rec 950 yds 7 TD PPR monster"},
   // More notable WRs Wave 24
-  {name:"Gabe Davis",pos:"WR",age:27.4,team:"FA",proj:{PPR:148,Half:136,Standard:124},adp:29.0,ktcVal:824,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Romeo Doubs",pos:"WR",age:26.4,team:"NE",proj:{PPR:162,Half:149,Standard:136},adp:25.5,ktcVal:4264,note:"Week 7: Emerging WR · 80+ rec 900+ yds · breakout ceiling"},
+  {name:"Gabe Davis",pos:"WR",age:27.4,team:"FA",proj:{PPR:148,Half:136,Standard:124},adp:29.0,ktcVal:824,note:"Big play: 52 rec 660 yds 6 TD"},
+  {name:"Romeo Doubs",pos:"WR",age:26.4,team:"NE",proj:{PPR:162,Half:149,Standard:136},adp:25.5,ktcVal:4264,note:"65 rec 740 yds 6 TD"},
   // More RB Wave 24
-  {name:"Sean Tucker",pos:"RB",age:24.8,team:"TB",proj:{PPR:135,Half:124,Standard:113},adp:29.5,ktcVal:3274,note:"Week 7: Bench back/handcuff · limited upside · hold for opportunity"},
+  {name:"Sean Tucker",pos:"RB",age:24.8,team:"TB",proj:{PPR:135,Half:124,Standard:113},adp:29.5,ktcVal:3274,note:"TB committee: 520 rush 48 rec"},
   // More TE Wave 24
-  {name:"Colby Parkinson",pos:"TE",age:27.6,team:"LAR",proj:{PPR:118,Half:108,Standard:98},adp:23.5,ktcVal:2426,note:"Week 7: Bench TE · LAR · stream candidate"},
+  {name:"Colby Parkinson",pos:"TE",age:27.6,team:"LAR",proj:{PPR:118,Half:108,Standard:98},adp:23.5,ktcVal:2426,note:"LAR: 46 rec 490 yds 4 TD"},
   // Wave 23 — elite IDL, QB prospects, IDP 2025 additions
   // IDL elite tier Wave 23
-  {name:"DeForest Buckner",pos:"DL",age:32.4,team:"IND",proj:{PPR:95,Half:95,Standard:95},adp:22.0,ktcVal:1854,note:"Week 7: Reserve DL · IND · limited snaps"},
-  {name:"Vita Vea",pos:"DL",age:31.6,team:"TB",proj:{PPR:85,Half:85,Standard:85},adp:29.0,ktcVal:1545,note:"Week 7: Reserve DL · TB · limited snaps"},
-  {name:"Arik Armstead",pos:"DL",age:32.8,team:"JAX",proj:{PPR:78,Half:78,Standard:78},adp:34.0,ktcVal:824,note:"Week 7: Reserve DL · JAX · limited snaps"},
-  {name:"Justin Madubuike",pos:"DL",age:28,team:"BAL",proj:{PPR:92,Half:92,Standard:92},adp:24.5,ktcVal:2266,note:"Week 7: Reserve DL · BAL · limited snaps"},
-  {name:"Javon Kinlaw",pos:"DL",age:28.9,team:"WAS",proj:{PPR:78,Half:78,Standard:78},adp:34.5,ktcVal:1030,note:"Week 7: Reserve DL · WAS · limited snaps"},
-  {name:"Quinton Jefferson",pos:"DL",age:33.4,team:"FA",proj:{PPR:62,Half:62,Standard:62},adp:46.0,ktcVal:412,note:"Week 7: Reserve DL · FA · limited snaps"},
-  {name:"Kris Jenkins Jr.",pos:"DL",age:24.9,team:"BUF",proj:{PPR:82,Half:82,Standard:82},adp:31.0,ktcVal:2266,note:"Week 7: Reserve DL · BUF · limited snaps"},
-  {name:"Brandon Jordan",pos:"DL",age:26,team:"GB",proj:{PPR:72,Half:72,Standard:72},adp:38.0,ktcVal:1236,note:"Week 7: Reserve DL · GB · limited snaps"},
+  {name:"DeForest Buckner",pos:"DL",age:32.4,team:"IND",proj:{PPR:95,Half:95,Standard:95},adp:22.0,ktcVal:1854,note:"Elite IDL: 9 sacks 52 tackles anchor"},
+  {name:"Vita Vea",pos:"DL",age:31.6,team:"TB",proj:{PPR:85,Half:85,Standard:85},adp:29.0,ktcVal:1545,note:"Elite NT: 7 sacks 50 tackles run stopper"},
+  {name:"Arik Armstead",pos:"DL",age:32.8,team:"JAX",proj:{PPR:78,Half:78,Standard:78},adp:34.0,ktcVal:824,note:"Versatile IDL: 7 sacks 42 tackles"},
+  {name:"Justin Madubuike",pos:"DL",age:28,team:"BAL",proj:{PPR:92,Half:92,Standard:92},adp:24.5,ktcVal:2266,note:"IDL: 8.5 sacks 48 tackles ascending"},
+  {name:"Javon Kinlaw",pos:"DL",age:28.9,team:"WAS",proj:{PPR:78,Half:78,Standard:78},adp:34.5,ktcVal:1030,note:"Signed WAS 3yr/$45M · IDL: 7 sacks when healthy"},
+  {name:"Quinton Jefferson",pos:"DL",age:33.4,team:"FA",proj:{PPR:62,Half:62,Standard:62},adp:46.0,ktcVal:412,note:"Released by DET Nov 2025 · unsigned FA"},
+  {name:"Kris Jenkins Jr.",pos:"DL",age:24.9,team:"BUF",proj:{PPR:82,Half:82,Standard:82},adp:31.0,ktcVal:2266,note:"Year 2 IDL: 7 sacks ascending"},
+  {name:"Brandon Jordan",pos:"DL",age:26,team:"GB",proj:{PPR:72,Half:72,Standard:72},adp:38.0,ktcVal:1236,note:"EDGE: 6 sacks ascending"},
   // IDP 2025 additions
-  {name:"Mike Green",pos:"DL",age:23.1,team:"SEA",proj:{PPR:95,Half:95,Standard:95},adp:22.5,ktcVal:3914,note:"Week 7: Reserve DL · SEA · limited snaps"},
-  {name:"Dani Dennis-Sutton",pos:"DL",age:22.7,team:"GB",proj:{PPR:82,Half:82,Standard:82},adp:30.5,ktcVal:2884,note:"Week 7: Reserve DL · GB · limited snaps"},
+  {name:"Mike Green",pos:"DL",age:23.1,team:"SEA",proj:{PPR:95,Half:95,Standard:95},adp:22.5,ktcVal:3914,note:"2024 EDGE breakout: 11 sacks elite production"},
+  {name:"Dani Dennis-Sutton",pos:"DL",age:22.7,team:"GB",proj:{PPR:82,Half:82,Standard:82},adp:30.5,ktcVal:2884,note:"2026 pick 4-20 · GB Packers · long athletic EDGE rusher"},
   // QB prospects Wave 23
-  {name:"Jalen Milroe",pos:"QB",age:23.7,team:"SEA",proj:{PPR:278,Half:278,Standard:278},adp:18.5,ktcVal:3296,note:"Week 7: Backup/developmental QB · limited starting role · dynasty hold"},
-  {name:"Will Rogers",pos:"QB",age:24,team:"WAS",proj:{PPR:242,Half:242,Standard:242},adp:24.5,ktcVal:721,note:"Week 7: Deep bench/PS · WAS · limited value"},
-  {name:"Preston Stone",pos:"QB",age:24,team:"ARI",proj:{PPR:235,Half:235,Standard:235},adp:26.5,ktcVal:618,note:"Week 7: Deep bench/PS · ARI · limited value"},
-  {name:"Michael Pratt",pos:"QB",age:24.9,team:"GB",proj:{PPR:228,Half:228,Standard:228},adp:27.5,ktcVal:515,note:"Week 7: Deep bench/PS · GB · limited value"},
-  {name:"Kevin Jennings",pos:"QB",age:23,team:"CHI",proj:{PPR:222,Half:222,Standard:222},adp:28.5,ktcVal:824,note:"Week 7: Deep bench/PS · CHI · limited value"},
-  {name:"Brendan Sorsby",pos:"QB",age:25,team:"CLE",proj:{PPR:198,Half:198,Standard:198},adp:34.5,ktcVal:412,note:"Week 7: Deep bench/PS · CLE · limited value"},
+  {name:"Jalen Milroe",pos:"QB",age:23.7,team:"SEA",proj:{PPR:278,Half:278,Standard:278},adp:18.5,ktcVal:3296,note:"2025 pick 3-92 · mobile 3,100 yds 24 TD 450 rush"},
+  {name:"Will Rogers",pos:"QB",age:24,team:"WAS",proj:{PPR:242,Half:242,Standard:242},adp:24.5,ktcVal:721,note:"2025 pick UDFA · accurate 2,800 yds 20 TD"},
+  {name:"Preston Stone",pos:"QB",age:24,team:"ARI",proj:{PPR:235,Half:235,Standard:235},adp:26.5,ktcVal:618,note:"2025: 2,700 yds 20 TD backup"},
+  {name:"Michael Pratt",pos:"QB",age:24.9,team:"GB",proj:{PPR:228,Half:228,Standard:228},adp:27.5,ktcVal:515,note:"2025 pick UDFA · 2,600 yds 19 TD backup"},
+  {name:"Kevin Jennings",pos:"QB",age:23,team:"CHI",proj:{PPR:222,Half:222,Standard:222},adp:28.5,ktcVal:824,note:"2025: mobile backup 2,500 yds"},
+  {name:"Brendan Sorsby",pos:"QB",age:25,team:"CLE",proj:{PPR:198,Half:198,Standard:198},adp:34.5,ktcVal:412,note:"Deep backup: 2,200 yds"},
   // More notable current WRs Wave 23
   // More RB depth Wave 23
-  {name:"Ryquell Armstead",pos:"RB",age:29.8,team:"FA",proj:{PPR:58,Half:53,Standard:48},adp:57.0,ktcVal:206,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Elijah Holyfield",pos:"RB",age:28.7,team:"FA",proj:{PPR:52,Half:47,Standard:42},adp:59.0,ktcVal:206,note:"Week 7: Practice squad · FA · no value"},
+  {name:"Ryquell Armstead",pos:"RB",age:29.8,team:"FA",proj:{PPR:58,Half:53,Standard:48},adp:57.0,ktcVal:206,note:"Power back veteran depth"},
+  {name:"Elijah Holyfield",pos:"RB",age:28.7,team:"FA",proj:{PPR:52,Half:47,Standard:42},adp:59.0,ktcVal:206,note:"Power back depth"},
   // Wave 22 — veteran IDL depth + CB/DB/LB fill-ins
   // IDL/DL veteran depth Wave 22
-  {name:"Cameron Heyward",pos:"DL",age:37.3,team:"PIT",proj:{PPR:82,Half:82,Standard:82},adp:31.5,ktcVal:721,note:"Week 7: Reserve DL · PIT · limited snaps"},
-  {name:"Grover Stewart",pos:"DL",age:32.9,team:"IND",proj:{PPR:72,Half:72,Standard:72},adp:38.5,ktcVal:721,note:"Week 7: Reserve DL · IND · limited snaps"},
-  {name:"Teair Tart",pos:"DL",age:29.5,team:"TEN",proj:{PPR:65,Half:65,Standard:65},adp:44.5,ktcVal:618,note:"Week 7: Reserve DL · TEN · limited snaps"},
-  {name:"DeMarcus Walker",pos:"DL",age:31.9,team:"HOU",proj:{PPR:62,Half:62,Standard:62},adp:46.5,ktcVal:515,note:"Week 7: Reserve DL · HOU · limited snaps"},
-  {name:"Carl Nassib",pos:"DL",age:33.4,team:"FA",proj:{PPR:58,Half:58,Standard:58},adp:50.5,ktcVal:412,note:"Week 7: Reserve DL · FA · limited snaps"},
-  {name:"Tyus Bowser",pos:"LB",age:31.3,team:"BAL",proj:{PPR:75,Half:75,Standard:75},adp:36.0,ktcVal:927,note:"Week 7: Reserve LB · BAL · limited value"},
-  {name:"Micah Kiser",pos:"LB",age:31.6,team:"LAR",proj:{PPR:72,Half:72,Standard:72},adp:38.5,ktcVal:618,note:"Week 7: Reserve LB · LAR · limited value"},
-  {name:"Brandon Copeland",pos:"LB",age:35.2,team:"FA",proj:{PPR:58,Half:58,Standard:58},adp:51.0,ktcVal:206,note:"Week 7: Reserve LB · FA · limited value"},
+  {name:"Cameron Heyward",pos:"DL",age:37.3,team:"PIT",proj:{PPR:82,Half:82,Standard:82},adp:31.5,ktcVal:721,note:"Veteran IDL: 7 sacks 44 tackles if active"},
+  {name:"Grover Stewart",pos:"DL",age:32.9,team:"IND",proj:{PPR:72,Half:72,Standard:72},adp:38.5,ktcVal:721,note:"NT: 38 tackles 3 sacks run stopper"},
+  {name:"Teair Tart",pos:"DL",age:29.5,team:"TEN",proj:{PPR:65,Half:65,Standard:65},adp:44.5,ktcVal:618,note:"IDL: 32 tackles 3 sacks"},
+  {name:"DeMarcus Walker",pos:"DL",age:31.9,team:"HOU",proj:{PPR:62,Half:62,Standard:62},adp:46.5,ktcVal:515,note:"EDGE depth: 5.5 sacks rotational"},
+  {name:"Carl Nassib",pos:"DL",age:33.4,team:"FA",proj:{PPR:58,Half:58,Standard:58},adp:50.5,ktcVal:412,note:"Veteran EDGE depth if active"},
+  {name:"Tyus Bowser",pos:"LB",age:31.3,team:"BAL",proj:{PPR:75,Half:75,Standard:75},adp:36.0,ktcVal:927,note:"EDGE/LB: 6 sacks 55 tackles"},
+  {name:"Micah Kiser",pos:"LB",age:31.6,team:"LAR",proj:{PPR:72,Half:72,Standard:72},adp:38.5,ktcVal:618,note:"ILB: 70 tackles 1 sack"},
+  {name:"Brandon Copeland",pos:"LB",age:35.2,team:"FA",proj:{PPR:58,Half:58,Standard:58},adp:51.0,ktcVal:206,note:"Veteran LB/EDGE depth"},
   // CB/DB depth Wave 22
-  {name:"Jamel Dean",pos:"DB",age:29.9,team:"PIT",proj:{PPR:78,Half:78,Standard:78},adp:34.5,ktcVal:1545,note:"Week 7: Reserve DB · PIT · depth"},
-  {name:"Bryce Hall",pos:"DB",age:28.8,team:"FA",proj:{PPR:68,Half:68,Standard:68},adp:41.5,ktcVal:824,note:"Week 7: Reserve DB · FA · depth"},
-  {name:"Nate Hairston",pos:"DB",age:32.2,team:"FA",proj:{PPR:55,Half:55,Standard:55},adp:54.5,ktcVal:412,note:"Week 7: Reserve DB · FA · depth"},
-  {name:"Jalen Thompson",pos:"DB",age:28.1,team:"DAL",proj:{PPR:75,Half:75,Standard:75},adp:36.5,ktcVal:1236,note:"Week 7: Reserve DB · DAL · depth"},
-  {name:"Chris Banjo",pos:"DB",age:36.5,team:"CAR",proj:{PPR:52,Half:52,Standard:52},adp:57.0,ktcVal:206,note:"Week 7: Reserve DB · CAR · depth"},
+  {name:"Jamel Dean",pos:"DB",age:29.9,team:"PIT",proj:{PPR:78,Half:78,Standard:78},adp:34.5,ktcVal:1545,note:"Signed PIT 3yr/$36.75M · CB: 58 tackles 3 INT"},
+  {name:"Bryce Hall",pos:"DB",age:28.8,team:"FA",proj:{PPR:68,Half:68,Standard:68},adp:41.5,ktcVal:824,note:"CB: 52 tackles 2 INT physical"},
+  {name:"Nate Hairston",pos:"DB",age:32.2,team:"FA",proj:{PPR:55,Half:55,Standard:55},adp:54.5,ktcVal:412,note:"Veteran CB depth"},
+  {name:"Jalen Thompson",pos:"DB",age:28.1,team:"DAL",proj:{PPR:75,Half:75,Standard:75},adp:36.5,ktcVal:1236,note:"Signed DAL 3yr/$33M · S: 68 tackles 2 INT"},
+  {name:"Chris Banjo",pos:"DB",age:36.5,team:"CAR",proj:{PPR:52,Half:52,Standard:52},adp:57.0,ktcVal:206,note:"Veteran ST/S depth"},
   // RB veteran depth Wave 22
-  {name:"Trey Sermon",pos:"RB",age:27.6,team:"FA",proj:{PPR:68,Half:62,Standard:56},adp:51.5,ktcVal:309,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Wayne Gallman",pos:"RB",age:31.9,team:"FA",proj:{PPR:58,Half:53,Standard:48},adp:56.5,ktcVal:206,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Jordan Wilkins",pos:"RB",age:32.1,team:"FA",proj:{PPR:55,Half:50,Standard:45},adp:57.5,ktcVal:206,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Ito Smith",pos:"RB",age:31,team:"FA",proj:{PPR:52,Half:47,Standard:42},adp:58.5,ktcVal:206,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Mekale McKay",pos:"WR",age:33.1,team:"FA",proj:{PPR:52,Half:48,Standard:44},adp:58.0,ktcVal:103,note:"Week 7: Deep bench · FA · limited value"},
+  {name:"Trey Sermon",pos:"RB",age:27.6,team:"FA",proj:{PPR:68,Half:62,Standard:56},adp:51.5,ktcVal:309,note:"Powerful back: 280 rush depth"},
+  {name:"Wayne Gallman",pos:"RB",age:31.9,team:"FA",proj:{PPR:58,Half:53,Standard:48},adp:56.5,ktcVal:206,note:"Veteran depth power"},
+  {name:"Jordan Wilkins",pos:"RB",age:32.1,team:"FA",proj:{PPR:55,Half:50,Standard:45},adp:57.5,ktcVal:206,note:"Veteran RB depth"},
+  {name:"Ito Smith",pos:"RB",age:31,team:"FA",proj:{PPR:52,Half:47,Standard:42},adp:58.5,ktcVal:206,note:"Receiving back depth FA"},
+  {name:"Mekale McKay",pos:"WR",age:33.1,team:"FA",proj:{PPR:52,Half:48,Standard:44},adp:58.0,ktcVal:103,note:"Big WR veteran depth"},
   // Wave 21 — 2025 IDP class + deeper DB/WR depth
   // 2025 IDP class additions
-  {name:"Maason Smith",pos:"DL",age:23.9,team:"JAX",proj:{PPR:75,Half:75,Standard:75},adp:35.5,ktcVal:1545,note:"Week 7: Reserve DL · JAX · limited snaps"},
-  {name:"Tyleik Williams",pos:"DL",age:23.5,team:"WAS",proj:{PPR:72,Half:72,Standard:72},adp:38.0,ktcVal:1442,note:"Week 7: Reserve DL · WAS · limited snaps"},
-  {name:"Jeremiah Trotter Jr.",pos:"LB",age:23.7,team:"PHI",proj:{PPR:88,Half:88,Standard:88},adp:27.5,ktcVal:2060,note:"Week 7: Reserve LB · PHI · limited value"},
-  {name:"Olumide Fashanu",pos:"DL",age:23,team:"NYJ",proj:{PPR:68,Half:68,Standard:68},adp:41.5,ktcVal:618,note:"Week 7: Reserve DL · NYJ · limited snaps"},
-  {name:"Josh Simmons",pos:"DL",age:23.7,team:"CLE",proj:{PPR:65,Half:65,Standard:65},adp:44.0,ktcVal:515,note:"Week 7: Reserve DL · CLE · limited snaps"},
+  {name:"Maason Smith",pos:"DL",age:23.9,team:"JAX",proj:{PPR:75,Half:75,Standard:75},adp:35.5,ktcVal:1545,note:"IDL: 35 tackles 4 sacks developing"},
+  {name:"Tyleik Williams",pos:"DL",age:23.5,team:"WAS",proj:{PPR:72,Half:72,Standard:72},adp:38.0,ktcVal:1442,note:"IDL: 32 tackles 3 sacks Year 3"},
+  {name:"Jeremiah Trotter Jr.",pos:"LB",age:23.7,team:"PHI",proj:{PPR:88,Half:88,Standard:88},adp:27.5,ktcVal:2060,note:"Year 2 ILB: 85 tackles 2 sacks namesake"},
+  {name:"Olumide Fashanu",pos:"DL",age:23,team:"NYJ",proj:{PPR:68,Half:68,Standard:68},adp:41.5,ktcVal:618,note:"OT convert: developmental DL"},
+  {name:"Josh Simmons",pos:"DL",age:23.7,team:"CLE",proj:{PPR:65,Half:65,Standard:65},adp:44.0,ktcVal:515,note:"OL/DL developmental"},
   // IDP DB depth Wave 21
-  {name:"Tarvarius Moore",pos:"DB",age:30,team:"SF",proj:{PPR:72,Half:72,Standard:72},adp:38.5,ktcVal:721,note:"Week 7: Reserve DB · SF · depth"},
-  {name:"Jaquiski Tartt",pos:"DB",age:34.5,team:"FA",proj:{PPR:55,Half:55,Standard:55},adp:54.5,ktcVal:412,note:"Week 7: Reserve DB · FA · depth"},
-  {name:"Johnathan Abram",pos:"DB",age:29.8,team:"FA",proj:{PPR:62,Half:62,Standard:62},adp:46.5,ktcVal:721,note:"Week 7: Reserve DB · FA · depth"},
-  {name:"Josh Jones",pos:"DB",age:29.2,team:"HOU",proj:{PPR:68,Half:68,Standard:68},adp:41.5,ktcVal:824,note:"Week 7: Reserve DB · HOU · depth"},
-  {name:"Dane Jackson",pos:"DB",age:29.7,team:"BUF",proj:{PPR:65,Half:65,Standard:65},adp:44.5,ktcVal:721,note:"Week 7: Reserve DB · BUF · depth"},
-  {name:"Andrew Adams",pos:"DB",age:33.8,team:"FA",proj:{PPR:52,Half:52,Standard:52},adp:57.0,ktcVal:309,note:"Week 7: Reserve DB · FA · depth"},
-  {name:"Sheldrick Redwine",pos:"DB",age:29.8,team:"FA",proj:{PPR:58,Half:58,Standard:58},adp:50.5,ktcVal:515,note:"Week 7: Reserve DB · FA · depth"},
+  {name:"Tarvarius Moore",pos:"DB",age:30,team:"SF",proj:{PPR:72,Half:72,Standard:72},adp:38.5,ktcVal:721,note:"FS: 60 tackles 2 INT versatile"},
+  {name:"Jaquiski Tartt",pos:"DB",age:34.5,team:"FA",proj:{PPR:55,Half:55,Standard:55},adp:54.5,ktcVal:412,note:"Veteran S depth"},
+  {name:"Johnathan Abram",pos:"DB",age:29.8,team:"FA",proj:{PPR:62,Half:62,Standard:62},adp:46.5,ktcVal:721,note:"Physical SS: 68 tackles 1 INT"},
+  {name:"Josh Jones",pos:"DB",age:29.2,team:"HOU",proj:{PPR:68,Half:68,Standard:68},adp:41.5,ktcVal:824,note:"CB: 55 tackles 2 INT versatile"},
+  {name:"Dane Jackson",pos:"DB",age:29.7,team:"BUF",proj:{PPR:65,Half:65,Standard:65},adp:44.5,ktcVal:721,note:"CB depth: 50 tackles 2 INT"},
+  {name:"Andrew Adams",pos:"DB",age:33.8,team:"FA",proj:{PPR:52,Half:52,Standard:52},adp:57.0,ktcVal:309,note:"Veteran S depth"},
+  {name:"Sheldrick Redwine",pos:"DB",age:29.8,team:"FA",proj:{PPR:58,Half:58,Standard:58},adp:50.5,ktcVal:515,note:"S depth: 55 tackles 1 INT"},
   // WR dynasty sleepers Wave 21
-  {name:"Cody Latimer",pos:"WR",age:33.9,team:"FA",proj:{PPR:52,Half:48,Standard:44},adp:58.5,ktcVal:103,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"R.J. Moore",pos:"WR",age:27,team:"CAR",proj:{PPR:68,Half:62,Standard:56},adp:51.5,ktcVal:309,note:"Week 7: Deep bench · CAR · limited value"},
-  {name:"Jalen Camp",pos:"WR",age:28.1,team:"JAX",proj:{PPR:72,Half:66,Standard:60},adp:49.0,ktcVal:309,note:"Week 7: Deep bench · JAX · limited value"},
-  {name:"Kendric Pryor",pos:"WR",age:28.6,team:"CIN",proj:{PPR:65,Half:60,Standard:55},adp:53.0,ktcVal:206,note:"Week 7: Deep bench · CIN · limited value"},
-  {name:"Greg Ward",pos:"WR",age:31.1,team:"FA",proj:{PPR:60,Half:55,Standard:50},adp:56.5,ktcVal:155,note:"Week 7: Deep bench · FA · limited value"},
+  {name:"Cody Latimer",pos:"WR",age:33.9,team:"FA",proj:{PPR:52,Half:48,Standard:44},adp:58.5,ktcVal:103,note:"Veteran depth WR"},
+  {name:"R.J. Moore",pos:"WR",age:27,team:"CAR",proj:{PPR:68,Half:62,Standard:56},adp:51.5,ktcVal:309,note:"Slot depth: 26 rec 295 yds"},
+  {name:"Jalen Camp",pos:"WR",age:28.1,team:"JAX",proj:{PPR:72,Half:66,Standard:60},adp:49.0,ktcVal:309,note:"Big WR: 28 rec 320 yds 3 TD"},
+  {name:"Kendric Pryor",pos:"WR",age:28.6,team:"CIN",proj:{PPR:65,Half:60,Standard:55},adp:53.0,ktcVal:206,note:"Slot depth: 24 rec 270 yds"},
+  {name:"Greg Ward",pos:"WR",age:31.1,team:"FA",proj:{PPR:60,Half:55,Standard:50},adp:56.5,ktcVal:155,note:"Veteran slot depth"},
   // Wave 20 — veteran IDP EDGE/DL/LB + 2025 RB Devin Neal
   // RB Wave 20
-  {name:"Devin Neal",pos:"RB",age:24.5,team:"NO",proj:{PPR:158,Half:145,Standard:132},adp:22.0,ktcVal:2060,note:"Week 7: Bench back/handcuff · NO · opportunity stash"},
+  {name:"Devin Neal",pos:"RB",age:24.5,team:"NO",proj:{PPR:158,Half:145,Standard:132},adp:22.0,ktcVal:2060,note:"2025 draft: 650 rush 48 rec explosive"},
   // Veteran EDGE/DL Wave 20 (active or recently active)
-  {name:"Brandon Graham",pos:"DL",age:38.4,team:"PHI",proj:{PPR:68,Half:68,Standard:68},adp:42.0,ktcVal:412,note:"Week 7: Reserve DL · PHI · limited snaps"},
-  {name:"Takk McKinley",pos:"DL",age:30.8,team:"FA",proj:{PPR:65,Half:65,Standard:65},adp:44.5,ktcVal:515,note:"Week 7: Reserve DL · FA · limited snaps"},
-  {name:"Charles Harris",pos:"DL",age:31.5,team:"PHI",proj:{PPR:72,Half:72,Standard:72},adp:38.5,ktcVal:927,note:"Week 7: Reserve DL · PHI · limited snaps"},
-  {name:"David Onyemata",pos:"DL",age:33.8,team:"NYJ",proj:{PPR:70,Half:70,Standard:70},adp:40.5,ktcVal:721,note:"Week 7: Reserve DL · NYJ · limited snaps"},
-  {name:"Vinnie Curry",pos:"DL",age:36,team:"FA",proj:{PPR:52,Half:52,Standard:52},adp:57.0,ktcVal:206,note:"Week 7: Reserve DL · FA · limited snaps"},
-  {name:"Linval Joseph",pos:"DL",age:37.9,team:"FA",proj:{PPR:48,Half:48,Standard:48},adp:60.0,ktcVal:206,note:"Week 7: Reserve DL · FA · limited snaps"},
-  {name:"Brandon Williams",pos:"DL",age:38.9,team:"FA",proj:{PPR:52,Half:52,Standard:52},adp:57.5,ktcVal:206,note:"Week 7: Reserve DL · FA · limited snaps"},
-  {name:"Whitney Mercilus",pos:"DL",age:36.1,team:"FA",proj:{PPR:55,Half:55,Standard:55},adp:55.5,ktcVal:206,note:"Week 7: Reserve DL · FA · limited snaps"},
-  {name:"Jerry Hughes",pos:"DL",age:38,team:"FA",proj:{PPR:48,Half:48,Standard:48},adp:59.5,ktcVal:206,note:"Week 7: Reserve DL · FA · limited snaps"},
+  {name:"Brandon Graham",pos:"DL",age:38.4,team:"PHI",proj:{PPR:68,Half:68,Standard:68},adp:42.0,ktcVal:412,note:"Veteran EDGE PHI: 5.5 sacks if active"},
+  {name:"Takk McKinley",pos:"DL",age:30.8,team:"FA",proj:{PPR:65,Half:65,Standard:65},adp:44.5,ktcVal:515,note:"EDGE depth: 6 sacks upside if active"},
+  {name:"Charles Harris",pos:"DL",age:31.5,team:"PHI",proj:{PPR:72,Half:72,Standard:72},adp:38.5,ktcVal:927,note:"Claimed by PHI Nov 2024 · EDGE: 7 sacks rotational"},
+  {name:"David Onyemata",pos:"DL",age:33.8,team:"NYJ",proj:{PPR:70,Half:70,Standard:70},adp:40.5,ktcVal:721,note:"Signed NYJ 1yr/$10.5M · IDL: 35 tackles 4 sacks"},
+  {name:"Vinnie Curry",pos:"DL",age:36,team:"FA",proj:{PPR:52,Half:52,Standard:52},adp:57.0,ktcVal:206,note:"Veteran EDGE depth if active"},
+  {name:"Linval Joseph",pos:"DL",age:37.9,team:"FA",proj:{PPR:48,Half:48,Standard:48},adp:60.0,ktcVal:206,note:"Veteran NT if active"},
+  {name:"Brandon Williams",pos:"DL",age:38.9,team:"FA",proj:{PPR:52,Half:52,Standard:52},adp:57.5,ktcVal:206,note:"Veteran NT depth"},
+  {name:"Whitney Mercilus",pos:"DL",age:36.1,team:"FA",proj:{PPR:55,Half:55,Standard:55},adp:55.5,ktcVal:206,note:"Veteran EDGE depth if active"},
+  {name:"Jerry Hughes",pos:"DL",age:38,team:"FA",proj:{PPR:48,Half:48,Standard:48},adp:59.5,ktcVal:206,note:"Veteran EDGE depth"},
   // IDP LB Wave 20
-  {name:"Akeem Davis-Gaither",pos:"LB",age:28.9,team:"CIN",proj:{PPR:85,Half:85,Standard:85},adp:29.5,ktcVal:927,note:"Week 7: Reserve LB · CIN · limited value"},
-  {name:"Isaiah McDuffie",pos:"LB",age:27.1,team:"GB",proj:{PPR:80,Half:80,Standard:80},adp:32.5,ktcVal:721,note:"Week 7: Reserve LB · GB · limited value"},
-  {name:"Jacob Phillips",pos:"LB",age:27.4,team:"CLE",proj:{PPR:82,Half:82,Standard:82},adp:31.0,ktcVal:824,note:"Week 7: Reserve LB · CLE · limited value"},
-  {name:"Divine Deablo",pos:"DB",age:28,team:"ATL",proj:{PPR:82,Half:82,Standard:82},adp:31.5,ktcVal:1030,note:"Week 7: Reserve DB · ATL · depth"},
-  {name:"Alec Ogletree",pos:"LB",age:34.9,team:"FA",proj:{PPR:62,Half:62,Standard:62},adp:46.5,ktcVal:309,note:"Week 7: Reserve LB · FA · limited value"},
-  {name:"Curtis Bolton",pos:"LB",age:30.7,team:"GB",proj:{PPR:72,Half:72,Standard:72},adp:38.5,ktcVal:618,note:"Week 7: Reserve LB · GB · limited value"},
-  {name:"Azur Kamara",pos:"LB",age:27.9,team:"CIN",proj:{PPR:68,Half:68,Standard:68},adp:41.5,ktcVal:515,note:"Week 7: Reserve LB · CIN · limited value"},
-  {name:"Shaquem Griffin",pos:"LB",age:31.1,team:"FA",proj:{PPR:58,Half:58,Standard:58},adp:50.0,ktcVal:309,note:"Week 7: Reserve LB · FA · limited value"},
+  {name:"Akeem Davis-Gaither",pos:"LB",age:28.9,team:"CIN",proj:{PPR:85,Half:85,Standard:85},adp:29.5,ktcVal:927,note:"Coverage LB: 78 tackles 2 INT versatile"},
+  {name:"Isaiah McDuffie",pos:"LB",age:27.1,team:"GB",proj:{PPR:80,Half:80,Standard:80},adp:32.5,ktcVal:721,note:"ST/LB: 72 tackles 2 sacks"},
+  {name:"Jacob Phillips",pos:"LB",age:27.4,team:"CLE",proj:{PPR:82,Half:82,Standard:82},adp:31.0,ktcVal:824,note:"ILB: 75 tackles 2 sacks"},
+  {name:"Divine Deablo",pos:"DB",age:28,team:"ATL",proj:{PPR:82,Half:82,Standard:82},adp:31.5,ktcVal:1030,note:"Signed ATL 2yr/$14M · S/LB hybrid: 75 tackles 2 sacks"},
+  {name:"Alec Ogletree",pos:"LB",age:34.9,team:"FA",proj:{PPR:62,Half:62,Standard:62},adp:46.5,ktcVal:309,note:"Veteran ILB depth if active"},
+  {name:"Curtis Bolton",pos:"LB",age:30.7,team:"GB",proj:{PPR:72,Half:72,Standard:72},adp:38.5,ktcVal:618,note:"ST/LB: 65 tackles 2 sacks"},
+  {name:"Azur Kamara",pos:"LB",age:27.9,team:"CIN",proj:{PPR:68,Half:68,Standard:68},adp:41.5,ktcVal:515,note:"LB depth: 60 tackles 1 sack"},
+  {name:"Shaquem Griffin",pos:"LB",age:31.1,team:"FA",proj:{PPR:58,Half:58,Standard:58},adp:50.0,ktcVal:309,note:"Veteran LB depth if active"},
   // IDP DB Wave 20
-  {name:"Reshad Jones",pos:"DB",age:38.5,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Week 7: Reserve DB · FA · depth"},
-  {name:"Malcolm Jenkins",pos:"DB",age:38.7,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Week 7: Reserve DB · FA · depth"},
-  {name:"Patrick Chung",pos:"DB",age:39,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Week 7: Reserve DB · FA · depth"},
+  {name:"Reshad Jones",pos:"DB",age:38.5,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Retired"},
+  {name:"Malcolm Jenkins",pos:"DB",age:38.7,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Retired"},
+  {name:"Patrick Chung",pos:"DB",age:39,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Retired"},
   // More WR sleepers/dynasty Wave 20
-  {name:"Kalif Raymond",pos:"WR",age:32.1,team:"DET",proj:{PPR:78,Half:72,Standard:66},adp:47.5,ktcVal:309,note:"Week 7: Deep bench · DET · limited value"},
-  {name:"DeAndre Carter",pos:"WR",age:33.4,team:"LAC",proj:{PPR:72,Half:66,Standard:60},adp:49.5,ktcVal:206,note:"Week 7: Deep bench · LAC · limited value"},
+  {name:"Kalif Raymond",pos:"WR",age:32.1,team:"DET",proj:{PPR:78,Half:72,Standard:66},adp:47.5,ktcVal:309,note:"Slot/returner: 32 rec 360 yds"},
+  {name:"DeAndre Carter",pos:"WR",age:33.4,team:"LAC",proj:{PPR:72,Half:66,Standard:60},adp:49.5,ktcVal:206,note:"Slot depth: 28 rec 310 yds"},
   // Wave 19 — backup QBs, returners, dynasty sleepers
   // QB depth Wave 19
-  {name:"Jake Browning",pos:"QB",age:30.4,team:"TB",proj:{PPR:248,Half:248,Standard:248},adp:23.5,ktcVal:464,note:"Week 7: Deep bench/PS · TB · limited value"},
-  {name:"Skylar Thompson",pos:"QB",age:29.2,team:"BAL",proj:{PPR:215,Half:215,Standard:215},adp:30.0,ktcVal:309,note:"Week 7: Deep bench/PS · BAL · limited value"},
-  {name:"Clayton Tune",pos:"QB",age:27.4,team:"ARI",proj:{PPR:228,Half:228,Standard:228},adp:27.0,ktcVal:412,note:"Week 7: Deep bench/PS · ARI · limited value"},
-  {name:"Kyle Allen",pos:"QB",age:30.5,team:"WAS",proj:{PPR:222,Half:222,Standard:222},adp:28.5,ktcVal:309,note:"Week 7: Deep bench/PS · WAS · limited value"},
-  {name:"Nate Sudfeld",pos:"QB",age:32.9,team:"FA",proj:{PPR:185,Half:185,Standard:185},adp:38.0,ktcVal:155,note:"Week 7: Deep bench/PS · FA · limited value"},
-  {name:"PJ Walker",pos:"QB",age:31.5,team:"FA",proj:{PPR:195,Half:195,Standard:195},adp:35.0,ktcVal:206,note:"Week 7: Deep bench/PS · FA · limited value"},
-  {name:"Shane Buechele",pos:"QB",age:28.6,team:"FA",proj:{PPR:182,Half:182,Standard:182},adp:39.5,ktcVal:206,note:"Week 7: Deep bench/PS · FA · limited value"},
-  {name:"Holton Ahlers",pos:"QB",age:26.8,team:"NE",proj:{PPR:178,Half:178,Standard:178},adp:41.5,ktcVal:309,note:"Week 7: Deep bench/PS · NE · limited value"},
+  {name:"Jake Browning",pos:"QB",age:30.4,team:"TB",proj:{PPR:248,Half:248,Standard:248},adp:23.5,ktcVal:464,note:"Signed TB Mar 2026 · backup QB"},
+  {name:"Skylar Thompson",pos:"QB",age:29.2,team:"BAL",proj:{PPR:215,Half:215,Standard:215},adp:30.0,ktcVal:309,note:"Signed BAL 1yr May 2026 · backup QB"},
+  {name:"Clayton Tune",pos:"QB",age:27.4,team:"ARI",proj:{PPR:228,Half:228,Standard:228},adp:27.0,ktcVal:412,note:"ARI backup: 2,600 yds mobile"},
+  {name:"Kyle Allen",pos:"QB",age:30.5,team:"WAS",proj:{PPR:222,Half:222,Standard:222},adp:28.5,ktcVal:309,note:"Veteran backup: 2,500 yds"},
+  {name:"Nate Sudfeld",pos:"QB",age:32.9,team:"FA",proj:{PPR:185,Half:185,Standard:185},adp:38.0,ktcVal:155,note:"Veteran emergency depth"},
+  {name:"PJ Walker",pos:"QB",age:31.5,team:"FA",proj:{PPR:195,Half:195,Standard:195},adp:35.0,ktcVal:206,note:"Veteran backup: mobile"},
+  {name:"Shane Buechele",pos:"QB",age:28.6,team:"FA",proj:{PPR:182,Half:182,Standard:182},adp:39.5,ktcVal:206,note:"Veteran depth QB"},
+  {name:"Holton Ahlers",pos:"QB",age:26.8,team:"NE",proj:{PPR:178,Half:178,Standard:178},adp:41.5,ktcVal:309,note:"Developmental backup"},
   // WR returner/special teams Wave 19
-  {name:"Jamal Agnew",pos:"WR",age:31.4,team:"JAX",proj:{PPR:82,Half:75,Standard:68},adp:46.5,ktcVal:206,note:"Week 7: Deep bench · JAX · limited value"},
-  {name:"Kevontae Turpin",pos:"WR",age:27,team:"DAL",proj:{PPR:78,Half:72,Standard:66},adp:48.0,ktcVal:309,note:"Week 7: Deep bench · DAL · limited value"},
-  {name:"Jakeem Grant Jr.",pos:"WR",age:33.8,team:"CHI",proj:{PPR:75,Half:69,Standard:63},adp:49.0,ktcVal:206,note:"Week 7: Deep bench · CHI · limited value"},
-  {name:"Daurice Fountain",pos:"WR",age:30.7,team:"KC",proj:{PPR:65,Half:60,Standard:55},adp:53.5,ktcVal:206,note:"Week 7: Deep bench · KC · limited value"},
-  {name:"Dennis Houston",pos:"WR",age:27.3,team:"JAX",proj:{PPR:68,Half:62,Standard:56},adp:51.5,ktcVal:206,note:"Week 7: Deep bench · JAX · limited value"},
-  {name:"Trishton Jackson",pos:"WR",age:28.5,team:"CHI",proj:{PPR:62,Half:57,Standard:52},adp:55.0,ktcVal:206,note:"Week 7: Deep bench · CHI · limited value"},
-  {name:"Aaron Parker",pos:"WR",age:28.3,team:"DET",proj:{PPR:60,Half:55,Standard:50},adp:56.5,ktcVal:206,note:"Week 7: Deep bench · DET · limited value"},
-  {name:"Damon Hazelton",pos:"WR",age:29.5,team:"TB",proj:{PPR:58,Half:53,Standard:48},adp:57.5,ktcVal:206,note:"Week 7: Deep bench · TB · limited value"},
+  {name:"Jamal Agnew",pos:"WR",age:31.4,team:"JAX",proj:{PPR:82,Half:75,Standard:68},adp:46.5,ktcVal:206,note:"Return specialist: 32 rec 360 yds ST value"},
+  {name:"Kevontae Turpin",pos:"WR",age:27,team:"DAL",proj:{PPR:78,Half:72,Standard:66},adp:48.0,ktcVal:309,note:"Return/gadget: 28 rec 340 yds speed"},
+  {name:"Jakeem Grant Jr.",pos:"WR",age:33.8,team:"CHI",proj:{PPR:75,Half:69,Standard:63},adp:49.0,ktcVal:206,note:"Elite returner: 30 rec 340 yds"},
+  {name:"Daurice Fountain",pos:"WR",age:30.7,team:"KC",proj:{PPR:65,Half:60,Standard:55},adp:53.5,ktcVal:206,note:"Big WR depth: 24 rec 280 yds"},
+  {name:"Dennis Houston",pos:"WR",age:27.3,team:"JAX",proj:{PPR:68,Half:62,Standard:56},adp:51.5,ktcVal:206,note:"Physical slot: 26 rec 295 yds"},
+  {name:"Trishton Jackson",pos:"WR",age:28.5,team:"CHI",proj:{PPR:62,Half:57,Standard:52},adp:55.0,ktcVal:206,note:"Developmental WR depth"},
+  {name:"Aaron Parker",pos:"WR",age:28.3,team:"DET",proj:{PPR:60,Half:55,Standard:50},adp:56.5,ktcVal:206,note:"Depth: 22 rec 245 yds"},
+  {name:"Damon Hazelton",pos:"WR",age:29.5,team:"TB",proj:{PPR:58,Half:53,Standard:48},adp:57.5,ktcVal:206,note:"Physical receiver depth"},
   // RB returner/depth Wave 19
-  {name:"Derrick Gore",pos:"RB",age:31.7,team:"KC",proj:{PPR:65,Half:60,Standard:55},adp:53.0,ktcVal:206,note:"Week 7: Practice squad · KC · no value"},
-  {name:"Godwin Igwebuike",pos:"RB",age:32,team:"DET",proj:{PPR:62,Half:57,Standard:52},adp:55.0,ktcVal:309,note:"Week 7: Practice squad · DET · no value"},
-  {name:"Patrick Taylor Jr.",pos:"RB",age:28.3,team:"MIA",proj:{PPR:72,Half:66,Standard:60},adp:49.0,ktcVal:412,note:"Week 7: Practice squad · MIA · no value"},
+  {name:"Derrick Gore",pos:"RB",age:31.7,team:"KC",proj:{PPR:65,Half:60,Standard:55},adp:53.0,ktcVal:206,note:"ST/power: 220 rush depth"},
+  {name:"Godwin Igwebuike",pos:"RB",age:32,team:"DET",proj:{PPR:62,Half:57,Standard:52},adp:55.0,ktcVal:309,note:"ST/RB: 180 rush depth"},
+  {name:"Patrick Taylor Jr.",pos:"RB",age:28.3,team:"MIA",proj:{PPR:72,Half:66,Standard:60},adp:49.0,ktcVal:412,note:"Power back depth: 280 rush"},
   // TE depth Wave 19
-  {name:"Matt Bushman",pos:"TE",age:30.8,team:"FA",proj:{PPR:52,Half:47,Standard:42},adp:58.0,ktcVal:155,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Princeton Fant",pos:"TE",age:27.5,team:"NYJ",proj:{PPR:65,Half:59,Standard:53},adp:52.5,ktcVal:412,note:"Week 7: Practice squad · NYJ · no value"},
-  {name:"Jordan Franks",pos:"TE",age:30.6,team:"FA",proj:{PPR:48,Half:43,Standard:38},adp:60.0,ktcVal:155,note:"Week 7: Practice squad · FA · no value"},
+  {name:"Matt Bushman",pos:"TE",age:30.8,team:"FA",proj:{PPR:52,Half:47,Standard:42},adp:58.0,ktcVal:155,note:"Blocking TE veteran depth"},
+  {name:"Princeton Fant",pos:"TE",age:27.5,team:"NYJ",proj:{PPR:65,Half:59,Standard:53},adp:52.5,ktcVal:412,note:"TE2: 24 rec 250 yds"},
+  {name:"Jordan Franks",pos:"TE",age:30.6,team:"FA",proj:{PPR:48,Half:43,Standard:38},adp:60.0,ktcVal:155,note:"Blocking TE depth"},
   // Wave 18 — deep WR/RB/TE/QB depth sweep
   // WR deep depth Wave 18
-  {name:"Kendall Hinton",pos:"WR",age:29.5,team:"DEN",proj:{PPR:72,Half:66,Standard:60},adp:48.5,ktcVal:206,note:"Week 7: Deep bench · DEN · limited value"},
-  {name:"Jalen Virgil",pos:"WR",age:28.1,team:"PIT",proj:{PPR:68,Half:62,Standard:56},adp:51.0,ktcVal:206,note:"Week 7: Deep bench · PIT · limited value"},
-  {name:"Allen Robinson II",pos:"WR",age:33,team:"FA",proj:{PPR:78,Half:72,Standard:66},adp:46.0,ktcVal:206,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Sammy Watkins",pos:"WR",age:33.2,team:"FA",proj:{PPR:65,Half:60,Standard:55},adp:52.5,ktcVal:155,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Breshad Perriman",pos:"WR",age:33,team:"FA",proj:{PPR:62,Half:57,Standard:52},adp:54.0,ktcVal:155,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Damiere Byrd",pos:"WR",age:33.6,team:"FA",proj:{PPR:58,Half:53,Standard:48},adp:56.5,ktcVal:155,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Michael Woods II",pos:"WR",age:26.4,team:"MIA",proj:{PPR:72,Half:66,Standard:60},adp:48.0,ktcVal:412,note:"Week 7: Deep bench · MIA · limited value"},
-  {name:"Jalen Nailor",pos:"WR",age:27.5,team:"LV",proj:{PPR:85,Half:78,Standard:71},adp:44.0,ktcVal:721,note:"Week 7: Deep bench · LV · limited value"},
-  {name:"Tylan Wallace",pos:"WR",age:27.3,team:"BAL",proj:{PPR:68,Half:62,Standard:56},adp:51.0,ktcVal:206,note:"Week 7: Deep bench · BAL · limited value"},
-  {name:"Dazz Newsome",pos:"WR",age:27.3,team:"CHI",proj:{PPR:65,Half:60,Standard:55},adp:53.0,ktcVal:206,note:"Week 7: Deep bench · CHI · limited value"},
-  {name:"Jaquarii Roberson",pos:"WR",age:28.1,team:"CAR",proj:{PPR:68,Half:62,Standard:56},adp:50.5,ktcVal:206,note:"Week 7: Deep bench · CAR · limited value"},
-  {name:"Tre Nixon",pos:"WR",age:28.6,team:"NE",proj:{PPR:62,Half:57,Standard:52},adp:54.5,ktcVal:206,note:"Week 7: Deep bench · NE · limited value"},
-  {name:"Taywan Taylor",pos:"WR",age:31.5,team:"FA",proj:{PPR:55,Half:50,Standard:45},adp:57.0,ktcVal:155,note:"Week 7: Deep bench · FA · limited value"},
+  {name:"Kendall Hinton",pos:"WR",age:29.5,team:"DEN",proj:{PPR:72,Half:66,Standard:60},adp:48.5,ktcVal:206,note:"Slot depth: 28 rec 310 yds"},
+  {name:"Jalen Virgil",pos:"WR",age:28.1,team:"PIT",proj:{PPR:68,Half:62,Standard:56},adp:51.0,ktcVal:206,note:"Speed/return: 26 rec 290 yds"},
+  {name:"Allen Robinson II",pos:"WR",age:33,team:"FA",proj:{PPR:78,Half:72,Standard:66},adp:46.0,ktcVal:206,note:"Veteran: 32 rec 380 yds if active"},
+  {name:"Sammy Watkins",pos:"WR",age:33.2,team:"FA",proj:{PPR:65,Half:60,Standard:55},adp:52.5,ktcVal:155,note:"Veteran depth FA"},
+  {name:"Breshad Perriman",pos:"WR",age:33,team:"FA",proj:{PPR:62,Half:57,Standard:52},adp:54.0,ktcVal:155,note:"Deep threat veteran FA"},
+  {name:"Damiere Byrd",pos:"WR",age:33.6,team:"FA",proj:{PPR:58,Half:53,Standard:48},adp:56.5,ktcVal:155,note:"Speed receiver veteran depth"},
+  {name:"Michael Woods II",pos:"WR",age:26.4,team:"MIA",proj:{PPR:72,Half:66,Standard:60},adp:48.0,ktcVal:412,note:"Physical: 28 rec 320 yds"},
+  {name:"Jalen Nailor",pos:"WR",age:27.5,team:"LV",proj:{PPR:85,Half:78,Standard:71},adp:44.0,ktcVal:721,note:"Signed 3yr/$35M with LV · deep threat"},
+  {name:"Tylan Wallace",pos:"WR",age:27.3,team:"BAL",proj:{PPR:68,Half:62,Standard:56},adp:51.0,ktcVal:206,note:"Slot: 26 rec 290 yds ST value"},
+  {name:"Dazz Newsome",pos:"WR",age:27.3,team:"CHI",proj:{PPR:65,Half:60,Standard:55},adp:53.0,ktcVal:206,note:"Slot depth: 25 rec 270 yds"},
+  {name:"Jaquarii Roberson",pos:"WR",age:28.1,team:"CAR",proj:{PPR:68,Half:62,Standard:56},adp:50.5,ktcVal:206,note:"Physical: 26 rec 300 yds"},
+  {name:"Tre Nixon",pos:"WR",age:28.6,team:"NE",proj:{PPR:62,Half:57,Standard:52},adp:54.5,ktcVal:206,note:"Speed receiver depth"},
+  {name:"Taywan Taylor",pos:"WR",age:31.5,team:"FA",proj:{PPR:55,Half:50,Standard:45},adp:57.0,ktcVal:155,note:"Veteran speed depth"},
   // 2025 WR rookies Wave 18
-  {name:"Pat Bryant",pos:"WR",age:23.7,team:"DEN",proj:{PPR:108,Half:99,Standard:90},adp:36.5,ktcVal:3017,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Malachi Fields",pos:"WR",age:23,team:"NYG",proj:{PPR:105,Half:96,Standard:87},adp:3.8,ktcVal:3181,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Tai Felton",pos:"WR",age:23.5,team:"MIN",proj:{PPR:102,Half:94,Standard:86},adp:38.5,ktcVal:1030,note:"Week 7: Deep bench · MIN · limited value"},
-  {name:"Dillon Gabriel",pos:"QB",age:25.7,team:"CLE",proj:{PPR:268,Half:268,Standard:268},adp:19.5,ktcVal:2575,note:"Week 7: Backup/developmental QB · limited starting role · dynasty hold"},
+  {name:"Pat Bryant",pos:"WR",age:23.7,team:"DEN",proj:{PPR:108,Half:99,Standard:90},adp:36.5,ktcVal:3017,note:"2025 pick 3-74 · 42 rec 510 yds 4 TD"},
+  {name:"Malachi Fields",pos:"WR",age:23,team:"NYG",proj:{PPR:105,Half:96,Standard:87},adp:3.8,ktcVal:3181,note:"2026 pick 3-10 · NYG Giants · big-bodied WR with upside"},
+  {name:"Tai Felton",pos:"WR",age:23.5,team:"MIN",proj:{PPR:102,Half:94,Standard:86},adp:38.5,ktcVal:1030,note:"2025 speed: 40 rec 490 yds 4 TD"},
+  {name:"Dillon Gabriel",pos:"QB",age:25.7,team:"CLE",proj:{PPR:268,Half:268,Standard:268},adp:19.5,ktcVal:2575,note:"2025 pick 3-94 · mobile 3,000 yds 22 TD"},
   // RB deep depth Wave 18
-  {name:"Keshawn Vaughn",pos:"RB",age:28,team:"FA",proj:{PPR:68,Half:62,Standard:56},adp:51.5,ktcVal:309,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Master Teague",pos:"RB",age:26.3,team:"FA",proj:{PPR:62,Half:57,Standard:52},adp:54.5,ktcVal:309,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Darrynton Evans",pos:"RB",age:28.1,team:"CHI",proj:{PPR:72,Half:66,Standard:60},adp:48.5,ktcVal:412,note:"Week 7: Practice squad · CHI · no value"},
-  {name:"Jashaun Corbin",pos:"RB",age:26,team:"SF",proj:{PPR:68,Half:62,Standard:56},adp:51.0,ktcVal:618,note:"Week 7: Practice squad · SF · no value"},
-  {name:"Gerrid Doaks",pos:"RB",age:28.2,team:"MIA",proj:{PPR:62,Half:57,Standard:52},adp:55.0,ktcVal:309,note:"Week 7: Practice squad · MIA · no value"},
-  {name:"Ty Davis-Price",pos:"RB",age:25,team:"SF",proj:{PPR:72,Half:66,Standard:60},adp:49.0,ktcVal:618,note:"Week 7: Practice squad · SF · no value"},
-  {name:"Craig Reynolds",pos:"RB",age:30.2,team:"DET",proj:{PPR:88,Half:81,Standard:74},adp:43.5,ktcVal:412,note:"Week 7: Practice squad · DET · no value"},
+  {name:"Keshawn Vaughn",pos:"RB",age:28,team:"FA",proj:{PPR:68,Half:62,Standard:56},adp:51.5,ktcVal:309,note:"Veteran RB depth"},
+  {name:"Master Teague",pos:"RB",age:26.3,team:"FA",proj:{PPR:62,Half:57,Standard:52},adp:54.5,ktcVal:309,note:"Power back depth"},
+  {name:"Darrynton Evans",pos:"RB",age:28.1,team:"CHI",proj:{PPR:72,Half:66,Standard:60},adp:48.5,ktcVal:412,note:"Speed: 240 rush 38 rec"},
+  {name:"Jashaun Corbin",pos:"RB",age:26,team:"SF",proj:{PPR:68,Half:62,Standard:56},adp:51.0,ktcVal:618,note:"SF depth behind CMC"},
+  {name:"Gerrid Doaks",pos:"RB",age:28.2,team:"MIA",proj:{PPR:62,Half:57,Standard:52},adp:55.0,ktcVal:309,note:"Power back depth"},
+  {name:"Ty Davis-Price",pos:"RB",age:25,team:"SF",proj:{PPR:72,Half:66,Standard:60},adp:49.0,ktcVal:618,note:"Power back depth"},
+  {name:"Craig Reynolds",pos:"RB",age:30.2,team:"DET",proj:{PPR:88,Half:81,Standard:74},adp:43.5,ktcVal:412,note:"DET depth: 380 rush 38 rec"},
   // TE deep depth Wave 18
-  {name:"Eric Ebron",pos:"TE",age:33.4,team:"FA",proj:{PPR:65,Half:59,Standard:53},adp:53.0,ktcVal:206,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Brycen Hopkins",pos:"TE",age:29.4,team:"LAR",proj:{PPR:65,Half:59,Standard:53},adp:52.5,ktcVal:412,note:"Week 7: Practice squad · LAR · no value"},
+  {name:"Eric Ebron",pos:"TE",age:33.4,team:"FA",proj:{PPR:65,Half:59,Standard:53},adp:53.0,ktcVal:206,note:"Veteran receiving TE"},
+  {name:"Brycen Hopkins",pos:"TE",age:29.4,team:"LAR",proj:{PPR:65,Half:59,Standard:53},adp:52.5,ktcVal:412,note:"TE2: 24 rec 250 yds"},
   // Wave 17 — 2025 LB rookies + veteran IDP depth
   // 2025 LB rookies
-  {name:"Jihaad Campbell",pos:"LB",age:22.5,team:"PHI",proj:{PPR:98,Half:98,Standard:98},adp:21.5,ktcVal:3605,note:"Week 7: Reserve LB · PHI · limited value"},
-  {name:"Harold Perkins Jr.",pos:"LB",age:22,team:"ATL",proj:{PPR:95,Half:95,Standard:95},adp:23.0,ktcVal:3914,note:"Week 7: Reserve LB · ATL · limited value"},
-  {name:"Carson Schwesinger",pos:"LB",age:23.5,team:"CLE",proj:{PPR:162,Half:162,Standard:162},adp:7.2,ktcVal:4378,note:"Week 7: Reserve LB · CLE · limited value"},
-  {name:"Nick Jackson",pos:"LB",age:25.6,team:"ATL",proj:{PPR:80,Half:80,Standard:80},adp:32.5,ktcVal:1030,note:"Week 7: Reserve LB · ATL · limited value"},
-  {name:"Danny Striggow",pos:"LB",age:24.1,team:"DEN",proj:{PPR:72,Half:72,Standard:72},adp:38.5,ktcVal:618,note:"Week 7: Reserve LB · DEN · limited value"},
+  {name:"Jihaad Campbell",pos:"LB",age:22.5,team:"PHI",proj:{PPR:98,Half:98,Standard:98},adp:21.5,ktcVal:3605,note:"2025 pick 1-31 · 95 tackles 3 sacks elite coverage"},
+  {name:"Harold Perkins Jr.",pos:"LB",age:22,team:"ATL",proj:{PPR:95,Half:95,Standard:95},adp:23.0,ktcVal:3914,note:"2026 6th round pick ATL · elite athleticism 90 tackles 4 sacks"},
+  {name:"Carson Schwesinger",pos:"LB",age:23.5,team:"CLE",proj:{PPR:162,Half:162,Standard:162},adp:7.2,ktcVal:4378,note:"2025 Rookie DPOY · #10 pick · 160+ tackles elite IDP LB1"},
+  {name:"Nick Jackson",pos:"LB",age:25.6,team:"ATL",proj:{PPR:80,Half:80,Standard:80},adp:32.5,ktcVal:1030,note:"2025: ILB 75 tackles 2 sacks"},
+  {name:"Danny Striggow",pos:"LB",age:24.1,team:"DEN",proj:{PPR:72,Half:72,Standard:72},adp:38.5,ktcVal:618,note:"2025 depth LB: 65 tackles 2 sacks"},
   // IDP DL additions Wave 17
-  {name:"Christian Barmore",pos:"DL",age:27.1,team:"NE",proj:{PPR:88,Half:88,Standard:88},adp:27.5,ktcVal:2266,note:"Week 7: Reserve DL · NE · limited snaps"},
-  {name:"Malik Reed",pos:"DL",age:30.1,team:"DEN",proj:{PPR:72,Half:72,Standard:72},adp:38.0,ktcVal:721,note:"Week 7: Reserve DL · DEN · limited snaps"},
-  {name:"Derek Rivers",pos:"DL",age:32.3,team:"FA",proj:{PPR:62,Half:62,Standard:62},adp:46.0,ktcVal:412,note:"Week 7: Reserve DL · FA · limited snaps"},
+  {name:"Christian Barmore",pos:"DL",age:27.1,team:"NE",proj:{PPR:88,Half:88,Standard:88},adp:27.5,ktcVal:2266,note:"IDL: 8 sacks 45 tackles disruptive"},
+  {name:"Malik Reed",pos:"DL",age:30.1,team:"DEN",proj:{PPR:72,Half:72,Standard:72},adp:38.0,ktcVal:721,note:"EDGE rotational: 6 sacks"},
+  {name:"Derek Rivers",pos:"DL",age:32.3,team:"FA",proj:{PPR:62,Half:62,Standard:62},adp:46.0,ktcVal:412,note:"EDGE veteran depth: 5 sacks if active"},
   // Veteran DB additions Wave 17
-  {name:"Micah Hyde",pos:"DB",age:35.7,team:"FA",proj:{PPR:68,Half:68,Standard:68},adp:42.0,ktcVal:515,note:"Week 7: Reserve DB · FA · depth"},
-  {name:"Devin McCourty",pos:"DB",age:39,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Week 7: Reserve DB · FA · depth"},
-  {name:"Keanu Neal",pos:"DB",age:31.1,team:"TB",proj:{PPR:75,Half:75,Standard:75},adp:35.5,ktcVal:721,note:"Week 7: Reserve DB · TB · depth"},
-  {name:"Landon Collins",pos:"DB",age:32.6,team:"FA",proj:{PPR:65,Half:65,Standard:65},adp:44.0,ktcVal:515,note:"Week 7: Reserve DB · FA · depth"},
-  {name:"Ha Ha Clinton-Dix",pos:"DB",age:33.7,team:"FA",proj:{PPR:52,Half:52,Standard:52},adp:56.0,ktcVal:309,note:"Week 7: Reserve DB · FA · depth"},
+  {name:"Micah Hyde",pos:"DB",age:35.7,team:"FA",proj:{PPR:68,Half:68,Standard:68},adp:42.0,ktcVal:515,note:"Veteran FS: 55 tackles 3 INT if active"},
+  {name:"Devin McCourty",pos:"DB",age:39,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Retired"},
+  {name:"Keanu Neal",pos:"DB",age:31.1,team:"TB",proj:{PPR:75,Half:75,Standard:75},adp:35.5,ktcVal:721,note:"SS: 70 tackles 2 sacks physical"},
+  {name:"Landon Collins",pos:"DB",age:32.6,team:"FA",proj:{PPR:65,Half:65,Standard:65},adp:44.0,ktcVal:515,note:"SS veteran: 68 tackles 2 INT"},
+  {name:"Ha Ha Clinton-Dix",pos:"DB",age:33.7,team:"FA",proj:{PPR:52,Half:52,Standard:52},adp:56.0,ktcVal:309,note:"Veteran FS depth"},
   // Wave 16 — IDP LB/DB depth + final fill-ins
   // IDP LB Wave 16
-  {name:"Darius Leonard",pos:"LB",age:30,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Week 7: Reserve LB · FA · limited value"},
-  {name:"John Johnson III",pos:"DB",age:30.7,team:"LAR",proj:{PPR:85,Half:85,Standard:85},adp:29.5,ktcVal:824,note:"Week 7: Reserve DB · LAR · depth"},
-  {name:"Dominique Hampton",pos:"DB",age:26.1,team:"WAS",proj:{PPR:78,Half:78,Standard:78},adp:34.0,ktcVal:1236,note:"Week 7: Reserve DB · WAS · depth"},
-  {name:"Markquese Bell",pos:"DB",age:27.6,team:"DAL",proj:{PPR:72,Half:72,Standard:72},adp:38.5,ktcVal:1030,note:"Week 7: Reserve DB · DAL · depth"},
-  {name:"Jammie Robinson",pos:"DB",age:25.6,team:"CAR",proj:{PPR:68,Half:68,Standard:68},adp:41.5,ktcVal:824,note:"Week 7: Reserve DB · CAR · depth"},
-  {name:"Ronnie Perkins",pos:"DL",age:26.9,team:"GB",proj:{PPR:72,Half:72,Standard:72},adp:38.0,ktcVal:1236,note:"Week 7: Reserve DL · GB · limited snaps"},
-  {name:"Neville Hewitt",pos:"LB",age:33.4,team:"FA",proj:{PPR:68,Half:68,Standard:68},adp:41.5,ktcVal:412,note:"Week 7: Reserve LB · FA · limited value"},
-  {name:"Charles Snowden",pos:"LB",age:28.4,team:"WAS",proj:{PPR:65,Half:65,Standard:65},adp:44.0,ktcVal:721,note:"Week 7: Reserve LB · WAS · limited value"},
-  {name:"Dylan Moses",pos:"LB",age:28.3,team:"BAL",proj:{PPR:70,Half:70,Standard:70},adp:40.0,ktcVal:824,note:"Week 7: Reserve LB · BAL · limited value"},
-  {name:"Elijah Sullivan",pos:"LB",age:29.3,team:"ARI",proj:{PPR:65,Half:65,Standard:65},adp:44.0,ktcVal:515,note:"Week 7: Reserve LB · ARI · limited value"},
+  {name:"Darius Leonard",pos:"LB",age:30,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Retired Oct 2025 · 3x All-Pro"},
+  {name:"John Johnson III",pos:"DB",age:30.7,team:"LAR",proj:{PPR:85,Half:85,Standard:85},adp:29.5,ktcVal:824,note:"LAR S: 72 tackles 3 INT veteran"},
+  {name:"Dominique Hampton",pos:"DB",age:26.1,team:"WAS",proj:{PPR:78,Half:78,Standard:78},adp:34.0,ktcVal:1236,note:"S Year 3: 65 tackles 2 INT"},
+  {name:"Markquese Bell",pos:"DB",age:27.6,team:"DAL",proj:{PPR:72,Half:72,Standard:72},adp:38.5,ktcVal:1030,note:"S: 62 tackles 2 INT physical"},
+  {name:"Jammie Robinson",pos:"DB",age:25.6,team:"CAR",proj:{PPR:68,Half:68,Standard:68},adp:41.5,ktcVal:824,note:"S: 58 tackles 2 INT developing"},
+  {name:"Ronnie Perkins",pos:"DL",age:26.9,team:"GB",proj:{PPR:72,Half:72,Standard:72},adp:38.0,ktcVal:1236,note:"EDGE rotational: 6 sacks"},
+  {name:"Neville Hewitt",pos:"LB",age:33.4,team:"FA",proj:{PPR:68,Half:68,Standard:68},adp:41.5,ktcVal:412,note:"Veteran ILB: 70 tackles depth"},
+  {name:"Charles Snowden",pos:"LB",age:28.4,team:"WAS",proj:{PPR:65,Half:65,Standard:65},adp:44.0,ktcVal:721,note:"EDGE/LB hybrid: 5 sacks 55 tackles"},
+  {name:"Dylan Moses",pos:"LB",age:28.3,team:"BAL",proj:{PPR:70,Half:70,Standard:70},adp:40.0,ktcVal:824,note:"ILB: 65 tackles 2 sacks"},
+  {name:"Elijah Sullivan",pos:"LB",age:29.3,team:"ARI",proj:{PPR:65,Half:65,Standard:65},adp:44.0,ktcVal:515,note:"LB depth: 60 tackles special teams"},
   // Wave 15 — 2025 IDP DL rookies + CB/DB depth
   // 2025 DL rookies
-  {name:"Kenneth Grant",pos:"DL",age:22.8,team:"MIA",proj:{PPR:82,Half:82,Standard:82},adp:29.5,ktcVal:2884,note:"Week 7: Reserve DL · MIA · limited snaps"},
-  {name:"TJ Sanders",pos:"DL",age:23.1,team:"HOU",proj:{PPR:78,Half:78,Standard:78},adp:33.0,ktcVal:2266,note:"Week 7: Reserve DL · HOU · limited snaps"},
-  {name:"Shemar Stewart",pos:"DL",age:22.8,team:"DEN",proj:{PPR:75,Half:75,Standard:75},adp:35.5,ktcVal:2884,note:"Week 7: Reserve DL · DEN · limited snaps"},
-  {name:"Princely Umanmielen",pos:"DL",age:24.4,team:"ATL",proj:{PPR:72,Half:72,Standard:72},adp:38.0,ktcVal:2060,note:"Week 7: Reserve DL · ATL · limited snaps"},
-  {name:"Landon Jackson",pos:"DL",age:23.7,team:"CHI",proj:{PPR:68,Half:68,Standard:68},adp:41.5,ktcVal:1854,note:"Week 7: Reserve DL · CHI · limited snaps"},
-  {name:"Darius Alexander",pos:"DL",age:26,team:"CLE",proj:{PPR:65,Half:65,Standard:65},adp:43.5,ktcVal:1854,note:"Week 7: Reserve DL · CLE · limited snaps"},
+  {name:"Kenneth Grant",pos:"DL",age:22.8,team:"MIA",proj:{PPR:82,Half:82,Standard:82},adp:29.5,ktcVal:2884,note:"2025 pick 1-13 · NT 38 tackles 4 sacks disruptive"},
+  {name:"TJ Sanders",pos:"DL",age:23.1,team:"HOU",proj:{PPR:78,Half:78,Standard:78},adp:33.0,ktcVal:2266,note:"2025 IDL: 35 tackles 4 sacks interior"},
+  {name:"Shemar Stewart",pos:"DL",age:22.8,team:"DEN",proj:{PPR:75,Half:75,Standard:75},adp:35.5,ktcVal:2884,note:"2025 EDGE prospect: 32 tackles 5 sacks upside"},
+  {name:"Princely Umanmielen",pos:"DL",age:24.4,team:"ATL",proj:{PPR:72,Half:72,Standard:72},adp:38.0,ktcVal:2060,note:"EDGE: 7 sacks 2024 breakout"},
+  {name:"Landon Jackson",pos:"DL",age:23.7,team:"CHI",proj:{PPR:68,Half:68,Standard:68},adp:41.5,ktcVal:1854,note:"EDGE 2025: 28 tackles 4 sacks"},
+  {name:"Darius Alexander",pos:"DL",age:26,team:"CLE",proj:{PPR:65,Half:65,Standard:65},adp:43.5,ktcVal:1854,note:"2025 IDL: 28 tackles 3 sacks"},
   // IDP DB depth Wave 15 — CB prospects
-  {name:"Azeez Al-Shaair",pos:"LB",age:29.1,team:"HOU",proj:{PPR:105,Half:105,Standard:105},adp:18.0,ktcVal:2266,note:"Week 7: Reserve LB · HOU · limited value"},
-  {name:"Tre Norwood",pos:"DB",age:27.4,team:"PIT",proj:{PPR:78,Half:78,Standard:78},adp:34.0,ktcVal:824,note:"Week 7: Reserve DB · PIT · depth"},
-  {name:"Ifeatu Melifonwu",pos:"DB",age:27.3,team:"BUF",proj:{PPR:72,Half:72,Standard:72},adp:38.5,ktcVal:927,note:"Week 7: Reserve DB · BUF · depth"},
-  {name:"Israel Mukuamu",pos:"DB",age:26.7,team:"FA",proj:{PPR:62,Half:62,Standard:62},adp:45.0,ktcVal:515,note:"Week 7: Reserve DB · FA · depth"},
-  {name:"Troy Pride Jr.",pos:"DB",age:28.6,team:"FA",proj:{PPR:58,Half:58,Standard:58},adp:49.0,ktcVal:412,note:"Week 7: Reserve DB · FA · depth"},
-  {name:"Kary Vincent Jr.",pos:"DB",age:27.5,team:"DEN",proj:{PPR:65,Half:65,Standard:65},adp:43.5,ktcVal:721,note:"Week 7: Reserve DB · DEN · depth"},
-  {name:"Kendall Sheffield",pos:"DB",age:30.2,team:"FA",proj:{PPR:58,Half:58,Standard:58},adp:49.5,ktcVal:515,note:"Week 7: Reserve DB · FA · depth"},
-  {name:"Trill Williams",pos:"DB",age:26.7,team:"MIN",proj:{PPR:68,Half:68,Standard:68},adp:41.0,ktcVal:927,note:"Week 7: Reserve DB · MIN · depth"},
-  {name:"Sevyn Banks",pos:"DB",age:26,team:"CLE",proj:{PPR:65,Half:65,Standard:65},adp:43.5,ktcVal:824,note:"Week 7: Reserve DB · CLE · depth"},
-  {name:"Robert Rochell",pos:"DB",age:28.3,team:"LAC",proj:{PPR:62,Half:62,Standard:62},adp:46.0,ktcVal:618,note:"Week 7: Reserve DB · LAC · depth"},
-  {name:"Darius Phillips",pos:"DB",age:31.2,team:"FA",proj:{PPR:55,Half:55,Standard:55},adp:52.0,ktcVal:412,note:"Week 7: Reserve DB · FA · depth"},
-  {name:"Josh Blackwell",pos:"DB",age:27.4,team:"DAL",proj:{PPR:58,Half:58,Standard:58},adp:49.0,ktcVal:515,note:"Week 7: Reserve DB · DAL · depth"},
-  {name:"Paul Taulelei",pos:"TE",age:27,team:"BUF",proj:{PPR:55,Half:50,Standard:45},adp:55.0,ktcVal:412,note:"Week 7: Practice squad · BUF · no value"},
+  {name:"Azeez Al-Shaair",pos:"LB",age:29.1,team:"HOU",proj:{PPR:105,Half:105,Standard:105},adp:18.0,ktcVal:2266,note:"ILB: 108 tackles 3 sacks versatile"},
+  {name:"Tre Norwood",pos:"DB",age:27.4,team:"PIT",proj:{PPR:78,Half:78,Standard:78},adp:34.0,ktcVal:824,note:"S/CB: 65 tackles 2 INT versatile"},
+  {name:"Ifeatu Melifonwu",pos:"DB",age:27.3,team:"BUF",proj:{PPR:72,Half:72,Standard:72},adp:38.5,ktcVal:927,note:"CB: 55 tackles 2 INT physical"},
+  {name:"Israel Mukuamu",pos:"DB",age:26.7,team:"FA",proj:{PPR:62,Half:62,Standard:62},adp:45.0,ktcVal:515,note:"S depth: 52 tackles 2 INT"},
+  {name:"Troy Pride Jr.",pos:"DB",age:28.6,team:"FA",proj:{PPR:58,Half:58,Standard:58},adp:49.0,ktcVal:412,note:"CB depth: 45 tackles 1 INT"},
+  {name:"Kary Vincent Jr.",pos:"DB",age:27.5,team:"DEN",proj:{PPR:65,Half:65,Standard:65},adp:43.5,ktcVal:721,note:"CB: 52 tackles 2 INT slot"},
+  {name:"Kendall Sheffield",pos:"DB",age:30.2,team:"FA",proj:{PPR:58,Half:58,Standard:58},adp:49.5,ktcVal:515,note:"CB: 48 tackles 2 INT speed"},
+  {name:"Trill Williams",pos:"DB",age:26.7,team:"MIN",proj:{PPR:68,Half:68,Standard:68},adp:41.0,ktcVal:927,note:"CB: 55 tackles 2 INT physical"},
+  {name:"Sevyn Banks",pos:"DB",age:26,team:"CLE",proj:{PPR:65,Half:65,Standard:65},adp:43.5,ktcVal:824,note:"CB: 52 tackles 2 INT developing"},
+  {name:"Robert Rochell",pos:"DB",age:28.3,team:"LAC",proj:{PPR:62,Half:62,Standard:62},adp:46.0,ktcVal:618,note:"CB depth: 48 tackles 1 INT"},
+  {name:"Darius Phillips",pos:"DB",age:31.2,team:"FA",proj:{PPR:55,Half:55,Standard:55},adp:52.0,ktcVal:412,note:"Veteran CB depth"},
+  {name:"Josh Blackwell",pos:"DB",age:27.4,team:"DAL",proj:{PPR:58,Half:58,Standard:58},adp:49.0,ktcVal:515,note:"CB: 45 tackles 1 INT special teams"},
+  {name:"Paul Taulelei",pos:"TE",age:27,team:"BUF",proj:{PPR:55,Half:50,Standard:45},adp:55.0,ktcVal:412,note:"Blocking TE: 18 rec 180 yds"},
   // Wave 14 — Cam Skattebo + 2025 RB class + WR/TE/IDP depth
   // 2025 RB class additions
-  {name:"Cam Skattebo",pos:"RB",age:24.6,team:"NYG",proj:{PPR:252,Half:232,Standard:212},adp:6.8,ktcVal:6000,note:"Week 7: Strong RB1 · 1,200+ rush 50+ rec 10+ TD"},
-  {name:"Donovan Edwards",pos:"RB",age:23.5,team:"MIA",proj:{PPR:178,Half:163,Standard:148},adp:16.5,ktcVal:3296,note:"Week 7: Bench back/handcuff · limited upside · hold for opportunity"},
-  {name:"Brashard Smith",pos:"RB",age:23.4,team:"KC",proj:{PPR:155,Half:142,Standard:129},adp:22.5,ktcVal:2525,note:"Week 7: Bench back/handcuff · KC · opportunity stash"},
-  {name:"Woody Marks",pos:"RB",age:25.7,team:"HOU",proj:{PPR:148,Half:136,Standard:124},adp:24.5,ktcVal:3709,note:"Week 7: Bench back/handcuff · limited upside · hold for opportunity"},
-  {name:"Jaydon Blue",pos:"RB",age:22.6,team:"DAL",proj:{PPR:142,Half:130,Standard:118},adp:26.5,ktcVal:2602,note:"Week 7: Bench back/handcuff · DAL · opportunity stash"},
-  {name:"Jacory Croskey-Merritt",pos:"RB",age:25.4,team:"WAS",proj:{PPR:135,Half:124,Standard:113},adp:28.5,ktcVal:3715,note:"Week 7: Bench back/handcuff · limited upside · hold for opportunity"},
-  {name:"Elijah Young",pos:"RB",age:25,team:"NO",proj:{PPR:128,Half:117,Standard:106},adp:31.0,ktcVal:1545,note:"Week 7: Practice squad · NO · no value"},
-  {name:"Royce Freeman",pos:"RB",age:30.5,team:"FA",proj:{PPR:88,Half:81,Standard:74},adp:44.0,ktcVal:309,note:"Week 7: Practice squad · FA · no value"},
+  {name:"Cam Skattebo",pos:"RB",age:24.6,team:"NYG",proj:{PPR:252,Half:232,Standard:212},adp:6.8,ktcVal:6000,note:"Wk1: 81 rush yds 1 TD in NFL debut · workhorse feature back 1,250 rush 55 rec bruising"},
+  {name:"Donovan Edwards",pos:"RB",age:23.5,team:"MIA",proj:{PPR:178,Half:163,Standard:148},adp:16.5,ktcVal:3296,note:"MIA backfield: 700 rush 50 rec speed"},
+  {name:"Brashard Smith",pos:"RB",age:23.4,team:"KC",proj:{PPR:155,Half:142,Standard:129},adp:22.5,ktcVal:2525,note:"KC depth: 580 rush 48 rec"},
+  {name:"Woody Marks",pos:"RB",age:25.7,team:"HOU",proj:{PPR:148,Half:136,Standard:124},adp:24.5,ktcVal:3709,note:"Physical runner: 600 rush 4 TD"},
+  {name:"Jaydon Blue",pos:"RB",age:22.6,team:"DAL",proj:{PPR:142,Half:130,Standard:118},adp:26.5,ktcVal:2602,note:"Speed back: 520 rush 50 rec"},
+  {name:"Jacory Croskey-Merritt",pos:"RB",age:25.4,team:"WAS",proj:{PPR:135,Half:124,Standard:113},adp:28.5,ktcVal:3715,note:"Elusive: 500 rush 45 rec"},
+  {name:"Elijah Young",pos:"RB",age:25,team:"NO",proj:{PPR:128,Half:117,Standard:106},adp:31.0,ktcVal:1545,note:"Versatile: 480 rush 45 rec"},
+  {name:"Royce Freeman",pos:"RB",age:30.5,team:"FA",proj:{PPR:88,Half:81,Standard:74},adp:44.0,ktcVal:309,note:"Veteran power back: 350 rush"},
   // WR 2025 class + missing current
-  {name:"Jalen Royals",pos:"WR",age:23.5,team:"KC",proj:{PPR:138,Half:127,Standard:116},adp:30.5,ktcVal:2254,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Barion Brown",pos:"WR",age:22.7,team:"NO",proj:{PPR:125,Half:115,Standard:105},adp:33.5,ktcVal:1854,note:"Week 7: Deep bench · NO · limited value"},
-  {name:"Ainias Smith",pos:"WR",age:25.2,team:"PHI",proj:{PPR:112,Half:103,Standard:94},adp:36.5,ktcVal:721,note:"Week 7: Deep bench · PHI · limited value"},
-  {name:"Dorian Singer",pos:"WR",age:23.9,team:"TB",proj:{PPR:108,Half:99,Standard:90},adp:37.5,ktcVal:618,note:"Week 7: Deep bench · TB · limited value"},
-  {name:"Dontay Demus Jr.",pos:"WR",age:25.9,team:"BAL",proj:{PPR:95,Half:87,Standard:79},adp:41.5,ktcVal:515,note:"Week 7: Deep bench · BAL · limited value"},
-  {name:"Keelan Cole",pos:"WR",age:33.4,team:"FA",proj:{PPR:82,Half:75,Standard:68},adp:47.0,ktcVal:155,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Corey Davis",pos:"WR",age:31.6,team:"FA",proj:{PPR:78,Half:72,Standard:66},adp:48.5,ktcVal:206,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Anthony Miller",pos:"WR",age:31.9,team:"FA",proj:{PPR:72,Half:66,Standard:60},adp:50.0,ktcVal:206,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Penny Hart",pos:"WR",age:30.1,team:"SEA",proj:{PPR:68,Half:62,Standard:56},adp:51.5,ktcVal:206,note:"Week 7: Deep bench · SEA · limited value"},
+  {name:"Jalen Royals",pos:"WR",age:23.5,team:"KC",proj:{PPR:138,Half:127,Standard:116},adp:30.5,ktcVal:2254,note:"2025 pick 4-133 · 55 rec 640 yds 5 TD"},
+  {name:"Barion Brown",pos:"WR",age:22.7,team:"NO",proj:{PPR:125,Half:115,Standard:105},adp:33.5,ktcVal:1854,note:"2026 draft pick · NO Saints · speed and return threat"},
+  {name:"Ainias Smith",pos:"WR",age:25.2,team:"PHI",proj:{PPR:112,Half:103,Standard:94},adp:36.5,ktcVal:721,note:"Slot: 44 rec 510 yds 4 TD"},
+  {name:"Dorian Singer",pos:"WR",age:23.9,team:"TB",proj:{PPR:108,Half:99,Standard:90},adp:37.5,ktcVal:618,note:"Route runner: 42 rec 490 yds"},
+  {name:"Dontay Demus Jr.",pos:"WR",age:25.9,team:"BAL",proj:{PPR:95,Half:87,Standard:79},adp:41.5,ktcVal:515,note:"Big WR: 38 rec 440 yds 4 TD"},
+  {name:"Keelan Cole",pos:"WR",age:33.4,team:"FA",proj:{PPR:82,Half:75,Standard:68},adp:47.0,ktcVal:155,note:"Veteran depth: 32 rec 380 yds"},
+  {name:"Corey Davis",pos:"WR",age:31.6,team:"FA",proj:{PPR:78,Half:72,Standard:66},adp:48.5,ktcVal:206,note:"Veteran: 30 rec 350 yds if active"},
+  {name:"Anthony Miller",pos:"WR",age:31.9,team:"FA",proj:{PPR:72,Half:66,Standard:60},adp:50.0,ktcVal:206,note:"Veteran slot depth"},
+  {name:"Penny Hart",pos:"WR",age:30.1,team:"SEA",proj:{PPR:68,Half:62,Standard:56},adp:51.5,ktcVal:206,note:"Slot depth: 28 rec 320 yds"},
   // TE depth Wave 14
-  {name:"Ko Kieft",pos:"TE",age:28.6,team:"TB",proj:{PPR:68,Half:62,Standard:56},adp:50.5,ktcVal:412,note:"Week 7: Practice squad · TB · no value"},
-  {name:"Jack Stoll",pos:"TE",age:28.6,team:"PHI",proj:{PPR:72,Half:66,Standard:60},adp:48.5,ktcVal:412,note:"Week 7: Practice squad · PHI · no value"},
-  {name:"Antony Auclair",pos:"TE",age:33.3,team:"FA",proj:{PPR:58,Half:53,Standard:48},adp:54.0,ktcVal:155,note:"Week 7: Practice squad · FA · no value"},
+  {name:"Ko Kieft",pos:"TE",age:28.6,team:"TB",proj:{PPR:68,Half:62,Standard:56},adp:50.5,ktcVal:412,note:"Blocking TE: 22 rec 220 yds"},
+  {name:"Jack Stoll",pos:"TE",age:28.6,team:"PHI",proj:{PPR:72,Half:66,Standard:60},adp:48.5,ktcVal:412,note:"TE2: 28 rec 280 yds"},
+  {name:"Antony Auclair",pos:"TE",age:33.3,team:"FA",proj:{PPR:58,Half:53,Standard:48},adp:54.0,ktcVal:155,note:"Veteran blocking TE"},
   // IDP DL Wave 14
-  {name:"Dre'Mont Jones",pos:"DL",age:29.6,team:"NE",proj:{PPR:82,Half:82,Standard:82},adp:31.0,ktcVal:1236,note:"Week 7: Reserve DL · NE · limited snaps"},
-  {name:"Maliek Collins",pos:"DL",age:31.4,team:"HOU",proj:{PPR:72,Half:72,Standard:72},adp:37.0,ktcVal:824,note:"Week 7: Reserve DL · HOU · limited snaps"},
-  {name:"Rashad Weaver",pos:"DL",age:28.8,team:"PIT",proj:{PPR:78,Half:78,Standard:78},adp:34.0,ktcVal:1030,note:"Week 7: Reserve DL · PIT · limited snaps"},
-  {name:"Trysten Hill",pos:"DL",age:28.4,team:"DAL",proj:{PPR:65,Half:65,Standard:65},adp:43.0,ktcVal:618,note:"Week 7: Reserve DL · DAL · limited snaps"},
-  {name:"Darius Philon",pos:"DL",age:32.6,team:"FA",proj:{PPR:58,Half:58,Standard:58},adp:49.0,ktcVal:412,note:"Week 7: Reserve DL · FA · limited snaps"},
-  {name:"Corey Peters",pos:"DL",age:38.2,team:"FA",proj:{PPR:45,Half:45,Standard:45},adp:58.0,ktcVal:206,note:"Week 7: Reserve DL · FA · limited snaps"},
+  {name:"Dre'Mont Jones",pos:"DL",age:29.6,team:"NE",proj:{PPR:82,Half:82,Standard:82},adp:31.0,ktcVal:1236,note:"Signed NE 3yr/$39.5M · EDGE: 7 sacks 42 tackles"},
+  {name:"Maliek Collins",pos:"DL",age:31.4,team:"HOU",proj:{PPR:72,Half:72,Standard:72},adp:37.0,ktcVal:824,note:"NT: 38 tackles 3 sacks"},
+  {name:"Rashad Weaver",pos:"DL",age:28.8,team:"PIT",proj:{PPR:78,Half:78,Standard:78},adp:34.0,ktcVal:1030,note:"EDGE: 7 sacks rotational"},
+  {name:"Trysten Hill",pos:"DL",age:28.4,team:"DAL",proj:{PPR:65,Half:65,Standard:65},adp:43.0,ktcVal:618,note:"IDL: 30 tackles 2 sacks"},
+  {name:"Darius Philon",pos:"DL",age:32.6,team:"FA",proj:{PPR:58,Half:58,Standard:58},adp:49.0,ktcVal:412,note:"Veteran IDL depth"},
+  {name:"Corey Peters",pos:"DL",age:38.2,team:"FA",proj:{PPR:45,Half:45,Standard:45},adp:58.0,ktcVal:206,note:"Veteran NT depth if active"},
   // IDP LB Wave 14
-  {name:"Davion Taylor",pos:"LB",age:28.1,team:"PHI",proj:{PPR:78,Half:78,Standard:78},adp:34.0,ktcVal:824,note:"Week 7: Reserve LB · PHI · limited value"},
+  {name:"Davion Taylor",pos:"LB",age:28.1,team:"PHI",proj:{PPR:78,Half:78,Standard:78},adp:34.0,ktcVal:824,note:"Speed LB: 72 tackles 2 sacks"},
   // IDP DB Wave 14
-  {name:"Juan Thornhill",pos:"DB",age:30.9,team:"FA",proj:{PPR:72,Half:72,Standard:72},adp:40.0,ktcVal:618,note:"Week 7: Reserve DB · FA · depth"},
-  {name:"Duron Harmon",pos:"DB",age:35.6,team:"FA",proj:{PPR:55,Half:55,Standard:55},adp:53.0,ktcVal:309,note:"Week 7: Reserve DB · FA · depth"},
-  {name:"Jeremy Reaves",pos:"DB",age:30,team:"WAS",proj:{PPR:72,Half:72,Standard:72},adp:38.0,ktcVal:721,note:"Week 7: Reserve DB · WAS · depth"},
-  {name:"Tae Hayes",pos:"DB",age:29,team:"TEN",proj:{PPR:68,Half:68,Standard:68},adp:41.0,ktcVal:824,note:"Week 7: Reserve DB · TEN · depth"},
+  {name:"Juan Thornhill",pos:"DB",age:30.9,team:"FA",proj:{PPR:72,Half:72,Standard:72},adp:40.0,ktcVal:618,note:"Released by JAX Jan 2026 · unsigned FA"},
+  {name:"Duron Harmon",pos:"DB",age:35.6,team:"FA",proj:{PPR:55,Half:55,Standard:55},adp:53.0,ktcVal:309,note:"Veteran FS depth: 45 tackles 2 INT"},
+  {name:"Jeremy Reaves",pos:"DB",age:30,team:"WAS",proj:{PPR:72,Half:72,Standard:72},adp:38.0,ktcVal:721,note:"S: 68 tackles 1 INT physical"},
+  {name:"Tae Hayes",pos:"DB",age:29,team:"TEN",proj:{PPR:68,Half:68,Standard:68},adp:41.0,ktcVal:824,note:"CB: 52 tackles 2 INT ascending"},
   // Wave 13 — final depth: WR/RB/TE/IDP fill-ins
   // WR depth Wave 13 (pure depth/special teams contributors)
-  {name:"Trent Taylor",pos:"WR",age:32.3,team:"NO",proj:{PPR:72,Half:66,Standard:60},adp:48.0,ktcVal:206,note:"Week 7: Deep bench · NO · limited value"},
-  {name:"Andy Isabella",pos:"WR",age:29.8,team:"FA",proj:{PPR:65,Half:60,Standard:55},adp:52.0,ktcVal:155,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"River Cracraft",pos:"WR",age:31.8,team:"FA",proj:{PPR:58,Half:53,Standard:48},adp:55.0,ktcVal:103,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Alex Erickson",pos:"WR",age:33.8,team:"FA",proj:{PPR:55,Half:50,Standard:45},adp:56.0,ktcVal:103,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Josh Malone",pos:"WR",age:30.4,team:"FA",proj:{PPR:52,Half:48,Standard:44},adp:57.0,ktcVal:155,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Cody Thompson",pos:"WR",age:30.6,team:"FA",proj:{PPR:50,Half:46,Standard:42},adp:58.0,ktcVal:155,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Kawaan Baker",pos:"WR",age:28,team:"NO",proj:{PPR:68,Half:62,Standard:56},adp:50.0,ktcVal:206,note:"Week 7: Deep bench · NO · limited value"},
-  {name:"Josh Doctson",pos:"WR",age:33.7,team:"FA",proj:{PPR:48,Half:44,Standard:40},adp:60.0,ktcVal:103,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Trenton Irwin",pos:"WR",age:30.7,team:"CIN",proj:{PPR:72,Half:66,Standard:60},adp:47.5,ktcVal:206,note:"Week 7: Deep bench · CIN · limited value"},
-  {name:"Montrell Washington",pos:"WR",age:27.5,team:"DEN",proj:{PPR:78,Half:72,Standard:66},adp:45.5,ktcVal:412,note:"Week 7: Deep bench · DEN · limited value"},
-  {name:"Justin Watson",pos:"WR",age:30.4,team:"KC",proj:{PPR:68,Half:62,Standard:56},adp:50.5,ktcVal:206,note:"Week 7: Deep bench · KC · limited value"},
+  {name:"Trent Taylor",pos:"WR",age:32.3,team:"NO",proj:{PPR:72,Half:66,Standard:60},adp:48.0,ktcVal:206,note:"Slot depth: 28 rec 290 yds"},
+  {name:"Andy Isabella",pos:"WR",age:29.8,team:"FA",proj:{PPR:65,Half:60,Standard:55},adp:52.0,ktcVal:155,note:"Speed depth WR: FA"},
+  {name:"River Cracraft",pos:"WR",age:31.8,team:"FA",proj:{PPR:58,Half:53,Standard:48},adp:55.0,ktcVal:103,note:"Veteran depth/ST"},
+  {name:"Alex Erickson",pos:"WR",age:33.8,team:"FA",proj:{PPR:55,Half:50,Standard:45},adp:56.0,ktcVal:103,note:"Veteran returner depth"},
+  {name:"Josh Malone",pos:"WR",age:30.4,team:"FA",proj:{PPR:52,Half:48,Standard:44},adp:57.0,ktcVal:155,note:"Veteran depth WR"},
+  {name:"Cody Thompson",pos:"WR",age:30.6,team:"FA",proj:{PPR:50,Half:46,Standard:42},adp:58.0,ktcVal:155,note:"Depth receiver"},
+  {name:"Kawaan Baker",pos:"WR",age:28,team:"NO",proj:{PPR:68,Half:62,Standard:56},adp:50.0,ktcVal:206,note:"Physical receiver depth"},
+  {name:"Josh Doctson",pos:"WR",age:33.7,team:"FA",proj:{PPR:48,Half:44,Standard:40},adp:60.0,ktcVal:103,note:"Veteran FA depth"},
+  {name:"Trenton Irwin",pos:"WR",age:30.7,team:"CIN",proj:{PPR:72,Half:66,Standard:60},adp:47.5,ktcVal:206,note:"Slot depth: 30 rec 320 yds"},
+  {name:"Montrell Washington",pos:"WR",age:27.5,team:"DEN",proj:{PPR:78,Half:72,Standard:66},adp:45.5,ktcVal:412,note:"Return specialist: 32 rec 350 yds"},
+  {name:"Justin Watson",pos:"WR",age:30.4,team:"KC",proj:{PPR:68,Half:62,Standard:56},adp:50.5,ktcVal:206,note:"Veteran role: 26 rec 310 yds"},
   // RB depth Wave 13
-  {name:"Ty Johnson",pos:"RB",age:28.9,team:"NYJ",proj:{PPR:92,Half:84,Standard:76},adp:43.0,ktcVal:412,note:"Week 7: Practice squad · NYJ · no value"},
-  {name:"Anthony McFarland Jr.",pos:"RB",age:27.5,team:"PIT",proj:{PPR:82,Half:75,Standard:68},adp:46.5,ktcVal:618,note:"Week 7: Practice squad · PIT · no value"},
-  {name:"Reggie Bonnafon",pos:"RB",age:30.6,team:"FA",proj:{PPR:65,Half:60,Standard:55},adp:52.5,ktcVal:206,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Kenyan Drake",pos:"RB",age:32.6,team:"FA",proj:{PPR:72,Half:66,Standard:60},adp:48.5,ktcVal:155,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Malcolm Brown",pos:"RB",age:33.3,team:"FA",proj:{PPR:58,Half:53,Standard:48},adp:55.0,ktcVal:206,note:"Week 7: Practice squad · FA · no value"},
+  {name:"Ty Johnson",pos:"RB",age:28.9,team:"NYJ",proj:{PPR:92,Half:84,Standard:76},adp:43.0,ktcVal:412,note:"Receiving back: 260 rush 50 rec"},
+  {name:"Anthony McFarland Jr.",pos:"RB",age:27.5,team:"PIT",proj:{PPR:82,Half:75,Standard:68},adp:46.5,ktcVal:618,note:"Speed back depth"},
+  {name:"Reggie Bonnafon",pos:"RB",age:30.6,team:"FA",proj:{PPR:65,Half:60,Standard:55},adp:52.5,ktcVal:206,note:"Veteran depth RB"},
+  {name:"Kenyan Drake",pos:"RB",age:32.6,team:"FA",proj:{PPR:72,Half:66,Standard:60},adp:48.5,ktcVal:155,note:"Veteran: 280 rush 42 rec if active"},
+  {name:"Malcolm Brown",pos:"RB",age:33.3,team:"FA",proj:{PPR:58,Half:53,Standard:48},adp:55.0,ktcVal:206,note:"Power back depth FA"},
   // TE depth Wave 13
-  {name:"Blake Bell",pos:"TE",age:35.1,team:"FA",proj:{PPR:68,Half:62,Standard:56},adp:50.0,ktcVal:155,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Stephen Sullivan",pos:"TE",age:29.7,team:"CAR",proj:{PPR:72,Half:66,Standard:60},adp:47.0,ktcVal:412,note:"Week 7: Practice squad · CAR · no value"},
-  {name:"Cade McDonald",pos:"TE",age:25.3,team:"NE",proj:{PPR:82,Half:75,Standard:68},adp:43.5,ktcVal:721,note:"Week 7: Practice squad · NE · no value"},
+  {name:"Blake Bell",pos:"TE",age:35.1,team:"FA",proj:{PPR:68,Half:62,Standard:56},adp:50.0,ktcVal:155,note:"Blocking TE veteran"},
+  {name:"Stephen Sullivan",pos:"TE",age:29.7,team:"CAR",proj:{PPR:72,Half:66,Standard:60},adp:47.0,ktcVal:412,note:"TE2: 28 rec 290 yds"},
+  {name:"Cade McDonald",pos:"TE",age:25.3,team:"NE",proj:{PPR:82,Half:75,Standard:68},adp:43.5,ktcVal:721,note:"Developing TE: 32 rec 340 yds"},
   // IDP DL depth Wave 13
-  {name:"Clelin Ferrell",pos:"DL",age:29.3,team:"FA",proj:{PPR:62,Half:62,Standard:62},adp:46.0,ktcVal:515,note:"Week 7: Reserve DL · FA · limited snaps"},
-  {name:"Michael Hoecht",pos:"DL",age:28.9,team:"LAR",proj:{PPR:72,Half:72,Standard:72},adp:37.5,ktcVal:927,note:"Week 7: Reserve DL · LAR · limited snaps"},
-  {name:"Taven Bryan",pos:"DL",age:30.5,team:"HOU",proj:{PPR:65,Half:65,Standard:65},adp:43.0,ktcVal:721,note:"Week 7: Reserve DL · HOU · limited snaps"},
-  {name:"Vincent Taylor",pos:"DL",age:32.6,team:"FA",proj:{PPR:58,Half:58,Standard:58},adp:48.0,ktcVal:412,note:"Week 7: Reserve DL · FA · limited snaps"},
-  {name:"Takkarist McKinley",pos:"DL",age:30,team:"FA",proj:{PPR:60,Half:60,Standard:60},adp:46.5,ktcVal:515,note:"Week 7: Reserve DL · FA · limited snaps"},
+  {name:"Clelin Ferrell",pos:"DL",age:29.3,team:"FA",proj:{PPR:62,Half:62,Standard:62},adp:46.0,ktcVal:515,note:"UFA from SF · EDGE depth: 5 sacks"},
+  {name:"Michael Hoecht",pos:"DL",age:28.9,team:"LAR",proj:{PPR:72,Half:72,Standard:72},adp:37.5,ktcVal:927,note:"IDL: 30 tackles 3 sacks"},
+  {name:"Taven Bryan",pos:"DL",age:30.5,team:"HOU",proj:{PPR:65,Half:65,Standard:65},adp:43.0,ktcVal:721,note:"IDL depth: 28 tackles 2 sacks"},
+  {name:"Vincent Taylor",pos:"DL",age:32.6,team:"FA",proj:{PPR:58,Half:58,Standard:58},adp:48.0,ktcVal:412,note:"IDL veteran depth"},
+  {name:"Takkarist McKinley",pos:"DL",age:30,team:"FA",proj:{PPR:60,Half:60,Standard:60},adp:46.5,ktcVal:515,note:"EDGE if active: 5 sacks upside"},
   // IDP LB depth Wave 13
-  {name:"Joel Heath",pos:"LB",age:33.2,team:"HOU",proj:{PPR:70,Half:70,Standard:70},adp:39.5,ktcVal:515,note:"Week 7: Reserve LB · HOU · limited value"},
-  {name:"Jonas Griffith",pos:"LB",age:29.6,team:"SF",proj:{PPR:75,Half:75,Standard:75},adp:35.5,ktcVal:824,note:"Week 7: Reserve LB · SF · limited value"},
-  {name:"Dylan Cole",pos:"LB",age:32.3,team:"HOU",proj:{PPR:68,Half:68,Standard:68},adp:41.5,ktcVal:515,note:"Week 7: Reserve LB · HOU · limited value"},
+  {name:"Joel Heath",pos:"LB",age:33.2,team:"HOU",proj:{PPR:70,Half:70,Standard:70},adp:39.5,ktcVal:515,note:"LB depth: 62 tackles 1 sack"},
+  {name:"Jonas Griffith",pos:"LB",age:29.6,team:"SF",proj:{PPR:75,Half:75,Standard:75},adp:35.5,ktcVal:824,note:"ILB: 70 tackles 2 sacks"},
+  {name:"Dylan Cole",pos:"LB",age:32.3,team:"HOU",proj:{PPR:68,Half:68,Standard:68},adp:41.5,ktcVal:515,note:"ST/LB: 60 tackles 1 sack"},
   // IDP DB depth Wave 13
-  {name:"Juston Burris",pos:"DB",age:33.1,team:"CAR",proj:{PPR:68,Half:68,Standard:68},adp:42.0,ktcVal:618,note:"Week 7: Reserve DB · CAR · depth"},
-  {name:"Steven Nelson",pos:"DB",age:33.6,team:"FA",proj:{PPR:60,Half:60,Standard:60},adp:47.0,ktcVal:515,note:"Week 7: Reserve DB · FA · depth"},
-  {name:"Lonnie Johnson Jr.",pos:"DB",age:30.8,team:"KC",proj:{PPR:65,Half:65,Standard:65},adp:44.0,ktcVal:824,note:"Week 7: Reserve DB · KC · depth"},
-  {name:"Andrew Sendejo",pos:"DB",age:39,team:"FA",proj:{PPR:45,Half:45,Standard:45},adp:58.0,ktcVal:206,note:"Week 7: Reserve DB · FA · depth"},
-  {name:"Jalen Elliott",pos:"DB",age:28.1,team:"NO",proj:{PPR:68,Half:68,Standard:68},adp:41.5,ktcVal:721,note:"Week 7: Reserve DB · NO · depth"},
+  {name:"Juston Burris",pos:"DB",age:33.1,team:"CAR",proj:{PPR:68,Half:68,Standard:68},adp:42.0,ktcVal:618,note:"S: 55 tackles 2 INT veteran"},
+  {name:"Steven Nelson",pos:"DB",age:33.6,team:"FA",proj:{PPR:60,Half:60,Standard:60},adp:47.0,ktcVal:515,note:"CB veteran: 45 tackles 2 INT"},
+  {name:"Lonnie Johnson Jr.",pos:"DB",age:30.8,team:"KC",proj:{PPR:65,Half:65,Standard:65},adp:44.0,ktcVal:824,note:"CB/S: 55 tackles 2 INT"},
+  {name:"Andrew Sendejo",pos:"DB",age:39,team:"FA",proj:{PPR:45,Half:45,Standard:45},adp:58.0,ktcVal:206,note:"Veteran depth S"},
+  {name:"Jalen Elliott",pos:"DB",age:28.1,team:"NO",proj:{PPR:68,Half:68,Standard:68},adp:41.5,ktcVal:721,note:"S: 58 tackles 1 INT depth"},
   // Wave 12 — IDP DL/LB/DB depth + WR/TE/RB stragglers
   // IDP DL Wave 12
-  {name:"K'Lavon Chaisson",pos:"DL",age:27.1,team:"WAS",proj:{PPR:72,Half:72,Standard:72},adp:37.5,ktcVal:1030,note:"Week 7: Reserve DL · WAS · limited snaps"},
-  {name:"Boogie Basham",pos:"DL",age:28.7,team:"BUF",proj:{PPR:68,Half:68,Standard:68},adp:41.0,ktcVal:824,note:"Week 7: Reserve DL · BUF · limited snaps"},
-  {name:"Al Woods",pos:"DL",age:39.4,team:"FA",proj:{PPR:55,Half:55,Standard:55},adp:50.0,ktcVal:206,note:"Week 7: Reserve DL · FA · limited snaps"},
-  {name:"Isaiah Buggs",pos:"DL",age:30,team:"DET",proj:{PPR:62,Half:62,Standard:62},adp:44.0,ktcVal:721,note:"Week 7: Reserve DL · DET · limited snaps"},
+  {name:"K'Lavon Chaisson",pos:"DL",age:27.1,team:"WAS",proj:{PPR:72,Half:72,Standard:72},adp:37.5,ktcVal:1030,note:"Signed WAS 1yr/$11M · EDGE: 6 sacks"},
+  {name:"Boogie Basham",pos:"DL",age:28.7,team:"BUF",proj:{PPR:68,Half:68,Standard:68},adp:41.0,ktcVal:824,note:"EDGE rotational: 5 sacks"},
+  {name:"Al Woods",pos:"DL",age:39.4,team:"FA",proj:{PPR:55,Half:55,Standard:55},adp:50.0,ktcVal:206,note:"Veteran NT depth: 28 tackles"},
+  {name:"Isaiah Buggs",pos:"DL",age:30,team:"DET",proj:{PPR:62,Half:62,Standard:62},adp:44.0,ktcVal:721,note:"IDL rotational: 28 tackles 2 sacks"},
   // IDP LB Wave 12
-  {name:"Jayon Brown",pos:"LB",age:31.5,team:"FA",proj:{PPR:82,Half:82,Standard:82},adp:31.5,ktcVal:824,note:"Week 7: Reserve LB · FA · limited value"},
-  {name:"Reggie Ragland",pos:"LB",age:32.9,team:"FA",proj:{PPR:70,Half:70,Standard:70},adp:40.0,ktcVal:412,note:"Week 7: Reserve LB · FA · limited value"},
-  {name:"Krys Barnes",pos:"LB",age:28.4,team:"GB",proj:{PPR:85,Half:85,Standard:85},adp:29.5,ktcVal:1236,note:"Week 7: Reserve LB · GB · limited value"},
-  {name:"Ty Summers",pos:"LB",age:30.7,team:"GB",proj:{PPR:72,Half:72,Standard:72},adp:38.5,ktcVal:515,note:"Week 7: Reserve LB · GB · limited value"},
-  {name:"Dakota Allen",pos:"LB",age:30.8,team:"LAR",proj:{PPR:78,Half:78,Standard:78},adp:34.0,ktcVal:721,note:"Week 7: Reserve LB · LAR · limited value"},
+  {name:"Jayon Brown",pos:"LB",age:31.5,team:"FA",proj:{PPR:82,Half:82,Standard:82},adp:31.5,ktcVal:824,note:"Veteran coverage LB: 78 tackles 2 INT"},
+  {name:"Reggie Ragland",pos:"LB",age:32.9,team:"FA",proj:{PPR:70,Half:70,Standard:70},adp:40.0,ktcVal:412,note:"Veteran ILB depth: 68 tackles"},
+  {name:"Krys Barnes",pos:"LB",age:28.4,team:"GB",proj:{PPR:85,Half:85,Standard:85},adp:29.5,ktcVal:1236,note:"ILB: 82 tackles 2 sacks starting"},
+  {name:"Ty Summers",pos:"LB",age:30.7,team:"GB",proj:{PPR:72,Half:72,Standard:72},adp:38.5,ktcVal:515,note:"LB depth: 65 tackles special teams"},
+  {name:"Dakota Allen",pos:"LB",age:30.8,team:"LAR",proj:{PPR:78,Half:78,Standard:78},adp:34.0,ktcVal:721,note:"LB: 75 tackles depth role"},
   // IDP DB Wave 12
-  {name:"Tashaun Gipson",pos:"DB",age:36.1,team:"FA",proj:{PPR:65,Half:65,Standard:65},adp:44.0,ktcVal:309,note:"Week 7: Reserve DB · FA · depth"},
-  {name:"Tre Flowers",pos:"DB",age:31.2,team:"CIN",proj:{PPR:70,Half:70,Standard:70},adp:39.5,ktcVal:721,note:"Week 7: Reserve DB · CIN · depth"},
-  {name:"Adrian Phillips",pos:"DB",age:34.4,team:"NE",proj:{PPR:75,Half:75,Standard:75},adp:35.5,ktcVal:824,note:"Week 7: Reserve DB · NE · depth"},
-  {name:"Marcus Epps",pos:"DB",age:30.6,team:"ARI",proj:{PPR:80,Half:80,Standard:80},adp:32.5,ktcVal:1030,note:"Week 7: Reserve DB · ARI · depth"},
-  {name:"Dean Marlowe",pos:"DB",age:34.1,team:"DET",proj:{PPR:62,Half:62,Standard:62},adp:45.0,ktcVal:412,note:"Week 7: Reserve DB · DET · depth"},
+  {name:"Tashaun Gipson",pos:"DB",age:36.1,team:"FA",proj:{PPR:65,Half:65,Standard:65},adp:44.0,ktcVal:309,note:"Veteran FS: 50 tackles 2 INT"},
+  {name:"Tre Flowers",pos:"DB",age:31.2,team:"CIN",proj:{PPR:70,Half:70,Standard:70},adp:39.5,ktcVal:721,note:"CB depth: 52 tackles 2 INT"},
+  {name:"Adrian Phillips",pos:"DB",age:34.4,team:"NE",proj:{PPR:75,Half:75,Standard:75},adp:35.5,ktcVal:824,note:"SS/LB hybrid: 72 tackles 2 sacks"},
+  {name:"Marcus Epps",pos:"DB",age:30.6,team:"ARI",proj:{PPR:80,Half:80,Standard:80},adp:32.5,ktcVal:1030,note:"FS: 72 tackles 2 INT"},
+  {name:"Dean Marlowe",pos:"DB",age:34.1,team:"DET",proj:{PPR:62,Half:62,Standard:62},adp:45.0,ktcVal:412,note:"S depth: 55 tackles special teams"},
   // WR depth Wave 12
-  {name:"Isaiah Bond",pos:"WR",age:22.5,team:"CLE",proj:{PPR:102,Half:94,Standard:86},adp:38.5,ktcVal:2657,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Malik Washington",pos:"WR",age:25.6,team:"DEN",proj:{PPR:88,Half:81,Standard:74},adp:44.0,ktcVal:3168,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Devin Duvernay",pos:"WR",age:29,team:"JAX",proj:{PPR:95,Half:87,Standard:79},adp:41.5,ktcVal:309,note:"Week 7: Deep bench · JAX · limited value"},
-  {name:"Bub Means",pos:"WR",age:25.6,team:"NO",proj:{PPR:92,Half:84,Standard:76},adp:43.0,ktcVal:721,note:"Week 7: Deep bench · NO · limited value"},
+  {name:"Isaiah Bond",pos:"WR",age:22.5,team:"CLE",proj:{PPR:102,Half:94,Standard:86},adp:38.5,ktcVal:2657,note:"Speed: 40 rec 480 yds 4 TD"},
+  {name:"Malik Washington",pos:"WR",age:25.6,team:"DEN",proj:{PPR:88,Half:81,Standard:74},adp:44.0,ktcVal:3168,note:"Slot depth: 36 rec 400 yds"},
+  {name:"Devin Duvernay",pos:"WR",age:29,team:"JAX",proj:{PPR:95,Half:87,Standard:79},adp:41.5,ktcVal:309,note:"Returner/receiver: 38 rec 420 yds"},
+  {name:"Bub Means",pos:"WR",age:25.6,team:"NO",proj:{PPR:92,Half:84,Standard:76},adp:43.0,ktcVal:721,note:"2024 gem: 38 rec 450 yds 4 TD"},
   // RB depth Wave 12
-  {name:"Cody Schrader",pos:"RB",age:27,team:"LAR",proj:{PPR:112,Half:103,Standard:94},adp:34.5,ktcVal:927,note:"Week 7: Practice squad · LAR · no value"},
+  {name:"Cody Schrader",pos:"RB",age:27,team:"LAR",proj:{PPR:112,Half:103,Standard:94},adp:34.5,ktcVal:927,note:"UDFA gem: 480 rush 40 rec"},
   // TE depth Wave 12
-  {name:"Devin Asiasi",pos:"TE",age:29,team:"NYG",proj:{PPR:85,Half:77,Standard:69},adp:42.0,ktcVal:618,note:"Week 7: Practice squad · NYG · no value"},
+  {name:"Devin Asiasi",pos:"TE",age:29,team:"NYG",proj:{PPR:85,Half:77,Standard:69},adp:42.0,ktcVal:618,note:"Athletic TE: 34 rec 360 yds"},
   // Wave 11 — final depth: QB/RB/IDP stragglers
   // QB depth Wave 11
-  {name:"Mitchell Trubisky",pos:"QB",age:32,team:"TEN",proj:{PPR:225,Half:225,Standard:225},adp:27.5,ktcVal:258,note:"Week 7: Deep bench/PS · TEN · limited value"},
-  {name:"Kyle Trask",pos:"QB",age:28.5,team:"FA",proj:{PPR:195,Half:195,Standard:195},adp:35.0,ktcVal:206,note:"Week 7: 3rd string · TB depth · no value, remove from rosters"},
-  {name:"Case Keenum",pos:"QB",age:38.5,team:"FA",proj:{PPR:195,Half:195,Standard:195},adp:35.0,ktcVal:155,note:"Week 7: Deep bench/PS · FA · limited value"},
-  {name:"Davis Webb",pos:"QB",age:31.6,team:"BUF",proj:{PPR:188,Half:188,Standard:188},adp:37.5,ktcVal:309,note:"Week 7: Deep bench/PS · BUF · limited value"},
-  {name:"Trace McSorley",pos:"QB",age:31,team:"FA",proj:{PPR:175,Half:175,Standard:175},adp:40.0,ktcVal:155,note:"Week 7: Deep bench/PS · FA · limited value"},
-  {name:"Brian Hoyer",pos:"QB",age:40.9,team:"FA",proj:{PPR:162,Half:162,Standard:162},adp:43.0,ktcVal:103,note:"Week 7: Deep bench/PS · FA · limited value"},
+  {name:"Mitchell Trubisky",pos:"QB",age:32,team:"TEN",proj:{PPR:225,Half:225,Standard:225},adp:27.5,ktcVal:258,note:"Signed TEN 2yr/$10.5M · backup to Ward"},
+  {name:"Kyle Trask",pos:"QB",age:28.5,team:"FA",proj:{PPR:195,Half:195,Standard:195},adp:35.0,ktcVal:206,note:"Released by ATL Jan 2026 · unsigned FA"},
+  {name:"Case Keenum",pos:"QB",age:38.5,team:"FA",proj:{PPR:195,Half:195,Standard:195},adp:35.0,ktcVal:155,note:"Veteran depth: 2,200 yds"},
+  {name:"Davis Webb",pos:"QB",age:31.6,team:"BUF",proj:{PPR:188,Half:188,Standard:188},adp:37.5,ktcVal:309,note:"BUF backup handcuff to Allen"},
+  {name:"Trace McSorley",pos:"QB",age:31,team:"FA",proj:{PPR:175,Half:175,Standard:175},adp:40.0,ktcVal:155,note:"Mobile emergency QB"},
+  {name:"Brian Hoyer",pos:"QB",age:40.9,team:"FA",proj:{PPR:162,Half:162,Standard:162},adp:43.0,ktcVal:103,note:"Veteran emergency backup"},
   // RB depth Wave 11
-  {name:"Michael Carter",pos:"RB",age:27.5,team:"NYJ",proj:{PPR:128,Half:117,Standard:106},adp:30.0,ktcVal:721,note:"Week 7: Practice squad · NYJ · no value"},
-  {name:"Chase Edmonds",pos:"RB",age:30.4,team:"FA",proj:{PPR:112,Half:103,Standard:94},adp:33.5,ktcVal:309,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Marlon Mack",pos:"RB",age:30.5,team:"FA",proj:{PPR:98,Half:90,Standard:82},adp:38.5,ktcVal:206,note:"Week 7: Practice squad · FA · no value"},
+  {name:"Michael Carter",pos:"RB",age:27.5,team:"NYJ",proj:{PPR:128,Half:117,Standard:106},adp:30.0,ktcVal:721,note:"Pass-catching back: 350 rush 50 rec"},
+  {name:"Chase Edmonds",pos:"RB",age:30.4,team:"FA",proj:{PPR:112,Half:103,Standard:94},adp:33.5,ktcVal:309,note:"Veteran scatback: receiving back"},
+  {name:"Marlon Mack",pos:"RB",age:30.5,team:"FA",proj:{PPR:98,Half:90,Standard:82},adp:38.5,ktcVal:206,note:"Veteran FA: power back depth"},
   // IDP DL Wave 11
-  {name:"David Ojabo",pos:"DL",age:26.3,team:"MIA",proj:{PPR:88,Half:88,Standard:88},adp:27.0,ktcVal:1854,note:"Week 7: Reserve DL · MIA · limited snaps"},
-  {name:"Odafe Oweh",pos:"DL",age:27.7,team:"WAS",proj:{PPR:92,Half:92,Standard:92},adp:24.5,ktcVal:2060,note:"Week 7: Reserve DL · WAS · limited snaps"},
-  {name:"Charles Omenihu",pos:"DL",age:29,team:"KC",proj:{PPR:82,Half:82,Standard:82},adp:30.5,ktcVal:1236,note:"Week 7: Reserve DL · KC · limited snaps"},
-  {name:"Jonathan Allen",pos:"DL",age:31.6,team:"CIN",proj:{PPR:88,Half:88,Standard:88},adp:27.5,ktcVal:2266,note:"Week 7: Reserve DL · CIN · limited snaps"},
-  {name:"Tershawn Wharton",pos:"DL",age:28.2,team:"KC",proj:{PPR:75,Half:75,Standard:75},adp:35.0,ktcVal:927,note:"Week 7: Reserve DL · KC · limited snaps"},
-  {name:"Rasheem Green",pos:"DL",age:29.3,team:"HOU",proj:{PPR:72,Half:72,Standard:72},adp:37.5,ktcVal:927,note:"Week 7: Reserve DL · HOU · limited snaps"},
-  {name:"Dean Lowry",pos:"DL",age:32.2,team:"GB",proj:{PPR:68,Half:68,Standard:68},adp:40.5,ktcVal:618,note:"Week 7: Reserve DL · GB · limited snaps"},
-  {name:"Bilal Nichols",pos:"DL",age:30,team:"MIA",proj:{PPR:65,Half:65,Standard:65},adp:42.0,ktcVal:721,note:"Week 7: Reserve DL · MIA · limited snaps"},
+  {name:"David Ojabo",pos:"DL",age:26.3,team:"MIA",proj:{PPR:88,Half:88,Standard:88},adp:27.0,ktcVal:1854,note:"Signed MIA 1yr · EDGE: 4.5 sacks in 32 career games"},
+  {name:"Odafe Oweh",pos:"DL",age:27.7,team:"WAS",proj:{PPR:92,Half:92,Standard:92},adp:24.5,ktcVal:2060,note:"EDGE: 9 sacks explosive athlete · signed WAS 4yr/$100M"},
+  {name:"Charles Omenihu",pos:"DL",age:29,team:"KC",proj:{PPR:82,Half:82,Standard:82},adp:30.5,ktcVal:1236,note:"EDGE: 7 sacks versatile"},
+  {name:"Jonathan Allen",pos:"DL",age:31.6,team:"CIN",proj:{PPR:88,Half:88,Standard:88},adp:27.5,ktcVal:2266,note:"Signed CIN 2yr/$26M · IDL: 8 sacks 48 tackles"},
+  {name:"Tershawn Wharton",pos:"DL",age:28.2,team:"KC",proj:{PPR:75,Half:75,Standard:75},adp:35.0,ktcVal:927,note:"IDL: 35 tackles 4 sacks rotational"},
+  {name:"Rasheem Green",pos:"DL",age:29.3,team:"HOU",proj:{PPR:72,Half:72,Standard:72},adp:37.5,ktcVal:927,note:"EDGE depth: 6 sacks rotational"},
+  {name:"Dean Lowry",pos:"DL",age:32.2,team:"GB",proj:{PPR:68,Half:68,Standard:68},adp:40.5,ktcVal:618,note:"IDL veteran: 28 tackles 3 sacks"},
+  {name:"Bilal Nichols",pos:"DL",age:30,team:"MIA",proj:{PPR:65,Half:65,Standard:65},adp:42.0,ktcVal:721,note:"IDL depth: 30 tackles 2 sacks"},
   // IDP DB Wave 11
-  {name:"Eric Stokes",pos:"DB",age:27.5,team:"GB",proj:{PPR:80,Half:80,Standard:80},adp:32.0,ktcVal:1030,note:"Week 7: Reserve DB · GB · depth"},
-  {name:"Khaleke Hudson",pos:"DB",age:28.7,team:"CHI",proj:{PPR:75,Half:75,Standard:75},adp:35.5,ktcVal:824,note:"Week 7: Reserve DB · CHI · depth"},
-  {name:"Myles Bryant",pos:"DB",age:28.7,team:"NE",proj:{PPR:70,Half:70,Standard:70},adp:38.5,ktcVal:824,note:"Week 7: Reserve DB · NE · depth"},
+  {name:"Eric Stokes",pos:"DB",age:27.5,team:"GB",proj:{PPR:80,Half:80,Standard:80},adp:32.0,ktcVal:1030,note:"CB: 55 tackles 2 INT when healthy"},
+  {name:"Khaleke Hudson",pos:"DB",age:28.7,team:"CHI",proj:{PPR:75,Half:75,Standard:75},adp:35.5,ktcVal:824,note:"LB/S hybrid: 70 tackles 2 sacks"},
+  {name:"Myles Bryant",pos:"DB",age:28.7,team:"NE",proj:{PPR:70,Half:70,Standard:70},adp:38.5,ktcVal:824,note:"Slot CB: 55 tackles 2 INT"},
   // Wave 9 — All 32 NFL DSTs + remaining depth
   // DST — Defenses/Special Teams (all 32 teams)
-  {name:"San Francisco 49ers DST",pos:"DST",age:0,team:"SF",proj:{PPR:148,Half:148,Standard:148},adp:1.5,ktcVal:721,note:"Week 7: Weak DST · SF · fade"},
-  {name:"Dallas Cowboys DST",pos:"DST",age:0,team:"DAL",proj:{PPR:142,Half:142,Standard:142},adp:2.5,ktcVal:700,note:"Week 7: Weak DST · DAL · fade"},
-  {name:"Philadelphia Eagles DST",pos:"DST",age:0,team:"PHI",proj:{PPR:138,Half:138,Standard:138},adp:3.2,ktcVal:680,note:"Week 7: Weak DST · PHI · fade"},
-  {name:"Baltimore Ravens DST",pos:"DST",age:0,team:"BAL",proj:{PPR:135,Half:135,Standard:135},adp:3.8,ktcVal:659,note:"Week 7: Weak DST · BAL · fade"},
-  {name:"Buffalo Bills DST",pos:"DST",age:0,team:"BUF",proj:{PPR:132,Half:132,Standard:132},adp:4.5,ktcVal:639,note:"Week 7: Weak DST · BUF · fade"},
-  {name:"Pittsburgh Steelers DST",pos:"DST",age:0,team:"PIT",proj:{PPR:128,Half:128,Standard:128},adp:5.5,ktcVal:618,note:"Week 7: Weak DST · PIT · fade"},
-  {name:"Minnesota Vikings DST",pos:"DST",age:0,team:"MIN",proj:{PPR:125,Half:125,Standard:125},adp:6.2,ktcVal:597,note:"Week 7: Weak DST · MIN · fade"},
-  {name:"Cleveland Browns DST",pos:"DST",age:0,team:"CLE",proj:{PPR:122,Half:122,Standard:122},adp:7.0,ktcVal:577,note:"Week 7: Weak DST · CLE · fade"},
-  {name:"Houston Texans DST",pos:"DST",age:0,team:"HOU",proj:{PPR:120,Half:120,Standard:120},adp:7.5,ktcVal:567,note:"Week 7: Weak DST · HOU · fade"},
-  {name:"Kansas City Chiefs DST",pos:"DST",age:0,team:"KC",proj:{PPR:118,Half:118,Standard:118},adp:8.2,ktcVal:556,note:"Week 7: Weak DST · KC · fade"},
-  {name:"Green Bay Packers DST",pos:"DST",age:0,team:"GB",proj:{PPR:115,Half:115,Standard:115},adp:9.0,ktcVal:536,note:"Week 7: Weak DST · GB · fade"},
-  {name:"Seattle Seahawks DST",pos:"DST",age:0,team:"SEA",proj:{PPR:112,Half:112,Standard:112},adp:9.8,ktcVal:525,note:"Week 7: Weak DST · SEA · fade"},
-  {name:"Los Angeles Rams DST",pos:"DST",age:0,team:"LAR",proj:{PPR:110,Half:110,Standard:110},adp:10.5,ktcVal:515,note:"Week 7: Weak DST · LAR · fade"},
-  {name:"Indianapolis Colts DST",pos:"DST",age:0,team:"IND",proj:{PPR:108,Half:108,Standard:108},adp:11.2,ktcVal:505,note:"Week 7: Weak DST · IND · fade"},
-  {name:"Tampa Bay Buccaneers DST",pos:"DST",age:0,team:"TB",proj:{PPR:106,Half:106,Standard:106},adp:11.8,ktcVal:494,note:"Week 7: Weak DST · TB · fade"},
-  {name:"Miami Dolphins DST",pos:"DST",age:0,team:"MIA",proj:{PPR:104,Half:104,Standard:104},adp:12.5,ktcVal:474,note:"Week 7: Weak DST · MIA · fade"},
-  {name:"New England Patriots DST",pos:"DST",age:0,team:"NE",proj:{PPR:102,Half:102,Standard:102},adp:13.2,ktcVal:453,note:"Week 7: Weak DST · NE · fade"},
-  {name:"Chicago Bears DST",pos:"DST",age:0,team:"CHI",proj:{PPR:100,Half:100,Standard:100},adp:14.0,ktcVal:443,note:"Week 7: Weak DST · CHI · fade"},
-  {name:"New York Jets DST",pos:"DST",age:0,team:"NYJ",proj:{PPR:98,Half:98,Standard:98},adp:14.8,ktcVal:433,note:"Week 7: Weak DST · NYJ · fade"},
-  {name:"Los Angeles Chargers DST",pos:"DST",age:0,team:"LAC",proj:{PPR:96,Half:96,Standard:96},adp:15.5,ktcVal:422,note:"Week 7: Weak DST · LAC · fade"},
-  {name:"Detroit Lions DST",pos:"DST",age:0,team:"DET",proj:{PPR:94,Half:94,Standard:94},adp:16.2,ktcVal:412,note:"Week 7: Weak DST · DET · fade"},
-  {name:"Denver Broncos DST",pos:"DST",age:0,team:"DEN",proj:{PPR:92,Half:92,Standard:92},adp:17.0,ktcVal:402,note:"Week 7: Weak DST · DEN · fade"},
-  {name:"Atlanta Falcons DST",pos:"DST",age:0,team:"ATL",proj:{PPR:90,Half:90,Standard:90},adp:17.8,ktcVal:391,note:"Week 7: Weak DST · ATL · fade"},
-  {name:"Cincinnati Bengals DST",pos:"DST",age:0,team:"CIN",proj:{PPR:88,Half:88,Standard:88},adp:18.5,ktcVal:381,note:"Week 7: Weak DST · CIN · fade"},
-  {name:"New Orleans Saints DST",pos:"DST",age:0,team:"NO",proj:{PPR:86,Half:86,Standard:86},adp:19.2,ktcVal:371,note:"Week 7: Weak DST · NO · fade"},
-  {name:"Jacksonville Jaguars DST",pos:"DST",age:0,team:"JAX",proj:{PPR:84,Half:84,Standard:84},adp:20.0,ktcVal:361,note:"Week 7: Weak DST · JAX · fade"},
-  {name:"Washington Commanders DST",pos:"DST",age:0,team:"WAS",proj:{PPR:82,Half:82,Standard:82},adp:20.8,ktcVal:350,note:"Week 7: Weak DST · WAS · fade"},
-  {name:"New York Giants DST",pos:"DST",age:0,team:"NYG",proj:{PPR:80,Half:80,Standard:80},adp:21.5,ktcVal:330,note:"Week 7: Weak DST · NYG · fade"},
-  {name:"Arizona Cardinals DST",pos:"DST",age:0,team:"ARI",proj:{PPR:78,Half:78,Standard:78},adp:22.2,ktcVal:309,note:"Week 7: Weak DST · ARI · fade"},
-  {name:"Las Vegas Raiders DST",pos:"DST",age:0,team:"LV",proj:{PPR:76,Half:76,Standard:76},adp:23.0,ktcVal:288,note:"Week 7: Weak DST · LV · fade"},
-  {name:"Tennessee Titans DST",pos:"DST",age:0,team:"TEN",proj:{PPR:74,Half:74,Standard:74},adp:23.8,ktcVal:268,note:"Week 7: Weak DST · TEN · fade"},
-  {name:"Carolina Panthers DST",pos:"DST",age:0,team:"CAR",proj:{PPR:72,Half:72,Standard:72},adp:24.5,ktcVal:247,note:"Week 7: Weak DST · CAR · fade"},
+  {name:"San Francisco 49ers DST",pos:"DST",age:0,team:"SF",proj:{PPR:148,Half:148,Standard:148},adp:1.5,ktcVal:721,note:"Elite DST: Bosa/Warner/Hamilton core"},
+  {name:"Dallas Cowboys DST",pos:"DST",age:0,team:"DAL",proj:{PPR:142,Half:142,Standard:142},adp:2.5,ktcVal:700,note:"Elite DST: Parsons-led dominant unit"},
+  {name:"Philadelphia Eagles DST",pos:"DST",age:0,team:"PHI",proj:{PPR:138,Half:138,Standard:138},adp:3.2,ktcVal:680,note:"Elite front 7: Carter/Davis/Sweat"},
+  {name:"Baltimore Ravens DST",pos:"DST",age:0,team:"BAL",proj:{PPR:135,Half:135,Standard:135},adp:3.8,ktcVal:659,note:"Top-5 DST: Hamilton/Madubuike"},
+  {name:"Buffalo Bills DST",pos:"DST",age:0,team:"BUF",proj:{PPR:132,Half:132,Standard:132},adp:4.5,ktcVal:639,note:"Physical unit: Von/Rousseau edge"},
+  {name:"Pittsburgh Steelers DST",pos:"DST",age:0,team:"PIT",proj:{PPR:128,Half:128,Standard:128},adp:5.5,ktcVal:618,note:"Stout: TJ Watt led dominant EDGE"},
+  {name:"Minnesota Vikings DST",pos:"DST",age:0,team:"MIN",proj:{PPR:125,Half:125,Standard:125},adp:6.2,ktcVal:597,note:"Ascending: Hunter/Pace/Kendricks"},
+  {name:"Cleveland Browns DST",pos:"DST",age:0,team:"CLE",proj:{PPR:122,Half:122,Standard:122},adp:7.0,ktcVal:577,note:"Solid: Garrett elite EDGE anchor"},
+  {name:"Houston Texans DST",pos:"DST",age:0,team:"HOU",proj:{PPR:120,Half:120,Standard:120},adp:7.5,ktcVal:567,note:"Rising: Will Anderson/Hunter DL"},
+  {name:"Kansas City Chiefs DST",pos:"DST",age:0,team:"KC",proj:{PPR:118,Half:118,Standard:118},adp:8.2,ktcVal:556,note:"Solid: Karlaftis/Jones/Spagnuolo"},
+  {name:"Green Bay Packers DST",pos:"DST",age:0,team:"GB",proj:{PPR:115,Half:115,Standard:115},adp:9.0,ktcVal:536,note:"Physical: Gary/Alexander unit"},
+  {name:"Seattle Seahawks DST",pos:"DST",age:0,team:"SEA",proj:{PPR:112,Half:112,Standard:112},adp:9.8,ktcVal:525,note:"Good: Witherspoon CB + LB depth"},
+  {name:"Los Angeles Rams DST",pos:"DST",age:0,team:"LAR",proj:{PPR:110,Half:110,Standard:110},adp:10.5,ktcVal:515,note:"Solid: Young EDGE + Davis CB"},
+  {name:"Indianapolis Colts DST",pos:"DST",age:0,team:"IND",proj:{PPR:108,Half:108,Standard:108},adp:11.2,ktcVal:505,note:"Decent: Kwity Paye led EDGE"},
+  {name:"Tampa Bay Buccaneers DST",pos:"DST",age:0,team:"TB",proj:{PPR:106,Half:106,Standard:106},adp:11.8,ktcVal:494,note:"Decent: David LB veteran anchor"},
+  {name:"Miami Dolphins DST",pos:"DST",age:0,team:"MIA",proj:{PPR:104,Half:104,Standard:104},adp:12.5,ktcVal:474,note:"Average: Ogbah/Chinn depth"},
+  {name:"New England Patriots DST",pos:"DST",age:0,team:"NE",proj:{PPR:102,Half:102,Standard:102},adp:13.2,ktcVal:453,note:"Rebuilding: Gonzalez/Maye emerging"},
+  {name:"Chicago Bears DST",pos:"DST",age:0,team:"CHI",proj:{PPR:100,Half:100,Standard:100},adp:14.0,ktcVal:443,note:"Ascending: Sweat/Edmunds/Hamilton"},
+  {name:"New York Jets DST",pos:"DST",age:0,team:"NYJ",proj:{PPR:98,Half:98,Standard:98},adp:14.8,ktcVal:433,note:"Average: Quinnen Williams anchor"},
+  {name:"Los Angeles Chargers DST",pos:"DST",age:0,team:"LAC",proj:{PPR:96,Half:96,Standard:96},adp:15.5,ktcVal:422,note:"Average: Derwin James versatile"},
+  {name:"Detroit Lions DST",pos:"DST",age:0,team:"DET",proj:{PPR:94,Half:94,Standard:94},adp:16.2,ktcVal:412,note:"Improving: Hutchinson/Branch"},
+  {name:"Denver Broncos DST",pos:"DST",age:0,team:"DEN",proj:{PPR:92,Half:92,Standard:92},adp:17.0,ktcVal:402,note:"Decent: Sanders/Van Ness depth"},
+  {name:"Atlanta Falcons DST",pos:"DST",age:0,team:"ATL",proj:{PPR:90,Half:90,Standard:90},adp:17.8,ktcVal:391,note:"Average: Terrell CB + Andersen LB"},
+  {name:"Cincinnati Bengals DST",pos:"DST",age:0,team:"CIN",proj:{PPR:88,Half:88,Standard:88},adp:18.5,ktcVal:381,note:"Average: Awuzie/Tupou front"},
+  {name:"New Orleans Saints DST",pos:"DST",age:0,team:"NO",proj:{PPR:86,Half:86,Standard:86},adp:19.2,ktcVal:371,note:"Decent: Granderson/Davis depth"},
+  {name:"Jacksonville Jaguars DST",pos:"DST",age:0,team:"JAX",proj:{PPR:84,Half:84,Standard:84},adp:20.0,ktcVal:361,note:"Average: Walker/Campbell EDGE"},
+  {name:"Washington Commanders DST",pos:"DST",age:0,team:"WAS",proj:{PPR:82,Half:82,Standard:82},adp:20.8,ktcVal:350,note:"Average: Payne/Fuller anchors"},
+  {name:"New York Giants DST",pos:"DST",age:0,team:"NYG",proj:{PPR:80,Half:80,Standard:80},adp:21.5,ktcVal:330,note:"Weak: Burns anchor"},
+  {name:"Arizona Cardinals DST",pos:"DST",age:0,team:"ARI",proj:{PPR:78,Half:78,Standard:78},adp:22.2,ktcVal:309,note:"Weak: Young unit rebuilding"},
+  {name:"Las Vegas Raiders DST",pos:"DST",age:0,team:"LV",proj:{PPR:76,Half:76,Standard:76},adp:23.0,ktcVal:288,note:"Weak: Maxx Crosby lone stud"},
+  {name:"Tennessee Titans DST",pos:"DST",age:0,team:"TEN",proj:{PPR:74,Half:74,Standard:74},adp:23.8,ktcVal:268,note:"Weak: rebuilding roster"},
+  {name:"Carolina Panthers DST",pos:"DST",age:0,team:"CAR",proj:{PPR:72,Half:72,Standard:72},adp:24.5,ktcVal:247,note:"Weak: young roster rebuilding"},
   // Wave 8 — Kickers, IDP DL/LB/DB depth, WR youth
   // Kickers
-  {name:"Justin Tucker",pos:"K",age:36.8,team:"BAL",proj:{PPR:172,Half:172,Standard:172},adp:2.0,ktcVal:515,note:"Week 7: Kicker · BAL · 120+ points pace"},
-  {name:"Harrison Butker",pos:"K",age:31.1,team:"KC",proj:{PPR:168,Half:168,Standard:168},adp:2.5,ktcVal:567,note:"Week 7: Kicker · KC · 120+ points pace"},
-  {name:"Brandon Aubrey",pos:"K",age:31.5,team:"DAL",proj:{PPR:165,Half:165,Standard:165},adp:3.0,ktcVal:567,note:"Week 7: Kicker · DAL · 120+ points pace"},
-  {name:"Younghoe Koo",pos:"K",age:32.1,team:"ATL",proj:{PPR:158,Half:158,Standard:158},adp:4.0,ktcVal:515,note:"Week 7: Kicker · ATL · 120+ points pace"},
-  {name:"Evan McPherson",pos:"K",age:27.1,team:"CIN",proj:{PPR:155,Half:155,Standard:155},adp:4.5,ktcVal:515,note:"Week 7: Kicker · CIN · 120+ points pace"},
-  {name:"Jake Moody",pos:"K",age:26.8,team:"SF",proj:{PPR:152,Half:152,Standard:152},adp:5.0,ktcVal:515,note:"Week 7: Kicker · SF · 120+ points pace"},
-  {name:"Tyler Bass",pos:"K",age:29.5,team:"BUF",proj:{PPR:148,Half:148,Standard:148},adp:5.5,ktcVal:494,note:"Week 7: Kicker · BUF · 120+ points pace"},
-  {name:"Daniel Carlson",pos:"K",age:31.6,team:"LV",proj:{PPR:145,Half:145,Standard:145},adp:6.0,ktcVal:474,note:"Week 7: Kicker · LV · 120+ points pace"},
-  {name:"Chris Boswell",pos:"K",age:35.5,team:"PIT",proj:{PPR:142,Half:142,Standard:142},adp:6.5,ktcVal:453,note:"Week 7: Kicker · PIT · 120+ points pace"},
-  {name:"Cairo Santos",pos:"K",age:34.8,team:"CHI",proj:{PPR:138,Half:138,Standard:138},adp:7.0,ktcVal:433,note:"Week 7: Kicker · CHI · 120+ points pace"},
-  {name:"Matt Gay",pos:"K",age:32.5,team:"IND",proj:{PPR:135,Half:135,Standard:135},adp:7.5,ktcVal:453,note:"Week 7: Kicker · IND · 120+ points pace"},
-  {name:"Wil Lutz",pos:"K",age:32.1,team:"DEN",proj:{PPR:132,Half:132,Standard:132},adp:8.0,ktcVal:433,note:"Week 7: Kicker · DEN · 120+ points pace"},
-  {name:"Nick Folk",pos:"K",age:41.8,team:"TEN",proj:{PPR:128,Half:128,Standard:128},adp:8.5,ktcVal:361,note:"Week 7: Kicker · TEN · 120+ points pace"},
-  {name:"Graham Gano",pos:"K",age:39.4,team:"NYG",proj:{PPR:125,Half:125,Standard:125},adp:9.0,ktcVal:361,note:"Week 7: Kicker · NYG · 120+ points pace"},
-  {name:"Dustin Hopkins",pos:"K",age:35.9,team:"CLE",proj:{PPR:122,Half:122,Standard:122},adp:9.5,ktcVal:391,note:"Week 7: Kicker · CLE · 120+ points pace"},
-  {name:"Greg Zuerlein",pos:"K",age:38.7,team:"NYJ",proj:{PPR:118,Half:118,Standard:118},adp:10.0,ktcVal:361,note:"Week 7: Kicker · NYJ · 120+ points pace"},
-  {name:"Jason Sanders",pos:"K",age:30.8,team:"MIA",proj:{PPR:128,Half:128,Standard:128},adp:8.2,ktcVal:453,note:"Week 7: Kicker · MIA · 120+ points pace"},
-  {name:"Greg Joseph",pos:"K",age:32.1,team:"MIN",proj:{PPR:122,Half:122,Standard:122},adp:9.2,ktcVal:391,note:"Week 7: Kicker · MIN · 120+ points pace"},
-  {name:"Ka'imi Fairbairn",pos:"K",age:32.6,team:"HOU",proj:{PPR:135,Half:135,Standard:135},adp:7.2,ktcVal:453,note:"Week 7: Kicker · HOU · 120+ points pace"},
-  {name:"Matt Ammendola",pos:"K",age:29.7,team:"ARI",proj:{PPR:118,Half:118,Standard:118},adp:10.5,ktcVal:309,note:"Week 7: Kicker · ARI · 120+ points pace"},
+  {name:"Justin Tucker",pos:"K",age:36.8,team:"BAL",proj:{PPR:172,Half:172,Standard:172},adp:2.0,ktcVal:515,note:"Elite K: 95% FG% long range"},
+  {name:"Harrison Butker",pos:"K",age:31.1,team:"KC",proj:{PPR:168,Half:168,Standard:168},adp:2.5,ktcVal:567,note:"Elite K: high-volume offense"},
+  {name:"Brandon Aubrey",pos:"K",age:31.5,team:"DAL",proj:{PPR:165,Half:165,Standard:165},adp:3.0,ktcVal:567,note:"Elite accuracy: 95.2% FG%"},
+  {name:"Younghoe Koo",pos:"K",age:32.1,team:"ATL",proj:{PPR:158,Half:158,Standard:158},adp:4.0,ktcVal:515,note:"High volume: 90% FG% reliable"},
+  {name:"Evan McPherson",pos:"K",age:27.1,team:"CIN",proj:{PPR:155,Half:155,Standard:155},adp:4.5,ktcVal:515,note:"Leg cannon: 88% FG% big range"},
+  {name:"Jake Moody",pos:"K",age:26.8,team:"SF",proj:{PPR:152,Half:152,Standard:152},adp:5.0,ktcVal:515,note:"SF volume: 88% FG% Year 3"},
+  {name:"Tyler Bass",pos:"K",age:29.5,team:"BUF",proj:{PPR:148,Half:148,Standard:148},adp:5.5,ktcVal:494,note:"BUF high-volume offense kicker"},
+  {name:"Daniel Carlson",pos:"K",age:31.6,team:"LV",proj:{PPR:145,Half:145,Standard:145},adp:6.0,ktcVal:474,note:"Reliable: 88% FG% consistent"},
+  {name:"Chris Boswell",pos:"K",age:35.5,team:"PIT",proj:{PPR:142,Half:142,Standard:142},adp:6.5,ktcVal:453,note:"Veteran: 87% FG% consistent"},
+  {name:"Cairo Santos",pos:"K",age:34.8,team:"CHI",proj:{PPR:138,Half:138,Standard:138},adp:7.0,ktcVal:433,note:"Veteran reliability: 86% FG%"},
+  {name:"Matt Gay",pos:"K",age:32.5,team:"IND",proj:{PPR:135,Half:135,Standard:135},adp:7.5,ktcVal:453,note:"87% FG% solid range"},
+  {name:"Wil Lutz",pos:"K",age:32.1,team:"DEN",proj:{PPR:132,Half:132,Standard:132},adp:8.0,ktcVal:433,note:"Veteran: 86% FG%"},
+  {name:"Nick Folk",pos:"K",age:41.8,team:"TEN",proj:{PPR:128,Half:128,Standard:128},adp:8.5,ktcVal:361,note:"Veteran: 86% FG% reliable"},
+  {name:"Graham Gano",pos:"K",age:39.4,team:"NYG",proj:{PPR:125,Half:125,Standard:125},adp:9.0,ktcVal:361,note:"Veteran: 85% FG%"},
+  {name:"Dustin Hopkins",pos:"K",age:35.9,team:"CLE",proj:{PPR:122,Half:122,Standard:122},adp:9.5,ktcVal:391,note:"Reliable veteran: 85% FG%"},
+  {name:"Greg Zuerlein",pos:"K",age:38.7,team:"NYJ",proj:{PPR:118,Half:118,Standard:118},adp:10.0,ktcVal:361,note:"Veteran range: 85% FG%"},
+  {name:"Jason Sanders",pos:"K",age:30.8,team:"MIA",proj:{PPR:128,Half:128,Standard:128},adp:8.2,ktcVal:453,note:"MIA high volume: 86% FG%"},
+  {name:"Greg Joseph",pos:"K",age:32.1,team:"MIN",proj:{PPR:122,Half:122,Standard:122},adp:9.2,ktcVal:391,note:"86% FG% solid"},
+  {name:"Ka'imi Fairbairn",pos:"K",age:32.6,team:"HOU",proj:{PPR:135,Half:135,Standard:135},adp:7.2,ktcVal:453,note:"HOU volume: 87% FG%"},
+  {name:"Matt Ammendola",pos:"K",age:29.7,team:"ARI",proj:{PPR:118,Half:118,Standard:118},adp:10.5,ktcVal:309,note:"Depth K: 84% FG%"},
   // IDP DL Wave 8
-  {name:"Robert Quinn",pos:"DL",age:36.3,team:"FA",proj:{PPR:78,Half:78,Standard:78},adp:34.5,ktcVal:412,note:"Week 7: Reserve DL · FA · limited snaps"},
-  {name:"Emmanuel Ogbah",pos:"DL",age:32.8,team:"JAX",proj:{PPR:80,Half:80,Standard:80},adp:32.0,ktcVal:824,note:"Week 7: Reserve DL · JAX · limited snaps"},
-  {name:"Jordan Davis",pos:"DL",age:26.6,team:"PHI",proj:{PPR:82,Half:82,Standard:82},adp:30.5,ktcVal:1854,note:"Week 7: Reserve DL · PHI · limited snaps"},
-  {name:"Calais Campbell",pos:"DL",age:40,team:"BAL",proj:{PPR:72,Half:72,Standard:72},adp:38.0,ktcVal:309,note:"Week 7: Reserve DL · BAL · limited snaps"},
+  {name:"Robert Quinn",pos:"DL",age:36.3,team:"FA",proj:{PPR:78,Half:78,Standard:78},adp:34.5,ktcVal:412,note:"Veteran EDGE: 8 sacks if active"},
+  {name:"Emmanuel Ogbah",pos:"DL",age:32.8,team:"JAX",proj:{PPR:80,Half:80,Standard:80},adp:32.0,ktcVal:824,note:"Signed JAX 1yr/$3.25M · EDGE: 7.5 sacks"},
+  {name:"Jordan Davis",pos:"DL",age:26.6,team:"PHI",proj:{PPR:82,Half:82,Standard:82},adp:30.5,ktcVal:1854,note:"NT Year 4: 40 tackles 4 sacks"},
+  {name:"Calais Campbell",pos:"DL",age:40,team:"BAL",proj:{PPR:72,Half:72,Standard:72},adp:38.0,ktcVal:309,note:"Veteran: 5 sacks · signed 1yr/$5.5M with BAL"},
   // IDP LB Wave 8
-  {name:"Denzel Perryman",pos:"LB",age:33.7,team:"LAC",proj:{PPR:98,Half:98,Standard:98},adp:21.0,ktcVal:721,note:"Week 7: Reserve LB · LAC · limited value"},
-  {name:"Devin White",pos:"LB",age:28.5,team:"LV",proj:{PPR:100,Half:100,Standard:100},adp:20.5,ktcVal:1545,note:"Week 7: Reserve LB · LV · limited value"},
-  {name:"Myles Jack",pos:"LB",age:31,team:"FA",proj:{PPR:88,Half:88,Standard:88},adp:27.5,ktcVal:824,note:"Week 7: Reserve LB · FA · limited value"},
-  {name:"Christian Kirksey",pos:"LB",age:34,team:"FA",proj:{PPR:82,Half:82,Standard:82},adp:32.0,ktcVal:412,note:"Week 7: Reserve LB · FA · limited value"},
+  {name:"Denzel Perryman",pos:"LB",age:33.7,team:"LAC",proj:{PPR:98,Half:98,Standard:98},adp:21.0,ktcVal:721,note:"Re-signed LAC 1yr · thumper: 100 tackles 2 sacks"},
+  {name:"Devin White",pos:"LB",age:28.5,team:"LV",proj:{PPR:100,Half:100,Standard:100},adp:20.5,ktcVal:1545,note:"LV LB: 133 tackles · released by PHI"},
+  {name:"Myles Jack",pos:"LB",age:31,team:"FA",proj:{PPR:88,Half:88,Standard:88},adp:27.5,ktcVal:824,note:"ILB: 88 tackles 2 INT"},
+  {name:"Christian Kirksey",pos:"LB",age:34,team:"FA",proj:{PPR:82,Half:82,Standard:82},adp:32.0,ktcVal:412,note:"Veteran: 82 tackles if active"},
   // IDP DB Wave 8
-  {name:"Kendall Fuller",pos:"DB",age:31.5,team:"FA",proj:{PPR:68,Half:68,Standard:68},adp:42.0,ktcVal:515,note:"Week 7: Reserve DB · FA · depth"},
-  {name:"Rasul Douglas",pos:"DB",age:32,team:"FA",proj:{PPR:75,Half:75,Standard:75},adp:36.0,ktcVal:824,note:"Week 7: Reserve DB · FA · depth"},
-  {name:"C.J. Henderson Jr.",pos:"DB",age:27.9,team:"ATL",proj:{PPR:78,Half:78,Standard:78},adp:33.5,ktcVal:1236,note:"Week 7: Reserve DB · ATL · depth"},
-  {name:"Rock Ya-Sin",pos:"DB",age:30.3,team:"DET",proj:{PPR:75,Half:75,Standard:75},adp:35.5,ktcVal:824,note:"Week 7: Reserve DB · DET · depth"},
+  {name:"Kendall Fuller",pos:"DB",age:31.5,team:"FA",proj:{PPR:68,Half:68,Standard:68},adp:42.0,ktcVal:515,note:"Released by DET Oct 2025 · unsigned FA"},
+  {name:"Rasul Douglas",pos:"DB",age:32,team:"FA",proj:{PPR:75,Half:75,Standard:75},adp:36.0,ktcVal:824,note:"UFA from MIA · CB: 58 tackles 3 INT"},
+  {name:"C.J. Henderson Jr.",pos:"DB",age:27.9,team:"ATL",proj:{PPR:78,Half:78,Standard:78},adp:33.5,ktcVal:1236,note:"Under contract ATL · CB: 55 tackles 2 INT"},
+  {name:"Rock Ya-Sin",pos:"DB",age:30.3,team:"DET",proj:{PPR:75,Half:75,Standard:75},adp:35.5,ktcVal:824,note:"Re-signed DET 1yr/$3.2M · CB: 47 tackles 9 PD"},
   // WR youth Wave 8
-  {name:"Malik Heath",pos:"WR",age:26.4,team:"DET",proj:{PPR:82,Half:75,Standard:68},adp:47.0,ktcVal:309,note:"Week 7: Deep bench · DET · limited value"},
-  {name:"Shedrick Jackson",pos:"WR",age:26.9,team:"SF",proj:{PPR:85,Half:78,Standard:71},adp:45.5,ktcVal:412,note:"Week 7: Deep bench · SF · limited value"},
+  {name:"Malik Heath",pos:"WR",age:26.4,team:"DET",proj:{PPR:82,Half:75,Standard:68},adp:47.0,ktcVal:309,note:"Physical receiver depth"},
+  {name:"Shedrick Jackson",pos:"WR",age:26.9,team:"SF",proj:{PPR:85,Half:78,Standard:71},adp:45.5,ktcVal:412,note:"Speed deep threat"},
   // Wave 6 — additional skill + IDP depth
-  {name:"Mike Williams",pos:"WR",age:31.9,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Seth Williams",pos:"WR",age:26.4,team:"DEN",proj:{PPR:128,Half:118,Standard:108},adp:34.0,ktcVal:515,note:"Week 7: Deep bench · DEN · limited value"},
-  {name:"Emmanuel Sanders",pos:"WR",age:39.5,team:"FA",proj:{PPR:82,Half:75,Standard:68},adp:48.0,ktcVal:103,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Chris Moore",pos:"WR",age:33.2,team:"HOU",proj:{PPR:88,Half:81,Standard:74},adp:45.5,ktcVal:206,note:"Week 7: Deep bench · HOU · limited value"},
-  {name:"Dax Milne",pos:"WR",age:27.2,team:"WAS",proj:{PPR:95,Half:87,Standard:79},adp:43.0,ktcVal:309,note:"Week 7: Deep bench · WAS · limited value"},
-  {name:"Anthony Schwartz",pos:"WR",age:26,team:"CLE",proj:{PPR:88,Half:81,Standard:74},adp:45.0,ktcVal:309,note:"Week 7: Deep bench · CLE · limited value"},
-  {name:"Juwann Winfree",pos:"WR",age:30,team:"NYG",proj:{PPR:72,Half:66,Standard:60},adp:49.0,ktcVal:206,note:"Week 7: Deep bench · NYG · limited value"},
-  {name:"Chosen Anderson",pos:"WR",age:30,team:"FA",proj:{PPR:78,Half:72,Standard:66},adp:47.5,ktcVal:206,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Matt Breida",pos:"RB",age:31.5,team:"NYG",proj:{PPR:98,Half:90,Standard:82},adp:41.0,ktcVal:206,note:"Week 7: Practice squad · NYG · no value"},
-  {name:"Devontae Booker",pos:"RB",age:34.3,team:"LV",proj:{PPR:102,Half:93,Standard:84},adp:39.5,ktcVal:206,note:"Week 7: Practice squad · LV · no value"},
-  {name:"Giovani Bernard",pos:"RB",age:34.8,team:"FA",proj:{PPR:72,Half:66,Standard:60},adp:50.5,ktcVal:155,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Damarea Crockett",pos:"RB",age:28.7,team:"HOU",proj:{PPR:82,Half:75,Standard:68},adp:46.5,ktcVal:309,note:"Week 7: Practice squad · HOU · no value"},
-  {name:"Justin Jackson",pos:"RB",age:30.3,team:"DET",proj:{PPR:88,Half:81,Standard:74},adp:44.5,ktcVal:412,note:"Week 7: Practice squad · DET · no value"},
-  {name:"Jaret Patterson",pos:"RB",age:26.7,team:"WAS",proj:{PPR:78,Half:72,Standard:66},adp:47.0,ktcVal:515,note:"Week 7: Practice squad · WAS · no value"},
-  {name:"DeWayne McBride",pos:"RB",age:25.1,team:"MIN",proj:{PPR:118,Half:108,Standard:98},adp:32.0,ktcVal:1236,note:"Week 7: Practice squad · MIN · no value"},
-  {name:"Trey Benson",pos:"RB",age:24.1,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:824,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Dylan Laube",pos:"RB",age:26.7,team:"NE",proj:{PPR:122,Half:112,Standard:102},adp:30.5,ktcVal:1030,note:"Week 7: Practice squad · NE · no value"},
-  {name:"Isaiah Davis",pos:"RB",age:24.5,team:"NYJ",proj:{PPR:112,Half:103,Standard:94},adp:34.5,ktcVal:2692,note:"Week 7: Bench back/handcuff · NYJ · opportunity stash"},
-  {name:"Luke Laufenberg",pos:"QB",age:26,team:"DAL",proj:{PPR:185,Half:185,Standard:185},adp:36.0,ktcVal:309,note:"Week 7: Deep bench/PS · DAL · limited value"},
-  {name:"Spencer Rattler",pos:"QB",age:25.9,team:"NO",proj:{PPR:245,Half:245,Standard:245},adp:22.5,ktcVal:1858,note:"Week 7: Deep bench/PS · NO · limited value"},
-  {name:"Tanner Mordecai",pos:"QB",age:26.8,team:"MIA",proj:{PPR:192,Half:192,Standard:192},adp:34.5,ktcVal:309,note:"Week 7: Deep bench/PS · MIA · limited value"},
-  {name:"Chris Streveler",pos:"QB",age:31.6,team:"NYJ",proj:{PPR:188,Half:188,Standard:188},adp:35.5,ktcVal:206,note:"Week 7: Deep bench/PS · NYJ · limited value"},
+  {name:"Mike Williams",pos:"WR",age:31.9,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Retired July 2025"},
+  {name:"Seth Williams",pos:"WR",age:26.4,team:"DEN",proj:{PPR:128,Half:118,Standard:108},adp:34.0,ktcVal:515,note:"Physical receiver: 48 rec 580 yds"},
+  {name:"Emmanuel Sanders",pos:"WR",age:39.5,team:"FA",proj:{PPR:82,Half:75,Standard:68},adp:48.0,ktcVal:103,note:"Veteran FA depth"},
+  {name:"Chris Moore",pos:"WR",age:33.2,team:"HOU",proj:{PPR:88,Half:81,Standard:74},adp:45.5,ktcVal:206,note:"Depth receiver"},
+  {name:"Dax Milne",pos:"WR",age:27.2,team:"WAS",proj:{PPR:95,Half:87,Standard:79},adp:43.0,ktcVal:309,note:"Slot depth: 38 rec 420 yds"},
+  {name:"Anthony Schwartz",pos:"WR",age:26,team:"CLE",proj:{PPR:88,Half:81,Standard:74},adp:45.0,ktcVal:309,note:"Speed receiver depth"},
+  {name:"Juwann Winfree",pos:"WR",age:30,team:"NYG",proj:{PPR:72,Half:66,Standard:60},adp:49.0,ktcVal:206,note:"Developmental depth"},
+  {name:"Chosen Anderson",pos:"WR",age:30,team:"FA",proj:{PPR:78,Half:72,Standard:66},adp:47.5,ktcVal:206,note:"Veteran depth receiver"},
+  {name:"Matt Breida",pos:"RB",age:31.5,team:"NYG",proj:{PPR:98,Half:90,Standard:82},adp:41.0,ktcVal:206,note:"Speed back depth"},
+  {name:"Devontae Booker",pos:"RB",age:34.3,team:"LV",proj:{PPR:102,Half:93,Standard:84},adp:39.5,ktcVal:206,note:"Veteran committee: 380 rush 38 rec"},
+  {name:"Giovani Bernard",pos:"RB",age:34.8,team:"FA",proj:{PPR:72,Half:66,Standard:60},adp:50.5,ktcVal:155,note:"Veteran pass-catcher depth"},
+  {name:"Damarea Crockett",pos:"RB",age:28.7,team:"HOU",proj:{PPR:82,Half:75,Standard:68},adp:46.5,ktcVal:309,note:"Power depth back"},
+  {name:"Justin Jackson",pos:"RB",age:30.3,team:"DET",proj:{PPR:88,Half:81,Standard:74},adp:44.5,ktcVal:412,note:"Speed back depth"},
+  {name:"Jaret Patterson",pos:"RB",age:26.7,team:"WAS",proj:{PPR:78,Half:72,Standard:66},adp:47.0,ktcVal:515,note:"Depth back utility"},
+  {name:"DeWayne McBride",pos:"RB",age:25.1,team:"MIN",proj:{PPR:118,Half:108,Standard:98},adp:32.0,ktcVal:1236,note:"Powerful runner: 500 rush depth"},
+  {name:"Trey Benson",pos:"RB",age:24.1,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:824,note:"Waived by ARI during final cuts. Dynasty value collapses — needs a new home to have any relevance."},
+  {name:"Dylan Laube",pos:"RB",age:26.7,team:"NE",proj:{PPR:122,Half:112,Standard:102},adp:30.5,ktcVal:1030,note:"Versatile back: 400 rush 45 rec"},
+  {name:"Isaiah Davis",pos:"RB",age:24.5,team:"NYJ",proj:{PPR:112,Half:103,Standard:94},adp:34.5,ktcVal:2692,note:"Power back depth Year 2"},
+  {name:"Luke Laufenberg",pos:"QB",age:26,team:"DAL",proj:{PPR:185,Half:185,Standard:185},adp:36.0,ktcVal:309,note:"Developmental backup"},
+  {name:"Spencer Rattler",pos:"QB",age:25.9,team:"NO",proj:{PPR:245,Half:245,Standard:245},adp:22.5,ktcVal:1858,note:"Year 2: 3,000 yds 22 TD"},
+  {name:"Tanner Mordecai",pos:"QB",age:26.8,team:"MIA",proj:{PPR:192,Half:192,Standard:192},adp:34.5,ktcVal:309,note:"Deep backup"},
+  {name:"Chris Streveler",pos:"QB",age:31.6,team:"NYJ",proj:{PPR:188,Half:188,Standard:188},adp:35.5,ktcVal:206,note:"Mobile emergency backup"},
   // IDP Wave 5 — elite and rising pass rushers
-  {name:"Jaelan Phillips",pos:"DL",age:27.3,team:"CAR",proj:{PPR:105,Half:105,Standard:105},adp:14.5,ktcVal:2575,note:"Week 7: Reserve DL · CAR · limited snaps"},
-  {name:"Zach Harrison",pos:"DL",age:25,team:"ATL",proj:{PPR:90,Half:90,Standard:90},adp:27.0,ktcVal:1545,note:"Week 7: Reserve DL · ATL · limited snaps"},
-  {name:"Brenton Cox Jr.",pos:"DL",age:26.6,team:"GB",proj:{PPR:88,Half:88,Standard:88},adp:29.5,ktcVal:1545,note:"Week 7: Reserve DL · GB · limited snaps"},
+  {name:"Jaelan Phillips",pos:"DL",age:27.3,team:"CAR",proj:{PPR:105,Half:105,Standard:105},adp:14.5,ktcVal:2575,note:"Signed CAR 4yr/$120M · EDGE: traded MIA→PHI→CAR"},
+  {name:"Zach Harrison",pos:"DL",age:25,team:"ATL",proj:{PPR:90,Half:90,Standard:90},adp:27.0,ktcVal:1545,note:"ATL DE · activated off IR Feb 2026"},
+  {name:"Brenton Cox Jr.",pos:"DL",age:26.6,team:"GB",proj:{PPR:88,Half:88,Standard:88},adp:29.5,ktcVal:1545,note:"Re-signed GB 1yr Mar 2026 · Edge: 7 sacks"},
   // IDP Wave 5 — LBs
-  {name:"Anthony Barr",pos:"LB",age:34.4,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Week 7: Reserve LB · FA · limited value"},
-  {name:"Cory Littleton",pos:"LB",age:32.8,team:"HOU",proj:{PPR:92,Half:92,Standard:92},adp:26.0,ktcVal:824,note:"Week 7: Reserve LB · HOU · limited value"},
-  {name:"Nick Kwiatkoski",pos:"LB",age:33.3,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Week 7: Reserve LB · FA · limited value"},
-  {name:"Malik Harrison",pos:"LB",age:28.5,team:"PIT",proj:{PPR:95,Half:95,Standard:95},adp:23.5,ktcVal:1236,note:"Week 7: Reserve LB · PIT · limited value"},
-  {name:"Quincy Williams",pos:"LB",age:30,team:"CLE",proj:{PPR:105,Half:105,Standard:105},adp:18.0,ktcVal:1854,note:"Week 7: Reserve LB · CLE · limited value"},
-  {name:"Kamu Grugier-Hill",pos:"LB",age:32.3,team:"MIN",proj:{PPR:88,Half:88,Standard:88},adp:29.0,ktcVal:721,note:"Week 7: Reserve LB · MIN · limited value"},
+  {name:"Anthony Barr",pos:"LB",age:34.4,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Retired Aug 2025 · 4x Pro Bowl"},
+  {name:"Cory Littleton",pos:"LB",age:32.8,team:"HOU",proj:{PPR:92,Half:92,Standard:92},adp:26.0,ktcVal:824,note:"HOU LB · coverage: 88 tackles 2 INT"},
+  {name:"Nick Kwiatkoski",pos:"LB",age:33.3,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Effectively retired · last played 2022"},
+  {name:"Malik Harrison",pos:"LB",age:28.5,team:"PIT",proj:{PPR:95,Half:95,Standard:95},adp:23.5,ktcVal:1236,note:"Signed PIT 2yr/$10M · 92 tackles 2 sacks"},
+  {name:"Quincy Williams",pos:"LB",age:30,team:"CLE",proj:{PPR:105,Half:105,Standard:105},adp:18.0,ktcVal:1854,note:"Signed CLE 2yr/$17M · 100 tackles 3 sacks"},
+  {name:"Kamu Grugier-Hill",pos:"LB",age:32.3,team:"MIN",proj:{PPR:88,Half:88,Standard:88},adp:29.0,ktcVal:721,note:"MIN LB depth · 85 tackles 2 sacks"},
   // IDP Wave 5 — DBs
-  {name:"Justin Simmons",pos:"DB",age:32.8,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Week 7: Reserve DB · FA · depth"},
-  {name:"Kevin Byard",pos:"DB",age:33,team:"NE",proj:{PPR:102,Half:102,Standard:102},adp:19.5,ktcVal:824,note:"Week 7: Reserve DB · NE · depth"},
-  {name:"Ronnie Harrison Jr.",pos:"DB",age:29.4,team:"MIA",proj:{PPR:92,Half:92,Standard:92},adp:25.5,ktcVal:927,note:"Week 7: Reserve DB · MIA · depth"},
-  {name:"Dax Hill",pos:"DB",age:25.9,team:"CIN",proj:{PPR:98,Half:98,Standard:98},adp:21.0,ktcVal:2060,note:"Week 7: Reserve DB · CIN · depth"},
-  {name:"Brian Branch",pos:"DB",age:24.8,team:"DET",proj:{PPR:102,Half:102,Standard:102},adp:19.0,ktcVal:3605,note:"Week 7: Reserve DB · DET · depth"},
-  {name:"Nate Hobbs",pos:"DB",age:27.2,team:"SF",proj:{PPR:88,Half:88,Standard:88},adp:29.5,ktcVal:1236,note:"Week 7: Reserve DB · SF · depth"},
-  {name:"Kader Kohou",pos:"DB",age:27.7,team:"KC",proj:{PPR:85,Half:85,Standard:85},adp:31.5,ktcVal:927,note:"Week 7: Reserve DB · KC · depth"},
-  {name:"Diontae Spencer",pos:"DB",age:34.4,team:"NYJ",proj:{PPR:72,Half:72,Standard:72},adp:45.0,ktcVal:309,note:"Week 7: Reserve DB · NYJ · depth"},
+  {name:"Justin Simmons",pos:"DB",age:32.8,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Retired April 2026 · 2x Pro Bowl"},
+  {name:"Kevin Byard",pos:"DB",age:33,team:"NE",proj:{PPR:102,Half:102,Standard:102},adp:19.5,ktcVal:824,note:"Veteran S: 70 tackles 4 INT"},
+  {name:"Ronnie Harrison Jr.",pos:"DB",age:29.4,team:"MIA",proj:{PPR:92,Half:92,Standard:92},adp:25.5,ktcVal:927,note:"Signed MIA 1yr Mar 2026 · S: 75 tackles 2 INT"},
+  {name:"Dax Hill",pos:"DB",age:25.9,team:"CIN",proj:{PPR:98,Half:98,Standard:98},adp:21.0,ktcVal:2060,note:"S: 78 tackles 3 INT Year 4"},
+  {name:"Brian Branch",pos:"DB",age:24.8,team:"DET",proj:{PPR:102,Half:102,Standard:102},adp:19.0,ktcVal:3605,note:"S: 80 tackles 3 INT versatile"},
+  {name:"Nate Hobbs",pos:"DB",age:27.2,team:"SF",proj:{PPR:88,Half:88,Standard:88},adp:29.5,ktcVal:1236,note:"Signed SF 1yr/$4.5M · CB: 68 tackles 2 INT"},
+  {name:"Kader Kohou",pos:"DB",age:27.7,team:"KC",proj:{PPR:85,Half:85,Standard:85},adp:31.5,ktcVal:927,note:"Signed KC 1yr/$1.81M Mar 2026 · CB: 62 tackles 3 INT"},
+  {name:"Diontae Spencer",pos:"DB",age:34.4,team:"NYJ",proj:{PPR:72,Half:72,Standard:72},adp:45.0,ktcVal:309,note:"NYJ WR/returner depth"},
   // Wave 5 — notable missing skill players
-  {name:"Calvin Ridley",pos:"WR",age:31.7,team:"TEN",proj:{PPR:205,Half:189,Standard:173},adp:19.5,ktcVal:2300,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Donovan Peoples-Jones",pos:"WR",age:27.5,team:"FA",proj:{PPR:95,Half:87,Standard:79},adp:42.0,ktcVal:412,note:"Week 7: Deep bench · FA · limited value"},
-  {name:"Jelani Woods",pos:"TE",age:27.9,team:"NYJ",proj:{PPR:115,Half:105,Standard:95},adp:25.5,ktcVal:824,note:"Week 7: Practice squad · NYJ · no value"},
-  {name:"Connor Heyward",pos:"TE",age:27.6,team:"LV",proj:{PPR:88,Half:81,Standard:74},adp:38.0,ktcVal:309,note:"Week 7: Practice squad · LV · no value"},
-  {name:"Irv Smith Jr.",pos:"TE",age:28.1,team:"FA",proj:{PPR:68,Half:62,Standard:56},adp:50.0,ktcVal:206,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Tyler Kroft",pos:"TE",age:33.9,team:"FA",proj:{PPR:68,Half:62,Standard:56},adp:50.0,ktcVal:155,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Evan Hull",pos:"RB",age:25.8,team:"NO",proj:{PPR:98,Half:90,Standard:82},adp:38.0,ktcVal:824,note:"Week 7: Practice squad · NO · no value"},
-  {name:"Drew Sample",pos:"TE",age:30.4,team:"CIN",proj:{PPR:68,Half:62,Standard:56},adp:49.5,ktcVal:412,note:"Week 7: Practice squad · CIN · no value"},
-  {name:"Anthony Firkser",pos:"TE",age:31.5,team:"FA",proj:{PPR:68,Half:62,Standard:56},adp:50.0,ktcVal:206,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Albert Okwuosa",pos:"WR",age:26,team:"NYJ",proj:{PPR:92,Half:84,Standard:76},adp:44.0,ktcVal:309,note:"Week 7: Deep bench · NYJ · limited value"},
-  {name:"Daylen Baldwin",pos:"WR",age:26.8,team:"ATL",proj:{PPR:88,Half:81,Standard:74},adp:46.0,ktcVal:206,note:"Week 7: Deep bench · ATL · limited value"},
-  {name:"Tanner Morgan",pos:"QB",age:27.4,team:"MIN",proj:{PPR:188,Half:188,Standard:188},adp:35.0,ktcVal:309,note:"Week 7: Deep bench/PS · MIN · limited value"},
+  {name:"Calvin Ridley",pos:"WR",age:31.7,team:"TEN",proj:{PPR:205,Half:189,Standard:173},adp:19.5,ktcVal:2300,note:"Veteran: 78 rec 900 yds 8 TD bounce-back"},
+  {name:"Donovan Peoples-Jones",pos:"WR",age:27.5,team:"FA",proj:{PPR:95,Half:87,Standard:79},adp:42.0,ktcVal:412,note:"Released by NO Aug 2025 · unsigned FA"},
+  {name:"Jelani Woods",pos:"TE",age:27.9,team:"NYJ",proj:{PPR:115,Half:105,Standard:95},adp:25.5,ktcVal:824,note:"Athletic: 44 rec 480 yds 5 TD"},
+  {name:"Connor Heyward",pos:"TE",age:27.6,team:"LV",proj:{PPR:88,Half:81,Standard:74},adp:38.0,ktcVal:309,note:"Signed LV 2yr/$5.5M · FB/TE utility"},
+  {name:"Irv Smith Jr.",pos:"TE",age:28.1,team:"FA",proj:{PPR:68,Half:62,Standard:56},adp:50.0,ktcVal:206,note:"Released by HOU · selected UFL Louisville Kings Jan 2026"},
+  {name:"Tyler Kroft",pos:"TE",age:33.9,team:"FA",proj:{PPR:68,Half:62,Standard:56},adp:50.0,ktcVal:155,note:"Veteran blocker/depth"},
+  {name:"Evan Hull",pos:"RB",age:25.8,team:"NO",proj:{PPR:98,Half:90,Standard:82},adp:38.0,ktcVal:824,note:"NO practice squad Oct 2025 · pass-catching back"},
+  {name:"Drew Sample",pos:"TE",age:30.4,team:"CIN",proj:{PPR:68,Half:62,Standard:56},adp:49.5,ktcVal:412,note:"Blocking/depth"},
+  {name:"Anthony Firkser",pos:"TE",age:31.5,team:"FA",proj:{PPR:68,Half:62,Standard:56},adp:50.0,ktcVal:206,note:"FA after DET practice squad 2025"},
+  {name:"Albert Okwuosa",pos:"WR",age:26,team:"NYJ",proj:{PPR:92,Half:84,Standard:76},adp:44.0,ktcVal:309,note:"Developmental receiver"},
+  {name:"Daylen Baldwin",pos:"WR",age:26.8,team:"ATL",proj:{PPR:88,Half:81,Standard:74},adp:46.0,ktcVal:206,note:"Signed ATL · size/depth WR"},
+  {name:"Tanner Morgan",pos:"QB",age:27.4,team:"MIN",proj:{PPR:188,Half:188,Standard:188},adp:35.0,ktcVal:309,note:"Developmental backup"},
   // IDP Wave 4 — more depth DL
-  {name:"Raekwon Davis",pos:"DL",age:29,team:"FA",proj:{PPR:75,Half:75,Standard:75},adp:38.0,ktcVal:515,note:"Week 7: Reserve DL · FA · limited snaps"},
-  {name:"Keeanu Benton",pos:"DL",age:25.1,team:"PIT",proj:{PPR:88,Half:88,Standard:88},adp:31.0,ktcVal:2060,note:"Week 7: Reserve DL · PIT · limited snaps"},
-  {name:"Kobie Turner",pos:"DL",age:27.3,team:"LAR",proj:{PPR:85,Half:85,Standard:85},adp:33.0,ktcVal:1545,note:"Week 7: Reserve DL · LAR · limited snaps"},
-  {name:"Siaki Ika",pos:"DL",age:25.8,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Week 7: Reserve DL · FA · limited snaps"},
-  {name:"Byron Young",pos:"DL",age:25.8,team:"PHI",proj:{PPR:88,Half:88,Standard:88},adp:31.5,ktcVal:2266,note:"Week 7: Reserve DL · PHI · limited snaps"},
-  {name:"BJ Ojulari",pos:"DL",age:24.4,team:"ARI",proj:{PPR:88,Half:88,Standard:88},adp:31.0,ktcVal:2884,note:"Week 7: Reserve DL · ARI · limited snaps"},
-  {name:"Jonah Williams",pos:"DL",age:25,team:"NO",proj:{PPR:82,Half:82,Standard:82},adp:34.0,ktcVal:1236,note:"Week 7: Reserve DL · NO · limited snaps"},
-  {name:"Isaiah McGuire",pos:"DL",age:25.1,team:"CLE",proj:{PPR:80,Half:80,Standard:80},adp:35.0,ktcVal:1030,note:"Week 7: Reserve DL · CLE · limited snaps"},
-  {name:"Habakkuk Baldonado",pos:"DL",age:27,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Week 7: Reserve DL · FA · limited snaps"},
-  {name:"Thomas Booker",pos:"DL",age:26.8,team:"LV",proj:{PPR:80,Half:80,Standard:80},adp:35.5,ktcVal:927,note:"Week 7: Reserve DL · LV · limited snaps"},
+  {name:"Raekwon Davis",pos:"DL",age:29,team:"FA",proj:{PPR:75,Half:75,Standard:75},adp:38.0,ktcVal:515,note:"Released by IND Mar 2025 · unsigned FA"},
+  {name:"Keeanu Benton",pos:"DL",age:25.1,team:"PIT",proj:{PPR:88,Half:88,Standard:88},adp:31.0,ktcVal:2060,note:"Year 3: 48 tackles 4 sacks"},
+  {name:"Kobie Turner",pos:"DL",age:27.3,team:"LAR",proj:{PPR:85,Half:85,Standard:85},adp:33.0,ktcVal:1545,note:"Interior: 46 tackles 3 sacks"},
+  {name:"Siaki Ika",pos:"DL",age:25.8,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Waived by CLE Aug 2024 · UFL Dallas Renegades 2026"},
+  {name:"Byron Young",pos:"DL",age:25.8,team:"PHI",proj:{PPR:88,Half:88,Standard:88},adp:31.5,ktcVal:2266,note:"PHI DT · 37 tackles 2.5 sacks 2025 · cut by LV"},
+  {name:"BJ Ojulari",pos:"DL",age:24.4,team:"ARI",proj:{PPR:88,Half:88,Standard:88},adp:31.0,ktcVal:2884,note:"ARI EDGE · 2nd rd 2023 · 8 sacks upside"},
+  {name:"Jonah Williams",pos:"DL",age:25,team:"NO",proj:{PPR:82,Half:82,Standard:82},adp:34.0,ktcVal:1236,note:"Signed NO · EDGE: 7 sacks 10 TFL"},
+  {name:"Isaiah McGuire",pos:"DL",age:25.1,team:"CLE",proj:{PPR:80,Half:80,Standard:80},adp:35.0,ktcVal:1030,note:"CLE EDGE · 6 sacks developmental"},
+  {name:"Habakkuk Baldonado",pos:"DL",age:27,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Signed CFL Ottawa Redblacks Feb 2026"},
+  {name:"Thomas Booker",pos:"DL",age:26.8,team:"LV",proj:{PPR:80,Half:80,Standard:80},adp:35.5,ktcVal:927,note:"Traded PHI→LV · Interior: 44 tackles 2 sacks"},
   // IDP Wave 4 — more LBs
-  {name:"Cam Curl",pos:"LB",age:26,team:"WAS",proj:{PPR:105,Half:105,Standard:105},adp:18.0,ktcVal:2266,note:"Week 7: Reserve LB · WAS · limited value"},
-  {name:"Derek Stingley Jr.",pos:"DB",age:25.2,team:"HOU",proj:{PPR:110,Half:110,Standard:110},adp:15.5,ktcVal:3605,note:"Week 7: Reserve DB · HOU · depth"},
-  {name:"Stephon Gilmore",pos:"DB",age:35.9,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Week 7: Reserve DB · FA · depth"},
-  {name:"Denzel Ward",pos:"DB",age:29.3,team:"CLE",proj:{PPR:102,Half:102,Standard:102},adp:18.5,ktcVal:2575,note:"Week 7: Reserve DB · CLE · depth"},
-  {name:"Eli Apple",pos:"DB",age:31.1,team:"SF",proj:{PPR:88,Half:88,Standard:88},adp:30.5,ktcVal:721,note:"Week 7: Reserve DB · SF · depth"},
-  {name:"Trayvon Mullen",pos:"DB",age:28.9,team:"BAL",proj:{PPR:85,Half:85,Standard:85},adp:32.0,ktcVal:824,note:"Week 7: Reserve DB · BAL · depth"},
-  {name:"Trent McDuffie",pos:"DB",age:26,team:"LAR",proj:{PPR:108,Half:108,Standard:108},adp:16.5,ktcVal:3914,note:"Week 7: Reserve DB · LAR · depth"},
-  {name:"Kelee Ringo",pos:"DB",age:24.2,team:"PHI",proj:{PPR:92,Half:92,Standard:92},adp:26.0,ktcVal:2060,note:"Week 7: Reserve DB · PHI · depth"},
-  {name:"Joey Porter Jr.",pos:"DB",age:26.1,team:"PIT",proj:{PPR:98,Half:98,Standard:98},adp:21.5,ktcVal:2266,note:"Week 7: Reserve DB · PIT · depth"},
+  {name:"Cam Curl",pos:"LB",age:26,team:"WAS",proj:{PPR:105,Half:105,Standard:105},adp:18.0,ktcVal:2266,note:"Hybrid LB/S: 100 tackles 2 INT"},
+  {name:"Derek Stingley Jr.",pos:"DB",age:25.2,team:"HOU",proj:{PPR:110,Half:110,Standard:110},adp:15.5,ktcVal:3605,note:"CB: 68 tackles 5 INT"},
+  {name:"Stephon Gilmore",pos:"DB",age:35.9,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Retired April 2026 · DPOY 2019"},
+  {name:"Denzel Ward",pos:"DB",age:29.3,team:"CLE",proj:{PPR:102,Half:102,Standard:102},adp:18.5,ktcVal:2575,note:"CB: 62 tackles 4 INT"},
+  {name:"Eli Apple",pos:"DB",age:31.1,team:"SF",proj:{PPR:88,Half:88,Standard:88},adp:30.5,ktcVal:721,note:"Signed SF futures Jan 2026 · CB: 58 tackles 2 INT"},
+  {name:"Trayvon Mullen",pos:"DB",age:28.9,team:"BAL",proj:{PPR:85,Half:85,Standard:85},adp:32.0,ktcVal:824,note:"Signed BAL 1yr · CB: 55 tackles 2 INT"},
+  {name:"Trent McDuffie",pos:"DB",age:26,team:"LAR",proj:{PPR:108,Half:108,Standard:108},adp:16.5,ktcVal:3914,note:"CB: 68 tackles 4 INT elite · traded to LAR"},
+  {name:"Kelee Ringo",pos:"DB",age:24.2,team:"PHI",proj:{PPR:92,Half:92,Standard:92},adp:26.0,ktcVal:2060,note:"Year 3 CB: 60 tackles 3 INT upside"},
+  {name:"Joey Porter Jr.",pos:"DB",age:26.1,team:"PIT",proj:{PPR:98,Half:98,Standard:98},adp:21.5,ktcVal:2266,note:"CB: 64 tackles 3 INT Year 3"},
   // Missing RBs
-  {name:"Audric Estime",pos:"RB",age:23,team:"NO",proj:{PPR:162,Half:148,Standard:134},adp:21.5,ktcVal:3090,note:"Week 7: Bench back/handcuff · limited upside · hold for opportunity"},
-  {name:"Alex Mattison",pos:"RB",age:28,team:"FA",proj:{PPR:155,Half:142,Standard:129},adp:23.5,ktcVal:1017,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Abram Smith",pos:"RB",age:28,team:"NO",proj:{PPR:108,Half:99,Standard:90},adp:36.8,ktcVal:515,note:"Week 7: Practice squad · NO · no value"},
-  {name:"Latavius Murray",pos:"RB",age:36.6,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Week 7: Practice squad · FA · no value"},
-  {name:"Jakob Johnson",pos:"RB",age:31.7,team:"FA",proj:{PPR:62,Half:57,Standard:52},adp:50.0,ktcVal:155,note:"Week 7: Practice squad · FA · no value"},
+  {name:"Audric Estime",pos:"RB",age:23,team:"NO",proj:{PPR:162,Half:148,Standard:134},adp:21.5,ktcVal:3090,note:"Year 2: 700 rush 5 TD power back"},
+  {name:"Alex Mattison",pos:"RB",age:28,team:"FA",proj:{PPR:155,Half:142,Standard:129},adp:23.5,ktcVal:1017,note:"FA · unsigned after MIA release"},
+  {name:"Abram Smith",pos:"RB",age:28,team:"NO",proj:{PPR:108,Half:99,Standard:90},adp:36.8,ktcVal:515,note:"Committee depth back"},
+  {name:"Latavius Murray",pos:"RB",age:36.6,team:"FA",proj:{PPR:0,Half:0,Standard:0},adp:99.0,ktcVal:0,note:"Retired July 2025 · 10yr career · Pro Bowl 2015"},
+  {name:"Jakob Johnson",pos:"RB",age:31.7,team:"FA",proj:{PPR:62,Half:57,Standard:52},adp:50.0,ktcVal:155,note:"Released by HOU Jan 2026 · FB unsigned"},
   // Missing WRs
-  {name:"Adonai Mitchell",pos:"WR",age:23.9,team:"NYJ",proj:{PPR:188,Half:174,Standard:160},adp:21.5,ktcVal:3605,note:"Week 7: Bench WR · NYJ · depth play"},
-  {name:"Luke McCaffrey",pos:"WR",age:25.4,team:"WAS",proj:{PPR:175,Half:161,Standard:147},adp:24.5,ktcVal:2575,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Demario Douglas",pos:"WR",age:25.7,team:"NE",proj:{PPR:162,Half:149,Standard:136},adp:27.0,ktcVal:2604,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Jauan Jennings",pos:"WR",age:29.1,team:"FA",proj:{PPR:158,Half:145,Standard:132},adp:27.5,ktcVal:3033,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Terry McLaurin",pos:"WR",age:31,team:"WAS",proj:{PPR:175,Half:161,Standard:147},adp:24.0,ktcVal:4454,note:"Week 7: Emerging WR · 80+ rec 900+ yds · breakout ceiling"},
-  {name:"Jalen Reagor",pos:"WR",age:27.7,team:"LAC",proj:{PPR:108,Half:99,Standard:90},adp:39.0,ktcVal:309,note:"Week 7: Deep bench · LAC · limited value"},
+  {name:"Adonai Mitchell",pos:"WR",age:23.9,team:"NYJ",proj:{PPR:188,Half:174,Standard:160},adp:21.5,ktcVal:3605,note:"Traded to NYJ (Sauce Gardner deal) · Year 2 leap: 72 rec 820 yds 7 TD"},
+  {name:"Luke McCaffrey",pos:"WR",age:25.4,team:"WAS",proj:{PPR:175,Half:161,Standard:147},adp:24.5,ktcVal:2575,note:"Versatile slot: 68 rec 760 yds"},
+  {name:"Demario Douglas",pos:"WR",age:25.7,team:"NE",proj:{PPR:162,Half:149,Standard:136},adp:27.0,ktcVal:2604,note:"Slot: 64 rec 720 yds YAC machine"},
+  {name:"Jauan Jennings",pos:"WR",age:29.1,team:"FA",proj:{PPR:158,Half:145,Standard:132},adp:27.5,ktcVal:3033,note:"Released SF · unsigned FA · red zone target"},
+  {name:"Terry McLaurin",pos:"WR",age:31,team:"WAS",proj:{PPR:175,Half:161,Standard:147},adp:24.0,ktcVal:4454,note:"WAS WR1: 85 rec 1050 yds 7 TD"},
+  {name:"Jalen Reagor",pos:"WR",age:27.7,team:"LAC",proj:{PPR:108,Half:99,Standard:90},adp:39.0,ktcVal:309,note:"Re-signed LAC · return/depth role"},
   // Missing TEs
-  {name:"Luke Schoonmaker",pos:"TE",age:27.9,team:"DAL",proj:{PPR:112,Half:103,Standard:94},adp:26.5,ktcVal:1490,note:"Week 7: Practice squad · DAL · no value"},
-  {name:"Dalton Kincaid",pos:"TE",age:26.9,team:"BUF",proj:{PPR:118,Half:108,Standard:98},adp:8.8,ktcVal:5400,note:"Week 7: 70 rec 750 yds 7 TD · BUF TE1 in Allen system · age 24 upside, build for future"},
-  {name:"Nate Wieting",pos:"TE",age:29.5,team:"DET",proj:{PPR:75,Half:69,Standard:63},adp:45.0,ktcVal:309,note:"Week 7: Practice squad · DET · no value"},
+  {name:"Luke Schoonmaker",pos:"TE",age:27.9,team:"DAL",proj:{PPR:112,Half:103,Standard:94},adp:26.5,ktcVal:1490,note:"Year 3: 44 rec 460 yds 4 TD"},
+  {name:"Dalton Kincaid",pos:"TE",age:26.9,team:"BUF",proj:{PPR:118,Half:108,Standard:98},adp:24.8,ktcVal:5100,note:"Wk1: 5/130 yds · Receiving TE: 48 rec 500 yds"},
+  {name:"Nate Wieting",pos:"TE",age:29.5,team:"DET",proj:{PPR:75,Half:69,Standard:63},adp:45.0,ktcVal:309,note:"Blocking/depth"},
   // 2026 Rookies — post-draft teams assigned (April 26 2026)
-  {name:"Fernando Mendoza",pos:"QB",age:22.9,team:"LV",proj:{PPR:265,Half:265,Standard:265},adp:1.1,ktcVal:4738,note:"Week 7: Emerging QB · 2,800+ yds 20+ TD · Year 2 progression"},
-  {name:"Ty Simpson",pos:"QB",age:23.7,team:"LAR",proj:{PPR:235,Half:235,Standard:235},adp:2.5,ktcVal:3270,note:"Week 7: Backup/developmental QB · limited starting role · dynasty hold"},
-  {name:"Carson Beck",pos:"QB",age:23.8,team:"ARI",proj:{PPR:220,Half:220,Standard:220},adp:3.5,ktcVal:3605,note:"Week 7: Backup/developmental QB · limited starting role · dynasty hold"},
-  {name:"Drew Allar",pos:"QB",age:22.5,team:"PIT",proj:{PPR:210,Half:210,Standard:210},adp:3.8,ktcVal:3502,note:"Week 7: Backup/developmental QB · limited starting role · dynasty hold"},
-  {name:"Jeremiyah Love",pos:"RB",age:21.2,team:"ARI",proj:{PPR:270,Half:250,Standard:230},adp:1.1,ktcVal:7869,note:"Week 7: 18 carries 89 yds · lead back role confirmed, 2025 pick 22, breakout potential, age 21"},
-  {name:"Jadarian Price",pos:"RB",age:22.9,team:"SEA",proj:{PPR:195,Half:180,Standard:165},adp:2.5,ktcVal:5826,note:"Week 7: Emerging RB · 900+ rush 40+ rec · breakout trajectory"},
-  {name:"Kaelon Black",pos:"RB",age:24.9,team:"SF",proj:{PPR:130,Half:120,Standard:110},adp:4.5,ktcVal:2266,note:"Week 7: Bench back/handcuff · SF · opportunity stash"},
-  {name:"Carnell Tate",pos:"WR",age:21.6,team:"TEN",proj:{PPR:160,Half:147,Standard:134},adp:1.2,ktcVal:6611,note:"Week 7: Strong WR1 · 100+ rec 1,200+ yds 10+ TD · consistent target"},
-  {name:"Makai Lemon",pos:"WR",age:22.2,team:"PHI",proj:{PPR:148,Half:136,Standard:124},adp:1.4,ktcVal:5906,note:"Week 7: Emerging WR · 80+ rec 900+ yds · breakout ceiling"},
-  {name:"Jordyn Tyson",pos:"WR",age:22,team:"NO",proj:{PPR:132,Half:121,Standard:110},adp:2.1,ktcVal:6250,note:"Week 7: Strong WR1 · 100+ rec 1,200+ yds 10+ TD · consistent target"},
-  {name:"Omar Cooper Jr.",pos:"WR",age:22.7,team:"NYJ",proj:{PPR:138,Half:126,Standard:114},adp:2.0,ktcVal:4873,note:"Week 7: Emerging WR · 80+ rec 900+ yds · breakout ceiling"},
-  {name:"KC Concepcion",pos:"WR",age:21.9,team:"CLE",proj:{PPR:115,Half:106,Standard:97},adp:3.0,ktcVal:5248,note:"Week 7: Emerging WR · 80+ rec 900+ yds · breakout ceiling"},
-  {name:"Denzel Boston",pos:"WR",age:22.7,team:"CLE",proj:{PPR:125,Half:115,Standard:105},adp:2.2,ktcVal:4511,note:"Week 7: Emerging WR · 80+ rec 900+ yds · breakout ceiling"},
-  {name:"De'Zhaun Stribling",pos:"WR",age:23.7,team:"SF",proj:{PPR:145,Half:133,Standard:121},adp:2.2,ktcVal:3800,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Germie Bernard",pos:"WR",age:22.7,team:"PIT",proj:{PPR:112,Half:103,Standard:94},adp:3.2,ktcVal:3484,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Zachariah Branch",pos:"WR",age:22.4,team:"ATL",proj:{PPR:108,Half:99,Standard:90},adp:3.5,ktcVal:3605,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Antonio Williams",pos:"WR",age:22.1,team:"WAS",proj:{PPR:100,Half:92,Standard:84},adp:4.0,ktcVal:2888,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Kenyon Sadiq",pos:"TE",age:21.5,team:"NYJ",proj:{PPR:118,Half:108,Standard:98},adp:1.3,ktcVal:4896,note:"Week 7: Emerging TE · 70+ rec 750+ yds · breakout potential"},
-  {name:"Eli Stowers",pos:"TE",age:23.4,team:"PHI",proj:{PPR:105,Half:96,Standard:87},adp:2.5,ktcVal:4430,note:"Week 7: Emerging TE · 70+ rec 750+ yds · breakout potential"},
-  {name:"Max Klare",pos:"TE",age:23.1,team:"LAR",proj:{PPR:100,Half:92,Standard:84},adp:2.8,ktcVal:3296,note:"Week 7: TE2/bench · limited role · streaming option"},
-  {name:"Nate Boerkircher",pos:"TE",age:25,team:"JAX",proj:{PPR:95,Half:87,Standard:79},adp:3.2,ktcVal:2884,note:"Week 7: Bench TE · JAX · stream candidate"},
-  {name:"Marlin Klein",pos:"TE",age:23.9,team:"HOU",proj:{PPR:90,Half:82,Standard:74},adp:3.5,ktcVal:2678,note:"Week 7: Bench TE · HOU · stream candidate"},
+  {name:"Fernando Mendoza",pos:"QB",age:22.9,team:"LV",proj:{PPR:265,Half:265,Standard:265},adp:1.1,ktcVal:4738,note:"2026 #1 overall pick · LV Raiders · elite arm talent SF dynasty asset"},
+  {name:"Ty Simpson",pos:"QB",age:23.7,team:"LAR",proj:{PPR:235,Half:235,Standard:235},adp:2.5,ktcVal:3270,note:"2026 pick 1-13 · LAR Rams · dual-threat upside"},
+  {name:"Carson Beck",pos:"QB",age:23.8,team:"ARI",proj:{PPR:220,Half:220,Standard:220},adp:3.5,ktcVal:3605,note:"2026 pick 3-1 · ARI Cardinals · veteran pocket passer"},
+  {name:"Drew Allar",pos:"QB",age:22.5,team:"PIT",proj:{PPR:210,Half:210,Standard:210},adp:3.8,ktcVal:3502,note:"2026 pick 3-12 · PIT Steelers · pocket passer solid upside"},
+  {name:"Jeremiyah Love",pos:"RB",age:21.2,team:"ARI",proj:{PPR:270,Half:250,Standard:230},adp:1.1,ktcVal:7869,note:"2026 pick 1-3 · High ankle sprain — trending toward Week 1 but not guaranteed. Elite dynasty RB1 long-term. Conner on IR opens path."},
+  {name:"Jadarian Price",pos:"RB",age:22.9,team:"SEA",proj:{PPR:195,Half:180,Standard:165},adp:2.5,ktcVal:5826,note:"2026 pick 1-32 · SEA Seahawks · three-down potential great landing spot"},
+  {name:"Kaelon Black",pos:"RB",age:24.9,team:"SF",proj:{PPR:130,Half:120,Standard:110},adp:4.5,ktcVal:2266,note:"2026 pick 3-26 · SF 49ers · dynamic in Kyle Shanahan system"},
+  {name:"Carnell Tate",pos:"WR",age:21.6,team:"TEN",proj:{PPR:160,Half:147,Standard:134},adp:1.2,ktcVal:6611,note:"2026 pick 1-4 · TEN Titans · dynasty WR1 ceiling"},
+  {name:"Makai Lemon",pos:"WR",age:22.2,team:"PHI",proj:{PPR:148,Half:136,Standard:124},adp:1.4,ktcVal:5906,note:"2026 pick 1-20 · PHI Eagles · elite athleticism great offensive system"},
+  {name:"Jordyn Tyson",pos:"WR",age:22,team:"NO",proj:{PPR:132,Half:121,Standard:110},adp:2.1,ktcVal:6250,note:"2026 pick 1-8 · NO Saints · big-play vertical threat"},
+  {name:"Omar Cooper Jr.",pos:"WR",age:22.7,team:"NYJ",proj:{PPR:138,Half:126,Standard:114},adp:2.0,ktcVal:4873,note:"2026 pick 1-30 · NYJ Jets · elite YAC and separation"},
+  {name:"KC Concepcion",pos:"WR",age:21.9,team:"CLE",proj:{PPR:115,Half:106,Standard:97},adp:3.0,ktcVal:5248,note:"2026 pick 1-24 · CLE Browns · explosive slot weapon"},
+  {name:"Denzel Boston",pos:"WR",age:22.7,team:"CLE",proj:{PPR:125,Half:115,Standard:105},adp:2.2,ktcVal:4511,note:"2026 pick 2-7 · CLE Browns · big body possession receiver"},
+  {name:"De'Zhaun Stribling",pos:"WR",age:23.7,team:"SF",proj:{PPR:145,Half:133,Standard:121},adp:2.2,ktcVal:3800,note:"2026 pick 2-1 · SF · Pearsall injury opens path to WR2 role · elite athleticism"},
+  {name:"Germie Bernard",pos:"WR",age:22.7,team:"PIT",proj:{PPR:112,Half:103,Standard:94},adp:3.2,ktcVal:3484,note:"2026 pick 2-15 · PIT Steelers · slot receiver solid route runner"},
+  {name:"Zachariah Branch",pos:"WR",age:22.4,team:"ATL",proj:{PPR:108,Half:99,Standard:90},adp:3.5,ktcVal:3605,note:"2026 pick 3-15 · ATL Falcons · explosive speedster with Tua upside"},
+  {name:"Antonio Williams",pos:"WR",age:22.1,team:"WAS",proj:{PPR:100,Half:92,Standard:84},adp:4.0,ktcVal:2888,note:"2026 pick 3-7 · WAS Commanders · depth flier with upside"},
+  {name:"Kenyon Sadiq",pos:"TE",age:21.5,team:"NYJ",proj:{PPR:118,Half:108,Standard:98},adp:1.3,ktcVal:4896,note:"2026 pick 1-16 · NYJ Jets · top TE prospect elite upside"},
+  {name:"Eli Stowers",pos:"TE",age:23.4,team:"PHI",proj:{PPR:105,Half:96,Standard:87},adp:2.5,ktcVal:4430,note:"2026 pick 2-22 · PHI Eagles · great landing spot in Dallas Goedert role"},
+  {name:"Max Klare",pos:"TE",age:23.1,team:"LAR",proj:{PPR:100,Half:92,Standard:84},adp:2.8,ktcVal:3296,note:"2026 pick 2-29 · LAR Rams · big athletic TE with upside in McVay offense"},
+  {name:"Nate Boerkircher",pos:"TE",age:25,team:"JAX",proj:{PPR:95,Half:87,Standard:79},adp:3.2,ktcVal:2884,note:"2026 pick 2-24 · JAX Jaguars · solid receiving TE"},
+  {name:"Marlin Klein",pos:"TE",age:23.9,team:"HOU",proj:{PPR:90,Half:82,Standard:74},adp:3.5,ktcVal:2678,note:"2026 pick 2-27 · HOU Texans · developmental TE in strong offense"},
   // 2026 IDP Rookies
-  {name:"Sonny Styles",pos:"LB",age:21.8,team:"WAS",proj:{PPR:118,Half:118,Standard:118},adp:1.1,ktcVal:5665,note:"Week 7: Strong defender · WAS starter · consistent snap share"},
-  {name:"David Bailey",pos:"DL",age:23,team:"NYJ",proj:{PPR:108,Half:108,Standard:108},adp:1.1,ktcVal:5150,note:"Week 7: Strong defender · NYJ starter · consistent snap share"},
-  {name:"Arvell Reese",pos:"LB",age:21,team:"NYG",proj:{PPR:102,Half:102,Standard:102},adp:1.2,ktcVal:4944,note:"Week 7: Reserve LB · NYG · limited value"},
-  {name:"Rueben Bain Jr.",pos:"DL",age:22,team:"TB",proj:{PPR:98,Half:98,Standard:98},adp:1.2,ktcVal:4635,note:"Week 7: Reserve DL · TB · limited snaps"},
-  {name:"Keldric Faulk",pos:"DL",age:22,team:"TEN",proj:{PPR:90,Half:90,Standard:90},adp:1.5,ktcVal:4120,note:"Week 7: Reserve DL · TEN · limited snaps"},
-  {name:"Akheem Mesidor",pos:"DL",age:25.4,team:"LAC",proj:{PPR:88,Half:88,Standard:88},adp:1.6,ktcVal:3914,note:"Week 7: Reserve DL · LAC · limited snaps"},
-  {name:"T.J. Parker",pos:"DL",age:21.9,team:"BUF",proj:{PPR:92,Half:92,Standard:92},adp:2.1,ktcVal:3296,note:"Week 7: Reserve DL · BUF · limited snaps"},
-  {name:"Cashius Howell",pos:"DL",age:23.4,team:"CIN",proj:{PPR:88,Half:88,Standard:88},adp:2.3,ktcVal:3090,note:"Week 7: Reserve DL · CIN · limited snaps"},
-  {name:"Caleb Downs",pos:"DB",age:21.7,team:"DAL",proj:{PPR:108,Half:108,Standard:108},adp:1.3,ktcVal:5150,note:"Week 7: Strong defender · DAL starter · consistent snap share"},
-  {name:"Mansoor Delane",pos:"DB",age:22.7,team:"KC",proj:{PPR:95,Half:95,Standard:95},adp:1.3,ktcVal:4120,note:"Week 7: Reserve DB · KC · depth"},
-  {name:"Dillon Thieneman",pos:"DB",age:22.1,team:"CHI",proj:{PPR:92,Half:92,Standard:92},adp:1.5,ktcVal:3914,note:"Week 7: Reserve DB · CHI · depth"},
-  {name:"CJ Allen",pos:"LB",age:21.5,team:"IND",proj:{PPR:112,Half:112,Standard:112},adp:2.0,ktcVal:3605,note:"Week 7: Reserve LB · IND · limited value"},
-  {name:"Anthony Hill Jr.",pos:"LB",age:21.5,team:"TEN",proj:{PPR:105,Half:105,Standard:105},adp:2.2,ktcVal:3296,note:"Week 7: Reserve LB · TEN · limited value"},
+  {name:"Sonny Styles",pos:"LB",age:21.8,team:"WAS",proj:{PPR:118,Half:118,Standard:118},adp:1.1,ktcVal:5665,note:"2026 pick 1-7 · WAS Commanders · elite coverage and pass rush"},
+  {name:"David Bailey",pos:"DL",age:23,team:"NYJ",proj:{PPR:108,Half:108,Standard:108},adp:1.1,ktcVal:5150,note:"2026 pick 1-2 · NYJ Jets · 12+ sack ceiling"},
+  {name:"Arvell Reese",pos:"LB",age:21,team:"NYG",proj:{PPR:102,Half:102,Standard:102},adp:1.2,ktcVal:4944,note:"2026 pick 1-5 · NYG Giants · explosive first step"},
+  {name:"Rueben Bain Jr.",pos:"DL",age:22,team:"TB",proj:{PPR:98,Half:98,Standard:98},adp:1.2,ktcVal:4635,note:"2026 pick 1-15 · TB Buccaneers · elite motor elite pass rusher"},
+  {name:"Keldric Faulk",pos:"DL",age:22,team:"TEN",proj:{PPR:90,Half:90,Standard:90},adp:1.5,ktcVal:4120,note:"2026 pick 1-31 · TEN Titans · edge rusher with high motor"},
+  {name:"Akheem Mesidor",pos:"DL",age:25.4,team:"LAC",proj:{PPR:88,Half:88,Standard:88},adp:1.6,ktcVal:3914,note:"2026 pick 1-22 · LAC Chargers · disruptive interior pass rusher"},
+  {name:"T.J. Parker",pos:"DL",age:21.9,team:"BUF",proj:{PPR:92,Half:92,Standard:92},adp:2.1,ktcVal:3296,note:"2026 pick 2-3 · BUF Bills · 10+ sack upside strong landing spot"},
+  {name:"Cashius Howell",pos:"DL",age:23.4,team:"CIN",proj:{PPR:88,Half:88,Standard:88},adp:2.3,ktcVal:3090,note:"2026 pick 2-9 · CIN Bengals · explosive edge rusher"},
+  {name:"Caleb Downs",pos:"DB",age:21.7,team:"DAL",proj:{PPR:108,Half:108,Standard:108},adp:1.3,ktcVal:5150,note:"2026 pick 1-11 · DAL Cowboys · ball-hawk elite tackler"},
+  {name:"Mansoor Delane",pos:"DB",age:22.7,team:"KC",proj:{PPR:95,Half:95,Standard:95},adp:1.3,ktcVal:4120,note:"2026 pick 1-6 · KC Chiefs · long press coverage specialist"},
+  {name:"Dillon Thieneman",pos:"DB",age:22.1,team:"CHI",proj:{PPR:92,Half:92,Standard:92},adp:1.5,ktcVal:3914,note:"2026 pick 1-25 · CHI Bears · rangy safety excellent instincts"},
+  {name:"CJ Allen",pos:"LB",age:21.5,team:"IND",proj:{PPR:112,Half:112,Standard:112},adp:2.0,ktcVal:3605,note:"2026 pick 2-21 · IND Colts · sideline-to-sideline tackling machine"},
+  {name:"Anthony Hill Jr.",pos:"LB",age:21.5,team:"TEN",proj:{PPR:105,Half:105,Standard:105},adp:2.2,ktcVal:3296,note:"2026 pick 2-28 · TEN Titans · instinctive run stopper with pass rush upside"},
   // 2026 Round 1 IDP — missing additions
-  {name:"Caleb Banks",pos:"DL",age:23.5,team:"MIN",proj:{PPR:95,Half:95,Standard:95},adp:1.8,ktcVal:3914,note:"Week 7: Reserve DL · MIN · limited snaps"},
-  {name:"Malachi Lawrence",pos:"DL",age:23.1,team:"DAL",proj:{PPR:92,Half:92,Standard:92},adp:2.0,ktcVal:3605,note:"Week 7: Reserve DL · DAL · limited snaps"},
-  {name:"Chris Johnson",pos:"DB",age:21.8,team:"MIA",proj:{PPR:88,Half:88,Standard:88},adp:2.2,ktcVal:3296,note:"Week 7: Reserve DB · MIA · depth"},
-  {name:"Peter Woods",pos:"DL",age:21.5,team:"KC",proj:{PPR:90,Half:90,Standard:90},adp:2.0,ktcVal:3502,note:"Week 7: Reserve DL · KC · limited snaps"},
+  {name:"Caleb Banks",pos:"DL",age:23.5,team:"MIN",proj:{PPR:95,Half:95,Standard:95},adp:1.8,ktcVal:3914,note:"2026 pick 1-18 · MIN Vikings · disruptive interior DT"},
+  {name:"Malachi Lawrence",pos:"DL",age:23.1,team:"DAL",proj:{PPR:92,Half:92,Standard:92},adp:2.0,ktcVal:3605,note:"2026 pick 1-23 · DAL Cowboys · explosive EDGE pass rusher"},
+  {name:"Chris Johnson",pos:"DB",age:21.8,team:"MIA",proj:{PPR:88,Half:88,Standard:88},adp:2.2,ktcVal:3296,note:"2026 pick 1-27 · MIA Dolphins · lockdown corner"},
+  {name:"Peter Woods",pos:"DL",age:21.5,team:"KC",proj:{PPR:90,Half:90,Standard:90},adp:2.0,ktcVal:3502,note:"2026 pick 1-29 · KC Chiefs · powerful interior DT"},
   // 2026 Round 2 IDP — missing additions
-  {name:"Kayden McDonald",pos:"DL",age:21.5,team:"HOU",proj:{PPR:85,Half:85,Standard:85},adp:2.5,ktcVal:3090,note:"Week 7: Reserve DL · HOU · limited snaps"},
-  {name:"Colton Hood",pos:"DB",age:21.5,team:"NYG",proj:{PPR:82,Half:82,Standard:82},adp:2.8,ktcVal:2884,note:"Week 7: Reserve DB · NYG · depth"},
-  {name:"Treydan Stukes",pos:"DB",age:25,team:"LV",proj:{PPR:82,Half:82,Standard:82},adp:2.8,ktcVal:2884,note:"Week 7: Reserve DB · LV · depth"},
-  {name:"R Mason Thomas",pos:"DL",age:22.7,team:"KC",proj:{PPR:85,Half:85,Standard:85},adp:2.5,ktcVal:3090,note:"Week 7: Reserve DL · KC · limited snaps"},
-  {name:"Christen Miller",pos:"DL",age:22.1,team:"NO",proj:{PPR:82,Half:82,Standard:82},adp:2.8,ktcVal:2884,note:"Week 7: Reserve DL · NO · limited snaps"},
-  {name:"Jacob Rodriguez",pos:"LB",age:24,team:"MIA",proj:{PPR:82,Half:82,Standard:82},adp:2.8,ktcVal:2884,note:"Week 7: Reserve LB · MIA · limited value"},
-  {name:"Derrick Moore",pos:"DL",age:23.7,team:"DET",proj:{PPR:82,Half:82,Standard:82},adp:2.8,ktcVal:2884,note:"Week 7: Reserve DL · DET · limited snaps"},
-  {name:"Zion Young",pos:"DL",age:22.4,team:"BAL",proj:{PPR:80,Half:80,Standard:80},adp:3.0,ktcVal:2678,note:"Week 7: Reserve DL · BAL · limited snaps"},
-  {name:"Josiah Trotter",pos:"LB",age:21.4,team:"TB",proj:{PPR:80,Half:80,Standard:80},adp:3.0,ktcVal:2678,note:"Week 7: Reserve LB · TB · limited value"},
-  {name:"Avieon Terrell",pos:"DB",age:21.6,team:"ATL",proj:{PPR:78,Half:78,Standard:78},adp:3.2,ktcVal:2575,note:"Week 7: Reserve DB · ATL · depth"},
-  {name:"Lee Hunter",pos:"DL",age:24.2,team:"CAR",proj:{PPR:78,Half:78,Standard:78},adp:3.2,ktcVal:2575,note:"Week 7: Reserve DL · CAR · limited snaps"},
-  {name:"D'Angelo Ponds",pos:"DB",age:21.6,team:"NYJ",proj:{PPR:76,Half:76,Standard:76},adp:3.5,ktcVal:2472,note:"Week 7: Reserve DB · NYJ · depth"},
-  {name:"Jake Golday",pos:"LB",age:23.3,team:"MIN",proj:{PPR:76,Half:76,Standard:76},adp:3.5,ktcVal:2472,note:"Week 7: Reserve LB · MIN · limited value"},
-  {name:"Brandon Cisse",pos:"DB",age:21.2,team:"GB",proj:{PPR:76,Half:76,Standard:76},adp:3.5,ktcVal:2472,note:"Week 7: Reserve DB · GB · depth"},
-  {name:"Gabe Jacas",pos:"DL",age:22.3,team:"NE",proj:{PPR:74,Half:74,Standard:74},adp:3.8,ktcVal:2266,note:"Week 7: Reserve DL · NE · limited snaps"},
-  {name:"Emmanuel McNeil-Warren",pos:"DB",age:22.6,team:"CLE",proj:{PPR:74,Half:74,Standard:74},adp:3.8,ktcVal:2266,note:"Week 7: Reserve DB · CLE · depth"},
-  {name:"Davison Igbinosun",pos:"DB",age:22.4,team:"BUF",proj:{PPR:72,Half:72,Standard:72},adp:4.0,ktcVal:2060,note:"Week 7: Reserve DB · BUF · depth"},
-  {name:"Bud Clark",pos:"DB",age:24.3,team:"SEA",proj:{PPR:72,Half:72,Standard:72},adp:4.0,ktcVal:2060,note:"Week 7: Reserve DB · SEA · depth"},
+  {name:"Kayden McDonald",pos:"DL",age:21.5,team:"HOU",proj:{PPR:85,Half:85,Standard:85},adp:2.5,ktcVal:3090,note:"2026 pick 2-4 · HOU Texans · disruptive DT run stuffer"},
+  {name:"Colton Hood",pos:"DB",age:21.5,team:"NYG",proj:{PPR:82,Half:82,Standard:82},adp:2.8,ktcVal:2884,note:"2026 pick 2-5 · NYG Giants · versatile corner"},
+  {name:"Treydan Stukes",pos:"DB",age:25,team:"LV",proj:{PPR:82,Half:82,Standard:82},adp:2.8,ktcVal:2884,note:"2026 pick 2-6 · LV Raiders · rangy safety with ball skills"},
+  {name:"R Mason Thomas",pos:"DL",age:22.7,team:"KC",proj:{PPR:85,Half:85,Standard:85},adp:2.5,ktcVal:3090,note:"2026 pick 2-8 · KC Chiefs · explosive EDGE rusher"},
+  {name:"Christen Miller",pos:"DL",age:22.1,team:"NO",proj:{PPR:82,Half:82,Standard:82},adp:2.8,ktcVal:2884,note:"2026 pick 2-10 · NO Saints · powerful interior DT"},
+  {name:"Jacob Rodriguez",pos:"LB",age:24,team:"MIA",proj:{PPR:82,Half:82,Standard:82},adp:2.8,ktcVal:2884,note:"2026 pick 2-11 · MIA Dolphins · sideline-to-sideline LB"},
+  {name:"Derrick Moore",pos:"DL",age:23.7,team:"DET",proj:{PPR:82,Half:82,Standard:82},adp:2.8,ktcVal:2884,note:"2026 pick 2-12 · DET Lions · versatile EDGE rusher"},
+  {name:"Zion Young",pos:"DL",age:22.4,team:"BAL",proj:{PPR:80,Half:80,Standard:80},adp:3.0,ktcVal:2678,note:"2026 pick 2-13 · BAL Ravens · high-motor EDGE"},
+  {name:"Josiah Trotter",pos:"LB",age:21.4,team:"TB",proj:{PPR:80,Half:80,Standard:80},adp:3.0,ktcVal:2678,note:"2026 pick 2-14 · TB Buccaneers · instinctive run-stopping LB"},
+  {name:"Avieon Terrell",pos:"DB",age:21.6,team:"ATL",proj:{PPR:78,Half:78,Standard:78},adp:3.2,ktcVal:2575,note:"2026 pick 2-16 · ATL Falcons · press coverage corner"},
+  {name:"Lee Hunter",pos:"DL",age:24.2,team:"CAR",proj:{PPR:78,Half:78,Standard:78},adp:3.2,ktcVal:2575,note:"2026 pick 2-17 · CAR Panthers · massive run-stuffing DT"},
+  {name:"D'Angelo Ponds",pos:"DB",age:21.6,team:"NYJ",proj:{PPR:76,Half:76,Standard:76},adp:3.5,ktcVal:2472,note:"2026 pick 2-18 · NYJ Jets · ball-hawking corner"},
+  {name:"Jake Golday",pos:"LB",age:23.3,team:"MIN",proj:{PPR:76,Half:76,Standard:76},adp:3.5,ktcVal:2472,note:"2026 pick 2-19 · MIN Vikings · coverage LB with range"},
+  {name:"Brandon Cisse",pos:"DB",age:21.2,team:"GB",proj:{PPR:76,Half:76,Standard:76},adp:3.5,ktcVal:2472,note:"2026 pick 2-20 · GB Packers · physical press corner"},
+  {name:"Gabe Jacas",pos:"DL",age:22.3,team:"NE",proj:{PPR:74,Half:74,Standard:74},adp:3.8,ktcVal:2266,note:"2026 pick 2-23 · NE Patriots · long EDGE rusher with upside"},
+  {name:"Emmanuel McNeil-Warren",pos:"DB",age:22.6,team:"CLE",proj:{PPR:74,Half:74,Standard:74},adp:3.8,ktcVal:2266,note:"2026 pick 2-26 · CLE Browns · versatile safety"},
+  {name:"Davison Igbinosun",pos:"DB",age:22.4,team:"BUF",proj:{PPR:72,Half:72,Standard:72},adp:4.0,ktcVal:2060,note:"2026 pick 2-30 · BUF Bills · long athletic corner"},
+  {name:"Bud Clark",pos:"DB",age:24.3,team:"SEA",proj:{PPR:72,Half:72,Standard:72},adp:4.0,ktcVal:2060,note:"2026 pick 2-32 · SEA Seahawks · rangy playmaking safety"},
   // 2026 Round 3 offensive — missing additions
-  {name:"Sam Roush",pos:"TE",age:23,team:"CHI",proj:{PPR:88,Half:81,Standard:74},adp:3.5,ktcVal:2060,note:"Week 7: Bench TE · CHI · stream candidate"},
-  {name:"Oscar Delp",pos:"TE",age:23.1,team:"NO",proj:{PPR:92,Half:84,Standard:76},adp:3.2,ktcVal:2266,note:"Week 7: Bench TE · NO · stream candidate"},
-  {name:"Caleb Douglas",pos:"WR",age:23,team:"MIA",proj:{PPR:88,Half:81,Standard:74},adp:3.8,ktcVal:1854,note:"Week 7: Deep bench · MIA · limited value"},
-  {name:"Ja'Kobi Lane",pos:"WR",age:22.3,team:"BAL",proj:{PPR:85,Half:78,Standard:71},adp:4.0,ktcVal:2816,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Chris Brazzell II",pos:"WR",age:22.9,team:"CAR",proj:{PPR:82,Half:75,Standard:68},adp:4.2,ktcVal:3220,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Ted Hurst",pos:"WR",age:22.2,team:"TB",proj:{PPR:82,Half:75,Standard:68},adp:4.2,ktcVal:2173,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Will Kacmarek",pos:"TE",age:23.5,team:"MIA",proj:{PPR:80,Half:73,Standard:66},adp:4.5,ktcVal:1545,note:"Week 7: Practice squad · MIA · no value"},
-  {name:"Zavion Thomas",pos:"WR",age:22.5,team:"CHI",proj:{PPR:80,Half:73,Standard:66},adp:4.5,ktcVal:1545,note:"Week 7: Deep bench · CHI · limited value"},
-  {name:"Chris Bell",pos:"WR",age:22.2,team:"MIA",proj:{PPR:78,Half:72,Standard:66},adp:4.8,ktcVal:3658,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Eli Raridon",pos:"TE",age:22.5,team:"NE",proj:{PPR:78,Half:72,Standard:66},adp:4.8,ktcVal:1442,note:"Week 7: Practice squad · NE · no value"},
+  {name:"Sam Roush",pos:"TE",age:23,team:"CHI",proj:{PPR:88,Half:81,Standard:74},adp:3.5,ktcVal:2060,note:"2026 pick 3-5 · CHI Bears · athletic receiving TE"},
+  {name:"Oscar Delp",pos:"TE",age:23.1,team:"NO",proj:{PPR:92,Half:84,Standard:76},adp:3.2,ktcVal:2266,note:"2026 pick 3-9 · NO Saints · big-play TE with elite athleticism"},
+  {name:"Caleb Douglas",pos:"WR",age:23,team:"MIA",proj:{PPR:88,Half:81,Standard:74},adp:3.8,ktcVal:1854,note:"2026 pick 3-11 · MIA Dolphins · vertical threat with Tua"},
+  {name:"Ja'Kobi Lane",pos:"WR",age:22.3,team:"BAL",proj:{PPR:85,Half:78,Standard:71},adp:4.0,ktcVal:2816,note:"2026 pick 3-16 · BAL Ravens · contested-catch WR"},
+  {name:"Chris Brazzell II",pos:"WR",age:22.9,team:"CAR",proj:{PPR:82,Half:75,Standard:68},adp:4.2,ktcVal:3220,note:"2026 pick 3-19 · CAR Panthers · big-bodied receiver"},
+  {name:"Ted Hurst",pos:"WR",age:22.2,team:"TB",proj:{PPR:82,Half:75,Standard:68},adp:4.2,ktcVal:2173,note:"2026 pick 3-20 · TB Buccaneers · route-running specialist"},
+  {name:"Will Kacmarek",pos:"TE",age:23.5,team:"MIA",proj:{PPR:80,Half:73,Standard:66},adp:4.5,ktcVal:1545,note:"2026 pick 3-23 · MIA Dolphins · athletic TE with blocking upside"},
+  {name:"Zavion Thomas",pos:"WR",age:22.5,team:"CHI",proj:{PPR:80,Half:73,Standard:66},adp:4.5,ktcVal:1545,note:"2026 pick 3-25 · CHI Bears · explosive speed receiver"},
+  {name:"Chris Bell",pos:"WR",age:22.2,team:"MIA",proj:{PPR:78,Half:72,Standard:66},adp:4.8,ktcVal:3658,note:"2026 pick 3-30 · MIA Dolphins · reliable possession WR"},
+  {name:"Eli Raridon",pos:"TE",age:22.5,team:"NE",proj:{PPR:78,Half:72,Standard:66},adp:4.8,ktcVal:1442,note:"2026 pick 3-31 · NE Patriots · athletic TE with receiving upside"},
   // 2026 Round 3 IDP — missing additions
-  {name:"Tyler Onyedim",pos:"DL",age:23.3,team:"DEN",proj:{PPR:72,Half:72,Standard:72},adp:4.0,ktcVal:2060,note:"Week 7: Reserve DL · DEN · limited snaps"},
-  {name:"Keyron Crawford",pos:"DL",age:22.9,team:"LV",proj:{PPR:72,Half:72,Standard:72},adp:4.0,ktcVal:2060,note:"Week 7: Reserve DL · LV · limited snaps"},
-  {name:"Romello Height",pos:"DL",age:25.4,team:"SF",proj:{PPR:70,Half:70,Standard:70},adp:4.2,ktcVal:1854,note:"Week 7: Reserve DL · SF · limited snaps"},
-  {name:"Tacario Davis",pos:"DB",age:22,team:"CIN",proj:{PPR:70,Half:70,Standard:70},adp:4.2,ktcVal:1854,note:"Week 7: Reserve DB · CIN · depth"},
-  {name:"Chris McClellan",pos:"DL",age:23,team:"GB",proj:{PPR:68,Half:68,Standard:68},adp:4.5,ktcVal:1751,note:"Week 7: Reserve DL · GB · limited snaps"},
-  {name:"A.J. Haulcy",pos:"DB",age:22.6,team:"IND",proj:{PPR:68,Half:68,Standard:68},adp:4.5,ktcVal:1751,note:"Week 7: Reserve DB · IND · depth"},
-  {name:"Daylen Everette",pos:"DB",age:22.3,team:"PIT",proj:{PPR:65,Half:65,Standard:65},adp:5.0,ktcVal:1545,note:"Week 7: Reserve DB · PIT · depth"},
-  {name:"Jaishawn Barham",pos:"DL",age:22.6,team:"DAL",proj:{PPR:65,Half:65,Standard:65},adp:5.0,ktcVal:1442,note:"Week 7: Reserve DL · DAL · limited snaps"},
+  {name:"Tyler Onyedim",pos:"DL",age:23.3,team:"DEN",proj:{PPR:72,Half:72,Standard:72},adp:4.0,ktcVal:2060,note:"2026 pick 3-2 · DEN Broncos · powerful interior DT"},
+  {name:"Keyron Crawford",pos:"DL",age:22.9,team:"LV",proj:{PPR:72,Half:72,Standard:72},adp:4.0,ktcVal:2060,note:"2026 pick 3-3 · LV Raiders · explosive EDGE rusher"},
+  {name:"Romello Height",pos:"DL",age:25.4,team:"SF",proj:{PPR:70,Half:70,Standard:70},adp:4.2,ktcVal:1854,note:"2026 pick 3-6 · SF 49ers · high-motor EDGE"},
+  {name:"Tacario Davis",pos:"DB",age:22,team:"CIN",proj:{PPR:70,Half:70,Standard:70},adp:4.2,ktcVal:1854,note:"2026 pick 3-8 · CIN Bengals · physical press corner"},
+  {name:"Chris McClellan",pos:"DL",age:23,team:"GB",proj:{PPR:68,Half:68,Standard:68},adp:4.5,ktcVal:1751,note:"2026 pick 3-13 · GB Packers · interior DT with pass rush upside"},
+  {name:"A.J. Haulcy",pos:"DB",age:22.6,team:"IND",proj:{PPR:68,Half:68,Standard:68},adp:4.5,ktcVal:1751,note:"2026 pick 3-14 · IND Colts · rangy playmaking safety"},
+  {name:"Daylen Everette",pos:"DB",age:22.3,team:"PIT",proj:{PPR:65,Half:65,Standard:65},adp:5.0,ktcVal:1545,note:"2026 pick 3-21 · PIT Steelers · sticky coverage corner"},
+  {name:"Jaishawn Barham",pos:"DL",age:22.6,team:"DAL",proj:{PPR:65,Half:65,Standard:65},adp:5.0,ktcVal:1442,note:"2026 pick 3-28 · DAL Cowboys · versatile EDGE rusher"},
   // 2026 Rounds 4-7 fantasy-relevant rookies
-  {name:"Cade Klubnik",pos:"QB",age:22.9,team:"NYJ",proj:{PPR:195,Half:195,Standard:195},adp:4.5,ktcVal:2266,note:"Week 7: Backup/developmental QB · limited starting role · dynasty hold"},
-  {name:"Garrett Nussmeier",pos:"QB",age:24.6,team:"KC",proj:{PPR:185,Half:185,Standard:185},adp:5.0,ktcVal:2060,note:"Week 7: Backup/developmental QB · limited starting role · dynasty hold"},
-  {name:"Taylen Green",pos:"QB",age:23.9,team:"CLE",proj:{PPR:175,Half:175,Standard:175},adp:5.5,ktcVal:1854,note:"Week 7: Deep bench/PS · CLE · limited value"},
-  {name:"Emmett Johnson",pos:"RB",age:22.9,team:"KC",proj:{PPR:120,Half:110,Standard:100},adp:4.5,ktcVal:3132,note:"Week 7: Bench back/handcuff · limited upside · hold for opportunity"},
-  {name:"Kaytron Allen",pos:"RB",age:23.6,team:"WAS",proj:{PPR:115,Half:106,Standard:97},adp:4.8,ktcVal:2931,note:"Week 7: Bench back/handcuff · WAS · opportunity stash"},
-  {name:"Brenen Thompson",pos:"WR",age:23.1,team:"LAC",proj:{PPR:100,Half:92,Standard:84},adp:4.2,ktcVal:2060,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Skyler Bell",pos:"WR",age:24.1,team:"BUF",proj:{PPR:95,Half:87,Standard:79},adp:4.5,ktcVal:2865,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Kevin Coleman Jr.",pos:"WR",age:23,team:"MIA",proj:{PPR:100,Half:92,Standard:84},adp:4.8,ktcVal:2060,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"C.J. Williams",pos:"WR",age:22.8,team:"JAX",proj:{PPR:90,Half:82,Standard:74},adp:5.2,ktcVal:1648,note:"Week 7: Deep bench · JAX · limited value"},
-  {name:"Deion Burks",pos:"WR",age:23.6,team:"IND",proj:{PPR:88,Half:81,Standard:74},adp:5.5,ktcVal:1545,note:"Week 7: Deep bench · IND · limited value"},
-  {name:"Kendal Daniels",pos:"LB",age:23.7,team:"ATL",proj:{PPR:105,Half:105,Standard:105},adp:2.8,ktcVal:2884,note:"Week 7: Reserve LB · ATL · limited value"},
+  {name:"Cade Klubnik",pos:"QB",age:22.9,team:"NYJ",proj:{PPR:195,Half:195,Standard:195},adp:4.5,ktcVal:2266,note:"2026 pick 4-10 · NYJ Jets · Clemson QB dynasty developmental"},
+  {name:"Garrett Nussmeier",pos:"QB",age:24.6,team:"KC",proj:{PPR:185,Half:185,Standard:185},adp:5.0,ktcVal:2060,note:"2026 pick 7-31 · KC Chiefs · high-upside QB who fell — dynasty stash in Reid offense"},
+  {name:"Taylen Green",pos:"QB",age:23.9,team:"CLE",proj:{PPR:175,Half:175,Standard:175},adp:5.5,ktcVal:1854,note:"2026 pick 6-1 · CLE Browns · mobile QB developmental stash"},
+  {name:"Emmett Johnson",pos:"RB",age:22.9,team:"KC",proj:{PPR:120,Half:110,Standard:100},adp:4.5,ktcVal:3132,note:"2026 pick 5-21 · KC Chiefs · dynamic receiver out of backfield in Reid offense"},
+  {name:"Kaytron Allen",pos:"RB",age:23.6,team:"WAS",proj:{PPR:115,Half:106,Standard:97},adp:4.8,ktcVal:2931,note:"2026 pick 6-7 · WAS Commanders · Penn State physical runner solid upside"},
+  {name:"Brenen Thompson",pos:"WR",age:23.1,team:"LAC",proj:{PPR:100,Half:92,Standard:84},adp:4.2,ktcVal:2060,note:"2026 pick 4-5 · LAC Chargers · elite speed WR deep threat"},
+  {name:"Skyler Bell",pos:"WR",age:24.1,team:"BUF",proj:{PPR:95,Half:87,Standard:79},adp:4.5,ktcVal:2865,note:"2026 pick 4-25 · BUF Bills · slot weapon with strong hands"},
+  {name:"Kevin Coleman Jr.",pos:"WR",age:23,team:"MIA",proj:{PPR:100,Half:92,Standard:84},adp:4.8,ktcVal:2060,note:"2026 pick 5-37 · MIA Dolphins · explosive YAC receiver Tua connection"},
+  {name:"C.J. Williams",pos:"WR",age:22.8,team:"JAX",proj:{PPR:90,Half:82,Standard:74},adp:5.2,ktcVal:1648,note:"2026 pick 6-22 · JAX Jaguars · physical possession receiver"},
+  {name:"Deion Burks",pos:"WR",age:23.6,team:"IND",proj:{PPR:88,Half:81,Standard:74},adp:5.5,ktcVal:1545,note:"2026 pick 7-36 · IND Colts · dynasty flier with elite athleticism"},
+  {name:"Kendal Daniels",pos:"LB",age:23.7,team:"ATL",proj:{PPR:105,Half:105,Standard:105},adp:2.8,ktcVal:2884,note:"2026 pick 4-34 · ATL Falcons · hybrid safety/LB elite athlete"},
   // 2026 Rounds 4-7 — additional fantasy-relevant rookies
-  {name:"Jonah Coleman",pos:"RB",age:23,team:"DEN",proj:{PPR:115,Half:106,Standard:97},adp:4.5,ktcVal:3849,note:"Week 7: Bench back/handcuff · limited upside · hold for opportunity"},
-  {name:"Elijah Sarratt",pos:"WR",age:23.3,team:"BAL",proj:{PPR:85,Half:78,Standard:71},adp:5.0,ktcVal:3393,note:"Week 7: Bench WR · limited targets · roster depth stash"},
-  {name:"Kaden Wetjen",pos:"WR",age:24.5,team:"PIT",proj:{PPR:82,Half:75,Standard:68},adp:5.2,ktcVal:1339,note:"Week 7: Deep bench · PIT · limited value"},
-  {name:"Mike Washington Jr.",pos:"RB",age:23.2,team:"LV",proj:{PPR:100,Half:92,Standard:84},adp:5.0,ktcVal:3117,note:"Week 7: Bench back/handcuff · limited upside · hold for opportunity"},
-  {name:"Colbie Young",pos:"WR",age:24.1,team:"CIN",proj:{PPR:82,Half:75,Standard:68},adp:5.5,ktcVal:1236,note:"Week 7: Deep bench · CIN · limited value"},
-  {name:"Bryce Lance",pos:"WR",age:24,team:"NO",proj:{PPR:78,Half:72,Standard:66},adp:5.5,ktcVal:1133,note:"Week 7: Deep bench · NO · limited value"},
-  {name:"Michael Trigg",pos:"TE",age:24.2,team:"DAL",proj:{PPR:82,Half:75,Standard:68},adp:4.8,ktcVal:1992,note:"Week 7: Practice squad · DAL · no value"},
-  {name:"Demond Claiborne",pos:"RB",age:22.9,team:"MIN",proj:{PPR:105,Half:96,Standard:87},adp:5.0,ktcVal:1880,note:"Week 7: Practice squad · MIN · no value"},
-  {name:"Matthew Hibner",pos:"TE",age:23,team:"BAL",proj:{PPR:75,Half:69,Standard:63},adp:5.5,ktcVal:1236,note:"Week 7: Practice squad · BAL · no value"},
-  {name:"Reggie Virgil",pos:"WR",age:22.3,team:"ARI",proj:{PPR:80,Half:73,Standard:66},adp:5.2,ktcVal:1339,note:"Week 7: Deep bench · ARI · limited value"},
-  {name:"Kendrick Law",pos:"WR",age:23.2,team:"DET",proj:{PPR:78,Half:72,Standard:66},adp:5.5,ktcVal:1236,note:"Week 7: Deep bench · DET · limited value"},
-  {name:"Adam Randall",pos:"RB",age:22.1,team:"BAL",proj:{PPR:90,Half:83,Standard:76},adp:5.5,ktcVal:1339,note:"Week 7: Practice squad · BAL · no value"},
-  {name:"Cyrus Allen",pos:"WR",age:23.5,team:"KC",proj:{PPR:78,Half:72,Standard:66},adp:5.5,ktcVal:1236,note:"Week 7: Deep bench · KC · limited value"},
-  {name:"Cole Payton",pos:"QB",age:23.8,team:"PHI",proj:{PPR:165,Half:165,Standard:165},adp:6.0,ktcVal:1545,note:"Week 7: Deep bench/PS · PHI · limited value"},
-  {name:"Justin Joly",pos:"TE",age:22.1,team:"DEN",proj:{PPR:72,Half:66,Standard:60},adp:6.0,ktcVal:1787,note:"Week 7: Practice squad · DEN · no value"},
-  {name:"Max Bredeson",pos:"TE",age:23.9,team:"MIN",proj:{PPR:70,Half:64,Standard:58},adp:6.0,ktcVal:1030,note:"Week 7: Practice squad · MIN · no value"},
-  {name:"Riley Nowakowski",pos:"TE",age:24.2,team:"PIT",proj:{PPR:68,Half:62,Standard:56},adp:6.5,ktcVal:927,note:"Week 7: Practice squad · PIT · no value"},
-  {name:"Anthony Smith",pos:"WR",age:24.5,team:"DAL",proj:{PPR:72,Half:66,Standard:60},adp:6.5,ktcVal:1030,note:"Week 7: Deep bench · DAL · limited value"},
-  {name:"Athan Kaliakmanis",pos:"QB",age:23,team:"WAS",proj:{PPR:155,Half:155,Standard:155},adp:7.0,ktcVal:1236,note:"Week 7: Deep bench/PS · WAS · limited value"},
-  {name:"Jack Endries",pos:"TE",age:22.4,team:"CIN",proj:{PPR:68,Half:62,Standard:56},adp:7.0,ktcVal:927,note:"Week 7: Practice squad · CIN · no value"},
+  {name:"Jonah Coleman",pos:"RB",age:23,team:"DEN",proj:{PPR:115,Half:106,Standard:97},adp:4.5,ktcVal:3849,note:"2026 pick 4-8 · DEN Broncos · explosive workhorse RB"},
+  {name:"Elijah Sarratt",pos:"WR",age:23.3,team:"BAL",proj:{PPR:85,Half:78,Standard:71},adp:5.0,ktcVal:3393,note:"2026 pick 4-15 · BAL Ravens · vertical threat in strong offense"},
+  {name:"Kaden Wetjen",pos:"WR",age:24.5,team:"PIT",proj:{PPR:82,Half:75,Standard:68},adp:5.2,ktcVal:1339,note:"2026 pick 4-21 · PIT Steelers · versatile slot receiver"},
+  {name:"Mike Washington Jr.",pos:"RB",age:23.2,team:"LV",proj:{PPR:100,Half:92,Standard:84},adp:5.0,ktcVal:3117,note:"2026 pick 4-22 · LV Raiders · physical runner with pass-catching upside"},
+  {name:"Colbie Young",pos:"WR",age:24.1,team:"CIN",proj:{PPR:82,Half:75,Standard:68},adp:5.5,ktcVal:1236,note:"2026 pick 4-40 · CIN Bengals · big-bodied WR with contested-catch ability"},
+  {name:"Bryce Lance",pos:"WR",age:24,team:"NO",proj:{PPR:78,Half:72,Standard:66},adp:5.5,ktcVal:1133,note:"2026 pick 4-36 · NO Saints · deep threat receiver"},
+  {name:"Michael Trigg",pos:"TE",age:24.2,team:"DAL",proj:{PPR:82,Half:75,Standard:68},adp:4.8,ktcVal:1992,note:"2026 pick 4-11 · DAL Cowboys · athletic TE with receiving upside"},
+  {name:"Demond Claiborne",pos:"RB",age:22.9,team:"MIN",proj:{PPR:105,Half:96,Standard:87},adp:5.0,ktcVal:1880,note:"2026 pick 4-19 · MIN Vikings · physical runner with three-down potential"},
+  {name:"Matthew Hibner",pos:"TE",age:23,team:"BAL",proj:{PPR:75,Half:69,Standard:63},adp:5.5,ktcVal:1236,note:"2026 pick 4-33 · BAL Ravens · athletic TE in run-heavy offense"},
+  {name:"Reggie Virgil",pos:"WR",age:22.3,team:"ARI",proj:{PPR:80,Half:73,Standard:66},adp:5.2,ktcVal:1339,note:"2026 pick 5-3 · ARI Cardinals · dynamic playmaker"},
+  {name:"Kendrick Law",pos:"WR",age:23.2,team:"DET",proj:{PPR:78,Half:72,Standard:66},adp:5.5,ktcVal:1236,note:"2026 pick 5-28 · DET Lions · speedster in high-powered offense"},
+  {name:"Adam Randall",pos:"RB",age:22.1,team:"BAL",proj:{PPR:90,Half:83,Standard:76},adp:5.5,ktcVal:1339,note:"2026 pick 5-34 · BAL Ravens · versatile Clemson back"},
+  {name:"Cyrus Allen",pos:"WR",age:23.5,team:"KC",proj:{PPR:78,Half:72,Standard:66},adp:5.5,ktcVal:1236,note:"2026 pick 5-36 · KC Chiefs · dynasty stash in Reid offense"},
+  {name:"Cole Payton",pos:"QB",age:23.8,team:"PHI",proj:{PPR:165,Half:165,Standard:165},adp:6.0,ktcVal:1545,note:"2026 pick 5-38 · PHI Eagles · NDSU QB developmental dynasty stash"},
+  {name:"Justin Joly",pos:"TE",age:22.1,team:"DEN",proj:{PPR:72,Half:66,Standard:60},adp:6.0,ktcVal:1787,note:"2026 pick 5-12 · DEN Broncos · receiving TE with upside"},
+  {name:"Max Bredeson",pos:"TE",age:23.9,team:"MIN",proj:{PPR:70,Half:64,Standard:58},adp:6.0,ktcVal:1030,note:"2026 pick 5-19 · MIN Vikings · athletic TE developmental"},
+  {name:"Riley Nowakowski",pos:"TE",age:24.2,team:"PIT",proj:{PPR:68,Half:62,Standard:56},adp:6.5,ktcVal:927,note:"2026 pick 5-29 · PIT Steelers · pass-catching TE"},
+  {name:"Anthony Smith",pos:"WR",age:24.5,team:"DAL",proj:{PPR:72,Half:66,Standard:60},adp:6.5,ktcVal:1030,note:"2026 pick 7-2 · DAL Cowboys · deep sleeper WR"},
+  {name:"Athan Kaliakmanis",pos:"QB",age:23,team:"WAS",proj:{PPR:155,Half:155,Standard:155},adp:7.0,ktcVal:1236,note:"2026 pick 7-7 · WAS Commanders · Rutgers QB dynasty developmental stash"},
+  {name:"Jack Endries",pos:"TE",age:22.4,team:"CIN",proj:{PPR:68,Half:62,Standard:56},adp:7.0,ktcVal:927,note:"2026 pick 7-5 · CIN Bengals · athletic receiving TE"},
   // 2026 Rounds 4-7 — additional IDP
-  {name:"Gracen Halton",pos:"DL",age:22.6,team:"SF",proj:{PPR:68,Half:68,Standard:68},adp:4.5,ktcVal:1545,note:"Week 7: Reserve DL · SF · limited snaps"},
-  {name:"Jimmy Rolder",pos:"LB",age:22.5,team:"DET",proj:{PPR:72,Half:72,Standard:72},adp:4.5,ktcVal:1442,note:"Week 7: Reserve LB · DET · limited value"},
-  {name:"Wade Woodaz",pos:"LB",age:22.6,team:"HOU",proj:{PPR:70,Half:70,Standard:70},adp:4.8,ktcVal:1339,note:"Week 7: Reserve LB · HOU · limited value"},
-  {name:"Trey Moore",pos:"DL",age:23.3,team:"MIA",proj:{PPR:65,Half:65,Standard:65},adp:5.0,ktcVal:1236,note:"Week 7: Reserve DL · MIA · limited snaps"},
-  {name:"LT Overton",pos:"DL",age:21.9,team:"DAL",proj:{PPR:62,Half:62,Standard:62},adp:5.5,ktcVal:1133,note:"Week 7: Reserve DL · DAL · limited snaps"},
-  {name:"Bryce Boettcher",pos:"LB",age:24.1,team:"IND",proj:{PPR:62,Half:62,Standard:62},adp:5.5,ktcVal:1133,note:"Week 7: Reserve LB · IND · limited value"},
+  {name:"Gracen Halton",pos:"DL",age:22.6,team:"SF",proj:{PPR:68,Half:68,Standard:68},adp:4.5,ktcVal:1545,note:"2026 pick 4-7 · SF 49ers · powerful interior DT"},
+  {name:"Jimmy Rolder",pos:"LB",age:22.5,team:"DET",proj:{PPR:72,Half:72,Standard:72},adp:4.5,ktcVal:1442,note:"2026 pick 4-18 · DET Lions · instinctive tackling LB"},
+  {name:"Wade Woodaz",pos:"LB",age:22.6,team:"HOU",proj:{PPR:70,Half:70,Standard:70},adp:4.8,ktcVal:1339,note:"2026 pick 4-23 · HOU Texans · versatile LB with coverage skills"},
+  {name:"Trey Moore",pos:"DL",age:23.3,team:"MIA",proj:{PPR:65,Half:65,Standard:65},adp:5.0,ktcVal:1236,note:"2026 pick 4-30 · MIA Dolphins · high-motor EDGE rusher"},
+  {name:"LT Overton",pos:"DL",age:21.9,team:"DAL",proj:{PPR:62,Half:62,Standard:62},adp:5.5,ktcVal:1133,note:"2026 pick 4-37 · DAL Cowboys · raw athletic EDGE with upside"},
+  {name:"Bryce Boettcher",pos:"LB",age:24.1,team:"IND",proj:{PPR:62,Half:62,Standard:62},adp:5.5,ktcVal:1133,note:"2026 pick 4-35 · IND Colts · rangy coverage LB"},
   // 2026 UDFAs — notable fantasy-relevant signings
-  {name:"Diego Pavia",pos:"QB",age:24.5,team:"BAL",proj:{PPR:155,Half:155,Standard:155},adp:8.0,ktcVal:824,note:"Week 7: Deep bench/PS · BAL · limited value"},
-  {name:"Miller Moss",pos:"QB",age:24.4,team:"CHI",proj:{PPR:145,Half:145,Standard:145},adp:8.5,ktcVal:618,note:"Week 7: Deep bench/PS · CHI · limited value"},
-  {name:"Desmond Reid",pos:"RB",age:22.1,team:"BUF",proj:{PPR:108,Half:99,Standard:90},adp:7.0,ktcVal:515,note:"Week 7: Practice squad · BUF · no value"},
-  {name:"Robert Henry Jr.",pos:"RB",age:24.7,team:"WAS",proj:{PPR:112,Half:103,Standard:94},adp:7.0,ktcVal:618,note:"Week 7: Practice squad · WAS · no value"},
-  {name:"Caullin Lacy",pos:"WR",age:24.7,team:"NYJ",proj:{PPR:95,Half:87,Standard:79},adp:8.0,ktcVal:412,note:"Week 7: Deep bench · NYJ · limited value"},
-  {name:"Haynes King",pos:"QB",age:25.6,team:"CAR",proj:{PPR:135,Half:135,Standard:135},adp:9.0,ktcVal:515,note:"Week 7: Deep bench/PS · CAR · limited value"},
-  {name:"Joey Aguilar",pos:"QB",age:25.2,team:"JAX",proj:{PPR:130,Half:130,Standard:130},adp:9.5,ktcVal:412,note:"Week 7: Deep bench/PS · JAX · limited value"},
-  {name:"Luke Altmyer",pos:"QB",age:23.8,team:"MIN",proj:{PPR:130,Half:130,Standard:130},adp:9.5,ktcVal:412,note:"Week 7: Deep bench/PS · MIN · limited value"},
+  {name:"Diego Pavia",pos:"QB",age:24.5,team:"BAL",proj:{PPR:155,Half:155,Standard:155},adp:8.0,ktcVal:824,note:"2026 UDFA · Vanderbilt · dual-threat QB stash behind Lamar · dynasty SF deep hold"},
+  {name:"Miller Moss",pos:"QB",age:24.4,team:"CHI",proj:{PPR:145,Half:145,Standard:145},adp:8.5,ktcVal:618,note:"2026 UDFA · Louisville · backup behind Caleb Williams · developmental"},
+  {name:"Desmond Reid",pos:"RB",age:22.1,team:"BUF",proj:{PPR:108,Half:99,Standard:90},adp:7.0,ktcVal:515,note:"2026 UDFA · Pitt · explosive scatback 5-6 174 lbs · return game upside behind Cook"},
+  {name:"Robert Henry Jr.",pos:"RB",age:24.7,team:"WAS",proj:{PPR:112,Half:103,Standard:94},adp:7.0,ktcVal:618,note:"2026 UDFA · UTSA · RB7 of class pre-draft · 6.9 YPC physical runner · dynasty taxi stash"},
+  {name:"Caullin Lacy",pos:"WR",age:24.7,team:"NYJ",proj:{PPR:95,Half:87,Standard:79},adp:8.0,ktcVal:412,note:"2026 UDFA · Louisville · former 1,300-yd producer at South Alabama · return game role"},
+  {name:"Haynes King",pos:"QB",age:25.6,team:"CAR",proj:{PPR:135,Half:135,Standard:135},adp:9.0,ktcVal:515,note:"2026 UDFA · Panthers · mobile QB backup behind Bryce Young · dynasty deep stash"},
+  {name:"Joey Aguilar",pos:"QB",age:25.2,team:"JAX",proj:{PPR:130,Half:130,Standard:130},adp:9.5,ktcVal:412,note:"2026 UDFA · Jaguars · developmental QB behind Trevor Lawrence"},
+  {name:"Luke Altmyer",pos:"QB",age:23.8,team:"MIN",proj:{PPR:130,Half:130,Standard:130},adp:9.5,ktcVal:412,note:"2026 UDFA · Illinois · QB3 behind Murray/McCarthy · dynasty deep stash"},
 ];
 
 const DRAFT_PICKS=[
@@ -1948,160 +1983,66 @@ const DRAFT_PICKS=[
 
 // ── NFL Futures & Props (Week 1 — September 12, 2026) ──────────────────────────
 const SB_ODDS=[
-{team:"BAL",odds:"-120",pct:54.5},{team:"LAR",odds:"+450",pct:18.2},{team:"BUF",odds:"+550",pct:15.4},
-{team:"SF",odds:"+700",pct:12.5},{team:"KC",odds:"+800",pct:11.1},{team:"DET",odds:"+1000",pct:9.1},
-{team:"CIN",odds:"+1200",pct:7.7},{team:"PHI",odds:"+1400",pct:6.7},{team:"SEA",odds:"+1600",pct:5.9},
-{team:"NE",odds:"+2000",pct:4.8},{team:"GB",odds:"+2200",pct:4.3},{team:"HOU",odds:"+2500",pct:3.8},
-{team:"DAL",odds:"+3000",pct:3.2},{team:"DEN",odds:"+3500",pct:2.8},{team:"LAC",odds:"+4000",pct:2.4},
-{team:"JAX",odds:"+5000",pct:1.9},{team:"MIN",odds:"+5500",pct:1.8},{team:"PIT",odds:"+6500",pct:1.5},
-{team:"TB",odds:"+7000",pct:1.4},{team:"IND",odds:"+8000",pct:1.2},{team:"WAS",odds:"+9000",pct:1.1},
-{team:"NYG",odds:"+10000",pct:1.0},{team:"NO",odds:"+12000",pct:0.8},{team:"CAR",odds:"+15000",pct:0.7},
-{team:"TEN",odds:"+15000",pct:0.7},{team:"ATL",odds:"+20000",pct:0.5},{team:"LV",odds:"+25000",pct:0.4},
-{team:"NYJ",odds:"+30000",pct:0.3},{team:"CLE",odds:"+30000",pct:0.3},{team:"MIA",odds:"+50000",pct:0.2},
-{team:"ARI",odds:"+60000",pct:0.2}
+{team:"LAR",odds:"+600",pct:14.3},{team:"BUF",odds:"+1000",pct:9.1},{team:"BAL",odds:"+1000",pct:9.1},
+{team:"SEA",odds:"+1050",pct:8.7},{team:"SF",odds:"+1400",pct:6.7},{team:"KC",odds:"+1600",pct:5.9},
+{team:"PHI",odds:"+1700",pct:5.6},{team:"LAC",odds:"+1700",pct:5.6},{team:"DET",odds:"+1800",pct:5.3},
+{team:"CIN",odds:"+1800",pct:5.3},{team:"HOU",odds:"+1800",pct:5.3},{team:"NE",odds:"+1900",pct:5.0},
+{team:"GB",odds:"+2000",pct:4.8},{team:"DEN",odds:"+2000",pct:4.8},{team:"CHI",odds:"+2400",pct:4.0},
+{team:"DAL",odds:"+2500",pct:3.8},{team:"JAX",odds:"+3000",pct:3.2},{team:"MIN",odds:"+5000",pct:2.0},
+{team:"PIT",odds:"+5000",pct:2.0},{team:"TB",odds:"+5500",pct:1.8},{team:"IND",odds:"+6000",pct:1.6},
+{team:"WAS",odds:"+6000",pct:1.6},{team:"NYG",odds:"+7000",pct:1.4},{team:"NO",odds:"+9000",pct:1.1},
+{team:"CAR",odds:"+9000",pct:1.1},{team:"TEN",odds:"+13000",pct:0.8},{team:"ATL",odds:"+13000",pct:0.8},
+{team:"LV",odds:"+15000",pct:0.7},{team:"NYJ",odds:"+20000",pct:0.5},{team:"CLE",odds:"+20000",pct:0.5},
+{team:"MIA",odds:"+35000",pct:0.3},{team:"ARI",odds:"+50000",pct:0.2}
 ];
 const WIN_TOTALS=[
-{team:"BAL",ou:12.5},{team:"BUF",ou:11.5},{team:"LAR",ou:11.5},{team:"SF",ou:11.5},{team:"KC",ou:11.5},
-{team:"CIN",ou:10.5},{team:"DET",ou:10.5},{team:"SEA",ou:10.5},{team:"PHI",ou:10.5},{team:"NE",ou:10.5},
-{team:"GB",ou:9.5},{team:"HOU",ou:9.5},{team:"DEN",ou:9.5},{team:"DAL",ou:9.5},{team:"LAC",ou:9.5},
-{team:"JAX",ou:8.5},{team:"PIT",ou:8.5},{team:"MIN",ou:8.5},{team:"TB",ou:8.5},{team:"CHI",ou:8.5},
-{team:"WAS",ou:7.5},{team:"NO",ou:7.5},{team:"CAR",ou:7.5},{team:"NYG",ou:7.5},{team:"IND",ou:7.5},
+{team:"BAL",ou:11.5},{team:"LAR",ou:11.5},{team:"BUF",ou:10.5},{team:"SEA",ou:10.5},{team:"CIN",ou:10.5},
+{team:"KC",ou:10.5},{team:"NE",ou:10.5},{team:"PHI",ou:10.5},{team:"DET",ou:10.5},{team:"CHI",ou:9.5},
+{team:"DAL",ou:9.5},{team:"DEN",ou:9.5},{team:"GB",ou:9.5},{team:"HOU",ou:9.5},{team:"LAC",ou:9.5},
+{team:"SF",ou:9.5},{team:"JAX",ou:8.5},{team:"MIN",ou:8.5},{team:"PIT",ou:8.5},{team:"TB",ou:8.5},
+{team:"CAR",ou:7.5},{team:"IND",ou:7.5},{team:"NO",ou:7.5},{team:"NYG",ou:7.5},{team:"WAS",ou:7.5},
 {team:"ATL",ou:6.5},{team:"TEN",ou:6.5},{team:"CLE",ou:5.5},{team:"LV",ou:5.5},{team:"NYJ",ou:5.5},
 {team:"MIA",ou:4.5},{team:"ARI",ou:3.5}
 ];
 const MVP_ODDS=[
-{name:"Lamar Jackson",pos:"QB",team:"BAL",odds:"-150"},{name:"Josh Allen",pos:"QB",team:"BUF",odds:"+200"},
-{name:"Brock Purdy",pos:"QB",team:"SF",odds:"+350"},{name:"Joe Burrow",pos:"QB",team:"CIN",odds:"+400"},
-{name:"Patrick Mahomes",pos:"QB",team:"KC",odds:"+450"},{name:"Jalen Hurts",pos:"QB",team:"PHI",odds:"+500"},
-{name:"Matthew Stafford",pos:"QB",team:"LAR",odds:"+600"},{name:"C.J. Stroud",pos:"QB",team:"HOU",odds:"+800"},
-{name:"Jordan Love",pos:"QB",team:"GB",odds:"+1000"},{name:"Jaxson Dart",pos:"QB",team:"NYG",odds:"+1200"},
-{name:"Jayden Daniels",pos:"QB",team:"WAS",odds:"+1500"},{name:"Caleb Williams",pos:"QB",team:"CHI",odds:"+2000"},
-{name:"Derek Carr",pos:"QB",team:"NO",odds:"+2500"},{name:"Baker Mayfield",pos:"QB",team:"TB",odds:"+3000"},
-{name:"Jahmyr Gibbs",pos:"RB",team:"DET",odds:"+5000"},{name:"Bijan Robinson",pos:"RB",team:"ATL",odds:"+6000"},
-{name:"Ja'Marr Chase",pos:"WR",team:"CIN",odds:"+8000"},{name:"Justin Jefferson",pos:"WR",team:"MIN",odds:"+10000"}
+{name:"Josh Allen",pos:"QB",team:"BUF",odds:"+600"},{name:"Lamar Jackson",pos:"QB",team:"BAL",odds:"+800"},
+{name:"Joe Burrow",pos:"QB",team:"CIN",odds:"+850"},{name:"Justin Herbert",pos:"QB",team:"LAC",odds:"+1000"},
+{name:"Patrick Mahomes",pos:"QB",team:"KC",odds:"+1000"},{name:"Drake Maye",pos:"QB",team:"NE",odds:"+1000"},
+{name:"Dak Prescott",pos:"QB",team:"DAL",odds:"+1200"},{name:"Caleb Williams",pos:"QB",team:"CHI",odds:"+1200"},
+{name:"Matthew Stafford",pos:"QB",team:"LAR",odds:"+1400"},{name:"Jordan Love",pos:"QB",team:"GB",odds:"+2000"},
+{name:"Brock Purdy",pos:"QB",team:"SF",odds:"+2000"},{name:"Trevor Lawrence",pos:"QB",team:"JAX",odds:"+2000"},
+{name:"Sam Darnold",pos:"QB",team:"SEA",odds:"+2200"},{name:"Jayden Daniels",pos:"QB",team:"WAS",odds:"+2500"},
+{name:"Jalen Hurts",pos:"QB",team:"PHI",odds:"+2800"},{name:"Jared Goff",pos:"QB",team:"DET",odds:"+3000"},
+{name:"Bo Nix",pos:"QB",team:"DEN",odds:"+3500"},{name:"C.J. Stroud",pos:"QB",team:"HOU",odds:"+4500"},
+{name:"Jaxson Dart",pos:"QB",team:"NYG",odds:"+4500"},{name:"Baker Mayfield",pos:"QB",team:"TB",odds:"+5000"},
+{name:"Bijan Robinson",pos:"RB",team:"ATL",odds:"+10000"},{name:"Jahmyr Gibbs",pos:"RB",team:"DET",odds:"+12000"},
+{name:"Puka Nacua",pos:"WR",team:"LAR",odds:"+15000"},{name:"Christian McCaffrey",pos:"RB",team:"SF",odds:"+15000"}
 ];
 const OPOY_ODDS=[
-{name:"Jahmyr Gibbs",pos:"RB",team:"DET",odds:"+180"},{name:"Derrick Henry",pos:"RB",team:"BAL",odds:"+250"},
-{name:"Ja'Marr Chase",pos:"WR",team:"CIN",odds:"+300"},{name:"Justin Jefferson",pos:"WR",team:"MIN",odds:"+350"},
-{name:"Saquon Barkley",pos:"RB",team:"PHI",odds:"+400"},{name:"Bijan Robinson",pos:"RB",team:"ATL",odds:"+500"},
-{name:"CeeDee Lamb",pos:"WR",team:"DAL",odds:"+600"},{name:"Patrick Mahomes",pos:"QB",team:"KC",odds:"+700"},
-{name:"Tee Higgins",pos:"WR",team:"CIN",odds:"+800"},{name:"Travis Kelce",pos:"TE",team:"KC",odds:"+1000"}
+{name:"Jahmyr Gibbs",pos:"RB",team:"DET",odds:"+650"},{name:"Bijan Robinson",pos:"RB",team:"ATL",odds:"+900"},
+{name:"Ja'Marr Chase",pos:"WR",team:"CIN",odds:"+1000"},{name:"Puka Nacua",pos:"WR",team:"LAR",odds:"+1300"},
+{name:"Christian McCaffrey",pos:"RB",team:"SF",odds:"+1700"},{name:"Jaxon Smith-Njigba",pos:"WR",team:"SEA",odds:"+1600"},
+{name:"Saquon Barkley",pos:"RB",team:"PHI",odds:"+1500"},{name:"Justin Jefferson",pos:"WR",team:"MIN",odds:"+1400"},
+{name:"CeeDee Lamb",pos:"WR",team:"DAL",odds:"+2000"},{name:"Amon-Ra St. Brown",pos:"WR",team:"DET",odds:"+2200"},
+{name:"De'Von Achane",pos:"RB",team:"MIA",odds:"+2500"},{name:"Ashton Jeanty",pos:"RB",team:"LV",odds:"+3000"},
+{name:"Brock Bowers",pos:"TE",team:"LV",odds:"+4000"},{name:"Drake London",pos:"WR",team:"ATL",odds:"+5000"}
 ];
 const OROY_ODDS=[
-{name:"Jaxson Dart",pos:"QB",team:"NYG",odds:"+120"},{name:"Cam Ward",pos:"QB",team:"TEN",odds:"+180"},
-{name:"Ashton Jeanty",pos:"RB",team:"LV",odds:"+200"},{name:"De'Zhaun Stribling",pos:"WR",team:"ARI",odds:"+250"},
-{name:"Jeremiyah Love",pos:"RB",team:"CHI",odds:"+300"},{name:"Tetairoa McMillan",pos:"WR",team:"CAR",odds:"+400"},
-{name:"Malik Nabers",pos:"WR",team:"NYG",odds:"+500"},{name:"Jaylen Wright",pos:"RB",team:"TEN",odds:"+600"},
-{name:"Shedeur Sanders",pos:"QB",team:"CLE",odds:"+800"},{name:"Travis Hunter",pos:"WR",team:"JAX",odds:"+1000"}
+{name:"Jeremiyah Love",pos:"RB",team:"ARI",odds:"+550"},{name:"Carnell Tate",pos:"WR",team:"TEN",odds:"+600"},
+{name:"Jadarian Price",pos:"RB",team:"SEA",odds:"+650"},{name:"Jordyn Tyson",pos:"WR",team:"NO",odds:"+625"},
+{name:"Fernando Mendoza",pos:"QB",team:"LV",odds:"+750"},{name:"De'Zhaun Stribling",pos:"WR",team:"SF",odds:"+1000"},
+{name:"Kenyon Sadiq",pos:"TE",team:"NYJ",odds:"+1400"},{name:"Makai Lemon",pos:"WR",team:"PHI",odds:"+2200"},
+{name:"Ty Simpson",pos:"QB",team:"LAR",odds:"+3300"},{name:"Omar Cooper Jr.",pos:"WR",team:"NYJ",odds:"+4000"},
+{name:"KC Concepcion",pos:"WR",team:"CLE",odds:"+5000"},{name:"Kaelon Black",pos:"RB",team:"SF",odds:"+6000"}
 ];
-// Week 2 Game Props (Sep 18-21, 2026) — updated weekly
+// Week 5 Game Props (Oct 12-14, 2026) — updated from provider
 const WEEKLY_PROPS=[
-// Week 2 Passing Yards (updated Sep 17)
-{name:"Josh Allen",pos:"QB",team:"BUF",stat:"Pass Yds",ou:268.5,opp:"DET"},
-{name:"Jared Goff",pos:"QB",team:"DET",stat:"Pass Yds",ou:268.5,opp:"BUF"},
-{name:"Dak Prescott",pos:"QB",team:"DAL",stat:"Pass Yds",ou:262.5,opp:"WAS"},
-{name:"Joe Burrow",pos:"QB",team:"CIN",stat:"Pass Yds",ou:258.5,opp:"HOU"},
-{name:"Jordan Love",pos:"QB",team:"GB",stat:"Pass Yds",ou:254.5,opp:"NYJ"},
-{name:"C.J. Stroud",pos:"QB",team:"HOU",stat:"Pass Yds",ou:248.5,opp:"CIN"},
-{name:"Caleb Williams",pos:"QB",team:"CHI",stat:"Pass Yds",ou:244.5,opp:"MIN"},
-{name:"Patrick Mahomes",pos:"QB",team:"KC",stat:"Pass Yds",ou:244.5,opp:"IND"},
-{name:"Jayden Daniels",pos:"QB",team:"WAS",stat:"Pass Yds",ou:238.5,opp:"DAL"},
-{name:"Tyler Shough",pos:"QB",team:"NO",stat:"Pass Yds",ou:237.5,opp:"BAL"},
-{name:"Brock Purdy",pos:"QB",team:"SF",stat:"Pass Yds",ou:235.5,opp:"MIA"},
-{name:"Lamar Jackson",pos:"QB",team:"BAL",stat:"Pass Yds",ou:224.5,opp:"NO"},
-{name:"Bo Nix",pos:"QB",team:"DEN",stat:"Pass Yds",ou:224.5,opp:"JAX"},
-{name:"Bryce Young",pos:"QB",team:"CAR",stat:"Pass Yds",ou:220.5,opp:"ATL"},
-// Week 2 Rushing Yards (updated Sep 17)
-{name:"Jahmyr Gibbs",pos:"RB",team:"DET",stat:"Rush Yds",ou:90.5,opp:"BUF"},
-{name:"Derrick Henry",pos:"RB",team:"BAL",stat:"Rush Yds",ou:88.5,opp:"NO"},
-{name:"Jonathan Taylor",pos:"RB",team:"IND",stat:"Rush Yds",ou:87.5,opp:"KC"},
-{name:"Bijan Robinson",pos:"RB",team:"ATL",stat:"Rush Yds",ou:84.5,opp:"CAR"},
-{name:"Saquon Barkley",pos:"RB",team:"PHI",stat:"Rush Yds",ou:82.5,opp:"TEN"},
-{name:"Kenneth Walker III",pos:"RB",team:"KC",stat:"Rush Yds",ou:78.5,opp:"IND"},
-{name:"James Cook",pos:"RB",team:"BUF",stat:"Rush Yds",ou:78.5,opp:"DET"},
-{name:"D'Andre Swift",pos:"RB",team:"CHI",stat:"Rush Yds",ou:73.5,opp:"MIN"},
-{name:"Breece Hall",pos:"RB",team:"NYJ",stat:"Rush Yds",ou:68.5,opp:"GB"},
-{name:"David Montgomery",pos:"RB",team:"HOU",stat:"Rush Yds",ou:66.5,opp:"CIN"},
-{name:"Christian McCaffrey",pos:"RB",team:"SF",stat:"Rush Yds",ou:66.5,opp:"MIA"},
-{name:"Ashton Jeanty",pos:"RB",team:"LV",stat:"Rush Yds",ou:58.5,opp:"LAC"},
-{name:"Chase Brown",pos:"RB",team:"CIN",stat:"Rush Yds",ou:56.5,opp:"HOU"},
-{name:"Caleb Williams",pos:"QB",team:"CHI",stat:"Rush Yds",ou:20.5,opp:"MIN"},
-// Week 2 Receiving Yards (updated Sep 17)
-{name:"Puka Nacua",pos:"WR",team:"LAR",stat:"Rec Yds",ou:82.5,opp:"NYG"},
-{name:"Justin Jefferson",pos:"WR",team:"MIN",stat:"Rec Yds",ou:78.5,opp:"CHI"},
-{name:"Jaxon Smith-Njigba",pos:"WR",team:"SEA",stat:"Rec Yds",ou:76.5,opp:"ARI"},
-{name:"Nico Collins",pos:"WR",team:"HOU",stat:"Rec Yds",ou:76.5,opp:"CIN"},
-{name:"CeeDee Lamb",pos:"WR",team:"DAL",stat:"Rec Yds",ou:75.5,opp:"WAS"},
-{name:"Chris Olave",pos:"WR",team:"NO",stat:"Rec Yds",ou:69.5,opp:"BAL"},
-{name:"Ja'Marr Chase",pos:"WR",team:"CIN",stat:"Rec Yds",ou:69.5,opp:"HOU"},
-{name:"Amon-Ra St. Brown",pos:"WR",team:"DET",stat:"Rec Yds",ou:68.5,opp:"BUF"},
-{name:"Malik Nabers",pos:"WR",team:"NYG",stat:"Rec Yds",ou:64.5,opp:"LAR"},
-{name:"Trey McBride",pos:"TE",team:"ARI",stat:"Rec Yds",ou:62.5,opp:"SEA"},
-{name:"Dalton Kincaid",pos:"TE",team:"BUF",stat:"Rec Yds",ou:62.5,opp:"DET"},
-{name:"Christian Watson",pos:"WR",team:"GB",stat:"Rec Yds",ou:60.5,opp:"NYJ"},
-{name:"Tee Higgins",pos:"WR",team:"CIN",stat:"Rec Yds",ou:58.5,opp:"HOU"},
-{name:"Parker Washington",pos:"WR",team:"JAX",stat:"Rec Yds",ou:54.5,opp:"DEN"},
-{name:"Jaylen Waddle",pos:"WR",team:"DEN",stat:"Rec Yds",ou:52.5,opp:"JAX"},
-{name:"Jalen Coker",pos:"WR",team:"CAR",stat:"Rec Yds",ou:48.5,opp:"ATL"},
-{name:"Colston Loveland",pos:"TE",team:"CHI",stat:"Rec Yds",ou:47.5,opp:"MIN"},
-{name:"Tucker Kraft",pos:"TE",team:"GB",stat:"Rec Yds",ou:46.5,opp:"NYJ"},
-{name:"Sam LaPorta",pos:"TE",team:"DET",stat:"Rec Yds",ou:46.5,opp:"BUF"},
-{name:"Tyler Warren",pos:"TE",team:"IND",stat:"Rec Yds",ou:45.5,opp:"KC"},
-{name:"Travis Kelce",pos:"TE",team:"KC",stat:"Rec Yds",ou:42.5,opp:"IND"},
-// Week 2 Receiving Yards — Jahmyr Gibbs RB receiving
-{name:"Jahmyr Gibbs",pos:"RB",team:"DET",stat:"Rec Yds",ou:29.5,opp:"BUF"},
-// Week 2 Passing TDs
-{name:"Josh Allen",pos:"QB",team:"BUF",stat:"Pass TD",ou:1.5,opp:"DET"},
-{name:"Caleb Williams",pos:"QB",team:"CHI",stat:"Pass TD",ou:1.5,opp:"MIN"},
-{name:"Joe Burrow",pos:"QB",team:"CIN",stat:"Pass TD",ou:1.5,opp:"HOU"},
-{name:"Patrick Mahomes",pos:"QB",team:"KC",stat:"Pass TD",ou:1.5,opp:"IND"},
-{name:"Jared Goff",pos:"QB",team:"DET",stat:"Pass TD",ou:1.5,opp:"BUF"},
-{name:"Brock Purdy",pos:"QB",team:"SF",stat:"Pass TD",ou:1.5,opp:"MIA"},
-{name:"Jordan Love",pos:"QB",team:"GB",stat:"Pass TD",ou:1.5,opp:"NYJ"},
-{name:"Lamar Jackson",pos:"QB",team:"BAL",stat:"Pass TD",ou:1.5,opp:"NO"},
-{name:"Dak Prescott",pos:"QB",team:"DAL",stat:"Pass TD",ou:1.5,opp:"WAS"},
-{name:"Tyler Shough",pos:"QB",team:"NO",stat:"Pass TD",ou:1.5,opp:"BAL"},
-{name:"C.J. Stroud",pos:"QB",team:"HOU",stat:"Pass TD",ou:1.5,opp:"CIN"},
-{name:"Jayden Daniels",pos:"QB",team:"WAS",stat:"Pass TD",ou:1.5,opp:"DAL"},
-// Week 2 Receptions
-{name:"Puka Nacua",pos:"WR",team:"LAR",stat:"Receptions",ou:7.5,opp:"NYG"},
-{name:"Chris Olave",pos:"WR",team:"NO",stat:"Receptions",ou:6.5,opp:"BAL"},
-{name:"Amon-Ra St. Brown",pos:"WR",team:"DET",stat:"Receptions",ou:6.5,opp:"BUF"},
-{name:"Justin Jefferson",pos:"WR",team:"MIN",stat:"Receptions",ou:6.5,opp:"CHI"},
-{name:"CeeDee Lamb",pos:"WR",team:"DAL",stat:"Receptions",ou:6.5,opp:"WAS"},
-{name:"Trey McBride",pos:"TE",team:"ARI",stat:"Receptions",ou:6.5,opp:"SEA"},
-{name:"Jaxon Smith-Njigba",pos:"WR",team:"SEA",stat:"Receptions",ou:6.5,opp:"ARI"},
-{name:"Ja'Marr Chase",pos:"WR",team:"CIN",stat:"Receptions",ou:5.5,opp:"HOU"},
-{name:"Nico Collins",pos:"WR",team:"HOU",stat:"Receptions",ou:5.5,opp:"CIN"},
-{name:"Malik Nabers",pos:"WR",team:"NYG",stat:"Receptions",ou:5.5,opp:"LAR"},
-{name:"Dalton Kincaid",pos:"TE",team:"BUF",stat:"Receptions",ou:4.5,opp:"DET"},
-{name:"DeVonta Smith",pos:"WR",team:"PHI",stat:"Receptions",ou:4.5,opp:"TEN"},
-// Week 2 Anytime TD
-{name:"Derrick Henry",pos:"RB",team:"BAL",stat:"Any TD",ou:0,opp:"NO",odds:"-165"},
-{name:"Saquon Barkley",pos:"RB",team:"PHI",stat:"Any TD",ou:0,opp:"TEN",odds:"-155"},
-{name:"Jahmyr Gibbs",pos:"RB",team:"DET",stat:"Any TD",ou:0,opp:"BUF",odds:"-150"},
-{name:"Kenneth Walker III",pos:"RB",team:"KC",stat:"Any TD",ou:0,opp:"IND",odds:"-140"},
-{name:"Bijan Robinson",pos:"RB",team:"ATL",stat:"Any TD",ou:0,opp:"CAR",odds:"-120"},
-{name:"D'Andre Swift",pos:"RB",team:"CHI",stat:"Any TD",ou:0,opp:"MIN",odds:"-120"},
-{name:"Christian McCaffrey",pos:"RB",team:"SF",stat:"Any TD",ou:0,opp:"MIA",odds:"-120"},
-{name:"Ja'Marr Chase",pos:"WR",team:"CIN",stat:"Any TD",ou:0,opp:"HOU",odds:"-110"},
-{name:"James Cook",pos:"RB",team:"BUF",stat:"Any TD",ou:0,opp:"DET",odds:"+120"},
-{name:"Josh Allen",pos:"QB",team:"BUF",stat:"Any TD",ou:0,opp:"DET",odds:"+120"},
-{name:"Amon-Ra St. Brown",pos:"WR",team:"DET",stat:"Any TD",ou:0,opp:"BUF",odds:"+100"},
-{name:"CeeDee Lamb",pos:"WR",team:"DAL",stat:"Any TD",ou:0,opp:"WAS",odds:"+105"},
-{name:"Puka Nacua",pos:"WR",team:"LAR",stat:"Any TD",ou:0,opp:"NYG",odds:"+105"},
-{name:"Justin Jefferson",pos:"WR",team:"MIN",stat:"Any TD",ou:0,opp:"CHI",odds:"+110"},
-{name:"Breece Hall",pos:"RB",team:"NYJ",stat:"Any TD",ou:0,opp:"GB",odds:"+130"},
-{name:"Jonathan Taylor",pos:"RB",team:"IND",stat:"Any TD",ou:0,opp:"KC",odds:"+130"},
-{name:"Nico Collins",pos:"WR",team:"HOU",stat:"Any TD",ou:0,opp:"CIN",odds:"+140"},
-{name:"Chris Olave",pos:"WR",team:"NO",stat:"Any TD",ou:0,opp:"BAL",odds:"+150"},
-{name:"Jalen Coker",pos:"WR",team:"CAR",stat:"Any TD",ou:0,opp:"ATL",odds:"+175"},
-{name:"Trey McBride",pos:"TE",team:"ARI",stat:"Any TD",ou:0,opp:"SEA",odds:"+210"},
-{name:"Dalton Kincaid",pos:"TE",team:"BUF",stat:"Any TD",ou:0,opp:"DET",odds:"+280"}
+  // Player props should be fetched from the odds provider
+  // If available, provider will return current week props
+  // Hardcoded fallback should only be used if provider unavailable
 ];
 // Current week's prop results — add as games finish
 var PROP_RESULTS:{[k:string]:number|string}={
-"Joe Burrow|Pass Yds":254,"Matthew Stafford|Pass Yds":155,"Dak Prescott|Pass Yds":175,"Jared Goff|Pass Yds":206,"Tyler Shough|Pass Yds":410,"Brock Purdy|Pass Yds":205,"Jordan Love|Pass Yds":387,"Justin Herbert|Pass Yds":209,"Patrick Mahomes|Pass Yds":184,"Josh Allen|Pass Yds":334,"Lamar Jackson|Pass Yds":324,"Caleb Williams|Pass Yds":269,"Jahmyr Gibbs|Rush Yds":156,"Derrick Henry|Rush Yds":144,"Jonathan Taylor|Rush Yds":98,"Saquon Barkley|Rush Yds":83,"Bijan Robinson|Rush Yds":83,"James Cook|Rush Yds":57,"Javonte Williams|Rush Yds":41,"D'Andre Swift|Rush Yds":124,"Devon Achane|Rush Yds":36,"Breece Hall|Rush Yds":102,"Kenneth Walker III|Rush Yds":173,"Christian McCaffrey|Rush Yds":68,"Puka Nacua|Rec Yds":74,"Ja'Marr Chase|Rec Yds":12,"Jaxon Smith-Njigba|Rec Yds":122,"CeeDee Lamb|Rec Yds":44,"Chris Olave|Rec Yds":182,"Justin Jefferson|Rec Yds":92,"Nico Collins|Rec Yds":75,"Tee Higgins|Rec Yds":59,"Malik Nabers|Rec Yds":69,"Trey McBride|Rec Yds":95,"Rashee Rice|Rec Yds":52,"Jahmyr Gibbs|Any TD":"YES","Saquon Barkley|Any TD":"NO","Ja'Marr Chase|Any TD":"NO","Derrick Henry|Any TD":"YES","Jonathan Taylor|Any TD":"YES","Amon-Ra St. Brown|Any TD":"YES","CeeDee Lamb|Any TD":"YES","Christian McCaffrey|Any TD":"NO","Justin Jefferson|Any TD":"YES","Rashee Rice|Any TD":"YES","Dalton Kincaid|Any TD":"NO"
 };
 const PLAYER_PROPS=[
 {name:"Josh Allen",pos:"QB",team:"BUF",stat:"Pass Yds",ou:4450.5},{name:"Josh Allen",pos:"QB",team:"BUF",stat:"Pass TD",ou:38.5},
@@ -2122,14 +2063,14 @@ const PLAYER_PROPS=[
 {name:"Brock Bowers",pos:"TE",team:"LV",stat:"Rec Yds",ou:950.5},{name:"Trey McBride",pos:"TE",team:"ARI",stat:"Rec Yds",ou:900.5}
 ];
 const DIV_ODDS=[
-{div:"AFC-E",teams:[{team:"BUF",odds:"-200"},{team:"MIA",odds:"+400"},{team:"NYJ",odds:"+1000"},{team:"NE",odds:"-500"}]},
-{div:"AFC-C",teams:[{team:"BAL",odds:"-150"},{team:"CIN",odds:"+200"},{team:"PIT",odds:"+400"},{team:"CLE",odds:"+800"}]},
-{div:"AFC-S",teams:[{team:"HOU",odds:"-220"},{team:"IND",odds:"+350"},{team:"TEN",odds:"+500"},{team:"JAX",odds:"+550"}]},
-{div:"AFC-W",teams:[{team:"KC",odds:"-130"},{team:"LAC",odds:"+180"},{team:"LV",odds:"+800"},{team:"DEN",odds:"+900"}]},
-{div:"NFC-E",teams:[{team:"PHI",odds:"-110"},{team:"DAL",odds:"+150"},{team:"WAS",odds:"+400"},{team:"NYG",odds:"+600"}]},
-{div:"NFC-C",teams:[{team:"DET",odds:"-140"},{team:"CHI",odds:"+180"},{team:"GB",odds:"+220"},{team:"MIN",odds:"+250"}]},
-{div:"NFC-S",teams:[{team:"ATL",odds:"+120"},{team:"TB",odds:"+150"},{team:"NO",odds:"+250"},{team:"CAR",odds:"+400"}]},
-{div:"NFC-W",teams:[{team:"SF",odds:"-180"},{team:"LAR",odds:"+160"},{team:"SEA",odds:"+200"},{team:"ARI",odds:"+800"}]}
+{div:"AFC East",teams:[{team:"BUF",odds:"-136"},{team:"NE",odds:"+145"},{team:"NYJ",odds:"+1200"},{team:"MIA",odds:"+2500"}]},
+{div:"AFC North",teams:[{team:"BAL",odds:"-109"},{team:"CIN",odds:"+225"},{team:"PIT",odds:"+520"},{team:"CLE",odds:"+2000"}]},
+{div:"AFC South",teams:[{team:"HOU",odds:"+110"},{team:"JAX",odds:"+245"},{team:"IND",odds:"+500"},{team:"TEN",odds:"+900"}]},
+{div:"AFC West",teams:[{team:"KC",odds:"+170"},{team:"LAC",odds:"+190"},{team:"DEN",odds:"+210"},{team:"LV",odds:"+1500"}]},
+{div:"NFC East",teams:[{team:"PHI",odds:"+140"},{team:"DAL",odds:"+235"},{team:"WAS",odds:"+450"},{team:"NYG",odds:"+700"}]},
+{div:"NFC North",teams:[{team:"DET",odds:"+165"},{team:"GB",odds:"+235"},{team:"CHI",odds:"+350"},{team:"MIN",odds:"+493"}]},
+{div:"NFC South",teams:[{team:"TB",odds:"+164"},{team:"CAR",odds:"+350"},{team:"ATL",odds:"+400"},{team:"NO",odds:"+255"}]},
+{div:"NFC West",teams:[{team:"LAR",odds:"+110"},{team:"SF",odds:"+200"},{team:"SEA",odds:"+225"},{team:"ARI",odds:"+10000"}]}
 ];
 
 // 2026 NFL Bye Weeks (weeks 5-14)
@@ -2233,7 +2174,7 @@ function AuthModal(props){
     if(!email.includes("@")){setErr("Enter a valid email address");return;}
     setErr("");setLoading(true);
     try{
-      var {error}=await supabaseClient!.auth.resetPasswordForEmail(email,{redirectTo:"https://fantasydraftpros.com/?reset=true"});
+      var {error}=await authClient!.auth.resetPasswordForEmail(email,{redirectTo:"https://fantasydraftpros.com/?reset=true"});
       if(error)throw error;
       setResetSent(true);
     }catch(e:any){setErr(e.message||"Something went wrong. Please try again.");}
@@ -2247,14 +2188,14 @@ function AuthModal(props){
     try {
       if(mode==="signup"){
         if(step===1){setLoading(false);setStep(2);return;}
-        var signUpResult=await supabaseClient!.auth.signUp({
+        var signUpResult=await authClient!.auth.signUp({
           email,password,
           options:{data:{name,plan},emailRedirectTo:"https://fantasydraftpros.com"}
         });
         if(signUpResult.error)throw signUpResult.error;
         // Store IP + visitor_id on user row for duplicate trial detection (non-blocking)
         if(signUpResult.data.session){
-          (async function(){try{var g=await getGeo().catch(function(){return null;});var upd:any={};if(g?.ip)upd.signup_ip=g.ip;var vid=getVisitorId();if(vid)upd.signup_visitor_id=vid;if(Object.keys(upd).length>0)await supabaseClient!.from("users").update(upd).eq("id",signUpResult.data.session!.user.id);}catch(e){}})();
+          (async function(){try{var g=await getGeo().catch(function(){return null;});var upd:any={};if(g?.ip)upd.signup_ip=g.ip;var vid=getVisitorId();if(vid)upd.signup_visitor_id=vid;if(Object.keys(upd).length>0)await authClient!.from("users").update(upd).eq("id",signUpResult.data.session!.user.id);}catch(e){}})();
         }
         // GATE 0 CORRECTIVE: Support both Confirm Email configurations
         // If session exists (Confirm Email disabled): Send authenticated welcome email immediately
@@ -2274,7 +2215,7 @@ function AuthModal(props){
           setErr("");
         }
       } else if(mode==="signin"){
-        var signInResult=await supabaseClient!.auth.signInWithPassword({email,password});
+        var signInResult=await authClient!.auth.signInWithPassword({email,password});
         if(signInResult.error)throw signInResult.error;
         // DEFENSIVE: Verify user and session exist before dereferencing
         if(!signInResult.data.user)throw new Error("Sign in succeeded but no user data returned");
@@ -2286,13 +2227,13 @@ function AuthModal(props){
         // Log in immediately with auth data — don't wait for DB
         onAuth({id:usr.id,name:usr.user_metadata?.name||usr.email||"",email:usr.email||"",plan:(admin3||fa3)?"elite":"free",isPro:admin3||fa3,isAdmin:admin3,token:sess.access_token});
         // Load profile from DB in background and update
-        supabaseClient!.from("users").select("name,plan,is_pro,is_admin,signup_ip,signup_visitor_id").eq("id",usr.id).single().then(function(profResult){
+        authClient!.from("users").select("name,plan,is_pro,is_admin,signup_ip,signup_visitor_id").eq("id",usr.id).single().then(function(profResult){
           var prof=profResult.data;
           if(!prof)return;
           var isAdm=admin3||prof.is_admin||false;
           onAuth({id:usr.id,name:prof.name||usr.user_metadata?.name||usr.email||"",email:usr.email||"",plan:(isAdm||fa3)?"elite":(prof.plan||"free"),isPro:prof.is_pro||isAdm||fa3,isAdmin:isAdm,token:sess.access_token});
           // Backfill IP + visitor_id if missing (for users who signed in before this feature)
-          if(!prof.signup_ip||!prof.signup_visitor_id){(async function(){try{var g=await getGeo().catch(function(){return null;});var upd:any={};if(!prof.signup_ip&&g?.ip)upd.signup_ip=g.ip;if(!prof.signup_visitor_id){var vid=getVisitorId();if(vid)upd.signup_visitor_id=vid;}if(Object.keys(upd).length>0)supabaseClient!.from("users").update(upd).eq("id",usr.id);}catch(e){}})();}
+          if(!prof.signup_ip||!prof.signup_visitor_id){(async function(){try{var g=await getGeo().catch(function(){return null;});var upd:any={};if(!prof.signup_ip&&g?.ip)upd.signup_ip=g.ip;if(!prof.signup_visitor_id){var vid=getVisitorId();if(vid)upd.signup_visitor_id=vid;}if(Object.keys(upd).length>0)authClient!.from("users").update(upd).eq("id",usr.id);}catch(e){}})();}
         }).catch(function(){});
       }
     } catch(e:any){
@@ -2429,353 +2370,10 @@ function TradeItem(props){
 // ── Analytics Dashboard Component ─────────────────────────────────────────
 
 function playerSlug(name:string){return name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");}
-function AnalyticsDashboard({T,data,loading,onLoad}:{T:any,data:any,loading:boolean,onLoad:()=>void}){
-  useEffect(function(){onLoad();},[]);// eslint-disable-line react-hooks/exhaustive-deps
-
-  // Build daily chart from raw page_view events
-  function buildDailyBuckets(events:any[]){
-    var buckets:Record<string,Set<string>>={};
-    var today=new Date();
-    for(var i=13;i>=0;i--){
-      var d=new Date(today);d.setDate(d.getDate()-i);
-      var key=d.toISOString().slice(0,10);
-      buckets[key]=new Set();
-    }
-    (events||[]).forEach(function(e:any){
-      var day=e.created_at?e.created_at.slice(0,10):"";
-      if(buckets[day])buckets[day].add(e.visitor_id);
-    });
-    return Object.entries(buckets).map(function([day,set]){return {day,count:set.size};});
-  }
-
-  function buildFeatureUsage(features:any[]){
-    var counts:Record<string,number>={};
-    (features||[]).forEach(function(e:any){
-      var t=e.event_data?.tab||"unknown";
-      counts[t]=(counts[t]||0)+1;
-    });
-    return Object.entries(counts).sort(function(a,b){return b[1]-a[1];}).slice(0,6);
-  }
-
-
-  if(loading) return React.createElement("div",{style:{padding:40,textAlign:"center",color:T.textSub}},
-    React.createElement("div",{style:{width:32,height:32,borderRadius:"50%",border:"3px solid "+T.purple+"30",borderTopColor:T.purple,animation:"spin 0.8s linear infinite",margin:"0 auto 12px"}}),
-    "Loading analytics..."
-  );
-
-  if(!data) return React.createElement("div",{style:{padding:16,textAlign:"center",color:T.textSub}},"No data yet — visit the site to start collecting.");
-  if(data.error) return React.createElement("div",{style:{padding:16}},
-    React.createElement("div",{style:{background:"#ef444418",border:"1px solid #ef4444",borderRadius:12,padding:16,marginBottom:12}},
-      React.createElement("div",{style:{fontWeight:800,fontSize:14,color:"#ef4444",marginBottom:6}},"Analytics Query Error"),
-      React.createElement("div",{style:{fontSize:12,color:T.textSub,fontFamily:"monospace",wordBreak:"break-all"}},(data.error))),
-    React.createElement("div",{style:{fontSize:12,color:T.textSub,lineHeight:1.7}},"This usually means the SELECT policy on ",React.createElement("code",null,"analytics_events")," doesn't allow the anon key. Run this in Supabase SQL editor:",React.createElement("pre",{style:{background:T.bgInput,borderRadius:8,padding:10,fontSize:11,marginTop:8,color:T.purple,overflowX:"auto"}},'DROP POLICY IF EXISTS "admin select" ON analytics_events;\nCREATE POLICY "anon select" ON analytics_events\n  FOR SELECT TO anon USING (true);')),
-    React.createElement("button",{onClick:onLoad,style:{marginTop:12,padding:"10px 20px",borderRadius:10,border:"1px solid "+T.border,background:"transparent",color:T.textSub,cursor:"pointer",fontWeight:600,fontSize:13}},"\u21BB Retry")
-  );
-
-  var daily=buildDailyBuckets(data.daily);
-  var maxDay=Math.max(1,...daily.map(function(d:any,idx:number){return d.count;}));
-  var totalUnique=new Set((data.daily||[]).map(function(e:any){return e.visitor_id;})).size;
-  var todayKey=new Date().toISOString().slice(0,10);
-  var todayVisitors=daily.find(function(d:any){return d.day===todayKey;})?.count||0;
-  var weekVisitors=new Set((data.daily||[]).filter(function(e:any){
-    var d=new Date(e.created_at);return(Date.now()-d.getTime())<7*86400000;
-  }).map(function(e:any){return e.visitor_id;})).size;
-  var features=buildFeatureUsage(data.features);
-
-  // Calculate trades by time period
-  var todayTrades=(data.dailyEvents||[]).filter(function(e:any){
-    var d=new Date(e.created_at);return e.event_type==="trade_analyzed"&&(Date.now()-d.getTime())<86400000;
-  }).length;
-  var weekTrades=(data.dailyEvents||[]).filter(function(e:any){
-    var d=new Date(e.created_at);return e.event_type==="trade_analyzed"&&(Date.now()-d.getTime())<7*86400000;
-  }).length;
-  var twoWeekTrades=(data.dailyEvents||[]).filter(function(e:any){
-    var d=new Date(e.created_at);return e.event_type==="trade_analyzed"&&(Date.now()-d.getTime())<14*86400000;
-  }).length;
-
-  // Enhanced metrics section
-  var bounceRate = ((data.dailyEvents||[]).filter(function(e){return e.event_type==='page_view';}).length / (totalUnique||1) * 100).toFixed(1);
-  var avgEventsPerVisitor = (((data.dailyEvents||[]).length / (totalUnique||1)) || 0).toFixed(1);
-  var topEventType = features[0]?features[0][0]:'Unknown';
-  var topEventCount = features[0]?features[0][1]:0;
-  var maxFeat=Math.max(1,...features.map(function(f:any){return f[1];}));
-
-  // Build user list from dedicated signed-in user events feed
-  var userMap:Record<string,{email:string,lastSeen:string,events:number,trades:number,lastAction:string}> = {};
-  (data.userEvents||[]).forEach(function(e:any){
-    var email=e.event_data?.user_email;
-    if(!email) return;
-    if(!userMap[email]) userMap[email]={email,lastSeen:e.created_at,events:0,trades:0,lastAction:e.event_type};
-    userMap[email].events++;
-    if(e.event_type==="trade_analyzed"){userMap[email].trades++;userMap[email].lastAction="trade_analyzed";}
-    if(e.created_at>userMap[email].lastSeen){userMap[email].lastSeen=e.created_at;userMap[email].lastAction=e.event_type;}
-  });
-  var userList=Object.values(userMap).sort(function(a,b){return b.lastSeen.localeCompare(a.lastSeen);});
-
-  // Build anonymous visitor list from recent events (no user_email)
-  var anonMap:Record<string,{vid:string,lastSeen:string,events:number,trades:number,lastAction:string}> = {};
-  (data.recent||[]).forEach(function(e:any){
-    var vid=e.visitor_id;
-    if(!vid||e.event_data?.user_email) return; // skip signed-in users
-    if(!anonMap[vid]) anonMap[vid]={vid,lastSeen:e.created_at,events:0,trades:0,lastAction:e.event_type};
-    anonMap[vid].events++;
-    if(e.event_type==="trade_analyzed"){anonMap[vid].trades++;anonMap[vid].lastAction="trade_analyzed";}
-    if(e.created_at>anonMap[vid].lastSeen){anonMap[vid].lastSeen=e.created_at;anonMap[vid].lastAction=e.event_type;}
-  });
-  var anonList=Object.values(anonMap).sort(function(a,b){return b.lastSeen.localeCompare(a.lastSeen);});
-
-  return React.createElement("div",{style:{padding:16}},
-    // Header
-    React.createElement("div",{style:{marginBottom:16}},
-      React.createElement("div",{style:{fontWeight:900,fontSize:20,color:T.text}},"Site Analytics"),
-      React.createElement("div",{style:{fontSize:12,color:T.textSub,marginTop:2}},"Last 14 days · unique visitors")
-    ),
-
-    // Summary cards
-    React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(90px, 1fr))",gap:6,marginBottom:20}},
-      [["Today",todayVisitors,"📅"],["7d",weekVisitors,"📆"],["14d",totalUnique,"🗓️"],["All Time",data.totalVisitors,"👥"],["Trades Today",todayTrades,"⚖️"],["Trades 7d",weekTrades,"📊"],["Trades 14d",twoWeekTrades,"📈"],["Total Trades",data.trades,"🏆"]].map(function(s:any){
-        return React.createElement("div",{key:s[0] as string,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"12px 8px",textAlign:"center"}},
-          React.createElement("div",{style:{fontSize:20,marginBottom:4}},s[2]),
-          React.createElement("div",{style:{fontWeight:900,fontSize:22,color:T.purple}},s[1]),
-          React.createElement("div",{style:{fontSize:10,color:T.textSub,fontWeight:600}},s[0])
-        );
-      })
-    ),
-
-    // Signed-in Users
-    React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"14px 12px",marginBottom:16}},
-      React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}},
-        React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text}},"Signed-In Users"),
-        React.createElement("div",{style:{fontSize:11,color:T.textSub}},userList.length+" users")
-      ),
-      userList.length===0
-        ? React.createElement("div",{style:{fontSize:12,color:T.textSub,textAlign:"center",padding:"12px 0"}},"No signed-in user activity yet. Users must sign in before analyzing trades.")
-        : userList.map(function(u:any,i:number){
-            var when=new Date(u.lastSeen);
-            var actionLabel=u.lastAction==="trade_analyzed"?"⚖️ Analyzed trade":u.lastAction==="tab_change"?"🔀 Browsed":u.lastAction==="page_view"?"🌐 Visited":"📌 "+u.lastAction;
-            var isTrader=u.trades>0;
-            return React.createElement("div",{key:u.email,style:{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:i<userList.length-1?"1px solid "+T.border:"none"}},
-              React.createElement("div",{style:{width:34,height:34,borderRadius:"50%",background:isTrader?"linear-gradient(135deg,"+T.purple+",#5b21b6)":T.purpleDim,border:"1px solid "+T.borderPurple,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,color:"#fff",flexShrink:0}},u.email.charAt(0).toUpperCase()),
-              React.createElement("div",{style:{flex:1,minWidth:0}},
-                React.createElement("div",{style:{fontSize:12,fontWeight:700,color:T.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},u.email),
-                React.createElement("div",{style:{fontSize:10,color:T.textSub,marginTop:2}},actionLabel+" · "+u.trades+" trades · "+when.toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}))
-              ),
-              isTrader&&React.createElement("div",{style:{background:T.purple+"22",border:"1px solid "+T.purple+"44",borderRadius:6,padding:"2px 7px",fontSize:9,fontWeight:800,color:T.purple,flexShrink:0}},u.trades+" trades")
-            );
-          })
-    ),
-
-    // Anonymous Visitors
-    React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"14px 12px",marginBottom:16}},
-      React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}},
-        React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text}},"Anonymous Visitors"),
-        React.createElement("div",{style:{fontSize:11,color:T.textSub}},anonList.length+" unique")
-      ),
-      anonList.length===0
-        ? React.createElement("div",{style:{fontSize:12,color:T.textSub,textAlign:"center",padding:"12px 0"}},"No recent anonymous activity.")
-        : anonList.slice(0,20).map(function(u:any,i:number){
-            var when=new Date(u.lastSeen);
-            var actionLabel=u.lastAction==="trade_analyzed"?"⚖️ Analyzed trade":u.lastAction==="tab_change"?"🔀 Browsed":"🌐 Visited";
-            return React.createElement("div",{key:u.vid,style:{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:i<Math.min(anonList.length,20)-1?"1px solid "+T.border:"none"}},
-              React.createElement("div",{style:{width:30,height:30,borderRadius:"50%",background:T.bgInput,border:"1px solid "+T.border,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,color:T.textDim,flexShrink:0}},"?"),
-              React.createElement("div",{style:{flex:1,minWidth:0}},
-                React.createElement("div",{style:{fontSize:11,color:T.textSub,fontFamily:"monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},u.vid),
-                React.createElement("div",{style:{fontSize:10,color:T.textDim,marginTop:2}},actionLabel+" · "+u.events+" events"+(u.trades?" · "+u.trades+" trades":"")+" · "+when.toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}))
-              ),
-              u.trades>0&&React.createElement("div",{style:{background:T.green+"22",border:"1px solid "+T.green+"44",borderRadius:6,padding:"2px 7px",fontSize:9,fontWeight:800,color:T.green,flexShrink:0}},u.trades+" trades")
-            );
-          })
-    ),
-
-    // Daily bar chart
-    React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"14px 12px",marginBottom:16}},
-      React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}},
-        React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text}},"Daily Unique Visitors"),
-        React.createElement("div",{style:{fontSize:10,color:T.textSub}},daily.length+" days tracked")
-      ),
-      React.createElement("div",{style:{display:"flex",alignItems:"flex-end",gap:6,height:120,paddingBottom:4}},
-        daily.map(function(d:any,idx:number){
-          var h=Math.max(8,Math.round((d.count/maxDay)*104));
-          var isToday=d.day===todayKey;
-          var daysAgo=daily.length-1-idx;
-          var opacity=isToday?1:Math.max(0.35,1-(daysAgo*0.08));
-          return React.createElement("div",{key:d.day,style:{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}},
-            d.count>0&&React.createElement("div",{style:{fontSize:11,fontWeight:600,color:isToday?T.purple:T.text,lineHeight:1}},d.count),
-            React.createElement("div",{title:d.day+" · "+d.count+" visitors",style:{width:"100%",height:h,borderRadius:4,background:isToday?T.purple:"rgba(124, 77, 255, "+opacity+")",border:isToday?"2px solid "+T.purple:"none",transition:"all 0.3s",cursor:"default",boxShadow:isToday?"0 0 8px "+T.purple+"30":"none"}}),
-            isToday&&React.createElement("div",{style:{fontSize:8,fontWeight:700,color:T.purple,marginTop:1}},isToday?"TODAY":"")
-          );
-        })
-      ),
-      React.createElement("div",{style:{display:"flex",justifyContent:"space-between",fontSize:9,color:T.textDim,marginTop:8}},
-        React.createElement("div",null,daily[0]?.day),
-        React.createElement("div",{style:{fontWeight:600}},daily[daily.length-1]?.day+" →")
-      )
-    ),
-
-    // Total trades
-    React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"12px 14px",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"space-between"}},
-      React.createElement("div",null,
-        React.createElement("div",{style:{fontSize:12,color:T.textSub,fontWeight:600}},"Total Trades Analyzed"),
-        React.createElement("div",{style:{fontSize:24,fontWeight:900,color:T.green}},data.trades.toLocaleString())
-      ),
-      React.createElement("div",{style:{fontSize:32}},"⚖️")
-    ),
-
-    // Feature usage
-    features.length>0&&React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"14px 12px",marginBottom:16}},
-      React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text,marginBottom:12}},"Feature Usage (14 days)"),
-      features.map(function(f:any){
-        var pct=Math.round((f[1]/maxFeat)*100);
-        return React.createElement("div",{key:f[0],style:{marginBottom:10}},
-          React.createElement("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:3}},
-            React.createElement("div",{style:{fontSize:12,color:T.text,fontWeight:600,textTransform:"capitalize"}},f[0]),
-            React.createElement("div",{style:{fontSize:12,color:T.textSub}},f[1]+" taps")
-          ),
-          React.createElement("div",{style:{height:6,background:T.bgInput,borderRadius:3,overflow:"hidden"}},
-            React.createElement("div",{style:{height:"100%",width:pct+"%",background:T.purple,borderRadius:3,transition:"width 0.4s"}})
-          )
-        );
-      })
-    ),
-
-    // Recent events
-    data.recent&&data.recent.length>0&&React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"14px 12px",marginBottom:16}},
-      React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text,marginBottom:10}},"Recent Activity"),
-      data.recent.slice(0,10).map(function(e:any,i:number){
-        var when=new Date(e.created_at);
-        var label=e.event_type==="page_view"?"🌐 Page View":e.event_type==="tab_change"?"🔀 Tab: "+e.event_data?.tab:e.event_type==="trade_analyzed"?"⚖️ Trade Analyzed":"📌 "+e.event_type;
-        var userEmail=e.event_data?.user_email||"";
-        return React.createElement("div",{key:i,style:{padding:"7px 0",borderBottom:i<9?"1px solid "+T.border:"none"}},
-          React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},
-            React.createElement("div",{style:{fontSize:12,color:T.text,fontWeight:600}},label),
-            React.createElement("div",{style:{fontSize:10,color:T.textSub}},when.toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}))
-          ),
-          userEmail&&React.createElement("div",{style:{fontSize:10,color:T.purple,marginTop:2}},userEmail)
-        );
-      })
-    ),
-
-    // Platform Trades Feed
-    React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"14px 12px",marginBottom:16}},
-      React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}},
-        React.createElement("div",null,
-          React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text}},"⚖️ All Platform Trades"),
-          React.createElement("div",{style:{fontSize:10,color:T.textSub,marginTop:2}},"Every trade analyzed across the platform")
-        ),
-        React.createElement("div",{style:{background:T.purple+"22",border:"1px solid "+T.purple+"44",borderRadius:8,padding:"4px 10px",fontSize:11,fontWeight:700,color:T.purple}},(data.platformTrades||[]).length+" trades")
-      ),
-      (data.platformTrades||[]).length===0
-        ? React.createElement("div",{style:{textAlign:"center",padding:"20px 0",fontSize:12,color:T.textSub}},"No trades logged yet.")
-        : (data.platformTrades||[]).map(function(e:any,i:number){
-            var d=e.event_data||{};
-            var sideA:string[]=(d.sideA||[]);
-            var sideB:string[]=(d.sideB||[]);
-            var when=new Date(e.created_at);
-            var email=d.user_email||null;
-            return React.createElement("div",{key:i,style:{padding:"10px 0",borderBottom:i<(data.platformTrades.length-1)?"1px solid "+T.border:"none"}},
-              React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}},
-                React.createElement("div",{style:{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap" as any}},
-                  email
-                    ? React.createElement("div",{style:{fontSize:11,fontWeight:700,color:T.purple}},email)
-                    : React.createElement("div",{style:{fontSize:11,color:T.textDim}},"Anonymous"),
-                  d.scoring&&React.createElement("div",{style:{fontSize:9,background:T.bgInput,borderRadius:4,padding:"1px 5px",color:T.textSub,fontWeight:600}},d.scoring),
-                  d.platform&&React.createElement("div",{style:{fontSize:9,background:d.platform==="iOS"?"#1d4ed8"+"22":d.platform==="Android"?"#15803d"+"22":T.bgInput,borderRadius:4,padding:"1px 5px",color:d.platform==="iOS"?"#60a5fa":d.platform==="Android"?"#4ade80":T.textSub,fontWeight:600}},d.platform==="iOS"?"📱 iOS":d.platform==="Android"?"🤖 Android":"🖥️ Web"),
-                  d.device&&React.createElement("div",{style:{fontSize:9,background:T.bgInput,borderRadius:4,padding:"1px 5px",color:T.textSub,fontWeight:600}},d.device),
-                  (d.country&&d.country!=="Unknown")&&React.createElement("div",{style:{fontSize:9,background:T.bgInput,borderRadius:4,padding:"1px 5px",color:T.textSub,fontWeight:600}},d.flag+" "+(d.city?d.city+", ":"")+d.country)
-                ),
-                React.createElement("div",{style:{fontSize:10,color:T.textDim}},when.toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}))
-              ),
-              React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr auto 1fr",gap:6,alignItems:"center"}},
-                React.createElement("div",{style:{background:T.bgInput,borderRadius:8,padding:"6px 8px"}},
-                  React.createElement("div",{style:{fontSize:9,color:T.textSub,fontWeight:700,marginBottom:3}},"TEAM A GIVES"),
-                  sideA.length>0
-                    ? sideA.map(function(name:string,j:number){return React.createElement("div",{key:j,style:{fontSize:11,color:T.text,fontWeight:600,marginBottom:1}},name);})
-                    : React.createElement("div",{style:{fontSize:10,color:T.textDim}},"—")
-                ),
-                React.createElement("div",{style:{fontSize:12,color:T.textDim,fontWeight:700}},"⇄"),
-                React.createElement("div",{style:{background:T.bgInput,borderRadius:8,padding:"6px 8px"}},
-                  React.createElement("div",{style:{fontSize:9,color:T.textSub,fontWeight:700,marginBottom:3}},"TEAM B GIVES"),
-                  sideB.length>0
-                    ? sideB.map(function(name:string,j:number){return React.createElement("div",{key:j,style:{fontSize:11,color:T.text,fontWeight:600,marginBottom:1}},name);})
-                    : React.createElement("div",{style:{fontSize:10,color:T.textDim}},"—")
-                )
-              )
-            );
-          })
-    ),
-
-    // Unique visitors section
-    data.uniqueVisitors && React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"14px 12px",marginBottom:16}},
-      React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text,marginBottom:10}},"Unique Daily Visitors"),
-      (data.uniqueVisitors||[]).length>0 ? React.createElement("table",{style:{width:"100%",fontSize:11,borderCollapse:"collapse"}},
-        React.createElement("thead",null,React.createElement("tr",{style:{borderBottom:"1px solid "+T.border}},
-          React.createElement("th",{style:{textAlign:"left",padding:"8px 0",color:T.textSub,fontWeight:600}},"Date"),
-          React.createElement("th",{style:{textAlign:"right",padding:"8px 0",color:T.textSub,fontWeight:600}},"Unique"),
-          React.createElement("th",{style:{textAlign:"right",padding:"8px 0",color:T.textSub,fontWeight:600}},"Events")
-        )),
-        React.createElement("tbody",null,(data.uniqueVisitors||[]).slice(0,14).map(function(v:any,i:number){
-          return React.createElement("tr",{key:i,style:{borderBottom:i<13?"1px solid "+T.border:"none"}},
-            React.createElement("td",{style:{padding:"8px 0",color:T.text}},v.visitor_date),
-            React.createElement("td",{style:{textAlign:"right",padding:"8px 0",color:T.purple,fontWeight:600}},v.unique_count),
-            React.createElement("td",{style:{textAlign:"right",padding:"8px 0",color:T.textSub}},v.total_events)
-          );
-        }))
-      ) : React.createElement("div",{style:{textAlign:"center",padding:"20px 0",fontSize:12,color:T.textSub}},"No visitor data")
-    ),
-
-    // Prior weeks Vegas lines
-    data.week6Odds && React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"14px 12px",marginBottom:16}},
-      React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text,marginBottom:10}},"Week 6 Vegas Lines"),
-      (data.week6Odds||[]).length>0 ? React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8,fontSize:11}},
-        (data.week6Odds||[]).map(function(g:any,i:number){
-          return React.createElement("div",{key:i,style:{background:T.bgInput,borderRadius:8,padding:"8px",borderLeft:"3px solid "+T.purple}},
-            React.createElement("div",{style:{fontWeight:600,color:T.text}},g.home_team+" @ "+g.away_team),
-            React.createElement("div",{style:{fontSize:10,color:T.textSub,marginTop:2}},(g.home_spread>0?"+":"")+g.home_spread+" / "+g.total)
-          );
-        })
-      ) : React.createElement("div",{style:{textAlign:"center",padding:"20px 0",fontSize:12,color:T.textSub}},"No Week 6 odds")
-    ),
-
-    // Unique visitors section
-    data.uniqueVisitors && React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"14px 12px",marginBottom:16}},
-      React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text,marginBottom:10}},"Unique Daily Visitors"),
-      (data.uniqueVisitors||[]).length>0 ? React.createElement("table",{style:{width:"100%",fontSize:11,borderCollapse:"collapse"}},
-        React.createElement("thead",null,React.createElement("tr",{style:{borderBottom:"1px solid "+T.border}},
-          React.createElement("th",{style:{textAlign:"left",padding:"8px 0",color:T.textSub,fontWeight:600}},"Date"),
-          React.createElement("th",{style:{textAlign:"right",padding:"8px 0",color:T.textSub,fontWeight:600}},"Unique"),
-          React.createElement("th",{style:{textAlign:"right",padding:"8px 0",color:T.textSub,fontWeight:600}},"Events")
-        )),
-        React.createElement("tbody",null,(data.uniqueVisitors||[]).slice(0,14).map(function(v:any,i:number){
-          return React.createElement("tr",{key:i,style:{borderBottom:i<13?"1px solid "+T.border:"none"}},
-            React.createElement("td",{style:{padding:"8px 0",color:T.text}},v.visitor_date),
-            React.createElement("td",{style:{textAlign:"right",padding:"8px 0",color:T.purple,fontWeight:600}},v.unique_count),
-            React.createElement("td",{style:{textAlign:"right",padding:"8px 0",color:T.textSub}},v.total_events)
-          );
-        }))
-      ) : React.createElement("div",{style:{textAlign:"center",padding:"20px 0",fontSize:12,color:T.textSub}},"No visitor data")
-    ),
-
-    // Prior weeks Vegas lines
-    data.week6Odds && React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"14px 12px",marginBottom:16}},
-      React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text,marginBottom:10}},"Week 6 Vegas Lines"),
-      (data.week6Odds||[]).length>0 ? React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8,fontSize:11}},
-        (data.week6Odds||[]).map(function(g:any,i:number){
-          return React.createElement("div",{key:i,style:{background:T.bgInput,borderRadius:8,padding:"8px",borderLeft:"3px solid "+T.purple}},
-            React.createElement("div",{style:{fontWeight:600,color:T.text}},g.home_team+" @ "+g.away_team),
-            React.createElement("div",{style:{fontSize:10,color:T.textSub,marginTop:2}},(g.home_spread>0?"+":"")+g.home_spread+" / "+g.total)
-          );
-        })
-      ) : React.createElement("div",{style:{textAlign:"center",padding:"20px 0",fontSize:12,color:T.textSub}},"No Week 6 odds")
-    ),
-
-    // Refresh button
-    React.createElement("button",{onClick:onLoad,style:{width:"100%",padding:"12px",borderRadius:12,border:"1px solid "+T.border,background:"transparent",color:T.textSub,cursor:"pointer",fontWeight:600,fontSize:13}},"↻ Refresh")
-  );
-}
 function findPlayerBySlug(slug:string){return PLAYERS.find(function(p){return playerSlug(p.name)===slug;})||null;}
 
 export default function App(){
-  var validTabs=["trade","league","rankings","reports","admin","vegaslines"];
+  var validTabs=["trade","league","rankings","reports","admin"];
   var [tab,setTabRaw]=useState(function(){
     var h=window.location.hash.replace("#","");if(validTabs.includes(h))return h;
     var path=window.location.pathname;
@@ -2783,7 +2381,7 @@ export default function App(){
     if(path.indexOf("trade")!==-1)return "trade";
     return "trade";
   });
-  function setTab(t:string){console.log("[TRACE-setTab]",{targetTab:t});setTabRaw(t);if(playerPage){setPlayerPage(null);window.history.pushState({},"","/");}window.location.hash=t;}
+  function setTab(t:string){setTabRaw(t);if(playerPage){setPlayerPage(null);window.history.pushState({},"","/");}window.location.hash=t;}
   var [playerPage,setPlayerPage]=useState<any>(function(){
     var m=window.location.pathname.match(/^\/players\/([a-z0-9-]+)\/?$/);
     if(m){var p=findPlayerBySlug(m[1]);if(p){document.title=p.name+" Dynasty Value & Trade Analysis | Fantasy Draft Pros";return p;}}
@@ -2803,7 +2401,7 @@ export default function App(){
   },[]);
   // Warm up Supabase on app load so auth is fast when user clicks sign in
   useEffect(function(){
-    if(supabaseClient)supabaseClient.auth.getSession().catch(function(){});
+    if(authClient)authClient.auth.getSession().catch(function(){});
   },[]);
   // Fetch FDP Value history for player page
   var ppSnapshotCtx=normalizeSnapshotContext({isDynasty:isDynasty,scoring:sKey,superflex:isSF,tePremium:tePremium,idp:idpMode});
@@ -2820,7 +2418,7 @@ export default function App(){
     (async function(){
       var all:FdpSnapshot[]=[];var hasMore=true;var cursorDate:string|null=null;var cursorId:number|null=null;var seen=new Set<number>();
       while(hasMore&&!cancelled){
-        var q=supabaseClient.from("fdp_value_snapshots").select("id,player_slug,player_name,value,values_version,effective_at,recorded_at,valuation_factors").eq("player_slug",slug).eq("league_type",ctx.leagueType).eq("scoring",ctx.scoring).eq("superflex",ctx.superflex).eq("te_premium",ctx.tePremium).eq("idp",ctx.idp).order("effective_at",{ascending:false}).order("id",{ascending:false}).limit(HISTORY_PAGE_SIZE);
+        var q=authClient.from("fdp_value_snapshots").select("id,player_slug,player_name,value,values_version,effective_at,recorded_at,valuation_factors").eq("player_slug",slug).eq("league_type",ctx.leagueType).eq("scoring",ctx.scoring).eq("superflex",ctx.superflex).eq("te_premium",ctx.tePremium).eq("idp",ctx.idp).order("effective_at",{ascending:false}).order("id",{ascending:false}).limit(HISTORY_PAGE_SIZE);
         if(cursorDate!==null&&cursorId!==null){q=q.or("effective_at.lt."+cursorDate+",and(effective_at.eq."+cursorDate+",id.lt."+cursorId+")");}
         var res=await q;
         if(res.error){if(!cancelled){setPpHistoryLoading(false);setPpHistoryError(true);}return;}
@@ -2860,8 +2458,8 @@ export default function App(){
   },[]);// eslint-disable-line react-hooks/exhaustive-deps
   // Auth state sync with Supabase
   useEffect(function(){
-    if(!supabaseClient)return;
-    var {data:{subscription}}=supabaseClient.auth.onAuthStateChange(function(event,session){
+    if(!authClient)return;
+    var {data:{subscription}}=authClient.auth.onAuthStateChange(function(event,session){
       if(event==="SIGNED_OUT"||!session){saveAndSetUser(null);setLeagueFetchedAt("");return;}
       if(event==="PASSWORD_RECOVERY"){setShowResetPw(true);return;}
       if(event==="SIGNED_IN"||event==="TOKEN_REFRESHED"||event==="INITIAL_SESSION"){
@@ -2871,7 +2469,7 @@ export default function App(){
         // Set user immediately from session — no DB wait
         saveAndSetUser({id:usr.id,name:usr.user_metadata?.name||usr.email||"",email:usr.email||"",plan:(isAdmin2||fa4)?"elite":"free",isPro:isAdmin2||fa4,isAdmin:isAdmin2,token:session.access_token});
         // Load profile from DB in background and update
-        supabaseClient.from("users").select("name,plan,is_pro,is_admin").eq("id",usr.id).single().then(function(profResult){
+        authClient.from("users").select("name,plan,is_pro,is_admin").eq("id",usr.id).single().then(function(profResult){
           var prof=profResult.data;
           if(!prof)return;
           var isAdm=isAdmin2||prof.is_admin||false;
@@ -2909,9 +2507,7 @@ export default function App(){
   var [faabB,setFaabB]=useState(0);
   var [analyzed,setAnalyzed]=useState(false);
   var [tradeQuota,setTradeQuota]=useState({limit_per_day:2,used_count:0,reserved_count:0,remaining_count:0,quota_date:"",is_unlimited:false,loading:true,error:null});
-
-  // fetchTradeQuotaStatus: NOW inside App, can access setTradeQuota via closure
-  async function fetchTradeQuotaStatus(userToken){
+  async function fetchTradeQuotaStatus(userToken: string) {
     if(!userToken){setTradeQuota({limit_per_day:2,used_count:0,reserved_count:0,remaining_count:0,quota_date:"",is_unlimited:false,loading:false,error:"Not authenticated"});return;}
     try{
       const res=await callEdgeFn("trade-quota-status",{},userToken);
@@ -2925,23 +2521,7 @@ export default function App(){
       setTradeQuota({limit_per_day:2,used_count:0,reserved_count:0,remaining_count:0,quota_date:"",is_unlimited:false,loading:false,error:"Quota fetch error"});
     }
   }
-
-  // fetchOdds: NOW inside App, HAS access to user via closure, includes auth token
-  async function fetchOdds():Promise<{odds:{[t:string]:{spread:number,total:number,opp:string}},source:string,fetchedAt:string,stale:boolean}>{
-    try{
-      const headers:any={"Content-Type":"application/json","apikey":SUPA_KEY};
-      if(user?.token){headers["Authorization"]=`Bearer ${user.token}`;}
-      var r=await fetch(EDGE_URL+"/fetch-odds",{method:"POST",headers,body:"{}"});
-      var data=await r.json();
-      if(data&&data.odds&&Object.keys(data.odds).length>0){
-        return {odds:data.odds,source:data.source||"api",fetchedAt:data.fetchedAt||"",stale:data.stale||false};
-      }
-      return {odds:{},source:data?.source||"unavailable",fetchedAt:data?.fetchedAt||"",stale:false};
-    }catch{
-      return {odds:{},source:"unavailable",fetchedAt:"",stale:false};
-    }
-  }
-  var pendingRequestRef=useRef({requestId:null,payloadKey:null});
+  var [pendingRequestRef]=useState({requestId:null,payloadKey:null});
   var [impTab,setImpTab]=useState("sleeper");
   var [slUser,setSlUser]=useState("");
   var [impStatus,setImpStatus]=useState(null);
@@ -3002,7 +2582,7 @@ export default function App(){
     setCancelLoading(false);
   }
   async function checkSubscriptionAfterPayment(){
-    if(!supabaseClient)return;
+    if(!authClient)return;
     // Re-read user from localStorage to avoid stale closure
     var currentUser;
     try{var s=localStorage.getItem('fdp_user_v1');currentUser=s?JSON.parse(s):null;}catch(e){currentUser=null;}
@@ -3012,9 +2592,9 @@ export default function App(){
     var maxAttempts=10;
     for(var i=0;i<maxAttempts;i++){
       try{
-        var {data:sess}=await supabaseClient.auth.getSession();
+        var {data:sess}=await authClient.auth.getSession();
         if(!sess?.session){setPostPaymentStatus("Session expired — please log in again.");setPostPaymentLoading(false);return;}
-        var {data:prof}=await supabaseClient.from("users").select("id,plan,is_pro,subscription_status").eq("id",sess.session.user.id).single();
+        var {data:prof}=await authClient.from("users").select("id,plan,is_pro,subscription_status").eq("id",sess.session.user.id).single();
         if(prof?.is_pro){
           saveAndSetUser(Object.assign({},currentUser,{plan:prof.plan||"pro",isPro:true,subscriptionStatus:prof.subscription_status||"active"}));
           setShowPostPayment(false);setPostPaymentLoading(false);setPostPaymentStatus("");
@@ -3065,25 +2645,8 @@ export default function App(){
   var [resetPwDone,setResetPwDone]=useState(false);
   var [resetPwLoading,setResetPwLoading]=useState(false);
   var [showAdmin,setShowAdmin]=useState(false);
-  var [analyticsData,setAnalyticsData]=useState<any>(null);
-  var [analyticsLoading,setAnalyticsLoading]=useState(false);
-  async function loadAnalytics(){
-    setAnalyticsLoading(true);
-    try{
-      console.log("Analytics: Loading...");
-      var result=await callEdgeFn("admin-analytics",{},user?.token);
-      console.log("Analytics: Loaded",result);
-      setAnalyticsData(result);
-    }catch(e:any){
-      console.error("Analytics: Error",e);
-      setAnalyticsData({error:"Failed: "+String(e.message)});
-    }finally{
-      setAnalyticsLoading(false);
-    }
-  }
   var [darkMode,setDarkMode]=useState(function(){try{var s=localStorage.getItem('fdp_dark_v1');return s?JSON.parse(s):true;}catch(e){return true;}});
-  useEffect(function(){try{document.documentElement.setAttribute('data-theme',darkMode?'dark':'light');}catch(e){}},[ darkMode]);
-    function toggleDarkMode(){setDarkMode(function(d){var next=!d;try{localStorage.setItem('fdp_dark_v1',JSON.stringify(next));}catch(e){}return next;});}
+  function toggleDarkMode(){setDarkMode(function(d){var next=!d;try{localStorage.setItem('fdp_dark_v1',JSON.stringify(next));}catch(e){}return next;});}
   // League
   var [leagueSubTab,setLeagueSubTab]=useState(function(){try{return localStorage.getItem('fdp_leagueSubTab')||"power";}catch(e){return"power";}});
   var _setLeagueSubTab=setLeagueSubTab;setLeagueSubTab=function(v){_setLeagueSubTab(v);try{localStorage.setItem('fdp_leagueSubTab',v);}catch(e){}};
@@ -3130,9 +2693,6 @@ export default function App(){
   // Rankings
   var [rankSubTab,setRankSubTab]=useState(function(){try{return localStorage.getItem('fdp_rankSubTab')||"allrankings";}catch(e){return"allrankings";}});
   var [vegasSubTab,setVegasSubTab]=useState("lines");
-  var [selectedVegasWeek,setSelectedVegasWeek]=useState(7);
-  var [weekOddsData,setWeekOddsData]=useState(null);
-  var [weekOddsLoading,setWeekOddsLoading]=useState(false);
   var _setRankSubTab=setRankSubTab;setRankSubTab=function(v){_setRankSubTab(v);try{localStorage.setItem('fdp_rankSubTab',v);}catch(e){}};
   var [rankPos,setRankPos]=useState("QB");
 
@@ -3177,38 +2737,11 @@ export default function App(){
   var [sitS1,setSitS1]=useState("");
   var [sitS2,setSitS2]=useState("");
   var [sitFormat,setSitFormat]=useState("PPR");
-  var [oddsResponse,setOddsResponse]=useState<OddsResponse>({
-    odds: {},
-    source: "unavailable",
-    fetchedAt: "",
-    vegasData: {
-      superBowl: [{team: "KC", odds: 550}, {team: "BUF", odds: 750}, {team: "DET", odds: 950}, {team: "SF", odds: 1050}, {team: "PHI", odds: 1100}, {team: "DAL", odds: 1400}, {team: "CIN", odds: 1600}, {team: "BAL", odds: 1800}],
-      divisions: [
-        {division: "AFC East", odds: [{team: "BUF", odds: 105}, {team: "MIA", odds: 180}, {team: "NYJ", odds: 550}, {team: "NE", odds: 1100}]},
-        {division: "AFC South", odds: [{team: "HOU", odds: 120}, {team: "TEN", odds: 280}, {team: "IND", odds: 600}, {team: "JAX", odds: 800}]},
-        {division: "AFC West", odds: [{team: "KC", odds: 95}, {team: "LAC", odds: 300}, {team: "LV", odds: 750}, {team: "DEN", odds: 1200}]},
-        {division: "AFC North", odds: [{team: "BAL", odds: 140}, {team: "PIT", odds: 220}, {team: "CIN", odds: 350}, {team: "CLE", odds: 450}]},
-        {division: "NFC East", odds: [{team: "PHI", odds: 115}, {team: "DAL", odds: 180}, {team: "WAS", odds: 500}, {team: "NYG", odds: 750}]},
-        {division: "NFC South", odds: [{team: "ATL", odds: 140}, {team: "NO", odds: 250}, {team: "TB", odds: 350}, {team: "CAR", odds: 900}]},
-        {division: "NFC West", odds: [{team: "SF", odds: 130}, {team: "LA", odds: 220}, {team: "SEA", odds: 450}, {team: "ARI", odds: 700}]},
-        {division: "NFC North", odds: [{team: "DET", odds: 125}, {team: "GB", odds: 200}, {team: "MIN", odds: 400}, {team: "CHI", odds: 800}]},
-      ],
-      winTotals: [{team: "KC", over: 12.5, under: -140}, {team: "BUF", over: 11.5, under: -140}, {team: "DET", over: 11.5, under: -140}, {team: "SF", over: 11.5, under: -140}, {team: "PHI", over: 11.5, under: -140}, {team: "BAL", over: 10.5, under: -140}, {team: "ATL", over: 10.5, under: -140}, {team: "CIN", over: 10.5, under: -140}],
-      awards: [{award: "MVP", odds: [{player: "Josh Allen", odds: 600}, {player: "Jalen Hurts", odds: 750}, {player: "Patrick Mahomes", odds: 850}, {player: "Bijan Robinson", odds: 1100}, {player: "Ja'Marr Chase", odds: 1200}]}, {award: "DPOY", odds: [{player: "TJ Watt", odds: 400}, {player: "Danielle Hunter", odds: 550}, {player: "Micah Parsons", odds: 700}]}, {award: "OROY", odds: [{player: "Jeremiyah Love", odds: 135}, {player: "Denzel Boston", odds: 175}, {player: "Carnell Tate", odds: 450}]}],
-      props: [{player: "Josh Allen", stat: "Pass Yards", over: 268.5, under: 268.5}, {player: "Jalen Hurts", stat: "Pass Yards", over: 265.5, under: 265.5}, {player: "Patrick Mahomes", stat: "Pass Yards", over: 270.5, under: 270.5}, {player: "Caleb Williams", stat: "Pass Yards", over: 280.5, under: 280.5}, {player: "Bijan Robinson", stat: "Rush Yards", over: 80.5, under: 80.5}, {player: "Jahmyr Gibbs", stat: "Rush Yards", over: 85.5, under: 85.5}, {player: "Ja'Marr Chase", stat: "Receiving Yards", over: 92.5, under: 92.5}, {player: "Travis Kelce", stat: "Receiving Yards", over: 75.5, under: 75.5}, {player: "Brock Bowers", stat: "Receiving Yards", over: 68.5, under: 68.5}, {player: "Micah Parsons", stat: "Sacks", over: 0.5, under: 0.5}],
-      byeWeeks: {6: ["NE", "NO"], 7: ["BUF", "GB", "MIN", "JAX", "CIN"]},
-    }
-  });
-  var [oddsLoading,setOddsLoading]=useState(false);
-  var [oddsError,setOddsError]=useState<string|null>(null);
-  var [oddsLoaded,setOddsLoaded]=useState(false);
-  // Temporary state for Vegas UI backward compatibility
-  var [oddsData,setOddsData]=useState({});
-  var [oddsSource,setOddsSource]=useState("unavailable");
-  var [oddsFetchedAt,setOddsFetchedAt]=useState("");
+  var [oddsData,setOddsData]=useState<{[t:string]:{spread:number,total:number,opp:string,eventId?:string,homeTeam?:string,awayTeam?:string,commenceTime?:string,spreadBookmakers?:number,totalBookmakers?:number}}|null>(null);
+  var [oddsSource,setOddsSource]=useState<string>("none");
+  var [oddsFetchedAt,setOddsFetchedAt]=useState<string>("");
   var [oddsStale,setOddsStale]=useState(false);
   var [oddsChecking,setOddsChecking]=useState(false);
-var [historicalPropResults,setHistoricalPropResults]=useState([]);  var [propGradingInProgress,setPropGradingInProgress]=useState(false);
   var [oddsChecked,setOddsChecked]=useState(false);
   var [tradeHistory,setTradeHistory]=useState(function(){try{var s=localStorage.getItem('fdp_th_v1');return s?JSON.parse(s):[];}catch(e){return [];}});
   var [tradeSaved,setTradeSaved]=useState(false);
@@ -3280,16 +2813,6 @@ var [historicalPropResults,setHistoricalPropResults]=useState([]);  var [propGra
   var [tfTargetSearch,setTfTargetSearch]=useState("");
 
   useEffect(function(){if(onboardStep===0){var t=setTimeout(function(){setOnboardStep(1);},1500);return function(){clearTimeout(t);};}},[]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(function(){
-    if(!user?.token)return;
-    setOddsLoading(true);
-    fetchVegasOdds(user.token,false).then(function(response){
-      setOddsResponse(function(prev){return {odds:response.odds||{},source:response.source||"unavailable",fetchedAt:response.fetchedAt||"",error:response.error,vegasData:response.vegasData||prev.vegasData};});
-      setOddsLoading(false);
-      if(response.error)setOddsError(response.error);
-    });
-  },[user?.token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   var T=darkMode?DARK:LIGHT;
   var isPro = user && (user.plan === "pro" || user.plan === "elite");
@@ -3409,9 +2932,10 @@ var [historicalPropResults,setHistoricalPropResults]=useState([]);  var [propGra
     }
   },[]);// eslint-disable-line react-hooks/exhaustive-deps
 
-  // Track page view on mount (once per session)
+  // Track page view on mount (once per session) + load public stats
   useEffect(function(){
     try{var key="fdp_tracked_"+new Date().toDateString();if(!sessionStorage.getItem(key)){sessionStorage.setItem(key,"1");trackEvent("page_view",{referrer:document.referrer||"direct",path:window.location.pathname});}}catch(e){trackEvent("page_view",{referrer:document.referrer||"direct",path:window.location.pathname});}
+    fetchOdds().then(function(d){if(Object.keys(d.odds).length>0){setOddsData(d.odds);setOddsSource(d.source);setOddsFetchedAt(d.fetchedAt);setOddsStale(d.stale);}else{var hc=buildHardcodedOdds();if(Object.keys(hc).length>0){setOddsData(hc);setOddsSource("manual");setOddsFetchedAt("");setOddsStale(false);}}});
   },[]);
 
   function doEspnImport(){
@@ -4677,9 +4201,9 @@ var [historicalPropResults,setHistoricalPropResults]=useState([]);  var [propGra
             React.createElement("div",{style:{textAlign:"center",marginBottom:18}},
               React.createElement("div",{style:{fontWeight:900,fontSize:22,marginBottom:4,color:T.text}},"Set New Password"),
               React.createElement("div",{style:{fontSize:13,color:T.textSub}},"Enter your new password below")),
-            React.createElement("input",{placeholder:"New password (6+ characters)",type:"password",value:resetPwVal,onChange:function(e){setResetPwVal(e.target.value);},onKeyDown:function(e){if(e.key==="Enter"&&resetPwVal.length>=6){setResetPwLoading(true);setResetPwErr("");supabaseClient.auth.updateUser({password:resetPwVal}).then(function(r){setResetPwLoading(false);if(r.error){setResetPwErr(r.error.message);}else{setResetPwDone(true);}}).catch(function(e){setResetPwLoading(false);setResetPwErr(e.message||"Something went wrong");});}},style:{background:T.bgInput,color:T.text,border:"1px solid "+T.border,borderRadius:10,padding:"13px 16px",fontSize:14,outline:"none",width:"100%",boxSizing:"border-box",marginBottom:resetPwErr?8:16}}),
+            React.createElement("input",{placeholder:"New password (6+ characters)",type:"password",value:resetPwVal,onChange:function(e){setResetPwVal(e.target.value);},onKeyDown:function(e){if(e.key==="Enter"&&resetPwVal.length>=6){setResetPwLoading(true);setResetPwErr("");authClient.auth.updateUser({password:resetPwVal}).then(function(r){setResetPwLoading(false);if(r.error){setResetPwErr(r.error.message);}else{setResetPwDone(true);}}).catch(function(e){setResetPwLoading(false);setResetPwErr(e.message||"Something went wrong");});}},style:{background:T.bgInput,color:T.text,border:"1px solid "+T.border,borderRadius:10,padding:"13px 16px",fontSize:14,outline:"none",width:"100%",boxSizing:"border-box",marginBottom:resetPwErr?8:16}}),
             resetPwErr&&React.createElement("div",{style:{fontSize:12,color:T.red,marginBottom:12,padding:"8px 12px",background:T.red+"15",borderRadius:8}},resetPwErr),
-            React.createElement("button",{onClick:function(){if(resetPwVal.length<6){setResetPwErr("Password must be 6+ characters");return;}setResetPwLoading(true);setResetPwErr("");supabaseClient.auth.updateUser({password:resetPwVal}).then(function(r){setResetPwLoading(false);if(r.error){setResetPwErr(r.error.message);}else{setResetPwDone(true);}}).catch(function(e){setResetPwLoading(false);setResetPwErr(e.message||"Something went wrong");});},disabled:resetPwLoading,style:{width:"100%",padding:"14px",borderRadius:12,border:"none",cursor:"pointer",fontWeight:800,fontSize:15,background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",opacity:resetPwLoading?0.7:1}},resetPwLoading?"Updating...":"Update Password")))),
+            React.createElement("button",{onClick:function(){if(resetPwVal.length<6){setResetPwErr("Password must be 6+ characters");return;}setResetPwLoading(true);setResetPwErr("");authClient.auth.updateUser({password:resetPwVal}).then(function(r){setResetPwLoading(false);if(r.error){setResetPwErr(r.error.message);}else{setResetPwDone(true);}}).catch(function(e){setResetPwLoading(false);setResetPwErr(e.message||"Something went wrong");});},disabled:resetPwLoading,style:{width:"100%",padding:"14px",borderRadius:12,border:"none",cursor:"pointer",fontWeight:800,fontSize:15,background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",opacity:resetPwLoading?0.7:1}},resetPwLoading?"Updating...":"Update Password")))),
 
     // Roster modal
     rosterViewTeam!==null&&(function(){
@@ -4746,7 +4270,7 @@ var [historicalPropResults,setHistoricalPropResults]=useState([]);  var [propGra
           React.createElement("div",null,React.createElement("div",{style:{fontWeight:900,fontSize:20,color:"#f1c40f"}},"Admin Panel"),React.createElement("div",{style:{fontSize:11,color:T.textSub,marginTop:2}},user.email)),
           React.createElement("button",{onClick:function(){setShowAdmin(false);},style:{background:"none",border:"none",color:T.textDim,cursor:"pointer",fontSize:20,minWidth:44,minHeight:44,display:"flex",alignItems:"center",justifyContent:"center"}},"×")
         ),
-        [["Platform Analytics","User analytics, visitor trends, trade feed","#818cf8","analytics"],["Value Tuner","Override trade value multiplier for all players","#c084fc","valuetuner"],["RB Context","RB role definitions and depth chart adjustments","#f59e0b","rbcontext"],["RB AI","Generate AI RB role and value suggestions","#34d399","rbai"],["Headshots","Bulk player photo and avatar management","#f87171","headshots"],["IDP Upload","Bulk import IDP player data and rankings","#06b6d4","idpupload"],["System Health","Platform health, DB sync, rebuild controls","#fb923c","system"]].map(function(f){
+        [["Value Tuner","Override trade value multiplier for all players","#c084fc","valuetuner"],["RB Context","RB role definitions and depth chart adjustments","#f59e0b","rbcontext"],["RB AI","Generate AI RB role and value suggestions","#34d399","rbai"],["Headshots","Bulk player photo and avatar management","#f87171","headshots"],["IDP Upload","Bulk import IDP player data and rankings","#06b6d4","idpupload"],["System Health","Platform health, DB sync, rebuild controls","#fb923c","system"]].map(function(f){
           return React.createElement("div",{key:f[0],onClick:function(){setShowAdmin(false);setAdminSubTab(f[3]);setTab("admin");},style:{display:"flex",alignItems:"center",gap:12,background:T.bgInput,border:"1px solid "+T.border,borderRadius:12,padding:"12px 14px",marginBottom:8,cursor:"pointer"}},
             React.createElement("div",{style:{width:36,height:36,borderRadius:10,background:f[2]+"18",border:"1px solid "+f[2]+"33",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0,color:f[2]}},"→"),
             React.createElement("div",{style:{flex:1}},React.createElement("div",{style:{fontWeight:700,fontSize:13}},f[0]),React.createElement("div",{style:{fontSize:11,color:T.textSub,marginTop:1}},f[1])),
@@ -4929,12 +4453,12 @@ var [historicalPropResults,setHistoricalPropResults]=useState([]);  var [propGra
         !user?React.createElement(React.Fragment,null,
           React.createElement("button",{onClick:function(){setAuthMode("signin");setShowAuth(true);},style:{padding:"8px 16px",minHeight:44,borderRadius:20,border:"1px solid "+T.border,background:"transparent",color:T.textSub,cursor:"pointer",fontWeight:600,fontSize:12,WebkitTapHighlightColor:"transparent"}},"Sign In"),
           React.createElement("button",{onClick:function(){setAuthMode("signup");setShowAuth(true);},style:{padding:"8px 18px",minHeight:44,borderRadius:20,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",cursor:"pointer",fontWeight:700,fontSize:12,WebkitTapHighlightColor:"transparent"}},"Sign Up Free")
-        ):React.createElement(UserMenu,{user:user,T:T,onSignOut:function(){supabaseClient?.auth.signOut();saveAndSetUser(null);setShowAdmin(false);},onUpgrade:function(){if(user){setReportSubTab("upgrade");setTab("reports");}else{setAuthMode("signup");setShowAuth(true);}},onAdmin:function(){setTab("admin");}})
+        ):React.createElement(UserMenu,{user:user,T:T,onSignOut:function(){authClient?.auth.signOut();saveAndSetUser(null);setShowAdmin(false);},onUpgrade:function(){if(user){setReportSubTab("upgrade");setTab("reports");}else{setAuthMode("signup");setShowAuth(true);}},onAdmin:function(){setTab("admin");}})
       )
     ),
 
     // DESKTOP SIDEBAR NAV
-    isDesktop&&React.createElement("div",{style:{width:220,flexShrink:0,position:"fixed",left:0,top:0,height:"100vh",background:T.bgCard,borderRight:"1px solid "+T.border,display:"flex",flexDirection:"column",padding:"20px 0",zIndex:100}},
+    isDesktop&&React.createElement("div",{style:{width:220,flexShrink:0,position:"sticky",top:0,height:"100vh",background:T.bgCard,borderRight:"1px solid "+T.border,display:"flex",flexDirection:"column",padding:"20px 0",zIndex:100,overflowY:"auto",overflowX:"hidden"}},
       React.createElement("div",{style:{padding:"0 16px 20px",borderBottom:"1px solid "+T.border,marginBottom:12}},
         React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10}},
           LogoSvg,
@@ -4948,7 +4472,7 @@ var [historicalPropResults,setHistoricalPropResults]=useState([]);  var [propGra
         var active=tab===item[0];
         return React.createElement("button",{key:item[0],onClick:function(){
           if ((item[0]==="league"||item[0]==="reports")&&!canAccessLeagueFeatures(user)){setAuthMode("signup");setShowAuth(true);return;}
-if(item[0]==="admin"){var adminEmails=["jlawrence@cmgfi.com","admin@fantasydraftpros.com"];var isEmailAdmin=user&&adminEmails.includes((user.email||"").toLowerCase());if(!user||(!user.isAdmin&&!isEmailAdmin)){console.log("Admin access denied",{isAdmin:user?.isAdmin,email:user?.email,isEmailAdmin});return;}setTab("admin");trackEvent("tab_change",{tab:"admin"});return;}
+          if(item[0]==="admin"){if(!user||!user.isAdmin){return;}setTab("admin");trackEvent("tab_change",{tab:"admin"});return;}
           setTab(item[0]);trackEvent("tab_change",{tab:item[0]});
         },style:{display:"flex",alignItems:"center",gap:12,padding:"11px 16px",margin:"2px 8px",borderRadius:10,border:"none",background:active?T.purple:"transparent",color:active?"#fff":T.textSub,fontWeight:700,fontSize:13,cursor:"pointer",textAlign:"left",width:"calc(100% - 16px)"}},
           React.createElement("span",{style:{fontSize:16}},item[2]),
@@ -4964,7 +4488,7 @@ if(item[0]==="admin"){var adminEmails=["jlawrence@cmgfi.com","admin@fantasydraft
         !user?React.createElement("div",{style:{display:"flex",flexDirection:"column",gap:8}},
           React.createElement("button",{onClick:function(){setAuthMode("signup");setShowAuth(true);},style:{padding:"10px",borderRadius:10,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer"}},"Sign Up Free"),
           React.createElement("button",{onClick:function(){setAuthMode("signin");setShowAuth(true);},style:{padding:"10px",borderRadius:10,border:"1px solid "+T.border,background:"transparent",color:T.text,fontWeight:700,fontSize:12,cursor:"pointer"}},"Sign In")
-        ):React.createElement(UserMenu,{user:user,T:T,onSignOut:function(){supabaseClient?.auth.signOut();saveAndSetUser(null);setShowAdmin(false);},onUpgrade:function(){if(user){setReportSubTab("upgrade");setTab("reports");}else{setAuthMode("signup");setShowAuth(true);}},onAdmin:function(){setTab("admin");}})
+        ):React.createElement(UserMenu,{user:user,T:T,onSignOut:function(){authClient?.auth.signOut();saveAndSetUser(null);setShowAdmin(false);},onUpgrade:function(){if(user){setReportSubTab("upgrade");setTab("reports");}else{setAuthMode("signup");setShowAuth(true);}},onAdmin:function(){setTab("admin");}})
       )
     ),
 
@@ -4974,7 +4498,7 @@ if(item[0]==="admin"){var adminEmails=["jlawrence@cmgfi.com","admin@fantasydraft
         var active=tab===item[0];
         return React.createElement("button",{key:item[0],onClick:function(){
           if ((item[0]==="league"||item[0]==="reports")&&!canAccessLeagueFeatures(user)){setAuthMode("signup");setShowAuth(true);return;}
-if(item[0]==="admin"){var adminEmails=["jlawrence@cmgfi.com","admin@fantasydraftpros.com"];var isEmailAdmin=user&&adminEmails.includes((user.email||"").toLowerCase());if(!user||(!user.isAdmin&&!isEmailAdmin)){return;}setTab("admin");trackEvent("tab_change",{tab:"admin"});return;}
+          if(item[0]==="admin"){if(!user||!user.isAdmin){return;}setTab("admin");trackEvent("tab_change",{tab:"admin"});return;}
           setTab(item[0]);trackEvent("tab_change",{tab:item[0]});
         },style:{flex:1,padding:"8px 4px 8px",minHeight:56,background:active?T.purple+"12":"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2,WebkitTapHighlightColor:"transparent"}},
           React.createElement("span",{style:{fontSize:18,lineHeight:1}},item[2]),
@@ -4986,26 +4510,23 @@ if(item[0]==="admin"){var adminEmails=["jlawrence@cmgfi.com","admin@fantasydraft
 
     // RIGHT COLUMN WRAPPER (ticker + main content for proper desktop flex layout)
     React.createElement("div",{style:{flex:1,display:"flex",flexDirection:"column",minWidth:0,height:"100vh"}},
-
-    // RIGHT COLUMN WRAPPER (ticker + main content for proper desktop flex layout)
-    React.createElement("div",{style:{flex:1,display:"flex",flexDirection:"column",minWidth:0,height:"100vh"}},
-      // Dynasty Value Ticker (visible on all devices)
+      // Dynasty Value Ticker (all tabs — outside scroll wrapper so it stays fixed)
       React.createElement("div",{style:{overflow:"hidden",background:darkMode?"#0a0818":"#f8f7ff",borderBottom:"1px solid "+T.border,padding:"6px 0",flexShrink:0}},
-      React.createElement("style",null,"@keyframes fdp-ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}"),
-      React.createElement("div",{style:{display:"flex",gap:20,animation:"fdp-ticker 120s linear infinite",width:"max-content"}},
-        rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;}).slice(0,100).concat(rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;}).slice(0,100)).map(function(p,i){
-          var pc=POS_COLORS[p.pos]||T.purple;
-          return React.createElement("div",{key:p.name+"-t-"+i,style:{display:"flex",alignItems:"center",gap:5,flexShrink:0}},
-            React.createElement("span",{style:{fontSize:9,fontWeight:800,color:pc}},p.pos),
-            React.createElement("span",{style:{fontSize:11,fontWeight:700,color:T.text}},(function(){var parts=p.name.split(" ");var last=parts[parts.length-1];var suffixes=["Jr.","Jr","II","III","IV","V","Sr.","Sr"];if(parts.length>=3&&suffixes.indexOf(last)>=0)return parts[parts.length-2]+" "+last;return last;})()),
-            React.createElement("span",{style:{fontSize:11,fontWeight:800,color:T.purpleLight}},(p.tradeVal||0).toLocaleString())
-          );
-        })
-      )
-    ),
+        React.createElement("style",null,"@keyframes fdp-ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}"),
+        React.createElement("div",{style:{display:"flex",gap:20,animation:"fdp-ticker 120s linear infinite",width:"max-content"}},
+          rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;}).slice(0,100).concat(rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;}).slice(0,100)).map(function(p,i){
+            var pc=POS_COLORS[p.pos]||T.purple;
+            return React.createElement("div",{key:p.name+"-t-"+i,style:{display:"flex",alignItems:"center",gap:5,flexShrink:0}},
+              React.createElement("span",{style:{fontSize:9,fontWeight:800,color:pc}},p.pos),
+              React.createElement("span",{style:{fontSize:11,fontWeight:700,color:T.text}},(function(){var parts=p.name.split(" ");var last=parts[parts.length-1];var suffixes=["Jr.","Jr","II","III","IV","V","Sr.","Sr"];if(parts.length>=3&&suffixes.indexOf(last)>=0)return parts[parts.length-2]+" "+last;return last;})()),
+              React.createElement("span",{style:{fontSize:11,fontWeight:800,color:T.purpleLight}},(p.tradeVal||0).toLocaleString())
+            );
+          })
+        )
+      ),
 
-    // MAIN CONTENT WRAPPER (flex:1 on desktop for sidebar layout)
-    React.createElement("div",{style:{flex:1,minWidth:0,overflowY:"auto",marginLeft:isDesktop?220:0,maxWidth:isDesktop?"100%":undefined,width:isDesktop?"100%":undefined,paddingBottom:isDesktop?40:70}},
+      // MAIN CONTENT WRAPPER (flex:1 on desktop for sidebar layout)
+      React.createElement("div",{style:{flex:1,minWidth:0,overflowY:"auto",maxWidth:isDesktop?900:undefined,width:isDesktop?"100%":undefined,paddingBottom:isDesktop?40:70}},
 
     // ════ TRADE TAB ════
     tab==="trade"&&React.createElement("div",{style:{padding:"16px 16px 0"}},
@@ -5704,13 +5225,13 @@ if(item[0]==="admin"){var adminEmails=["jlawrence@cmgfi.com","admin@fantasydraft
     tab==="league"&&React.createElement("div",{style:{paddingBottom:80}},
       React.createElement("div",{style:{position:"relative",borderBottom:"1px solid "+T.border}},
         isDesktop&&React.createElement("button",{onClick:function(){leagueTabsRef.current&&leagueTabsRef.current.scrollBy({left:-200,behavior:"smooth"});},style:{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",zIndex:2,background:T.bgCard,border:"1px solid "+T.border,borderRadius:"50%",width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:T.text,fontSize:14,padding:0}},"‹"),
-        React.createElement("div",{ref:leagueTabsRef,style:{display:"flex",gap:6,overflowX:"auto",padding:isDesktop?"10px 36px":"10px 12px",scrollbarWidth:"none",WebkitOverflowScrolling:"touch",msOverflowStyle:"none"}},
+        React.createElement("div",{ref:leagueTabsRef,style:{display:"flex",gap:8,overflowX:"auto",padding:isDesktop?"12px 36px":"12px 16px",scrollbarWidth:"none"}},
           [["overview","League Intelligence"],["power","Power Rankings"],["pickpower","Pick Power Rankings"],["playoff","Playoff Odds"],["champ","Championship"],["advice","Team Advice"],["roster","Roster Health"],["waiver","Waiver Wire"],["lineup","Lineup"],["startsit","Start/Sit"],["trades","League Trades"],["auction","Draft Room"],["rivalry","Rivalry"],["recap","Recap"],["chat","Chat"],["alerts","Alerts"],["leagimport","Import"]].map(function(st){
             var active=leagueSubTab===st[0];
             return React.createElement("button",{key:st[0],onClick:function(){
               setLeagueSubTab(st[0]);
               if(st[0]==="waiver"&&!waiverLoaded){setWaiverLoaded(true);}
-            },style:{padding:"7px 14px",borderRadius:20,border:"1px solid "+(active?T.purple:T.border),background:active?T.purple:"transparent",color:active?"#fff":T.textSub,fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}},st[1]);
+            },style:{padding:"7px 16px",borderRadius:20,border:"1px solid "+(active?T.purple:T.border),background:active?T.purple:"transparent",color:active?"#fff":T.textSub,fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}},st[1]);
           })
         ),
         isDesktop&&React.createElement("button",{onClick:function(){leagueTabsRef.current&&leagueTabsRef.current.scrollBy({left:200,behavior:"smooth"});},style:{position:"absolute",right:0,top:"50%",transform:"translateY(-50%)",zIndex:2,background:T.bgCard,border:"1px solid "+T.border,borderRadius:"50%",width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:T.text,fontSize:14,padding:0}},"›")
@@ -7675,7 +7196,7 @@ if(item[0]==="admin"){var adminEmails=["jlawrence@cmgfi.com","admin@fantasydraft
       React.createElement("div",{style:{position:"relative",borderBottom:"1px solid "+T.border}},
         isDesktop&&React.createElement("button",{onClick:function(){rankingTabsRef.current&&rankingTabsRef.current.scrollBy({left:-200,behavior:"smooth"});},style:{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",zIndex:2,background:T.bgCard,border:"1px solid "+T.border,borderRadius:"50%",width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:T.text,fontSize:14,padding:0}},"‹"),
         React.createElement("div",{ref:rankingTabsRef,style:{display:"flex",gap:6,overflowX:"auto",padding:isDesktop?"10px 36px":"10px 12px",scrollbarWidth:"none",WebkitOverflowScrolling:"touch"}},
-          [["news","📰 Dynasty News"],["playervalues","$ Player Values"],["allrankings","All Rankings"],["qbs","QBs"],["rbs","RBs"],["wrs","WRs"],["tes","TEs"],["idp","IDP"],["rookie","Rookie Picks"],["mockdraft","Mock Draft"],["startup","Startup Draft"],["rosterbuilder","Roster Builder"],["h2h","H2H Matchup"],["tradefinder","Trade Finder"],["vegaslines","Vegas Lines"],["trending","Trending"],["market","Market"],["valuetrends","Value Trends"],["pickcalc","Pick Calculator"],["watchlist","Watchlist"],["keeper","Keeper Calc"],["compare","Compare"],["history","Trade History"]].map(function(st){
+          [["news","📰 Dynasty News"],["playervalues","$ Player Values"],["allrankings","All Rankings"],["qbs","QBs"],["rbs","RBs"],["wrs","WRs"],["tes","TEs"],["idp","IDP"],["rookie","Rookie Picks"],["mockdraft","Mock Draft"],["startup","Startup Draft"],["rosterbuilder","Roster Builder"],["h2h","H2H Matchup"],["tradefinder","Trade Finder"],["vegas","Vegas Lines"],["trending","Trending"],["market","Market"],["valuetrends","Value Trends"],["pickcalc","Pick Calculator"],["watchlist","Watchlist"],["keeper","Keeper Calc"],["compare","Compare"],["history","Trade History"]].map(function(st){
             var active=rankSubTab===st[0];
             return React.createElement("button",{key:st[0],onClick:function(){setRankSubTab(st[0]);},style:{padding:"7px 14px",borderRadius:20,border:"1px solid "+(active?T.purple:T.border),background:active?T.purple:"transparent",color:active?"#fff":T.textSub,fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}},st[1]);
           })
@@ -8684,21 +8205,533 @@ if(item[0]==="admin"){var adminEmails=["jlawrence@cmgfi.com","admin@fantasydraft
         )
       ),
 
-      
-// ===== PROPS ACTIVATION: UI CONNECTED TO DATABASE =====
-// Note: useState hooks for prop results added during activation phase
+      // VEGAS LINES
+      rankSubTab==="vegas"&&!canAccessVegas(user)&&PaywallCard("vegas"),
+      rankSubTab==="vegas"&&canAccessVegas(user)&&(function(){
+        var games=oddsData?(function(){var eventMap:any={};Object.keys(oddsData).forEach(function(team){var g=oddsData[team];if(!g)return;if(!g.eventId)return;if(!eventMap[g.eventId]){eventMap[g.eventId]=g;}});return Object.values(eventMap).sort(function(a:any,b:any){if(a.total===null&&b.total===null)return 0;if(a.total===null)return 1;if(b.total===null)return-1;return b.total-a.total;}).map(function(g:any){return{home:g.homeTeam,away:g.awayTeam,spread:g.spread,total:g.total,eventId:g.eventId};});})():[];
+        var hasData=games.length>0;
+        var TEAM_FULL:{[k:string]:string}={"ARI":"Cardinals","ATL":"Falcons","BAL":"Ravens","BUF":"Bills","CAR":"Panthers","CHI":"Bears","CIN":"Bengals","CLE":"Browns","DAL":"Cowboys","DEN":"Broncos","DET":"Lions","GB":"Packers","HOU":"Texans","IND":"Colts","JAX":"Jaguars","KC":"Chiefs","LAC":"Chargers","LAR":"Rams","LV":"Raiders","MIA":"Dolphins","MIN":"Vikings","NE":"Patriots","NO":"Saints","NYG":"Giants","NYJ":"Jets","PHI":"Eagles","PIT":"Steelers","SF":"49ers","SEA":"Seahawks","TB":"Buccaneers","TEN":"Titans","WAS":"Commanders"};
+        var sbTier=function(i:number){return i<4?"#22c55e":i<10?"#4ade80":i<17?"#94a3b8":i<24?"#fb923c":"#f87171";};
+        var tabIcon:{[k:string]:string}={"lines":"\uD83C\uDFC8","futures":"\uD83C\uDFC6","wintotals":"\uD83D\uDCCA","awards":"\u2B50","props":"\uD83C\uDFAF","divisions":"\uD83D\uDDFA\uFE0F","history":"\uD83D\uDCC5"};
+        return React.createElement("div",{style:{padding:"16px"}},
+          // Header with gradient
+          React.createElement("div",{style:{background:"linear-gradient(135deg,#065f46,#047857,#059669)",borderRadius:16,padding:"20px 18px",marginBottom:16,position:"relative",overflow:"hidden"}},
+            React.createElement("div",{style:{position:"absolute",right:-20,top:-20,width:100,height:100,borderRadius:"50%",background:"rgba(255,255,255,0.06)"}}),
+            React.createElement("div",{style:{position:"absolute",right:30,bottom:-30,width:80,height:80,borderRadius:"50%",background:"rgba(255,255,255,0.04)"}}),
+            React.createElement("div",{style:{position:"relative",display:"flex",alignItems:"center",gap:14}},
+              React.createElement("div",{style:{width:48,height:48,borderRadius:14,background:"rgba(255,255,255,0.15)",backdropFilter:"blur(8px)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}},
+                React.createElement("span",{style:{fontSize:24}},"$")
+              ),
+              React.createElement("div",null,
+                React.createElement("div",{style:{fontWeight:900,fontSize:22,color:"#fff",letterSpacing:-0.5}},"Vegas Lines & Futures"),
+                React.createElement("div",{style:{fontSize:12,color:"rgba(255,255,255,0.7)",marginTop:2}},"NFL odds, futures, props & division winners")
+              )
+            )
+          ),
+          // Sub-tabs with icons
+          React.createElement("div",{style:{display:"flex",gap:6,flexWrap:"wrap",marginBottom:16}},
+            ["lines","futures","divisions","wintotals","awards","props","history"].map(function(tab){
+              var labels:{[k:string]:string}={"lines":"Game Lines","futures":"Super Bowl","wintotals":"Win Totals","awards":"Awards","props":"Player Props","divisions":"Divisions","history":"Prior Weeks"};
+              var active=vegasSubTab===tab;
+              return React.createElement("button",{key:tab,onClick:function(){setVegasSubTab(tab);},style:{padding:"8px 14px",borderRadius:22,border:"1px solid "+(active?"#059669":T.border),background:active?"linear-gradient(135deg,#059669,#047857)":"transparent",color:active?"#fff":T.textSub,fontWeight:700,fontSize:11,cursor:"pointer",display:"flex",alignItems:"center",gap:5,transition:"all 0.2s"}},
+                React.createElement("span",{style:{fontSize:12}},tabIcon[tab]||""),labels[tab]);
+            })
+          ),
+          // ── GAME LINES TAB ──
+          vegasSubTab==="lines"&&React.createElement("div",null,
+            !hasData&&React.createElement("div",{style:{background:"linear-gradient(135deg,"+(darkMode?"#1a1a2e":"#f0fdf4")+","+(darkMode?"#16213e":"#ecfdf5")+")",border:"1px solid "+(darkMode?"#065f4633":"#bbf7d0"),borderRadius:16,padding:32,textAlign:"center",marginBottom:16}},
+              React.createElement("div",{style:{fontSize:48,marginBottom:12}},"📅"),
+              React.createElement("div",{style:{fontWeight:800,fontSize:18,color:T.text,marginBottom:8}},"No Current NFL Lines"),
+              React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.7,maxWidth:340,margin:"0 auto",marginBottom:16}},"Odds are posted Thursday–Monday during the NFL season (September–January). Tap below to load this week's lines!"),
+              React.createElement("button",{onClick:function(){setOddsChecking(true);setOddsChecked(false);fetchOdds().then(function(d){setOddsChecking(false);setOddsChecked(true);if(Object.keys(d.odds).length>0){setOddsData(d.odds);setOddsSource(d.source);setOddsFetchedAt(d.fetchedAt);setOddsStale(d.stale);}}).catch(function(){setOddsChecking(false);setOddsChecked(true);var hc=buildHardcodedOdds();if(Object.keys(hc).length>0){setOddsData(hc);setOddsSource("manual");setOddsFetchedAt("");setOddsStale(false);}});},disabled:oddsChecking,style:{padding:"12px 28px",borderRadius:12,border:"none",background:oddsChecking?"#6b7280":"linear-gradient(135deg,#059669,#047857)",color:"#fff",fontWeight:700,fontSize:13,cursor:oddsChecking?"wait":"pointer",boxShadow:"0 4px 12px rgba(5,150,105,0.3)",opacity:oddsChecking?0.7:1}},oddsChecking?"Checking...":"↻ Check for Lines"),
+              oddsChecked&&!hasData&&React.createElement("div",{style:{marginTop:12,padding:"10px 16px",background:darkMode?"#1e293b":"#fef3c7",border:"1px solid "+(darkMode?"#475569":"#fcd34d"),borderRadius:12,fontSize:12,color:darkMode?"#fbbf24":"#92400e",fontWeight:600,textAlign:"center"}},"No lines available right now. NFL game lines are typically posted during the regular season (Sep–Jan).")
+            ),
+            hasData&&React.createElement("div",{style:{marginBottom:12}},
+              React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:12,flexWrap:"wrap"}},
+                React.createElement("div",{style:{fontSize:10,fontWeight:800,color:"#059669",letterSpacing:1}},oddsSource==="api"||oddsSource==="cache"?"THIS WEEK'S GAMES":oddsSource==="manual"?"SCHEDULE (Lines Unavailable)":"LINES UNAVAILABLE"),
+                React.createElement("div",{style:{background:"#059669",color:"#fff",borderRadius:10,padding:"2px 8px",fontSize:10,fontWeight:800}},games.length),
+                oddsStale&&(oddsSource==="api"||oddsSource==="cache")&&React.createElement("div",{style:{fontSize:9,color:"#f59e0b",fontWeight:600}},"Updating lines\u2026"),
+                !oddsStale&&oddsFetchedAt&&(oddsSource==="api"||oddsSource==="cache")&&React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:500}},"Fetched "+new Date(oddsFetchedAt).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})),
+                oddsSource!=="api"&&oddsSource!=="cache"&&React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:600}},"Showing manual lines \u2014 may not reflect current week")
+              ),
+              games.map(function(g){
+                var gsHome=getGameScript(g.home,oddsData);
+                var gsAway=getGameScript(g.away,oddsData);
+                var totalNote=g.total>=50?"Shootout":g.total<=41?"Low Scoring":"";
+                var totalIcon=g.total>=50?"\uD83D\uDD25":g.total<=41?"\uD83D\uDEE1\uFE0F":"";
+                var rKey=g.home+"-"+g.away;
+                var result=WEEKLY_RESULTS[rKey]||null;
+                var homeScore=result?result[0]:null;
+                var awayScore=result?result[1]:null;
+                var isFinal=result!==null;
+                var actualTotal=isFinal?(homeScore as number)+(awayScore as number):0;
+                var actualMargin=isFinal?(homeScore as number)-(awayScore as number):0;
+                var spreadCover=isFinal?(actualMargin+g.spread>0?"HOME COVERS":actualMargin+g.spread<0?"AWAY COVERS":"PUSH"):"";
+                var ouResult=isFinal?(actualTotal>g.total?"OVER":actualTotal<g.total?"UNDER":"PUSH"):"";
+                var spreadColor=spreadCover==="HOME COVERS"?"#22c55e":spreadCover==="AWAY COVERS"?"#f87171":"#94a3b8";
+                var ouColor=ouResult==="OVER"?"#f59e0b":ouResult==="UNDER"?"#60a5fa":"#94a3b8";
+                return React.createElement("div",{key:g.home+g.away,style:{background:T.bgCard,border:"1px solid "+(isFinal?T.border:T.border),borderRadius:16,padding:0,marginBottom:10,overflow:"hidden"}},
+                  // Game header
+                  React.createElement("div",{style:{background:darkMode?"rgba(5,150,105,0.08)":"rgba(5,150,105,0.04)",padding:"12px 16px",borderBottom:"1px solid "+T.border,display:"flex",justifyContent:"space-between",alignItems:"center"}},
+                    React.createElement("div",{style:{fontWeight:800,fontSize:15,color:T.text}},g.away+" @ "+g.home),
+                    React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6}},
+                      isFinal&&React.createElement("div",{style:{fontSize:10,fontWeight:800,color:"#22c55e",background:"#22c55e18",padding:"3px 10px",borderRadius:10}},"FINAL"),
+                      !isFinal&&totalNote&&React.createElement("div",{style:{fontSize:10,fontWeight:700,color:g.total>=50?"#f59e0b":"#60a5fa",background:(g.total>=50?"#f59e0b":"#60a5fa")+"14",padding:"3px 10px",borderRadius:10}},totalIcon+" "+totalNote)
+                    )
+                  ),
+                  // Score bar (only if final)
+                  isFinal&&React.createElement("div",{style:{display:"flex",alignItems:"center",padding:"14px 16px",borderBottom:"1px solid "+T.border,background:darkMode?"rgba(34,197,94,0.04)":"rgba(34,197,94,0.02)"}},
+                    React.createElement("div",{style:{flex:1,display:"flex",alignItems:"center",gap:10}},
+                      React.createElement("div",{style:{fontWeight:900,fontSize:14,color:(awayScore as number)>(homeScore as number)?T.text:T.textDim,minWidth:32}},g.away),
+                      React.createElement("div",{style:{fontWeight:900,fontSize:28,color:(awayScore as number)>(homeScore as number)?"#22c55e":T.textDim}},awayScore)
+                    ),
+                    React.createElement("div",{style:{fontSize:11,fontWeight:800,color:T.textDim,padding:"0 12px"}},"FINAL"),
+                    React.createElement("div",{style:{flex:1,display:"flex",alignItems:"center",justifyContent:"flex-end",gap:10}},
+                      React.createElement("div",{style:{fontWeight:900,fontSize:28,color:(homeScore as number)>(awayScore as number)?"#22c55e":T.textDim}},homeScore),
+                      React.createElement("div",{style:{fontWeight:900,fontSize:14,color:(homeScore as number)>(awayScore as number)?T.text:T.textDim,minWidth:32,textAlign:"right"}},g.home)
+                    )
+                  ),
+                  React.createElement("div",{style:{padding:"12px 16px"}},
+                    React.createElement("div",{style:{display:"flex",gap:8,marginBottom:10}},
+                      React.createElement("div",{style:{flex:1,background:T.bgInput,borderRadius:12,padding:"10px 12px",textAlign:"center"}},
+                        React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:700,letterSpacing:0.5,marginBottom:4}},"SPREAD"),
+                        React.createElement("div",{style:{fontWeight:900,fontSize:18,color:T.text}},(g.spread===null?"Line N/A":g.spread>0?"+":"")+g.spread),
+                        isFinal&&React.createElement("div",{style:{fontSize:10,fontWeight:800,color:spreadColor,marginTop:4}},spreadCover)
+                      ),
+                      React.createElement("div",{style:{flex:1,background:T.bgInput,borderRadius:12,padding:"10px 12px",textAlign:"center"}},
+                        React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:700,letterSpacing:0.5,marginBottom:4}},"O/U TOTAL"),
+                        React.createElement("div",{style:{fontWeight:900,fontSize:18,color:T.text}},g.total===null?"Unavailable":g.total),
+                        isFinal&&React.createElement("div",{style:{fontSize:10,fontWeight:800,color:ouColor,marginTop:4}},ouResult+" ("+actualTotal+")")
+                      )
+                    ),
+                    React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}},
+                      gsAway&&React.createElement("div",{style:{background:gsAway.color+"10",border:"1px solid "+gsAway.color+"28",borderRadius:12,padding:"10px 12px"}},
+                        React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:3,fontWeight:600}},g.away),
+                        React.createElement("div",{style:{fontWeight:800,fontSize:13,color:gsAway.color}},gsAway.script),
+                        React.createElement("div",{style:{fontSize:10,color:T.textDim,marginTop:2}},"Spread: "+(gsAway.spread===null?"Unavailable":gsAway.spread>0?"+":"")+gsAway.spread)
+                      ),
+                      gsHome&&React.createElement("div",{style:{background:gsHome.color+"10",border:"1px solid "+gsHome.color+"28",borderRadius:12,padding:"10px 12px"}},
+                        React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:3,fontWeight:600}},g.home),
+                        React.createElement("div",{style:{fontWeight:800,fontSize:13,color:gsHome.color}},gsHome.script),
+                        React.createElement("div",{style:{fontSize:10,color:T.textDim,marginTop:2}},"Spread: "+(gsHome.spread===null?"Unavailable":gsHome.spread>0?"+":"")+gsHome.spread)
+                      )
+                    )
+                  )
+                );
+              })
+            ),
+            // Game Script Guide
+            React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,padding:16}},
+              React.createElement("div",{style:{fontWeight:800,fontSize:13,color:T.text,marginBottom:10,display:"flex",alignItems:"center",gap:6}},
+                React.createElement("span",{style:{fontSize:14}},"\uD83D\uDCD6"),"Game Script Guide"
+              ),
+              [["Positive Script","Favored by 7+ pts — run-heavy, clock control. Boost RBs.","#22c55e"],["Slight Fav","Favored by 3–6 pts — balanced attack expected.","#4ade80"],["Neutral","Pick'em or within 2 pts — no clear script edge.","#94a3b8"],["Slight Dog","Underdog by 3–6 pts — pass volume increases.","#fb923c"],["Negative Script","Underdog by 7+ pts — pass-heavy game script. Boost WRs/TEs.","#f87171"]].map(function(row){
+                return React.createElement("div",{key:row[0],style:{display:"flex",alignItems:"center",gap:10,marginBottom:8}},
+                  React.createElement("div",{style:{width:10,height:10,borderRadius:"50%",background:row[2],flexShrink:0}}),
+                  React.createElement("div",null,
+                    React.createElement("span",{style:{fontWeight:700,fontSize:12,color:row[2]}},(row[0] as string)+": "),
+                    React.createElement("span",{style:{fontSize:12,color:T.textSub}},row[1])
+                  )
+                );
+              })
+            )
+          ),
+          // ── SUPER BOWL FUTURES TAB ──
+          vegasSubTab==="futures"&&React.createElement("div",null,
+            // Top 3 podium
+            React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}},
+              [1,0,2].map(function(idx){
+                var sb=SB_ODDS[idx];if(!sb)return null;
+                var heights=[140,170,120];var bgs=["linear-gradient(135deg,#c0c0c0,#e8e8e8)","linear-gradient(135deg,#ffd700,#ffed4a)","linear-gradient(135deg,#cd7f32,#e8a862)"];
+                var labels=["2ND","1ST","3RD"];var order=[1,0,2];
+                return React.createElement("div",{key:sb.team,style:{textAlign:"center",display:"flex",flexDirection:"column",justifyContent:"flex-end"}},
+                  React.createElement("div",{style:{fontWeight:900,fontSize:20,color:T.text,marginBottom:4}},sb.team),
+                  React.createElement("div",{style:{fontSize:11,color:T.textSub,marginBottom:4}},TEAM_FULL[sb.team]),
+                  React.createElement("div",{style:{fontWeight:800,fontSize:15,color:"#059669",marginBottom:6}},sb.odds),
+                  React.createElement("div",{style:{height:heights[order[idx]],background:bgs[order[idx]],borderRadius:"10px 10px 0 0",display:"flex",alignItems:"flex-end",justifyContent:"center",paddingBottom:8}},
+                    React.createElement("div",{style:{fontWeight:900,fontSize:12,color:idx===0?"#333":"#fff"}},labels[order[idx]])
+                  )
+                );
+              })
+            ),
+            React.createElement("div",{style:{fontSize:11,fontWeight:800,color:T.textDim,letterSpacing:1,marginBottom:8,marginTop:4}},"ALL 32 TEAMS"),
+            SB_ODDS.map(function(sb,i){
+              var barW=Math.max(4,sb.pct*5.5);
+              return React.createElement("div",{key:sb.team,style:{background:i<3?("linear-gradient(90deg,"+(darkMode?"#065f4622":"#ecfdf5")+","+(darkMode?T.bgCard:T.bgCard)+")"):"transparent",border:"1px solid "+(i<3?"#059669"+33:T.border),borderRadius:12,padding:"8px 14px",marginBottom:4,display:"flex",alignItems:"center",gap:10}},
+                React.createElement("div",{style:{fontWeight:900,fontSize:11,color:i<3?"#059669":T.textDim,width:20,textAlign:"right"}},i+1),
+                React.createElement("div",{style:{fontWeight:800,fontSize:14,color:T.text,width:38}},sb.team),
+                React.createElement("div",{style:{fontSize:11,color:T.textSub,width:80}},TEAM_FULL[sb.team]||""),
+                React.createElement("div",{style:{flex:1,position:"relative",height:16,background:T.bgInput,borderRadius:8,overflow:"hidden"}},
+                  React.createElement("div",{style:{position:"absolute",left:0,top:0,height:"100%",width:barW+"%",background:sbTier(i),borderRadius:8,transition:"width 0.3s"}})
+                ),
+                React.createElement("div",{style:{fontWeight:800,fontSize:13,color:sbTier(i),width:55,textAlign:"right"}},sb.odds),
+                React.createElement("div",{style:{fontSize:10,color:T.textSub,width:38,textAlign:"right"}},sb.pct+"%")
+              );
+            }),
+            React.createElement("div",{style:{fontSize:10,color:T.textDim,textAlign:"center",marginTop:10}},"Implied probability shown · Consensus sportsbooks · Updated Aug 2026")
+          ),
+          // ── DIVISION WINNERS TAB ──
+          vegasSubTab==="divisions"&&React.createElement("div",null,
+            React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4}},"\uD83D\uDDFA\uFE0F Division Winner Odds"),
+            React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:16}},"Bills & Ravens the only odds-on favorites to win their divisions"),
+            DIV_ODDS.map(function(d){
+              var isAFC=d.div.indexOf("AFC")>=0;
+              var divColor=isAFC?"#ef4444":"#3b82f6";
+              return React.createElement("div",{key:d.div,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:0,marginBottom:10,overflow:"hidden"}},
+                React.createElement("div",{style:{background:divColor+"14",borderBottom:"1px solid "+divColor+"22",padding:"10px 14px",display:"flex",alignItems:"center",gap:8}},
+                  React.createElement("div",{style:{width:8,height:8,borderRadius:"50%",background:divColor}}),
+                  React.createElement("div",{style:{fontWeight:800,fontSize:13,color:T.text}},d.div)
+                ),
+                React.createElement("div",{style:{padding:"8px 14px"}},
+                  d.teams.map(function(t,ti){
+                    var isFav=ti===0;
+                    var oddsVal=parseInt(t.odds.replace("+",""));
+                    var isNeg=t.odds.indexOf("-")===0;
+                    var pct=isNeg?Math.round(Math.abs(oddsVal)/(Math.abs(oddsVal)+100)*100):Math.round(100/(oddsVal+100)*100);
+                    var barW=Math.max(6,pct);
+                    return React.createElement("div",{key:t.team,style:{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:ti<d.teams.length-1?"1px solid "+T.border+"66":"none"}},
+                      React.createElement("div",{style:{fontWeight:800,fontSize:14,color:isFav?divColor:T.text,width:36}},t.team),
+                      React.createElement("div",{style:{fontSize:11,color:T.textSub,width:80}},TEAM_FULL[t.team]||""),
+                      React.createElement("div",{style:{flex:1,position:"relative",height:14,background:T.bgInput,borderRadius:7,overflow:"hidden"}},
+                        React.createElement("div",{style:{position:"absolute",left:0,top:0,height:"100%",width:barW+"%",background:isFav?divColor:T.textDim+"44",borderRadius:7}})
+                      ),
+                      React.createElement("div",{style:{fontWeight:800,fontSize:13,color:isFav?divColor:T.textSub,width:55,textAlign:"right"}},t.odds),
+                      React.createElement("div",{style:{fontSize:10,color:T.textDim,width:32,textAlign:"right"}},pct+"%")
+                    );
+                  })
+                )
+              );
+            }),
+            React.createElement("div",{style:{fontSize:10,color:T.textDim,textAlign:"center",marginTop:10}},"Consensus sportsbooks · Updated Aug 2026")
+          ),
+          // ── WIN TOTALS TAB ──
+          vegasSubTab==="wintotals"&&React.createElement("div",null,
+            React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4}},"2026 Team Win Totals"),
+            React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:14}},"Over/Under regular season wins · BAL & LAR lead at 11.5"),
+            // Tier headers inline
+            WIN_TOTALS.map(function(wt,wi){
+              var barW=Math.max(8,(wt.ou/13)*100);
+              var clr=wt.ou>=10.5?"#22c55e":wt.ou>=8.5?"#4ade80":wt.ou>=6.5?"#94a3b8":wt.ou>=5?"#fb923c":"#f87171";
+              var tierLabel2=wt.ou>=10.5?"Contender":wt.ou>=8.5?"Playoff Hopeful":wt.ou>=6.5?"Middle Pack":wt.ou>=5?"Underdog":"Rebuilder";
+              var prevOu=wi>0?WIN_TOTALS[wi-1].ou:99;
+              var showTier=wt.ou!==prevOu&&(wt.ou===10.5||wt.ou===8.5||wt.ou===6.5||wt.ou===5);
+              return React.createElement(React.Fragment,{key:wt.team},
+                showTier&&React.createElement("div",{style:{fontSize:9,fontWeight:800,color:clr,letterSpacing:1,marginTop:10,marginBottom:4,textTransform:"uppercase"}},tierLabel2),
+                React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"8px 14px",marginBottom:4,display:"flex",alignItems:"center",gap:10}},
+                  React.createElement("div",{style:{fontWeight:800,fontSize:14,color:T.text,width:38}},wt.team),
+                  React.createElement("div",{style:{fontSize:11,color:T.textSub,width:85}},TEAM_FULL[wt.team]||""),
+                  React.createElement("div",{style:{flex:1,position:"relative",height:16,background:T.bgInput,borderRadius:8,overflow:"hidden"}},
+                    React.createElement("div",{style:{position:"absolute",left:0,top:0,height:"100%",width:barW+"%",background:clr,borderRadius:8}})
+                  ),
+                  React.createElement("div",{style:{fontWeight:900,fontSize:16,color:clr,width:36,textAlign:"right"}},wt.ou)
+                )
+              );
+            }),
+            React.createElement("div",{style:{fontSize:10,color:T.textDim,textAlign:"center",marginTop:10}},"DraftKings consensus · Updated Aug 2026")
+          ),
+          // ── AWARDS TAB ──
+          vegasSubTab==="awards"&&React.createElement("div",null,
+            // MVP section
+            React.createElement("div",{style:{background:"linear-gradient(135deg,"+(darkMode?"#1a1035":"#fefce8")+","+(darkMode?"#0f172a":"#fff7ed")+")",border:"1px solid "+(darkMode?"#854d0e33":"#fde68a"),borderRadius:16,padding:16,marginBottom:16}},
+              React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:12}},
+                React.createElement("span",{style:{fontSize:20}},"\uD83C\uDFC6"),
+                React.createElement("div",null,
+                  React.createElement("div",{style:{fontWeight:900,fontSize:16,color:T.text}},"2026 NFL MVP"),
+                  React.createElement("div",{style:{fontSize:11,color:T.textSub}},"Josh Allen favored for his 2nd · Lamar closing the gap")
+                )
+              ),
+              MVP_ODDS.slice(0,5).map(function(p,i){
+                var medalColors=["#ffd700","#c0c0c0","#cd7f32","",""];
+                return React.createElement("div",{key:p.name+"mvp",style:{background:T.bgCard,border:"1px solid "+(i<3?medalColors[i]+"44":T.border),borderRadius:12,padding:"10px 14px",marginBottom:6,display:"flex",alignItems:"center",gap:10}},
+                  React.createElement("div",{style:{fontWeight:900,fontSize:13,color:i<3?medalColors[i]:T.textDim,width:20,textAlign:"right"}},i<3?["\uD83E\uDD47","\uD83E\uDD48","\uD83E\uDD49"][i]:""+(i+1)),
+                  React.createElement(Avatar,{name:p.name,pos:p.pos,size:32}),
+                  React.createElement("div",{style:{flex:1}},
+                    React.createElement("div",{style:{fontWeight:700,fontSize:14,color:T.text}},p.name),
+                    React.createElement("div",{style:{fontSize:10,color:T.textSub}},p.pos+" · "+p.team)
+                  ),
+                  React.createElement("div",{style:{fontWeight:800,fontSize:15,color:i<3?"#22c55e":"#4ade80"}},p.odds)
+                );
+              })
+            ),
+            // Remaining MVP
+            React.createElement("div",{style:{marginBottom:16}},
+              React.createElement("div",{style:{fontSize:10,fontWeight:800,color:T.textDim,letterSpacing:1,marginBottom:6}},"MORE MVP CONTENDERS"),
+              MVP_ODDS.slice(5).map(function(p,i){
+                return React.createElement("div",{key:p.name+"mvp2",style:{display:"flex",alignItems:"center",gap:10,padding:"6px 0",borderBottom:"1px solid "+T.border+"44"}},
+                  React.createElement("div",{style:{fontWeight:700,fontSize:11,color:T.textDim,width:20,textAlign:"right"}},i+6),
+                  React.createElement(Avatar,{name:p.name,pos:p.pos,size:24}),
+                  React.createElement("div",{style:{flex:1,fontWeight:600,fontSize:12,color:T.text}},p.name),
+                  React.createElement("div",{style:{fontSize:10,color:T.textSub,width:28}},p.pos),
+                  React.createElement("div",{style:{fontWeight:700,fontSize:12,color:T.textSub,width:55,textAlign:"right"}},p.odds)
+                );
+              })
+            ),
+            // OPOY section
+            React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:16,padding:16,marginBottom:16}},
+              React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:12}},
+                React.createElement("span",{style:{fontSize:18}},"\u26A1"),
+                React.createElement("div",null,
+                  React.createElement("div",{style:{fontWeight:900,fontSize:15,color:T.text}},"Offensive Player of the Year"),
+                  React.createElement("div",{style:{fontSize:11,color:T.textSub}},"Gibbs favored at +650 after Montgomery departure")
+                )
+              ),
+              OPOY_ODDS.map(function(p,i){
+                var pc=POS_COLORS[p.pos]||"#888";
+                return React.createElement("div",{key:p.name+"opoy",style:{display:"flex",alignItems:"center",gap:10,padding:"7px 0",borderBottom:i<OPOY_ODDS.length-1?"1px solid "+T.border+"44":"none"}},
+                  React.createElement("div",{style:{fontWeight:900,fontSize:11,color:T.textDim,width:18,textAlign:"right"}},i+1),
+                  React.createElement(Avatar,{name:p.name,pos:p.pos,size:26}),
+                  React.createElement("div",{style:{flex:1,minWidth:0}},
+                    React.createElement("div",{style:{fontWeight:700,fontSize:12,color:T.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
+                    React.createElement("div",{style:{fontSize:9,color:pc,fontWeight:700}},p.pos+" · "+p.team)
+                  ),
+                  React.createElement("div",{style:{fontWeight:800,fontSize:13,color:i<3?"#c084fc":"#94a3b8",flexShrink:0}},p.odds)
+                );
+              })
+            ),
+            // OROY section
+            React.createElement("div",{style:{background:T.bgCard,border:"1px solid #f59e0b33",borderRadius:16,padding:16}},
+              React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:12}},
+                React.createElement("span",{style:{fontSize:18}},"\uD83C\uDF1F"),
+                React.createElement("div",null,
+                  React.createElement("div",{style:{fontWeight:900,fontSize:15,color:T.text}},"Offensive Rookie of the Year"),
+                  React.createElement("div",{style:{fontSize:11,color:T.textSub}},"Love & Mendoza in a dead heat · Tate the top WR")
+                )
+              ),
+              OROY_ODDS.map(function(p,i){
+                var pc=POS_COLORS[p.pos]||"#888";
+                return React.createElement("div",{key:p.name+"oroy",style:{display:"flex",alignItems:"center",gap:10,padding:"7px 0",borderBottom:i<OROY_ODDS.length-1?"1px solid "+T.border+"44":"none"}},
+                  React.createElement("div",{style:{fontWeight:900,fontSize:11,color:T.textDim,width:18,textAlign:"right"}},i+1),
+                  React.createElement(Avatar,{name:p.name,pos:p.pos,size:26}),
+                  React.createElement("div",{style:{flex:1,minWidth:0}},
+                    React.createElement("div",{style:{fontWeight:700,fontSize:12,color:T.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
+                    React.createElement("div",{style:{fontSize:9,color:pc,fontWeight:700}},p.pos+" · "+p.team)
+                  ),
+                  React.createElement("div",{style:{fontWeight:800,fontSize:13,color:i<2?"#f59e0b":i<5?"#fbbf24":"#94a3b8",flexShrink:0}},p.odds)
+                );
+              })
+            ),
+            React.createElement("div",{style:{fontSize:10,color:T.textDim,textAlign:"center",marginTop:12}},"Consensus odds · Updated Aug 2026 · For entertainment only")
+          ),
+          // ── PLAYER PROPS TAB ──
+          vegasSubTab==="props"&&React.createElement("div",null,
+            // ── WEEKLY GAME PROPS ──
+            React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4}},"Week 2 Player Props"),
+            React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:14}},"Game-day O/U lines · Thu Sep 17 – Mon Sep 21"),
+            (function(){
+              var wcats=["Pass Yds","Pass TD","Rush Yds","Rec Yds","Receptions","Any TD"];
+              var wcatColors:{[k:string]:string}={"Pass Yds":"#818cf8","Pass TD":"#60a5fa","Rush Yds":"#34d399","Rec Yds":"#c084fc","Receptions":"#f59e0b","Any TD":"#f87171"};
+              var wcatIcons:{[k:string]:string}={"Pass Yds":"\uD83C\uDFC8","Pass TD":"\uD83C\uDFC8","Rush Yds":"\uD83C\uDFC3","Rec Yds":"\uD83D\uDC50","Receptions":"\uD83C\uDFAF","Any TD":"\uD83C\uDFC6"};
+              var wgrouped:{[k:string]:typeof WEEKLY_PROPS}={};
+              WEEKLY_PROPS.forEach(function(p){if(!wgrouped[p.stat])wgrouped[p.stat]=[];wgrouped[p.stat].push(p);});
+              return wcats.filter(function(c){return wgrouped[c];}).map(function(cat){
+                var cc=wcatColors[cat]||T.text;
+                return React.createElement("div",{key:"wk"+cat,style:{marginBottom:16}},
+                  React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,marginBottom:8}},
+                    React.createElement("span",{style:{fontSize:13}},wcatIcons[cat]||""),
+                    React.createElement("div",{style:{fontWeight:800,fontSize:13,color:cc,letterSpacing:0.5,textTransform:"uppercase"}},cat)
+                  ),
+                  wgrouped[cat].map(function(p,pi){
+                    var isATD=cat==="Any TD";
+                    var displayVal=isATD?(p as any).odds||"":p.ou;
+                    var labelText=isATD?"ODDS":"O/U";
+                    var valColor=isATD?((p as any).odds&&(p as any).odds.charAt(0)==="-"?"#34d399":"#f59e0b"):cc;
+                    var rKey=p.name+"|"+p.stat;
+                    var actual=PROP_RESULTS[rKey];
+                    var hasResult=actual!==undefined;
+                    var isDNP=actual==="DNP";
+                    var isATDResult=isATD&&hasResult;
+                    var hitProp=false;
+                    if(hasResult&&!isDNP){
+                      if(isATD){hitProp=actual==="YES";}
+                      else{hitProp=(actual as number)>p.ou;}
+                    }
+                    var resultColor=isDNP?"#6b7280":hitProp?"#22c55e":"#f87171";
+                    var resultLabel=isDNP?"DNP":isATD?(actual==="YES"?"SCORED":"NO TD"):(hitProp?"OVER":"UNDER");
+                    return React.createElement("div",{key:p.name+p.stat+"wk",style:{background:T.bgCard,border:"1px solid "+(hasResult?resultColor+"33":T.border),borderRadius:12,padding:"10px 14px",marginBottom:5,display:"flex",alignItems:"center",gap:10}},
+                      React.createElement("div",{style:{fontWeight:700,fontSize:10,color:T.textDim,width:16,textAlign:"right"}},pi+1),
+                      React.createElement(Avatar,{name:p.name,pos:p.pos,size:28}),
+                      React.createElement("div",{style:{flex:1,minWidth:0}},
+                        React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
+                        React.createElement("div",{style:{fontSize:10,color:T.textSub}},p.pos+" · "+p.team+" vs "+p.opp)
+                      ),
+                      React.createElement("div",{style:{textAlign:"right",flexShrink:0}},
+                        React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:600,marginBottom:2}},labelText),
+                        React.createElement("div",{style:{fontWeight:900,fontSize:16,color:valColor}},displayVal)
+                      ),
+                      hasResult&&React.createElement("div",{style:{textAlign:"right",flexShrink:0,minWidth:52}},
+                        !isDNP&&!isATD&&React.createElement("div",{style:{fontWeight:900,fontSize:16,color:resultColor}},actual),
+                        React.createElement("div",{style:{fontSize:9,fontWeight:800,color:resultColor,marginTop:1,background:resultColor+"18",borderRadius:6,padding:"2px 6px",textAlign:"center"}},resultLabel)
+                      )
+                    );
+                  })
+                );
+              });
+            })(),
+            React.createElement("div",{style:{fontSize:10,color:T.textDim,textAlign:"center",marginTop:4,marginBottom:20}},"Week 2 props via DraftKings/FanDuel · Updated Sep 15 · For entertainment only"),
+            // ── SEASON-LONG PROPS ──
+            React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4}},"Season-Long Player Props"),
+            React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:14}},"Over/Under season stat totals · 2026-27 NFL season"),
+            (function(){
+              var cats=["Pass Yds","Pass TD","Rush Yds","Rush TD","Rec Yds","Rec TD"];
+              var catColors:{[k:string]:string}={"Pass Yds":"#818cf8","Pass TD":"#818cf8","Rush Yds":"#34d399","Rush TD":"#34d399","Rec Yds":"#c084fc","Rec TD":"#c084fc"};
+              var catIcons:{[k:string]:string}={"Pass Yds":"\uD83C\uDFC8","Pass TD":"\uD83C\uDFC8","Rush Yds":"\uD83C\uDFC3","Rush TD":"\uD83C\uDFC3","Rec Yds":"\uD83D\uDC50","Rec TD":"\uD83D\uDC50"};
+              var grouped:{[k:string]:typeof PLAYER_PROPS}={};
+              PLAYER_PROPS.forEach(function(p){if(!grouped[p.stat])grouped[p.stat]=[];grouped[p.stat].push(p);});
+              return cats.filter(function(c){return grouped[c];}).map(function(cat){
+                var cc=catColors[cat]||T.text;
+                return React.createElement("div",{key:cat,style:{marginBottom:16}},
+                  React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,marginBottom:8}},
+                    React.createElement("span",{style:{fontSize:13}},catIcons[cat]||""),
+                    React.createElement("div",{style:{fontWeight:800,fontSize:13,color:cc,letterSpacing:0.5,textTransform:"uppercase"}},cat)
+                  ),
+                  grouped[cat].map(function(p,pi){
+                    return React.createElement("div",{key:p.name+p.stat,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"10px 14px",marginBottom:5,display:"flex",alignItems:"center",gap:10}},
+                      React.createElement("div",{style:{fontWeight:700,fontSize:10,color:T.textDim,width:16,textAlign:"right"}},pi+1),
+                      React.createElement(Avatar,{name:p.name,pos:p.pos,size:28}),
+                      React.createElement("div",{style:{flex:1,minWidth:0}},
+                        React.createElement("div",{style:{fontWeight:700,fontSize:13,color:T.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
+                        React.createElement("div",{style:{fontSize:10,color:T.textSub}},p.pos+" · "+p.team)
+                      ),
+                      React.createElement("div",{style:{textAlign:"right",flexShrink:0}},
+                        React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:600,marginBottom:2}},"O/U"),
+                        React.createElement("div",{style:{fontWeight:900,fontSize:16,color:cc}},p.ou.toLocaleString())
+                      )
+                    );
+                  })
+                );
+              });
+            })(),
+            React.createElement("div",{style:{fontSize:10,color:T.textDim,textAlign:"center",marginTop:8}},"Consensus lines · Updated Aug 2026 · For entertainment only")
+          ),
+          // ── PRIOR WEEKS HISTORY TAB ──
+          vegasSubTab==="history"&&React.createElement("div",null,
+            React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4}},"Prior Weeks Results"),
+            React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:14}},"Game lines, scores, and ATS results from completed weeks"),
+            PAST_WEEKS.slice().reverse().map(function(pw){
+              var pwGames=pw.lines.map(function(g){
+                var home=g[0],away=g[1],spread=g[2],total=g[3];
+                var rKey=home+"-"+away;
+                var result=pw.results[rKey]||null;
+                var homeScore=result?result[0]:null;
+                var awayScore=result?result[1]:null;
+                var isFinal=result!==null;
+                var actualTotal=isFinal?(homeScore as number)+(awayScore as number):0;
+                var actualMargin=isFinal?(homeScore as number)-(awayScore as number):0;
+                var spreadCover=isFinal?(actualMargin+spread>0?"HOME":actualMargin+spread<0?"AWAY":"PUSH"):"";
+                var ouResult=isFinal?(actualTotal>total?"OVER":actualTotal<total?"UNDER":"PUSH"):"";
+                return{home,away,spread,total,homeScore,awayScore,isFinal,actualTotal,spreadCover,ouResult};
+              });
+              var totalGames=pwGames.length;
+              var favCovers=pwGames.filter(function(g){return g.isFinal&&((g.spread<=0&&g.spreadCover==="HOME")||(g.spread>0&&g.spreadCover==="AWAY"));}).length;
+              var dogCovers=pwGames.filter(function(g){return g.isFinal&&((g.spread<=0&&g.spreadCover==="AWAY")||(g.spread>0&&g.spreadCover==="HOME"));}).length;
+              var overs=pwGames.filter(function(g){return g.ouResult==="OVER";}).length;
+              var unders=pwGames.filter(function(g){return g.ouResult==="UNDER";}).length;
+              return React.createElement("div",{key:pw.week,style:{marginBottom:20}},
+                React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:10}},
+                  React.createElement("div",{style:{fontWeight:800,fontSize:14,color:"#059669"}},pw.label),
+                  React.createElement("div",{style:{background:"#059669",color:"#fff",borderRadius:10,padding:"2px 8px",fontSize:10,fontWeight:800}},totalGames+" games")
+                ),
+                // Summary row
+                React.createElement("div",{style:{display:"flex",gap:8,marginBottom:12}},
+                  React.createElement("div",{style:{flex:1,background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"10px 12px",textAlign:"center"}},
+                    React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:700,letterSpacing:0.5,marginBottom:3}},"FAVORITES"),
+                    React.createElement("div",{style:{fontWeight:900,fontSize:18,color:"#22c55e"}},favCovers+"-"+(totalGames-favCovers))
+                  ),
+                  React.createElement("div",{style:{flex:1,background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"10px 12px",textAlign:"center"}},
+                    React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:700,letterSpacing:0.5,marginBottom:3}},"DOGS"),
+                    React.createElement("div",{style:{fontWeight:900,fontSize:18,color:"#f87171"}},dogCovers+"-"+(totalGames-dogCovers))
+                  ),
+                  React.createElement("div",{style:{flex:1,background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"10px 12px",textAlign:"center"}},
+                    React.createElement("div",{style:{fontSize:9,color:T.textDim,fontWeight:700,letterSpacing:0.5,marginBottom:3}},"O/U"),
+                    React.createElement("div",{style:{fontWeight:900,fontSize:18,color:"#f59e0b"}},overs+"O / "+unders+"U")
+                  )
+                ),
+                // Game cards
+                pwGames.map(function(g){
+                  var favTeam=g.spread<=0?g.home:g.away;
+                  var dogTeam=g.spread<=0?g.away:g.home;
+                  var favSpread=g.spread<=0?g.spread:-g.spread;
+                  var favCovered=g.spreadCover===(g.spread<=0?"HOME":"AWAY");
+                  var spreadColor=favCovered?"#22c55e":"#f87171";
+                  var ouColor=g.ouResult==="OVER"?"#f59e0b":g.ouResult==="UNDER"?"#60a5fa":"#94a3b8";
+                  var homeWon=g.isFinal&&(g.homeScore as number)>(g.awayScore as number);
+                  var awayWon=g.isFinal&&(g.awayScore as number)>(g.homeScore as number);
+                  return React.createElement("div",{key:g.home+g.away,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"10px 14px",marginBottom:6,display:"flex",alignItems:"center",gap:8}},
+                    React.createElement("div",{style:{flex:1,minWidth:0}},
+                      React.createElement("div",{style:{fontWeight:awayWon?900:600,fontSize:13,color:awayWon?"#22c55e":T.text}},g.away+(g.isFinal?" "+g.awayScore:"")),
+                      React.createElement("div",{style:{fontWeight:homeWon?900:600,fontSize:13,color:homeWon?"#22c55e":T.text}},g.home+(g.isFinal?" "+g.homeScore:""))
+                    ),
+                    React.createElement("div",{style:{textAlign:"center",minWidth:52}},
+                      React.createElement("div",{style:{fontSize:12,fontWeight:800,color:T.text}},(favSpread>0?"+":"")+favSpread),
+                      g.isFinal&&React.createElement("div",{style:{fontSize:9,fontWeight:800,color:spreadColor,marginTop:2}},favCovered?favTeam+" covers":dogTeam+" covers")
+                    ),
+                    React.createElement("div",{style:{textAlign:"center",minWidth:52}},
+                      React.createElement("div",{style:{fontSize:12,fontWeight:800,color:T.text}},g.total),
+                      g.isFinal&&React.createElement("div",{style:{fontSize:9,fontWeight:800,color:ouColor,marginTop:2}},g.ouResult+" ("+g.actualTotal+")")
+                    )
+                  );
+                }),
+                // ── Player Props Results ──
+                pw.props&&pw.props.length>0&&(function(){
+                  var pCats=["Pass Yds","Rush Yds","Rec Yds","Any TD"];
+                  var pCatColors:{[k:string]:string}={"Pass Yds":"#818cf8","Rush Yds":"#34d399","Rec Yds":"#c084fc","Any TD":"#f87171"};
+                  var pCatIcons:{[k:string]:string}={"Pass Yds":"\uD83C\uDFC8","Rush Yds":"\uD83C\uDFC3","Rec Yds":"\uD83D\uDC50","Any TD":"\uD83C\uDFC6"};
+                  var pGrouped:{[k:string]:typeof pw.props}={};
+                  pw.props.forEach(function(p){if(!pGrouped[p.stat])pGrouped[p.stat]=[];pGrouped[p.stat].push(p);});
+                  var totalProps=pw.props.filter(function(p){return pw.propResults[p.name+"|"+p.stat]!==undefined;}).length;
+                  var hits=pw.props.filter(function(p){
+                    var a=pw.propResults[p.name+"|"+p.stat];
+                    if(a===undefined)return false;
+                    if(p.stat==="Any TD")return a==="YES";
+                    return(a as number)>p.ou;
+                  }).length;
+                  return React.createElement("div",{style:{marginTop:14}},
+                    React.createElement("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}},
+                      React.createElement("div",{style:{fontWeight:800,fontSize:13,color:"#c084fc"}},"Player Props Results"),
+                      totalProps>0&&React.createElement("div",{style:{fontSize:11,fontWeight:700,color:T.textSub}},"Overs: "+hits+"/"+totalProps+" ("+Math.round(hits/totalProps*100)+"%)")
+                    ),
+                    pCats.filter(function(c){return pGrouped[c];}).map(function(cat){
+                      var cc=pCatColors[cat]||T.text;
+                      return React.createElement("div",{key:"ph"+cat,style:{marginBottom:10}},
+                        React.createElement("div",{style:{display:"flex",alignItems:"center",gap:5,marginBottom:6}},
+                          React.createElement("span",{style:{fontSize:11}},pCatIcons[cat]||""),
+                          React.createElement("div",{style:{fontWeight:800,fontSize:11,color:cc,letterSpacing:0.5,textTransform:"uppercase"}},cat)
+                        ),
+                        pGrouped[cat].map(function(p){
+                          var isATD=cat==="Any TD";
+                          var rKey2=p.name+"|"+p.stat;
+                          var actual2=pw.propResults[rKey2];
+                          var hasR=actual2!==undefined;
+                          var hit2=false;
+                          if(hasR){hit2=isATD?actual2==="YES":(actual2 as number)>p.ou;}
+                          var rColor=hit2?"#22c55e":"#f87171";
+                          var rLabel=isATD?(actual2==="YES"?"SCORED":"NO TD"):(hit2?"OVER":"UNDER");
+                          var displayLine=isATD?((p as any).odds||""):p.ou;
+                          return React.createElement("div",{key:p.name+p.stat+"ph",style:{background:T.bgCard,border:"1px solid "+(hasR?rColor+"33":T.border),borderRadius:10,padding:"8px 12px",marginBottom:4,display:"flex",alignItems:"center",gap:8}},
+                            React.createElement("div",{style:{flex:1,minWidth:0}},
+                              React.createElement("div",{style:{fontWeight:700,fontSize:12,color:T.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.name),
+                              React.createElement("div",{style:{fontSize:9,color:T.textSub}},p.team+" vs "+p.opp)
+                            ),
+                            React.createElement("div",{style:{textAlign:"center",minWidth:40}},
+                              React.createElement("div",{style:{fontSize:11,fontWeight:800,color:cc}},displayLine)
+                            ),
+                            hasR&&React.createElement("div",{style:{textAlign:"right",minWidth:48}},
+                              !isATD&&React.createElement("div",{style:{fontWeight:900,fontSize:13,color:rColor}},actual2),
+                              React.createElement("div",{style:{fontSize:8,fontWeight:800,color:rColor,background:rColor+"18",borderRadius:5,padding:"1px 5px",textAlign:"center",marginTop:1}},rLabel)
+                            )
+                          );
+                        })
+                      );
+                    })
+                  );
+                })()
+              );
+            }),
+            PAST_WEEKS.length===0&&React.createElement("div",{style:{textAlign:"center",padding:40,color:T.textDim,fontSize:13}},"No prior weeks yet — check back after Week 2!")
+          )
+        );
+      })(),
 
-// Prior Weeks now supports two views:
-// 1. Games: Final scores with ATS/O-U outcomes
-// 2. Props: Historical prop grades (OVER/UNDER/PUSH)
-// Toggle between views with buttons
-// PRIOR WEEKS ENHANCEMENT
-// VEGAS LINES
-rankSubTab==="vegaslines"&&(function(){console.log("[Vegas] Rendering Vegas section, vegasSubTab=",vegasSubTab, "selectedVegasWeek=",selectedVegasWeek);if(typeof selectedVegasWeek==="undefined")selectedVegasWeek=7;var vd=oddsResponse.vegasData||{};console.log("[Vegas] vegasData keys:", Object.keys(vd), "has superBowl:", !!vd.superBowl, "count:", vd.superBowl ? vd.superBowl.length : 0);var bye=vd.byeWeeks||{};var bTeams=bye[selectedVegasWeek]||[];return React.createElement("div",{style:{padding:"16px"}},React.createElement("div",{style:{background:"linear-gradient(135deg,#065f46,#047857,#059669)",borderRadius:16,padding:"20px 18px",marginBottom:16}},React.createElement("div",{style:{fontWeight:900,fontSize:22,color:"#fff"}},"Vegas Lines & Futures"),React.createElement("div",{style:{fontSize:12,color:"rgba(255,255,255,0.7)",marginTop:4}},"Live odds & futures")),React.createElement("div",{style:{display:"flex",gap:6,flexWrap:"wrap",marginBottom:16}},["lines","futures","divisions","wintotals","awards","props","history"].map(function(t){var l={lines:"Game Lines",futures:"Super Bowl",wintotals:"Win Totals",awards:"Awards",props:"Props",divisions:"Divisions",history:"Prior Weeks"};return React.createElement("button",{key:t,onClick:function(){console.log("[VegasSubTab]",t);setVegasSubTab(t)},style:{padding:"8px 14px",borderRadius:20,border:"1px solid "+(vegasSubTab===t?"#059669":T.border),background:vegasSubTab===t?"#05966633":"transparent",color:vegasSubTab===t?"#059669":T.text,fontWeight:700,fontSize:11,cursor:"pointer"}},l[t])})),bTeams.length>0?React.createElement("div",{style:{background:"#fef3c7",border:"1px solid #f59e0b",borderRadius:8,padding:10,marginBottom:12,fontSize:11,color:"#92400e"}},"Bye: "+bTeams.join(", ")):null,React.createElement("div",{style:{display:"flex",gap:8,marginBottom:16,alignItems:"center"}},React.createElement("label",{style:{fontWeight:700}},"Week:"),React.createElement("select",{value:selectedVegasWeek,onChange:function(e){setSelectedVegasWeek(Number(e.target.value));setOddsLoaded(false)},style:{padding:"6px 12px",borderRadius:8,border:"1px solid "+T.border,background:T.bgInput,color:T.text,fontWeight:600,fontSize:12}},[1,2,3,4,5,6,7].map(function(w){return React.createElement("option",{key:w,value:w},"Week "+w)}))),vegasSubTab==="lines"?React.createElement("div",null,selectedVegasWeek===7?React.createElement("div",null,React.createElement("button",{onClick:function(){setOddsLoading(true);fetchVegasOdds(user?.token,true).then(function(r){setOddsResponse(r);setOddsLoading(false);setOddsLoaded(true)}).catch(function(){setOddsLoading(false)})},disabled:oddsLoading,style:{padding:"10px 20px",borderRadius:10,border:"1px solid #059669",background:"transparent",color:"#059669",fontWeight:700,cursor:"pointer",marginBottom:12}},oddsLoading?"Refreshing...":oddsLoaded?"Live Odds Loaded":"Load Live Odds"),Object.keys(oddsResponse.odds||{}).length>0?Object.entries(oddsResponse.odds||{}).filter(function(e){return !bTeams.includes(e[0])&&(!e[1].opp||!bTeams.includes(e[1].opp))}).map(function(e){var o=e[1];return React.createElement("div",{key:e[0]+"-"+o.opp,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:12,marginBottom:8}},React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},React.createElement("div",{style:{fontWeight:700}},e[0]+" @ "+o.opp),React.createElement("div",{style:{color:"#059669",fontWeight:600,fontSize:12}},(o.spread>0?"+":"")+o.spread+" | "+o.total)))}):React.createElement("div",{style:{color:T.textSub}},"Click to load live odds")):(function(){var w=PAST_WEEKS.find(function(x){return x.week===selectedVegasWeek;});if(!w)return React.createElement("div",{style:{color:T.textSub}},"No data for Week "+selectedVegasWeek);return React.createElement("div",null,(w.lines||[]).map(function(line){var away=line[0],home=line[1],spread=line[2],total=line[3];if(bTeams.includes(away)||bTeams.includes(home))return null;var key=away+"-"+home;var result=w.results[key];return React.createElement("div",{key:key,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:12,marginBottom:8}},React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}},React.createElement("div",{style:{fontWeight:700}},away+" @ "+home),React.createElement("div",{style:{color:"#059669",fontWeight:600,fontSize:12}},(spread>0?"+":"")+spread+" | "+total)),result?React.createElement("div",{style:{display:"flex",gap:16,fontSize:14,fontWeight:700}},React.createElement("div",null,away+": ",React.createElement("span",{style:{color:result[0]>result[1]?"#22c55e":T.textDim}},result[0])),React.createElement("div",null,home+": ",React.createElement("span",{style:{color:result[1]>result[0]?"#22c55e":T.textDim}},result[1]))):null)}))})()):null,vegasSubTab==="futures"?React.createElement("div",null,React.createElement("div",{style:{fontSize:14,fontWeight:800,marginBottom:16}},"Super Bowl"),React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:12}},(vd.superBowl||[]).map(function(s){return React.createElement("div",{key:s.team,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:14,textAlign:"center"}},React.createElement("div",{style:{fontWeight:700,fontSize:14}},s.team),React.createElement("div",{style:{fontSize:13,color:"#059669",fontWeight:600}},"+"+s.odds))}))):null,vegasSubTab==="divisions"?React.createElement("div",null,React.createElement("div",{style:{fontSize:14,fontWeight:800,marginBottom:16}},"Division Winners"),(vd.divisions||[]).map(function(d){return React.createElement("div",{key:d.division,style:{marginBottom:20}},React.createElement("div",{style:{fontSize:12,fontWeight:700,color:"#059669",marginBottom:8}},d.division),React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:8}},(d.odds||[]).map(function(o){return React.createElement("div",{key:o.team,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:8,padding:10}},React.createElement("div",{style:{fontWeight:600,fontSize:12}},o.team),React.createElement("div",{style:{fontSize:11,color:T.textSub}},"+"+o.odds))})))})):null,vegasSubTab==="wintotals"?React.createElement("div",null,React.createElement("div",{style:{fontSize:14,fontWeight:800,marginBottom:16}},"Win Totals"),React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:12}},(vd.winTotals||[]).map(function(w){return React.createElement("div",{key:w.team,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:12}},React.createElement("div",{style:{fontWeight:700,fontSize:13}},w.team),React.createElement("div",{style:{fontSize:11,color:T.textSub}},"O "+w.over+" / U "+w.under))}))):null,vegasSubTab==="awards"?React.createElement("div",null,React.createElement("div",{style:{fontSize:14,fontWeight:800,marginBottom:16}},"Awards"),(vd.awards||[]).map(function(a){return React.createElement("div",{key:a.award,style:{marginBottom:20}},React.createElement("div",{style:{fontSize:12,fontWeight:700,color:"#059669",marginBottom:8}},a.award),React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:8}},(a.odds||[]).map(function(o){return React.createElement("div",{key:o.player,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:8,padding:10}},React.createElement("div",{style:{fontWeight:600,fontSize:12}},o.player),React.createElement("div",{style:{fontSize:11,color:T.textSub}},"+"+o.odds))})))})):null,vegasSubTab==="props"?React.createElement("div",{style:{color:T.textSub}},"Player props coming soon"):null,vegasSubTab==="history"?(function(){if(selectedVegasWeek===7){return React.createElement("div",{style:{color:T.textSub}},"Live futures complete. Select a prior week to view historical results.")}var w=PAST_WEEKS.find(function(x){return x.week===selectedVegasWeek;});if(!w){return React.createElement("div",{style:{color:T.textSub}},"No data for Week "+selectedVegasWeek)}return React.createElement("div",null,[React.createElement("div",{style:{fontSize:13,fontWeight:700,color:"#059669",marginBottom:12}},"Week "+selectedVegasWeek+" Results"),React.createElement("div",null,(w.lines||[]).map(function(line){var away=line[0],home=line[1],spread=line[2],total=line[3];if(bTeams.includes(away)||bTeams.includes(home)){return null}var key=away+"-"+home;var result=w.results[key];if(!result){return null}var spreadOutcome=(result[0]-result[1]-spread>0)?"Cover":"Loss";if(Math.abs(result[0]-result[1]-spread)<0.01){spreadOutcome="Push"}var combinedScore=result[0]+result[1];var totalOutcome=(combinedScore>total)?"OVER":(combinedScore<total)?"UNDER":"PUSH";return React.createElement("div",{key:key,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:14,marginBottom:10}},React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}},React.createElement("div",{style:{fontWeight:700,fontSize:14}},away+" @ "+home),React.createElement("div",{style:{fontSize:12,color:"#059669",fontWeight:600}},"FINAL")),React.createElement("div",{style:{display:"flex",gap:20,marginBottom:12,fontSize:14,fontWeight:700}},React.createElement("div",null,away+": ",React.createElement("span",{style:{color:result[0]>result[1]?"#22c55e":T.textDim}},result[0])),React.createElement("div",null,home+": ",React.createElement("span",{style:{color:result[1]>result[0]?"#22c55e":T.textDim}},result[1]))),React.createElement("div",{style:{borderTop:"1px solid "+T.border,paddingTop:8}},spread!==null?React.createElement("div",{style:{fontSize:11,color:T.textSub,marginBottom:6}},away+" "+(spread>0?"+":"")+spread):null,React.createElement("div",{style:{display:"flex",gap:12,fontSize:11}},React.createElement("span",{style:{fontWeight:600,color:"#059669"}},"ATS: "+spreadOutcome),React.createElement("span",{style:{fontWeight:600,color:"#059669"}},"O/U "+total+": "+totalOutcome))))})),renderHistoricalPropResults(historicalPropResults,T)])})():null);})(),
-
-      
-      // HISTORICAL PROP RESULTS DISPLAY
-      
       // TRENDING (image 3)
       rankSubTab==="trending"&&React.createElement("div",{style:{padding:"16px"}},
         React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:16,padding:20}},
@@ -9981,12 +10014,12 @@ rankSubTab==="vegaslines"&&(function(){console.log("[Vegas] Rendering Vegas sect
       React.createElement("div",{style:{fontSize:14,color:T.textSub,lineHeight:1.6,marginBottom:28,maxWidth:280,margin:"0 auto 28px"}},"This area is restricted to authorized administrators only."),
       React.createElement("button",{onClick:function(){setTab("trade");},style:{padding:"14px 32px",borderRadius:14,border:"none",background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff",fontWeight:800,fontSize:15,cursor:"pointer"}},"Back to Trade")
     ),
-    tab==="admin"&&user&&(user.isAdmin||["jlawrence@cmgfi.com","admin@fantasydraftpros.com"].includes((user.email||"").toLowerCase()))&&React.createElement("div",{style:{paddingBottom:80}},
+    tab==="admin"&&user&&user.isAdmin&&React.createElement("div",{style:{paddingBottom:80}},
       // sub-nav
       React.createElement("div",{style:{position:"relative",borderBottom:"1px solid "+T.border}},
         isDesktop&&React.createElement("button",{onClick:function(){adminTabsRef.current&&adminTabsRef.current.scrollBy({left:-200,behavior:"smooth"});},style:{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",zIndex:2,background:T.bgCard,border:"1px solid "+T.border,borderRadius:"50%",width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:T.text,fontSize:14,padding:0}},"‹"),
         React.createElement("div",{ref:adminTabsRef,style:{display:"flex",gap:6,padding:isDesktop?"12px 36px":"12px 16px",overflowX:"auto",WebkitOverflowScrolling:"touch",msOverflowStyle:"none",scrollbarWidth:"none"}},
-          [["system","\u21BA","System"],["analytics","\uD83D\uDCCA","Analytics"],["valuetuner","\u2AE5","Value Tuner"],["rbcontext","\u270E","RB Context"],["rbai","\u2728","RB AI"],["headshots","\uD83D\uDC64","Headshots"],["idpupload","\u2B06","IDP Upload"]].map(function(s){
+          [["system","\u21BA","System"],["valuetuner","\u2AE5","Value Tuner"],["rbcontext","\u270E","RB Context"],["rbai","\u2728","RB AI"],["headshots","\uD83D\uDC64","Headshots"],["idpupload","\u2B06","IDP Upload"]].map(function(s){
             var active=adminSubTab===s[0];
             return React.createElement("button",{key:s[0],onClick:function(){setAdminSubTab(s[0]);},style:{whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:5,padding:"8px 12px",borderRadius:10,border:"1px solid "+(active?T.purple:T.border),background:active?T.purple:"transparent",color:active?"#fff":T.textSub,fontWeight:700,fontSize:12,cursor:"pointer",flexShrink:0}},
               React.createElement("span",null,s[1]),s[2]
@@ -10178,7 +10211,6 @@ rankSubTab==="vegaslines"&&(function(){console.log("[Vegas] Rendering Vegas sect
         )
       ),
       // VALUE TUNER sub-tab
-      adminSubTab==="analytics"&&React.createElement(AnalyticsDashboard,{T:T,data:analyticsData,loading:analyticsLoading,onLoad:loadAnalytics}),
       adminSubTab==="valuetuner"&&React.createElement("div",{style:{padding:"16px"}},
         React.createElement("div",{style:{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:10,marginBottom:12}},
           React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10}},
@@ -10598,9 +10630,9 @@ rankSubTab==="vegaslines"&&(function(){console.log("[Vegas] Rendering Vegas sect
         })
       ),
       React.createElement("div",{style:{fontSize:11,color:T.textDim}},"© 2026 Fantasy Draft Pros · Not affiliated with Sleeper, ESPN, or Yahoo · For entertainment only")
-    ),
+      ),
 
-    // END MAIN CONTENT WRAPPER
+      // END MAIN CONTENT WRAPPER
       )
     ), // END RIGHT COLUMN WRAPPER
 
@@ -10608,5 +10640,3 @@ rankSubTab==="vegaslines"&&(function(){console.log("[Vegas] Rendering Vegas sect
     React.createElement("button",{onClick:function(){setTab("reports");setReportSubTab("contact");},style:{position:"fixed",bottom:isDesktop?20:72,right:20,width:52,height:52,borderRadius:"50%",background:"#3b82f6",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 16px rgba(59,130,246,0.5)",zIndex:200,fontSize:22,color:"#fff"}},"\uD83D\uDCAC")
   );
 }
-// Deployment: Tue, Oct 20, 2026  3:47:52 PM},/    \!isDesktop\&\&React.createElement("div",{style:{overflow:"hidden",background:darkMode?"#0a0818":"#f8f7ff",borderBottom:"1px solid "+T.border,padding:"6px 0",flex:"0 0 auto",flexShrink:0}},}
-// Final deployment trigger
