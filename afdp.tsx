@@ -3108,6 +3108,7 @@ export default function App(){
   var [propGradingInProgress,setPropGradingInProgress]=useState<Record<number,boolean>>({});
   var [currentPlayerProps,setCurrentPlayerProps]=useState<any[]>([]);
   var [currentNFLWeek,setCurrentNFLWeek]=useState(function(){return getNFLWeekForDate();});
+  var [selectedHistoryWeek,setSelectedHistoryWeek]=useState<number>(function(){return PAST_WEEKS.length?PAST_WEEKS[PAST_WEEKS.length-1].week:1;});
   var _setRankSubTab=setRankSubTab;setRankSubTab=function(v){_setRankSubTab(v);try{localStorage.setItem('fdp_rankSubTab',v);}catch(e){}};
   var [rankPos,setRankPos]=useState("QB");
 
@@ -3354,14 +3355,12 @@ export default function App(){
   },[]);
 
   useEffect(function(){
-    if(vegasSubTab==="history"&&user?.token){
-      PAST_WEEKS.forEach(function(pw){
-        if(!historicalPropResults[pw.week]&&!propGradingInProgress[pw.week]){
-          triggerPropGrading(user.token,pw.week);
-        }
-      });
+    if(vegasSubTab==="history"&&user?.token&&selectedHistoryWeek){
+      if(!historicalPropResults[selectedHistoryWeek]&&!propGradingInProgress[selectedHistoryWeek]){
+        triggerPropGrading(user.token,selectedHistoryWeek);
+      }
     }
-  },[vegasSubTab,user?.token]);
+  },[vegasSubTab,user?.token,selectedHistoryWeek]);
 
   function doEspnImport(){
     if(!espnLeagueId.trim())return;
@@ -9030,9 +9029,19 @@ export default function App(){
           ),
           // ── PRIOR WEEKS HISTORY TAB ──
           vegasSubTab==="history"&&React.createElement("div",null,
-            React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4}},"Prior Weeks Results"),
-            React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:14}},"Game lines, scores, and ATS results from completed weeks"),
-            PAST_WEEKS.slice().reverse().map(function(pw){
+            React.createElement("div",{style:{display:"flex",alignItems:"center",gap:12,marginBottom:16}},
+              React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text}},"Prior Weeks Results"),
+              React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8}},
+                React.createElement("div",{style:{fontSize:13,fontWeight:600,color:T.text}},"Week:"),
+                React.createElement("select",{value:selectedHistoryWeek,onChange:function(e){setSelectedHistoryWeek(Number(e.target.value));},style:{padding:"6px 10px",borderRadius:8,border:"1px solid "+T.border,background:T.bgInput,color:T.text,fontSize:13,fontWeight:600,cursor:"pointer",minWidth:100,minHeight:44}},
+                  PAST_WEEKS.map(function(pw){return React.createElement("option",{key:pw.week,value:pw.week},"Week "+pw.week);})
+                )
+              )
+            ),
+            (function(){
+              var selectedHistory=PAST_WEEKS.find(function(pw){return pw.week===selectedHistoryWeek;});
+              if(!selectedHistory)return React.createElement("div",{style:{textAlign:"center",padding:"20px",color:T.textDim}},"No week selected");
+              var pw=selectedHistory;
               var pwGames=pw.lines.map(function(g){
                 var home=g[0],away=g[1],spread=g[2],total=g[3];
                 var rKey=home+"-"+away;
@@ -9197,7 +9206,7 @@ export default function App(){
                   );
                 })()
               );
-            }),
+            })(),
             PAST_WEEKS.length===0&&React.createElement("div",{style:{textAlign:"center",padding:40,color:T.textDim,fontSize:13}},"No prior weeks yet — check back after Week 2!")
           )
         );
