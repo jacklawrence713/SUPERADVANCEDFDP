@@ -336,7 +336,12 @@ propResults:{
 "Christian McCaffrey|Any TD":"NO","Justin Jefferson|Any TD":"YES",
 "Rashee Rice|Any TD":"YES","Dalton Kincaid|Any TD":"NO"
 } as {[k:string]:number|string}
-}
+},
+{week:2,label:"Week 2 · Sep 17–21",lines:[],results:{},props:[],propResults:{}},
+{week:3,label:"Week 3 · Sep 24–28",lines:[],results:{},props:[],propResults:{}},
+{week:4,label:"Week 4 · Oct 1–5",lines:[],results:{},props:[],propResults:{}},
+{week:5,label:"Week 5 · Oct 8–12",lines:[],results:{},props:[],propResults:{}},
+{week:6,label:"Week 6 · Oct 15–19",lines:[],results:{},props:[],propResults:{}}
 ];
 // Current week's lines (Week 5, Oct 8-12 2026)
 var WEEKLY_LINES:[string,string,number|null,number|null][]=[
@@ -3109,6 +3114,7 @@ export default function App(){
   var [currentPlayerProps,setCurrentPlayerProps]=useState<any[]>([]);
   var [currentNFLWeek,setCurrentNFLWeek]=useState(function(){return getNFLWeekForDate();});
   var [selectedHistoryWeek,setSelectedHistoryWeek]=useState<number>(function(){return PAST_WEEKS.length?PAST_WEEKS[PAST_WEEKS.length-1].week:1;});
+  var [selectedPlayerPropsWeek,setSelectedPlayerPropsWeek]=useState<number>(function(){return currentNFLWeek;});
   var _setRankSubTab=setRankSubTab;setRankSubTab=function(v){_setRankSubTab(v);try{localStorage.setItem('fdp_rankSubTab',v);}catch(e){}};
   var [rankPos,setRankPos]=useState("QB");
 
@@ -8939,7 +8945,13 @@ export default function App(){
           // ── PLAYER PROPS TAB ──
           vegasSubTab==="props"&&React.createElement("div",null,
             // ── WEEKLY GAME PROPS ──
-            React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4}},"Week "+currentNFLWeek+" Player Props"),
+            React.createElement("div",{style:{display:"flex",alignItems:"center",gap:12,marginBottom:16}},
+              React.createElement("div",{style:{fontWeight:600,fontSize:13,color:T.text}},"Week:"),
+              React.createElement("select",{value:selectedPlayerPropsWeek,onChange:function(e){setSelectedPlayerPropsWeek(Number(e.target.value));},style:{padding:"6px 10px",borderRadius:8,border:"1px solid "+T.border,background:T.bgInput,color:T.text,fontSize:13,fontWeight:600,cursor:"pointer",minWidth:100,minHeight:44}},
+                [1,2,3,4,5,6].map(function(w){return React.createElement("option",{key:w,value:w},"Week "+w);})
+              )
+            ),
+            React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4}},"Week "+selectedPlayerPropsWeek+" Player Props"),
             React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:14}},currentPlayerProps.length>0?"Live odds from sportsbooks":"No current player props available"),
             (function(){
               var wcats=["Pass Yds","Pass TD","Rush Yds","Rec Yds","Receptions","Any TD"];
