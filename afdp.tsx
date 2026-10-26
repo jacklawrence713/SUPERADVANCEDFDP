@@ -364,13 +364,46 @@ var WEEK_6_LINES:[string,string,number|null,number|null][]=[
 ];
 // Get current NFL week based on date (Oct 2026)
 function getCurrentNFLWeek(date:Date=new Date()):{week:number,lines:[string,string,number|null,number|null][],label:string}{
-  var month=date.getMonth(),day=date.getDate();
-  if(month===9){// October
-    if(day<=12){return{week:5,lines:WEEKLY_LINES,label:"Week 5"};}
-    if(day<=19){return{week:6,lines:WEEK_6_LINES,label:"Week 6"};}
+  // 2026 NFL Season: Week 1 begins September 10, 2026 (Thursday)
+  // 18 weeks of regular season, roughly 7 days per week
+  var nflSeasonStart=new Date(2026,8,10);// September 10, 2026
+  if(date<nflSeasonStart){
+    return{week:1,lines:WEEKLY_LINES,label:"Week 1 (Pre-Season)"};
   }
-  // Fallback: return Week 5
-  return{week:5,lines:WEEKLY_LINES,label:"Week 5"};
+  var weeksSinceStart=Math.floor((date.getTime()-nflSeasonStart.getTime())/(7*24*60*60*1000));
+  var week=Math.max(1,Math.min(18,weeksSinceStart+1));
+  return{week:week,lines:WEEKLY_LINES,label:"Week "+week};
+}
+function getNFLWeekForDate(date:Date=new Date()):number{
+  var nflSeasonStart=new Date(2026,8,10);
+  if(date<nflSeasonStart)return 1;
+  var weeksSinceStart=Math.floor((date.getTime()-nflSeasonStart.getTime())/(7*24*60*60*1000));
+  return Math.max(1,Math.min(18,weeksSinceStart+1));
+}
+async function fetchHistoricalPropResults(token:string|undefined,week:number,season:number=2026):Promise<any[]>{
+  if(!token)return[];
+  try{
+    var r=await fetch(EDGE_URL+"/fetch-grade-props",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify({week:week,season:season})});
+    if(!r.ok)return[];
+    var data=await r.json();
+    return data.results||[];
+  }catch(e){
+    console.error("[Vegas] fetchHistoricalPropResults error:",e);
+    return[];
+  }
+}
+async function triggerPropGrading(token:string|undefined,week:number,season:number=2026):Promise<void>{
+  if(!token)return;
+  try{
+    setPropGradingInProgress({...propGradingInProgress,[week]:true});
+    await fetch(EDGE_URL+"/fetch-grade-props",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify({week:week,season:season,grade:true})});
+    var results=await fetchHistoricalPropResults(token,week,season);
+    setHistoricalPropResults({...historicalPropResults,[week]:results});
+  }catch(e){
+    console.error("[Vegas] triggerPropGrading error:",e);
+  }finally{
+    setPropGradingInProgress({...propGradingInProgress,[week]:false});
+  }
 }
 function buildHardcodedOdds():{[t:string]:{spread:number|null,total:number|null,opp:string}}{
   var r:{[t:string]:{spread:number|null,total:number|null,opp:string}}={};
@@ -379,17 +412,35 @@ function buildHardcodedOdds():{[t:string]:{spread:number|null,total:number|null,
 }
 // fetchOdds calls the server-side fetch-odds Edge Function (never the provider directly).
 // Returns {odds, source} — source distinguishes "api" / "cache" / "manual" / "unavailable".
-async function fetchOdds():Promise<{odds:{[t:string]:{spread:number|null,total:number|null,opp:string}},source:string,fetchedAt:string,stale:boolean}>{
+async function fetchVegasOdds(token:string|undefined,forceRefresh:boolean=false):Promise<{odds:{[t:string]:{spread:number|null,total:number|null,opp:string}},source:string,fetchedAt:string,stale:boolean,playerProps?:any[],error?:string}>{
   try{
-    var r=await fetch(EDGE_URL+"/fetch-odds",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPA_KEY},body:"{}"});
+    if(!token){
+      console.warn("[Vegas] fetchVegasOdds: No auth token provided");
+      return {odds:{},source:"unavailable",fetchedAt:"",stale:false,error:"unauthorized"};
+    }
+    var headers={"Content-Type":"application/json","Authorization":"Bearer "+token};
+    var body=JSON.stringify({forceRefresh:forceRefresh});
+    var r=await fetch(EDGE_URL+"/fetch-odds",{method:"POST",headers:headers,body:body});
+    if(!r.ok){
+      var errStatus=r.status;
+      console.error("[Vegas] fetch-odds returned "+errStatus);
+      if(errStatus===401||errStatus===403){
+        return {odds:{},source:"unavailable",fetchedAt:"",stale:false,error:"insufficient_entitlement"};
+      }
+      return {odds:{},source:"unavailable",fetchedAt:"",stale:false,error:"api_error_"+errStatus};
+    }
     var data=await r.json();
     if(data&&data.odds&&Object.keys(data.odds).length>0){
-      return {odds:data.odds,source:data.source||"api",fetchedAt:data.fetchedAt||"",stale:data.stale||false};
+      return {odds:data.odds,source:data.source||"api",fetchedAt:data.fetchedAt||"",stale:data.stale||false,playerProps:data.playerProps};
     }
-    return {odds:{},source:data?.source||"unavailable",fetchedAt:data?.fetchedAt||"",stale:false};
-  }catch{
-    return {odds:{},source:"unavailable",fetchedAt:"",stale:false};
+    return {odds:{},source:data?.source||"unavailable",fetchedAt:data?.fetchedAt||"",stale:false,playerProps:data?.playerProps,error:data?.error};
+  }catch(e){
+    console.error("[Vegas] fetchVegasOdds exception:",e);
+    return {odds:{},source:"unavailable",fetchedAt:"",stale:false,error:"network_error"};
   }
+}
+async function fetchOdds():Promise<{odds:{[t:string]:{spread:number|null,total:number|null,opp:string}},source:string,fetchedAt:string,stale:boolean}>{
+  return fetchVegasOdds(undefined);
 }
 function getGameScript(team:string,odds:{[t:string]:{spread:number|null,total:number|null,opp:string}}|null):{spread:number|null,total:number|null,script:string,label:string,color:string,opp:string}|null{
   if(!odds)return null;
@@ -3053,6 +3104,10 @@ export default function App(){
   // Rankings
   var [rankSubTab,setRankSubTab]=useState(function(){try{return localStorage.getItem('fdp_rankSubTab')||"allrankings";}catch(e){return"allrankings";}});
   var [vegasSubTab,setVegasSubTab]=useState("lines");
+  var [historicalPropResults,setHistoricalPropResults]=useState<Record<number,any[]>>({});
+  var [propGradingInProgress,setPropGradingInProgress]=useState<Record<number,boolean>>({});
+  var [currentPlayerProps,setCurrentPlayerProps]=useState<any[]>([]);
+  var [currentNFLWeek,setCurrentNFLWeek]=useState(function(){return getNFLWeekForDate();});
   var _setRankSubTab=setRankSubTab;setRankSubTab=function(v){_setRankSubTab(v);try{localStorage.setItem('fdp_rankSubTab',v);}catch(e){}};
   var [rankPos,setRankPos]=useState("QB");
 
@@ -3295,8 +3350,18 @@ export default function App(){
   // Track page view on mount (once per session) + load public stats
   useEffect(function(){
     try{var key="fdp_tracked_"+new Date().toDateString();if(!sessionStorage.getItem(key)){sessionStorage.setItem(key,"1");trackEvent("page_view",{referrer:document.referrer||"direct",path:window.location.pathname});}}catch(e){trackEvent("page_view",{referrer:document.referrer||"direct",path:window.location.pathname});}
-    fetchOdds().then(function(d){if(Object.keys(d.odds).length>0){setOddsData(d.odds);setOddsSource(d.source);setOddsFetchedAt(d.fetchedAt);setOddsStale(d.stale);}else{var hc=buildHardcodedOdds();if(Object.keys(hc).length>0){setOddsData(hc);setOddsSource("manual");setOddsFetchedAt("");setOddsStale(false);}}});
+    if(user?.token){fetchVegasOdds(user.token).then(function(d){if(Object.keys(d.odds).length>0){setOddsData(d.odds);setOddsSource(d.source);setOddsFetchedAt(d.fetchedAt);setOddsStale(d.stale);if(d.playerProps&&d.playerProps.length>0){setCurrentPlayerProps(d.playerProps);}}else{var hc=buildHardcodedOdds();if(Object.keys(hc).length>0){setOddsData(hc);setOddsSource("manual");setOddsFetchedAt("");setOddsStale(false);}}})};
   },[]);
+
+  useEffect(function(){
+    if(vegasSubTab==="history"&&user?.token){
+      PAST_WEEKS.forEach(function(pw){
+        if(!historicalPropResults[pw.week]&&!propGradingInProgress[pw.week]){
+          triggerPropGrading(user.token,pw.week);
+        }
+      });
+    }
+  },[vegasSubTab,user?.token]);
 
   function doEspnImport(){
     if(!espnLeagueId.trim())return;
@@ -8603,7 +8668,7 @@ export default function App(){
               React.createElement("div",{style:{fontSize:48,marginBottom:12}},"📅"),
               React.createElement("div",{style:{fontWeight:800,fontSize:18,color:T.text,marginBottom:8}},"No Current NFL Lines"),
               React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.7,maxWidth:340,margin:"0 auto",marginBottom:16}},"Odds are posted Thursday–Monday during the NFL season (September–January). Tap below to load this week's lines!"),
-              React.createElement("button",{onClick:function(){setOddsChecking(true);setOddsChecked(false);fetchOdds().then(function(d){setOddsChecking(false);setOddsChecked(true);if(Object.keys(d.odds).length>0){setOddsData(d.odds);setOddsSource(d.source);setOddsFetchedAt(d.fetchedAt);setOddsStale(d.stale);}}).catch(function(){setOddsChecking(false);setOddsChecked(true);var hc=buildHardcodedOdds();if(Object.keys(hc).length>0){setOddsData(hc);setOddsSource("manual");setOddsFetchedAt("");setOddsStale(false);}});},disabled:oddsChecking,style:{padding:"12px 28px",borderRadius:12,border:"none",background:oddsChecking?"#6b7280":"linear-gradient(135deg,#059669,#047857)",color:"#fff",fontWeight:700,fontSize:13,cursor:oddsChecking?"wait":"pointer",boxShadow:"0 4px 12px rgba(5,150,105,0.3)",opacity:oddsChecking?0.7:1}},oddsChecking?"Checking...":"↻ Check for Lines"),
+              React.createElement("button",{onClick:function(){if(!user||!user.token){alert("Please log in to check live odds");return;}setOddsChecking(true);setOddsChecked(false);fetchVegasOdds(user.token,true).then(function(d){setOddsChecking(false);setOddsChecked(true);if(Object.keys(d.odds).length>0){setOddsData(d.odds);setOddsSource(d.source);setOddsFetchedAt(d.fetchedAt);setOddsStale(d.stale);if(d.playerProps){setCurrentPlayerProps(d.playerProps);}}}).catch(function(){setOddsChecking(false);setOddsChecked(true);var hc=buildHardcodedOdds();if(Object.keys(hc).length>0){setOddsData(hc);setOddsSource("manual");setOddsFetchedAt("");setOddsStale(false);}});},disabled:oddsChecking,style:{padding:"12px 28px",borderRadius:12,border:"none",background:oddsChecking?"#6b7280":"linear-gradient(135deg,#059669,#047857)",color:"#fff",fontWeight:700,fontSize:13,cursor:oddsChecking?"wait":"pointer",boxShadow:"0 4px 12px rgba(5,150,105,0.3)",opacity:oddsChecking?0.7:1}},oddsChecking?"Checking...":"↻ Check for Lines"),
               oddsChecked&&!hasData&&React.createElement("div",{style:{marginTop:12,padding:"10px 16px",background:darkMode?"#1e293b":"#fef3c7",border:"1px solid "+(darkMode?"#475569":"#fcd34d"),borderRadius:12,fontSize:12,color:darkMode?"#fbbf24":"#92400e",fontWeight:600,textAlign:"center"}},"No lines available right now. NFL game lines are typically posted during the regular season (Sep–Jan).")
             ),
             hasData&&React.createElement("div",{style:{marginBottom:12}},
@@ -8875,8 +8940,8 @@ export default function App(){
           // ── PLAYER PROPS TAB ──
           vegasSubTab==="props"&&React.createElement("div",null,
             // ── WEEKLY GAME PROPS ──
-            React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4}},"Week 2 Player Props"),
-            React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:14}},"Game-day O/U lines · Thu Sep 17 – Mon Sep 21"),
+            React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4}},"Week "+currentNFLWeek+" Player Props"),
+            React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:14}},currentPlayerProps.length>0?"Live odds from sportsbooks":"No current player props available"),
             (function(){
               var wcats=["Pass Yds","Pass TD","Rush Yds","Rec Yds","Receptions","Any TD"];
               var wcatColors:{[k:string]:string}={"Pass Yds":"#818cf8","Pass TD":"#60a5fa","Rush Yds":"#34d399","Rec Yds":"#c084fc","Receptions":"#f59e0b","Any TD":"#f87171"};
@@ -9078,6 +9143,52 @@ export default function App(){
                             hasR&&React.createElement("div",{style:{textAlign:"right",minWidth:48}},
                               !isATD&&React.createElement("div",{style:{fontWeight:900,fontSize:13,color:rColor}},actual2),
                               React.createElement("div",{style:{fontSize:8,fontWeight:800,color:rColor,background:rColor+"18",borderRadius:5,padding:"1px 5px",textAlign:"center",marginTop:1}},rLabel)
+                            )
+                          );
+                        })
+                      );
+                    })
+                  );
+                })(),
+                // Safe historical graded props display
+                (function(){
+                  var histProps=historicalPropResults[pw.week]||[];
+                  if(histProps.length===0){
+                    if(propGradingInProgress[pw.week]){
+                      return React.createElement("div",{style:{marginTop:14,padding:"12px",background:T.bgCard,borderRadius:10,textAlign:"center",color:T.textSub,fontSize:12}},"Loading graded props...");
+                    }
+                    return null;
+                  }
+                  var gCats=["Pass Yds","Rush Yds","Rec Yds","Any TD"];
+                  var gCatColors:{[k:string]:string}={"Pass Yds":"#818cf8","Rush Yds":"#34d399","Rec Yds":"#c084fc","Any TD":"#f87171"};
+                  var gCatIcons:{[k:string]:string}={"Pass Yds":"🏈","Rush Yds":"🏃","Rec Yds":"👐","Any TD":"🏆"};
+                  var gGrouped:{[k:string]:any[]}={};
+                  histProps.forEach(function(g:any){if(!gGrouped[g.stat||g.market_key])gGrouped[g.stat||g.market_key]=[];gGrouped[g.stat||g.market_key].push(g);});
+                  return React.createElement("div",{style:{marginTop:14}},
+                    React.createElement("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}},
+                      React.createElement("div",{style:{fontWeight:800,fontSize:13,color:"#a78bfa"}},"Graded Props (Historical)"),
+                      React.createElement("div",{style:{fontSize:10,fontWeight:600,color:T.textSub}},"From database")
+                    ),
+                    gCats.filter(function(c){return gGrouped[c]&&gGrouped[c].length>0;}).map(function(cat){
+                      var gc=gCatColors[cat]||T.text;
+                      return React.createElement("div",{key:"gh"+cat,style:{marginBottom:10}},
+                        React.createElement("div",{style:{display:"flex",alignItems:"center",gap:5,marginBottom:6}},
+                          React.createElement("span",{style:{fontSize:11}},gCatIcons[cat]||""),
+                          React.createElement("div",{style:{fontWeight:800,fontSize:11,color:gc,letterSpacing:0.5,textTransform:"uppercase"}},cat)
+                        ),
+                        gGrouped[cat].map(function(g:any){
+                          var gradeColor=(g.grade==="OVER"||g.grade==="YES")?"#22c55e":(g.grade==="PUSH"?"#f59e0b":"#f87171");
+                          return React.createElement("div",{key:(g.player_name||g.name)+(g.market_key||g.stat)+"gh",style:{background:T.bgCard,border:"1px solid "+gradeColor+"33",borderRadius:10,padding:"8px 12px",marginBottom:4,display:"flex",alignItems:"center",gap:8}},
+                            React.createElement("div",{style:{flex:1,minWidth:0}},
+                              React.createElement("div",{style:{fontWeight:700,fontSize:12,color:T.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},g.player_name||g.name),
+                              React.createElement("div",{style:{fontSize:9,color:T.textSub}},g.market_display||g.market||g.stat)
+                            ),
+                            React.createElement("div",{style:{textAlign:"center",minWidth:40}},
+                              React.createElement("div",{style:{fontSize:11,fontWeight:800,color:gc}},g.line)
+                            ),
+                            g.grade&&g.grade!=="RESULT_UNAVAILABLE"&&React.createElement("div",{style:{textAlign:"right",minWidth:48}},
+                              React.createElement("div",{style:{fontWeight:900,fontSize:13,color:gradeColor}},g.actual_value||g.actual),
+                              React.createElement("div",{style:{fontSize:8,fontWeight:800,color:gradeColor,background:gradeColor+"18",borderRadius:5,padding:"1px 5px",textAlign:"center",marginTop:1}},g.grade)
                             )
                           );
                         })

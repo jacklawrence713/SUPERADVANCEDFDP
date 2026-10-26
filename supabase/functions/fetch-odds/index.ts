@@ -672,7 +672,9 @@ Deno.serve(async (req) => {
         try {
           const eventIds = [...new Set(Object.values(response.odds).filter(o => o.eventId).map(o => o.eventId))];
           const currentDate = new Date();
-          const week = Math.ceil((currentDate.getTime() - new Date(2026, 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000));
+          const nflSeasonStart = new Date(2026, 8, 10); // September 10, 2026
+          const weeksSinceStart = Math.floor((currentDate.getTime() - nflSeasonStart.getTime()) / (7 * 24 * 60 * 60 * 1000));
+          const week = Math.max(1, Math.min(18, weeksSinceStart + 1));
           const season = 2026;
           
           if (eventIds.length > 0) {
@@ -682,6 +684,33 @@ Deno.serve(async (req) => {
         } catch (e) {
           console.error("[fetch-odds] Props capture error:", e);
         }
+      }
+      
+      // Fetch current week's player props to return to frontend
+      try{
+        const { data: currentProps, error: propsError } = await supabase
+          .from("historical_player_props")
+          .select("*")
+          .eq("week", week)
+          .eq("season", season);
+        
+        if(!propsError && currentProps && currentProps.length > 0){
+          response.playerProps = currentProps.map((p: any) => ({
+            player_name: p.player_name,
+            team: p.team,
+            opponent: p.opponent,
+            market_key: p.market_key,
+            market_display: p.market_display,
+            line: p.line,
+            over_price: p.over_price,
+            under_price: p.under_price,
+            bookmaker: p.bookmaker,
+            eventId: p.event_id
+          }));
+          console.log(`[fetch-odds] Returning ${response.playerProps.length} current week props to frontend`);
+        }
+      }catch(e){
+        console.log("[fetch-odds] Could not fetch current week props");
       }
       
       return new Response(JSON.stringify(response), {
