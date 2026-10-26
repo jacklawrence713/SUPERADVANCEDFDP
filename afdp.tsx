@@ -9084,6 +9084,49 @@ export default function App(){
                       );
                     })
                   );
+                })(),
+                // ── Graded Props (from database) ──
+                historicalPropResults[pw.week]&&historicalPropResults[pw.week].length>0&&(function(){
+                  var gProps=historicalPropResults[pw.week];
+                  var gCats=["Pass Yds","Rush Yds","Rec Yds","Any TD"];
+                  var gCatColors:{[k:string]:string}={"Pass Yds":"#818cf8","Rush Yds":"#34d399","Rec Yds":"#c084fc","Any TD":"#f87171"};
+                  var gCatIcons:{[k:string]:string}={"Pass Yds":"🏈","Rush Yds":"🏃","Rec Yds":"👐","Any TD":"🏆"};
+                  var gGrouped:{[k:string]:any[]}={};
+                  gProps.forEach(function(g:any){if(!gGrouped[g.stat])gGrouped[g.stat]=[];gGrouped[g.stat].push(g);});
+                  var totalGraded=gProps.filter(function(g:any){return g.grade!=="DNP";}).length;
+                  var gradedHits=gProps.filter(function(g:any){return g.grade==="OVER"||g.grade==="YES";}).length;
+                  return React.createElement("div",{style:{marginTop:14}},
+                    React.createElement("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}},
+                      React.createElement("div",{style:{fontWeight:800,fontSize:13,color:"#a78bfa"}},"Graded Props"),
+                      propGradingInProgress[pw.week]&&React.createElement("div",{style:{fontSize:10,fontWeight:600,color:T.textSub}},"Grading..."),
+                      !propGradingInProgress[pw.week]&&totalGraded>0&&React.createElement("div",{style:{fontSize:11,fontWeight:700,color:T.textSub}},gradedHits+" hits ("+Math.round(gradedHits/totalGraded*100)+"%)")
+                    ),
+                    gCats.filter(function(c){return gGrouped[c]&&gGrouped[c].length>0;}).map(function(cat){
+                      var gc=gCatColors[cat]||T.text;
+                      return React.createElement("div",{key:"gh"+cat,style:{marginBottom:10}},
+                        React.createElement("div",{style:{display:"flex",alignItems:"center",gap:5,marginBottom:6}},
+                          React.createElement("span",{style:{fontSize:11}},gCatIcons[cat]||""),
+                          React.createElement("div",{style:{fontWeight:800,fontSize:11,color:gc,letterSpacing:0.5,textTransform:"uppercase"}},cat)
+                        ),
+                        gGrouped[cat].map(function(g:any){
+                          var gradeColor=(g.grade==="OVER"||g.grade==="YES")?"#22c55e":(g.grade==="PUSH"?"#f59e0b":"#f87171");
+                          return React.createElement("div",{key:g.player_name+g.stat+"gh",style:{background:T.bgCard,border:"1px solid "+gradeColor+"33",borderRadius:10,padding:"8px 12px",marginBottom:4,display:"flex",alignItems:"center",gap:8}},
+                            React.createElement("div",{style:{flex:1,minWidth:0}},
+                              React.createElement("div",{style:{fontWeight:700,fontSize:12,color:T.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},g.player_name),
+                              React.createElement("div",{style:{fontSize:9,color:T.textSub}},g.market)
+                            ),
+                            React.createElement("div",{style:{textAlign:"center",minWidth:40}},
+                              React.createElement("div",{style:{fontSize:11,fontWeight:800,color:gc}},g.line)
+                            ),
+                            g.grade!=="DNP"&&React.createElement("div",{style:{textAlign:"right",minWidth:48}},
+                              React.createElement("div",{style:{fontWeight:900,fontSize:13,color:gradeColor}},g.actual),
+                              React.createElement("div",{style:{fontSize:8,fontWeight:800,color:gradeColor,background:gradeColor+"18",borderRadius:5,padding:"1px 5px",textAlign:"center",marginTop:1}},g.grade)
+                            )
+                          );
+                        })
+                      );
+                    })
+                  );
                 })()
               );
             }),
