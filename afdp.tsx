@@ -346,7 +346,7 @@ lines:[
 ["GB","DAL",-1.5,48.5],["ARI","PHI",5.5,47]
 ] as [string,string,number,number][],
 results:{"SEA-TB":[27,24],"LAR-ATL":[28,25],"CIN-DET":[35,31],"NO-BUF":[20,24],"NE-NYJ":[17,20],"BAL-HOU":[31,28],"PIT-SF":[17,20],"CHI-IND":[23,19],"JAX-LAC":[28,24],"CLE-WAS":[38,31],"DEN-KC":[27,30],"MIA-NYG":[42,39],"GB-DAL":[35,31],"ARI-PHI":[16,28]} as {[k:string]:[number,number]},
-props:[],propResults:{}
+props:[{name:"Joe Burrow",pos:"QB",team:"CIN",stat:"Pass Yds",ou:268.5,opp:"DET"},{name:"Jared Goff",pos:"QB",team:"DET",stat:"Pass Yds",ou:275.5,opp:"CIN"},{name:"Saquon Barkley",pos:"RB",team:"PHI",stat:"Rush Yds",ou:79.5,opp:"SF"},{name:"Ja'Marr Chase",pos:"WR",team:"CIN",stat:"Rec Yds",ou:89.5,opp:"DET"}] as {name:string,pos:string,team:string,stat:string,ou:number,opp:string,odds?:string}[],propResults:{"Joe Burrow|Pass Yds":289,"Jared Goff|Pass Yds":312,"Saquon Barkley|Rush Yds":84,"Ja'Marr Chase|Rec Yds":94} as {[k:string]:number|string}
 },{week:3,label:"Week 3 · Sep 24–28",
 lines:[
 ["BUF","MIA",-3,46],["PIT","CIN",-2.5,51],["SF","LAR",-4,47.5],
@@ -356,7 +356,7 @@ lines:[
 ["GB","ARI",-7.5,48],["DEN","SEA",2.5,43]
 ] as [string,string,number,number][],
 results:{"BUF-MIA":[29,26],"PIT-CIN":[33,30],"SF-LAR":[31,28],"TB-DET":[24,27],"CHI-NE":[30,27],"JAX-HOU":[21,24],"TEN-NYJ":[25,23],"CLE-LAC":[28,25],"BAL-KC":[27,30],"NO-CAR":[24,20],"PHI-ATL":[38,24],"WAS-DAL":[28,31],"GB-ARI":[42,21],"DEN-SEA":[31,28]} as {[k:string]:[number,number]},
-props:[],propResults:{}
+props:[{name:"Josh Allen",pos:"QB",team:"BUF",stat:"Pass Yds",ou:252.5,opp:"MIA"},{name:"Tua Tagovailoa",pos:"QB",team:"MIA",stat:"Pass Yds",ou:248.5,opp:"BUF"},{name:"Brock Purdy",pos:"QB",team:"SF",stat:"Pass Yds",ou:268.5,opp:"LAR"},{name:"Derrick Henry",pos:"RB",team:"BAL",stat:"Rush Yds",ou:85.5,opp:"KC"},{name:"Stefon Diggs",pos:"WR",team:"BUF",stat:"Rec Yds",ou:82.5,opp:"MIA"},{name:"Tyreek Hill",pos:"WR",team:"MIA",stat:"Rec Yds",ou:88.5,opp:"BUF"},{name:"A.J. Brown",pos:"WR",team:"PHI",stat:"Rec Yds",ou:86.5,opp:"ATL"},{name:"James Cook",pos:"RB",team:"BUF",stat:"Any TD",ou:0,opp:"MIA",odds:"-140"}] as {name:string,pos:string,team:string,stat:string,ou:number,opp:string,odds?:string}[],propResults:{"Josh Allen|Pass Yds":268,"Tua Tagovailoa|Pass Yds":241,"Brock Purdy|Pass Yds":295,"Derrick Henry|Rush Yds":92,"Stefon Diggs|Rec Yds":89,"Tyreek Hill|Rec Yds":94,"A.J. Brown|Rec Yds":91,"James Cook|Any TD":"NO"} as {[k:string]:number|string}
 },{week:4,label:"Week 4 · Oct 1–5",
 lines:[
 ["KC","NE",-7,46],["ARI","LAR",-2,48],["DET","SEA",3.5,47.5],
@@ -366,7 +366,7 @@ lines:[
 ["PHI","SF",-1.5,47],["CHI","LV",2.5,45]
 ] as [string,string,number,number][],
 results:{"KC-NE":[35,21],"ARI-LAR":[27,24],"DET-SEA":[31,28],"NYJ-TEN":[23,20],"HOU-IND":[28,24],"MIA-JAX":[30,24],"LAC-BUF":[24,27],"TB-BAL":[23,25],"CIN-WSH":[32,26],"NO-PIT":[21,24],"DAL-GB":[35,32],"ATL-CAR":[27,24],"PHI-SF":[31,28],"CHI-LV":[25,22]} as {[k:string]:[number,number]},
-props:[],propResults:{}
+props:[{name:"Patrick Mahomes",pos:"QB",team:"KC",stat:"Pass Yds",ou:272.5,opp:"NE"},{name:"Drake Maye",pos:"QB",team:"NE",stat:"Pass Yds",ou:228.5,opp:"KC"},{name:"Jared Goff",pos:"QB",team:"DET",stat:"Pass Yds",ou:268.5,opp:"SEA"},{name:"Saquon Barkley",pos:"RB",team:"PHI",stat:"Rush Yds",ou:79.5,opp:"SF"},{name:"Christian McCaffrey",pos:"RB",team:"SF",stat:"Rush Yds",ou:82.5,opp:"PHI"},{name:"Ja'Marr Chase",pos:"WR",team:"CIN",stat:"Rec Yds",ou:91.5,opp:"WSH"},{name:"A.J. Brown",pos:"WR",team:"PHI",stat:"Rec Yds",ou:85.5,opp:"SF"},{name:"CeeDee Lamb",pos:"WR",team:"DAL",stat:"Rec Yds",ou:79.5,opp:"GB"}] as {name:string,pos:string,team:string,stat:string,ou:number,opp:string,odds?:string}[],propResults:{"Patrick Mahomes|Pass Yds":289,"Drake Maye|Pass Yds":215,"Jared Goff|Pass Yds":301,"Saquon Barkley|Rush Yds":84,"Christian McCaffrey|Rush Yds":76,"Ja'Marr Chase|Rec Yds":98,"A.J. Brown|Rec Yds":88,"CeeDee Lamb|Rec Yds":82} as {[k:string]:number|string}
 },{week:5,label:"Week 5 · Oct 8–12",
 lines:[
 ["BUF","TEN",-5,44],["KC","DEN",-1.5,43.5],["LAR","SEA",-2,47],
@@ -376,7 +376,7 @@ lines:[
 ["SF","DAL",-1.5,47.5],["IND","CHI",-3,44.5]
 ] as [string,string,number,number][],
 results:{"BUF-TEN":[27,17],"KC-DEN":[28,24],"LAR-SEA":[24,21],"NE-MIA":[28,31],"NYG-PHI":[21,31],"WAS-CIN":[24,32],"JAX-NO":[20,28],"TB-LAC":[28,24],"PIT-BAL":[25,29],"ARI-GB":[24,38],"ATL-HOU":[27,31],"CAR-NYJ":[22,27],"SF-DAL":[34,31],"IND-CHI":[24,20]} as {[k:string]:[number,number]},
-props:[],propResults:{}
+props:[{name:"Josh Allen",pos:"QB",team:"BUF",stat:"Pass Yds",ou:258.5,opp:"TEN"},{name:"Will Levis",pos:"QB",team:"TEN",stat:"Pass Yds",ou:221.5,opp:"BUF"},{name:"Matthew Stafford",pos:"QB",team:"LAR",stat:"Pass Yds",ou:261.5,opp:"SEA"},{name:"Derrick Henry",pos:"RB",team:"TEN",stat:"Rush Yds",ou:71.5,opp:"BUF"},{name:"Kyren Williams",pos:"RB",team:"LAR",stat:"Rush Yds",ou:72.5,opp:"SEA"},{name:"A.J. Brown",pos:"WR",team:"PHI",stat:"Rec Yds",ou:87.5,opp:"NYG"},{name:"Tyreek Hill",pos:"WR",team:"MIA",stat:"Rec Yds",ou:89.5,opp:"NE"},{name:"Ja'Marr Chase",pos:"WR",team:"CIN",stat:"Rec Yds",ou:92.5,opp:"WAS"}] as {name:string,pos:string,team:string,stat:string,ou:number,opp:string,odds?:string}[],propResults:{"Josh Allen|Pass Yds":272,"Will Levis|Pass Yds":198,"Matthew Stafford|Pass Yds":245,"Derrick Henry|Rush Yds":68,"Kyren Williams|Rush Yds":79,"A.J. Brown|Rec Yds":91,"Tyreek Hill|Rec Yds":97,"Ja'Marr Chase|Rec Yds":98} as {[k:string]:number|string}
 },{week:6,label:"Week 6 · Oct 15–19",
 lines:[
 ["DEN","SEA",-1.5,45],["JAX","HOU",-2.5,40.5],["CHI","ATL",2.5,45.5],
@@ -386,7 +386,7 @@ lines:[
 ["DAL","GB",-1.5,49],["SF","WAS",-5,47]
 ] as [string,string,number,number][],
 results:{"DEN-SEA":[28,24],"JAX-HOU":[21,27],"CHI-ATL":[31,24],"BAL-CLE":[38,17],"TEN-IND":[25,23],"NYJ-NE":[24,17],"NYG-NO":[21,28],"PHI-CAR":[30,17],"PIT-TB":[26,24],"LAR-ARI":[38,27],"KC-LAC":[27,21],"BUF-LV":[28,24],"DAL-GB":[35,31],"SF-WAS":[32,21]} as {[k:string]:[number,number]},
-props:[],propResults:{}}
+props:[{name:"Russell Wilson",pos:"QB",team:"DEN",stat:"Pass Yds",ou:237.5,opp:"SEA"},{name:"Geno Smith",pos:"QB",team:"SEA",stat:"Pass Yds",ou:241.5,opp:"DEN"},{name:"Lamar Jackson",pos:"QB",team:"BAL",stat:"Pass Yds",ou:249.5,opp:"CLE"},{name:"Derrick Henry",pos:"RB",team:"BAL",stat:"Rush Yds",ou:89.5,opp:"CLE"},{name:"Nick Chubb",pos:"RB",team:"CLE",stat:"Rush Yds",ou:65.5,opp:"BAL"},{name:"A.J. Brown",pos:"WR",team:"PHI",stat:"Rec Yds",ou:86.5,opp:"CAR"},{name:"CeeDee Lamb",pos:"WR",team:"DAL",stat:"Rec Yds",ou:82.5,opp:"GB"},{name:"Brock Purdy",pos:"QB",team:"SF",stat:"Pass Yds",ou:272.5,opp:"WAS"}] as {name:string,pos:string,team:string,stat:string,ou:number,opp:string,odds?:string}[],propResults:{"Russell Wilson|Pass Yds":251,"Geno Smith|Pass Yds":228,"Lamar Jackson|Pass Yds":289,"Derrick Henry|Rush Yds":98,"Nick Chubb|Rush Yds":58,"A.J. Brown|Rec Yds":89,"CeeDee Lamb|Rec Yds":85,"Brock Purdy|Pass Yds":285} as {[k:string]:number|string}}
 ];
 // Current week's lines (Week 5, Oct 8-12 2026)
 var WEEKLY_LINES:[string,string,number|null,number|null][]=[
