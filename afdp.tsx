@@ -442,6 +442,19 @@ async function fetchHistoricalPropResults(token:string|undefined,week:number,sea
     return[];
   }
 }
+async function fetchHistoricalPropsForUI(week:number):Promise<{props:any[],results:any}>{
+  if(!user?.token)return {props:[],results:{}};
+  try{
+    var url=EDGE_URL+"/fetch-grade-props";
+    var r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+user.token},body:JSON.stringify({week:week,season:2026,fetch_only:true})});
+    if(!r.ok)return {props:[],results:{}};
+    var data=await r.json();
+    return {props:data.props||[],results:data.results||{}};
+  }catch(e){
+    console.error("[Player Props] Error fetching week "+week+" props:",e);
+    return {props:[],results:{}};
+  }
+}
 async function triggerPropGrading(token:string|undefined,week:number,season:number=2026):Promise<void>{
   if(!token)return;
   try{
