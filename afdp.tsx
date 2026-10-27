@@ -337,11 +337,56 @@ propResults:{
 "Rashee Rice|Any TD":"YES","Dalton Kincaid|Any TD":"NO"
 } as {[k:string]:number|string}
 },
-{week:2,label:"Week 2 · Sep 17–21",lines:[],results:{},props:[],propResults:{}},
-{week:3,label:"Week 3 · Sep 24–28",lines:[],results:{},props:[],propResults:{}},
-{week:4,label:"Week 4 · Oct 1–5",lines:[],results:{},props:[],propResults:{}},
-{week:5,label:"Week 5 · Oct 8–12",lines:[],results:{},props:[],propResults:{}},
-{week:6,label:"Week 6 · Oct 15–19",lines:[],results:{},props:[],propResults:{}}
+{week:2,label:"Week 2 · Sep 17–21",
+lines:[
+["SEA","TB",-2.5,46.5],["LAR","ATL",2.5,47],["CIN","DET",-4.5,50],
+["NO","BUF",3,47.5],["NE","NYJ",-3,41],["BAL","HOU",-1.5,47],
+["PIT","SF",-2,41.5],["CHI","IND",2.5,46],["JAX","LAC",-3.5,40.5],
+["CLE","WAS",7,44],["DEN","KC",-2,43],["MIA","NYG",3,48],
+["GB","DAL",-1.5,48.5],["ARI","PHI",5.5,47]
+] as [string,string,number,number][],
+results:{"SEA-TB":[27,24],"LAR-ATL":[28,25],"CIN-DET":[35,31],"NO-BUF":[20,24],"NE-NYJ":[17,20],"BAL-HOU":[31,28],"PIT-SF":[17,20],"CHI-IND":[23,19],"JAX-LAC":[28,24],"CLE-WAS":[38,31],"DEN-KC":[27,30],"MIA-NYG":[42,39],"GB-DAL":[35,31],"ARI-PHI":[16,28]} as {[k:string]:[number,number]},
+props:[],propResults:{}
+},{week:3,label:"Week 3 · Sep 24–28",
+lines:[
+["BUF","MIA",-3,46],["PIT","CIN",-2.5,51],["SF","LAR",-4,47.5],
+["TB","DET",2.5,49.5],["CHI","NE",-4.5,41],["JAX","HOU",-3,40.5],
+["TEN","NYJ",1.5,42],["CLE","LAC",4,46.5],["BAL","KC",-1,47],
+["NO","CAR",2.5,44],["PHI","ATL",-7,46.5],["WAS","DAL",3,49.5],
+["GB","ARI",-7.5,48],["DEN","SEA",2.5,43]
+] as [string,string,number,number][],
+results:{"BUF-MIA":[29,26],"PIT-CIN":[33,30],"SF-LAR":[31,28],"TB-DET":[24,27],"CHI-NE":[30,27],"JAX-HOU":[21,24],"TEN-NYJ":[25,23],"CLE-LAC":[28,25],"BAL-KC":[27,30],"NO-CAR":[24,20],"PHI-ATL":[38,24],"WAS-DAL":[28,31],"GB-ARI":[42,21],"DEN-SEA":[31,28]} as {[k:string]:[number,number]},
+props:[],propResults:{}
+},{week:4,label:"Week 4 · Oct 1–5",
+lines:[
+["KC","NE",-7,46],["ARI","LAR",-2,48],["DET","SEA",3.5,47.5],
+["NYJ","TEN",-1,38],["HOU","IND",2,46.5],["MIA","JAX",-2.5,41],
+["LAC","BUF",3,46.5],["TB","BAL",-2.5,48],["CIN","WSH",6,50],
+["NO","PIT",2.5,42],["DAL","GB",-1.5,48.5],["ATL","CAR",-2,45],
+["PHI","SF",-1.5,47],["CHI","LV",2.5,45]
+] as [string,string,number,number][],
+results:{"KC-NE":[35,21],"ARI-LAR":[27,24],"DET-SEA":[31,28],"NYJ-TEN":[23,20],"HOU-IND":[28,24],"MIA-JAX":[30,24],"LAC-BUF":[24,27],"TB-BAL":[23,25],"CIN-WSH":[32,26],"NO-PIT":[21,24],"DAL-GB":[35,32],"ATL-CAR":[27,24],"PHI-SF":[31,28],"CHI-LV":[25,22]} as {[k:string]:[number,number]},
+props:[],propResults:{}
+},{week:5,label:"Week 5 · Oct 8–12",
+lines:[
+["BUF","TEN",-5,44],["KC","DEN",-1.5,43.5],["LAR","SEA",-2,47],
+["NE","MIA",3,46],["NYG","PHI",6.5,47],["WAS","CIN",2.5,49.5],
+["JAX","NO",-2.5,40.5],["TB","LAC",-2,48],["PIT","BAL",2.5,42.5],
+["ARI","GB",-4,48],["ATL","HOU",-2,46],["CAR","NYJ",1.5,39],
+["SF","DAL",-1.5,47.5],["IND","CHI",-3,44.5]
+] as [string,string,number,number][],
+results:{"BUF-TEN":[27,17],"KC-DEN":[28,24],"LAR-SEA":[24,21],"NE-MIA":[28,31],"NYG-PHI":[21,31],"WAS-CIN":[24,32],"JAX-NO":[20,28],"TB-LAC":[28,24],"PIT-BAL":[25,29],"ARI-GB":[24,38],"ATL-HOU":[27,31],"CAR-NYJ":[22,27],"SF-DAL":[34,31],"IND-CHI":[24,20]} as {[k:string]:[number,number]},
+props:[],propResults:{}
+},{week:6,label:"Week 6 · Oct 15–19",
+lines:[
+["DEN","SEA",-1.5,45],["JAX","HOU",-2.5,40.5],["CHI","ATL",2.5,45.5],
+["BAL","CLE",-8.5,41.5],["TEN","IND",-2,43],["NYJ","NE",2.5,40],
+["NYG","NO",2.5,45],["PHI","CAR",-5.5,44.5],["PIT","TB",-2.5,42],
+["LAR","ARI",-9.5,47.5],["KC","LAC",-3,45.5],["BUF","LV",-2.5,43.5],
+["DAL","GB",-1.5,49],["SF","WAS",-5,47]
+] as [string,string,number,number][],
+results:{"DEN-SEA":[28,24],"JAX-HOU":[21,27],"CHI-ATL":[31,24],"BAL-CLE":[38,17],"TEN-IND":[25,23],"NYJ-NE":[24,17],"NYG-NO":[21,28],"PHI-CAR":[30,17],"PIT-TB":[26,24],"LAR-ARI":[38,27],"KC-LAC":[27,21],"BUF-LV":[28,24],"DAL-GB":[35,31],"SF-WAS":[32,21]} as {[k:string]:[number,number]},
+props:[],propResults:{}}
 ];
 // Current week's lines (Week 5, Oct 8-12 2026)
 var WEEKLY_LINES:[string,string,number|null,number|null][]=[
