@@ -357,7 +357,7 @@ async function fetchPlayerPropsForEvents(
     }
 
     let totalPropsInserted = 0;
-    const supportedMarkets = ["player_pass_yds", "player_pass_tds", "player_rec_yds", "player_receptions", "player_rush_yds", "player_rush_tds"];
+    const supportedMarkets = ["player_pass_yds", "player_pass_tds", "player_reception_yds", "player_receptions", "player_rush_yds", "player_rush_tds", "player_anytime_td"];
 
     for (const eventId of eventIds) {
       try {
@@ -380,30 +380,56 @@ async function fetchPlayerPropsForEvents(
         for (const bookmaker of eventData.bookmakers) {
           for (const market of bookmaker.markets || []) {
             const outcomes = market.outcomes || [];
-            if (outcomes.length < 2) continue;
+            if (outcomes.length === 0) continue;
 
-            const playerName = outcomes[0]?.player || outcomes[0]?.name;
-            if (!playerName) continue;
-
-            const line = outcomes[0]?.point;
-            if (line === null || line === undefined) continue;
-
-            propsToInsert.push({
-              week,
-              season,
-              event_id: eventId,
-              player_name: playerName,
-              team: awayTeam || "?",
-              opponent: homeTeam || "?",
-              position: null,
-              market_key: market.key,
-              market_display: market.key.replace("player_", "").replace(/_/g, " "),
-              line,
-              over_price: outcomes[0]?.price,
-              under_price: outcomes[1]?.price,
-              bookmaker: bookmaker.key || "unknown",
-              captured_at: new Date().toISOString(),
-            });
+            // Group outcomes by player name (description field)
+            const playerProps: {[playerName: string]: {over?: any, under?: any, line?: number}} = {};
+            
+            for (const outcome of outcomes) {
+              const playerName = outcome.description;
+              if (!playerName) continue;
+              
+              if (!playerProps[playerName]) {
+                playerProps[playerName] = {};
+              }
+              
+              // Capture line from point field
+              if (outcome.point !== null && outcome.point !== undefined) {
+                playerProps[playerName].line = outcome.point;
+              }
+              
+              // Classify as Over/Under based on name
+              if (outcome.name === "Over" || outcome.name.includes("Over")) {
+                playerProps[playerName].over = outcome.price;
+              } else if (outcome.name === "Under" || outcome.name.includes("Under")) {
+                playerProps[playerName].under = outcome.price;
+              } else if (market.key === "player_anytime_td") {
+                // For anytime TD, capture Yes/No or outcome name as-is
+                playerProps[playerName][outcome.name.toLowerCase()] = outcome.price;
+              }
+            }
+            
+            // Create prop records for each player
+            for (const [playerName, props] of Object.entries(playerProps)) {
+              if (!props.line && market.key !== "player_anytime_td") continue;
+              
+              propsToInsert.push({
+                week,
+                season,
+                event_id: eventId,
+                player_name: playerName,
+                team: awayTeam || "?",
+                opponent: homeTeam || "?",
+                position: null,
+                market_key: market.key,
+                market_display: market.key.replace("player_", "").replace(/_/g, " "),
+                line: props.line || null,
+                over_price: props.over,
+                under_price: props.under,
+                bookmaker: bookmaker.key || "unknown",
+                captured_at: new Date().toISOString(),
+              });
+            }
           }
         }
 
@@ -695,19 +721,59 @@ Deno.serve(async (req) => {
           .eq("season", season);
         
         if(!propsError && currentProps && currentProps.length > 0){
-          response.playerProps = currentProps.map((p: any) => ({
-            player_name: p.player_name,
-            team: p.team,
-            opponent: p.opponent,
-            market_key: p.market_key,
-            market_display: p.market_display,
-            line: p.line,
-            over_price: p.over_price,
-            under_price: p.under_price,
-            bookmaker: p.bookmaker,
-            eventId: p.event_id
-          }));
-          console.log(`[fetch-odds] Returning ${response.playerProps.length} current week props to frontend`);
+          // Build consensus props: group by player+market, use median line, count bookmakers
+          const consensusMap: {[key: string]: {props: any[], lines: number[], overPrices: number[], underPrices: number[]}} = {};
+          
+          for (const p of currentProps) {
+            const key = p.player_name + "|" + p.market_key;
+            if (!consensusMap[key]) {
+              consensusMap[key] = {props: [p], lines: [], overPrices: [], underPrices: []};
+            } else {
+              consensusMap[key].props.push(p);
+            }
+            
+            if (p.line !== null) consensusMap[key].lines.push(p.line);
+            if (p.over_price) consensusMap[key].overPrices.push(p.over_price);
+            if (p.under_price) consensusMap[key].underPrices.push(p.under_price);
+          }
+          
+          // Create consensus props for frontend
+          response.playerProps = Object.values(consensusMap).map((group: any) => {
+            const p = group.props[0]; // Base prop data
+            const bookmakerCount = group.props.length;
+            
+            // Median line consensus
+            let consensusLine = p.line;
+            if (group.lines.length > 0) {
+              group.lines.sort((a: number, b: number) => a - b);
+              const mid = Math.floor(group.lines.length / 2);
+              consensusLine = group.lines.length % 2 === 0 
+                ? (group.lines[mid - 1] + group.lines[mid]) / 2 
+                : group.lines[mid];
+            }
+            
+            // Median prices
+            const getMedian = (nums: number[]) => {
+              if (nums.length === 0) return null;
+              nums.sort((a: number, b: number) => a - b);
+              const mid = Math.floor(nums.length / 2);
+              return nums.length % 2 === 0 ? (nums[mid - 1] + nums[mid]) / 2 : nums[mid];
+            };
+            
+            return {
+              player_name: p.player_name,
+              team: p.team,
+              opponent: p.opponent,
+              market_key: p.market_key,
+              market_display: p.market_display,
+              line: consensusLine,
+              over_price: getMedian(group.overPrices),
+              under_price: getMedian(group.underPrices),
+              bookmaker_count: bookmakerCount,
+              eventId: p.event_id
+            };
+          });
+          console.log(`[fetch-odds] Returning ${response.playerProps.length} consensus props for ${Object.keys(consensusMap).length} unique players/markets to frontend`);
         }
       }catch(e){
         console.log("[fetch-odds] Could not fetch current week props");
