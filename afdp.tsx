@@ -8997,13 +8997,16 @@ export default function App(){
               )
             ),
             React.createElement("div",{style:{fontWeight:800,fontSize:16,color:T.text,marginBottom:4}},"Week "+selectedPlayerPropsWeek+" Player Props"),
-            React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:14}},currentPlayerProps.length>0?"Live odds from sportsbooks":"No current player props available"),
+            React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:14}},selectedPlayerPropsWeek>=1&&selectedPlayerPropsWeek<=6?"Week "+selectedPlayerPropsWeek+" historical props · Lines and actual outcomes":"Live odds from sportsbooks"),
             (function(){
               var wcats=["Pass Yds","Pass TD","Rush Yds","Rec Yds","Receptions","Any TD"];
               var wcatColors:{[k:string]:string}={"Pass Yds":"#818cf8","Pass TD":"#60a5fa","Rush Yds":"#34d399","Rec Yds":"#c084fc","Receptions":"#f59e0b","Any TD":"#f87171"};
               var wcatIcons:{[k:string]:string}={"Pass Yds":"\uD83C\uDFC8","Pass TD":"\uD83C\uDFC8","Rush Yds":"\uD83C\uDFC3","Rec Yds":"\uD83D\uDC50","Receptions":"\uD83C\uDFAF","Any TD":"\uD83C\uDFC6"};
-              var wgrouped:{[k:string]:typeof WEEKLY_PROPS}={};
-              WEEKLY_PROPS.forEach(function(p){if(!wgrouped[p.stat])wgrouped[p.stat]=[];wgrouped[p.stat].push(p);});
+              var selectedPropsWeekData=PAST_WEEKS.find(function(pw){return pw.week===selectedPlayerPropsWeek;});
+              var selectedWeekProps=selectedPropsWeekData&&selectedPropsWeekData.props?selectedPropsWeekData.props:[];
+              var selectedWeekPropResults=selectedPropsWeekData&&selectedPropsWeekData.propResults?selectedPropsWeekData.propResults:{};
+              var wgrouped:{[k:string]:any}={};
+              selectedWeekProps.forEach(function(p){if(!wgrouped[p.stat])wgrouped[p.stat]=[];wgrouped[p.stat].push(p);});
               return wcats.filter(function(c){return wgrouped[c];}).map(function(cat){
                 var cc=wcatColors[cat]||T.text;
                 return React.createElement("div",{key:"wk"+cat,style:{marginBottom:16}},
@@ -9017,7 +9020,7 @@ export default function App(){
                     var labelText=isATD?"ODDS":"O/U";
                     var valColor=isATD?((p as any).odds&&(p as any).odds.charAt(0)==="-"?"#34d399":"#f59e0b"):cc;
                     var rKey=p.name+"|"+p.stat;
-                    var actual=PROP_RESULTS[rKey];
+                    var actual=selectedWeekPropResults[rKey];
                     var hasResult=actual!==undefined;
                     var isDNP=actual==="DNP";
                     var isATDResult=isATD&&hasResult;
