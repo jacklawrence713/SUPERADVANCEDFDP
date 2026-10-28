@@ -7,6 +7,8 @@ import { generateSeoData, getPositionRankingTitle, getPositionRankingDescription
 
 import { generatePlayerDirectoryHtml, generatePositionDirectoryHtml } from './src/seo-player-directory'
 import { generateLandingPageHtml } from './src/seo-page-generator'
+import { generateDynastyHubHtml } from './src/seo-authority-hubs'
+import { generateBuyLowHtml, generateSellHighHtml, generateDraftPickValuesHtml } from './src/seo-strategy-pages'
 import { generateEnhancedPlayerHtml } from './src/seo-player-pages'
 import { SEO_ROUTES, findRoute } from './src/seo-routes'
 import { generatePlayerDirectories, generateRegistryLandingPages } from './src/build-seo-integration'
@@ -554,6 +556,35 @@ function spaRoutesPlugin() {
       )
       writeFileSync(resolve(distDir, 'sitemap.xml'), sitemap)
       console.log(`[spa-routes] Generated sitemap.xml with ${indexable.length} player + ${dirUrls.length} directory + ${landingUrls.length} landing pages`)
+
+      // Phase 7: Generate Dynasty Authority Hub
+      const dynastyHubDir = resolve(distDir, 'dynasty-fantasy-football')
+      if (!existsSync(dynastyHubDir)) mkdirSync(dynastyHubDir, { recursive: true })
+      const dynastyHubHtml = generateDynastyHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(dynastyHubDir, 'index.html'), dynastyHubHtml)
+      console.log('[spa-routes] Generated /dynasty-fantasy-football/ authority hub')
+
+      // Phase 8: Generate Strategy Pages with real player data
+      // Buy-Low candidates
+      const buyLowDir = resolve(distDir, 'dynasty-buy-low')
+      if (!existsSync(buyLowDir)) mkdirSync(buyLowDir, { recursive: true })
+      const buyLowHtml = generateBuyLowHtml(seoData.allPlayers, appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(buyLowDir, 'index.html'), buyLowHtml)
+
+      // Sell-High candidates
+      const sellHighDir = resolve(distDir, 'dynasty-sell-high')
+      if (!existsSync(sellHighDir)) mkdirSync(sellHighDir, { recursive: true })
+      const sellHighHtml = generateSellHighHtml(seoData.allPlayers, appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(sellHighDir, 'index.html'), sellHighHtml)
+
+      // Draft Pick Values
+      const pickValuesDir = resolve(distDir, 'dynasty-draft-pick-values')
+      if (!existsSync(pickValuesDir)) mkdirSync(pickValuesDir, { recursive: true })
+      const pickValuesHtml = generateDraftPickValuesHtml(seoData.allPlayers, appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(pickValuesDir, 'index.html'), pickValuesHtml)
+
+      console.log('[spa-routes] Generated 3 strategy pages (buy-low, sell-high, draft-pick-values) with real player data')
+
     }
   }
 }
