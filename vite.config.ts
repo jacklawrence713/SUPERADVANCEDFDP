@@ -3,6 +3,7 @@ import { generatePlayerComparisonPageHtml } from './src/seo-player-comparison'
 import { enhanceInternalLinking } from './src/seo-internal-linking'
 import { injectRichSnippets } from './src/seo-rich-snippet-injection'
 import { injectKnowledgeGraphConnections } from './src/seo-knowledge-graph-injection'
+import { injectEeatSignals } from './src/seo-eat-injection'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
@@ -27,6 +28,7 @@ import { generatePlayerComparisonPageHtml } from './src/seo-player-comparison'
 import { enhanceInternalLinking } from './src/seo-internal-linking'
 import { injectRichSnippets } from './src/seo-rich-snippet-injection'
 import { injectKnowledgeGraphConnections } from './src/seo-knowledge-graph-injection'
+import { injectEeatSignals } from './src/seo-eat-injection'
 // Parse the PLAYERS array from afdp.tsx source at build time.
 function parsePlayers(srcPath: string): Array<{ name: string; pos: string; age: number; team: string; ktcVal?: number; proj: { PPR: number; Half: number; Standard: number }; note?: string }> {
   const src = readFileSync(srcPath, 'utf-8')
@@ -779,6 +781,14 @@ function spaRoutesPlugin() {
         console.log(`[spa-routes] Injected knowledge graph connections into ${kgResult.recommendationsAdded} pages (${kgResult.clustersIdentified} topic clusters) for Phase 16`)
       } catch (e) {
         console.error('[spa-routes] Failed to inject knowledge graph:', e)
+      }
+
+      // Phase 17: Inject E-E-A-T Signals & Expert Attribution
+      try {
+        const eatResult = injectEeatSignals(distDir)
+        console.log(`[spa-routes] Injected E-E-A-T signals into ${eatResult.pagesProcessed} pages (${eatResult.authorBylineAdded} bylines + ${eatResult.trustSectionAdded} trust sections) for Phase 17`)
+      } catch (e) {
+        console.error('[spa-routes] Failed to inject E-E-A-T signals:', e)
       }
       }
       }
