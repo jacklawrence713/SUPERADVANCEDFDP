@@ -64,6 +64,12 @@ import { injectAnchorTextOptimization } from './src/seo-anchor-text-injection'
 import { injectLinkBuildingStrategy } from './src/seo-link-building-injection'
 import { injectCompetitorBacklinkAnalysis } from './src/seo-competitor-link-injection'
 import { generateLinkMetricsReport } from './src/seo-link-metrics-report'
+import { injectGA4EventTracking } from './src/seo-ga4-injection'
+import { injectConversionFunnels } from './src/seo-funnel-injection'
+import { injectAttributionModels } from './src/seo-attribution-injection'
+import { injectUserBehaviorTracking } from './src/seo-behavior-injection'
+import { injectABTestingStrategy } from './src/seo-testing-injection'
+import { generateAnalyticsDashboard } from './src/seo-analytics-dashboard'
 // Parse the PLAYERS array from afdp.tsx source at build time.
 function parsePlayers(srcPath: string): Array<{ name: string; pos: string; age: number; team: string; ktcVal?: number; proj: { PPR: number; Half: number; Standard: number }; note?: string }> {
   const src = readFileSync(srcPath, 'utf-8')
@@ -1032,6 +1038,53 @@ function spaRoutesPlugin() {
         console.log(`[spa-routes] Generated link metrics report (${metricsResult.metricsIncluded} velocity metrics, ${metricsResult.kpisTracked} KPIs tracked) for Phase 22.6 at ${metricsResult.reportPath}`)
       } catch (e) {
         console.error('[spa-routes] Failed to generate link metrics report:', e)
+      }
+      // Phase 23.1: GA4 Event Tracking Implementation
+      try {
+        const ga4Result = injectGA4EventTracking(distDir)
+        console.log(`[spa-routes] Injected GA4 event tracking (${ga4Result.trackingRecommendationsAdded} tracking blocks + ${ga4Result.eventImplementationsAdded} event implementations) for Phase 23.1`)
+      } catch (e) {
+        console.error('[spa-routes] Failed to inject GA4 event tracking:', e)
+      }
+
+      // Phase 23.2: Conversion Funnel Mapping & Analysis
+      try {
+        const funnelResult = injectConversionFunnels(distDir)
+        console.log(`[spa-routes] Injected conversion funnels (${funnelResult.funnelTrackingAdded} funnel blocks + ${funnelResult.optimizationRecsAdded} optimization recommendations) for Phase 23.2`)
+      } catch (e) {
+        console.error('[spa-routes] Failed to inject conversion funnels:', e)
+      }
+
+      // Phase 23.3: User Journey Attribution Modeling
+      try {
+        const attributionResult = injectAttributionModels(distDir)
+        console.log(`[spa-routes] Injected attribution models (${attributionResult.modelRecommendationsAdded} model blocks + ${attributionResult.journeyInsightsAdded} journey insights) for Phase 23.3`)
+      } catch (e) {
+        console.error('[spa-routes] Failed to inject attribution models:', e)
+      }
+
+      // Phase 23.4: Heat Map & User Behavior Analysis
+      try {
+        const behaviorResult = injectUserBehaviorTracking(distDir)
+        console.log(`[spa-routes] Injected user behavior tracking (${behaviorResult.heatmapRecommendationsAdded} heatmap blocks + ${behaviorResult.frictionAnalysisAdded} friction analysis) for Phase 23.4`)
+      } catch (e) {
+        console.error('[spa-routes] Failed to inject user behavior tracking:', e)
+      }
+
+      // Phase 23.5: A/B Testing & Multivariate Strategy
+      try {
+        const testingResult = injectABTestingStrategy(distDir)
+        console.log(`[spa-routes] Injected A/B testing strategy (${testingResult.testRecommendationsAdded} test blocks + ${testingResult.testingInsightsAdded} testing insights) for Phase 23.5`)
+      } catch (e) {
+        console.error('[spa-routes] Failed to inject A/B testing strategy:', e)
+      }
+
+      // Phase 23.6: Analytics Dashboard & ROI Reporting
+      try {
+        const analyticsResult = generateAnalyticsDashboard(distDir)
+        console.log(`[spa-routes] Generated analytics dashboard (${analyticsResult.metricsIncluded} GA4 events, ${analyticsResult.funnelsAnalyzed} funnels) for Phase 23.6 at ${analyticsResult.reportPath}`)
+      } catch (e) {
+        console.error('[spa-routes] Failed to generate analytics dashboard:', e)
       }
     }
   }
