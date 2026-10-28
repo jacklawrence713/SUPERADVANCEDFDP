@@ -1,0 +1,74 @@
+
+      // Phase 12: Inject SEO Footer into all generated pages (player pages, guides, strategy pages, etc)
+      const staticFooterHtml = `
+  <footer style="background:#0a0913;color:#9b96b8;padding:48px 20px;margin-top:60px;border-top:1px solid #2a2837">
+    <div style="max-width:1200px;margin:0 auto">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:32px;margin-bottom:48px;font-size:13px">
+        <div><h3 style="color:#7c4dff;font-size:14px;font-weight:700;margin:0 0 12px 0;text-transform:uppercase">Tools</h3><ul style="list-style:none;padding:0;margin:0"><li style="margin-bottom:8px"><a href="/dynasty-trade-analyzer/" style="color:#7c4dff;text-decoration:none;font-size:13px">Trade Analyzer</a></li><li style="margin-bottom:8px"><a href="/dynasty-trade-calculator/" style="color:#7c4dff;text-decoration:none;font-size:13px">Trade Calculator</a></li><li style="margin-bottom:8px"><a href="/dynasty-rankings/" style="color:#7c4dff;text-decoration:none;font-size:13px">Rankings</a></li><li style="margin-bottom:8px"><a href="/guides/" style="color:#7c4dff;text-decoration:none;font-size:13px">Guides</a></li></ul></div>
+        <div><h3 style="color:#7c4dff;font-size:14px;font-weight:700;margin:0 0 12px 0;text-transform:uppercase">Players</h3><ul style="list-style:none;padding:0;margin:0"><li style="margin-bottom:8px"><a href="/players/" style="color:#7c4dff;text-decoration:none;font-size:13px">Player Directory</a></li><li style="margin-bottom:8px"><a href="/players/qb/" style="color:#7c4dff;text-decoration:none;font-size:13px">QB Players</a></li><li style="margin-bottom:8px"><a href="/players/rb/" style="color:#7c4dff;text-decoration:none;font-size:13px">RB Players</a></li><li style="margin-bottom:8px"><a href="/players/wr/" style="color:#7c4dff;text-decoration:none;font-size:13px">WR Players</a></li></ul></div>
+        <div><h3 style="color:#7c4dff;font-size:14px;font-weight:700;margin:0 0 12px 0;text-transform:uppercase">Strategy</h3><ul style="list-style:none;padding:0;margin:0"><li style="margin-bottom:8px"><a href="/dynasty-buy-low/" style="color:#7c4dff;text-decoration:none;font-size:13px">Buy-Low Players</a></li><li style="margin-bottom:8px"><a href="/dynasty-sell-high/" style="color:#7c4dff;text-decoration:none;font-size:13px">Sell-High Players</a></li><li style="margin-bottom:8px"><a href="/dynasty-draft-pick-values/" style="color:#7c4dff;text-decoration:none;font-size:13px">Draft Pick Values</a></li><li style="margin-bottom:8px"><a href="/dynasty-fantasy-football/" style="color:#7c4dff;text-decoration:none;font-size:13px">Dynasty Hub</a></li></ul></div>
+        <div><h3 style="color:#7c4dff;font-size:14px;font-weight:700;margin:0 0 12px 0;text-transform:uppercase">About</h3><ul style="list-style:none;padding:0;margin:0"><li style="margin-bottom:8px"><a href="/about/" style="color:#7c4dff;text-decoration:none;font-size:13px">About FDP</a></li><li style="margin-bottom:8px"><a href="/methodology/" style="color:#7c4dff;text-decoration:none;font-size:13px">Methodology</a></li><li style="margin-bottom:8px"><a href="/editorial-policy/" style="color:#7c4dff;text-decoration:none;font-size:13px">Editorial Policy</a></li><li style="margin-bottom:8px"><a href="/" style="color:#7c4dff;text-decoration:none;font-size:13px">Home</a></li></ul></div>
+      </div>
+      <div style="border-top:1px solid #2a2837;padding-top:24px;font-size:12px;color:#6b6580">
+        <p style="margin:0 0 8px 0">Fantasy Draft Pros — Dynasty trade analyzer, FDP Values for 1,000+ players, rankings, and guides.</p>
+        <p style="margin:0">Not affiliated with NFL, ESPN, Sleeper, or any sportsbook. © 2026</p>
+      </div>
+    </div>
+  </footer>
+  `
+
+      // Recursively inject footer into all generated HTML files
+      const injectFooterIntoPages = (directory: string) => {
+        try {
+          const items = readFileSync(directory, { encoding: 'utf-8', withFileTypes: true }) as any
+          // Note: this won't work as-is, we'll use a proper implementation
+        } catch (e) {
+          // Directory doesn't exist yet or can't be read
+        }
+      }
+
+      // Inject footer into all player pages (already generated)
+      try {
+        const playerDir = resolve(distDir, 'players')
+        const injectInDir = (dir: string) => {
+          try {
+            const items = readFileSync(dir).toString().split('\n')
+            // This approach won't work; we need a different method
+          } catch (e) {
+            //
+          }
+        }
+
+        // Use Node.js fs to recursively find and update HTML files
+        const fs = require('fs')
+        const path = require('path')
+
+        const walkDir = (dir: string) => {
+          try {
+            const files = fs.readdirSync(dir, { withFileTypes: true })
+            for (const file of files) {
+              const fullPath = path.join(dir, file.name)
+              if (file.isDirectory()) {
+                walkDir(fullPath)
+              } else if (file.name === 'index.html' && dir !== distDir) {
+                try {
+                  let content = fs.readFileSync(fullPath, 'utf-8')
+                  if (content.includes('</body>') && !content.includes('Dynasty Tools')) {
+                    content = content.replace('</body>', `${staticFooterHtml}\n  </body>`)
+                    fs.writeFileSync(fullPath, content)
+                  }
+                } catch (e) {
+                  // Skip if file can't be read
+                }
+              }
+            }
+          } catch (e) {
+            // Skip if directory can't be read
+          }
+        }
+
+        walkDir(distDir)
+        console.log('[spa-routes] Injected SEO footer into all generated pages')
+      } catch (e) {
+        console.error('[spa-routes] Failed to inject footer into pages:', e)
+      }

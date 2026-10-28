@@ -1,0 +1,46 @@
+      // Phase 12: Inject SEO Footer into all generated pages
+      const { getStaticSeoFooterHtml } = require('./src/seo-footer-static.ts')
+      const staticFooterHtml = getStaticSeoFooterHtml()
+      
+      function injectFooterIntoAllPages(dir: string) {
+        const files = readFileSync(dir, { recursive: true, encoding: 'utf-8' })
+        // This is a placeholder - we'll use a proper recursive function
+      }
+      
+      // Inject footer into all HTML files in dist
+      const injectFooterRecursively = (dir: string, footerHtml: string) => {
+        const fs = require('fs')
+        const path = require('path')
+        
+        try {
+          const items = fs.readdirSync(dir)
+          for (const item of items) {
+            const itemPath = path.join(dir, item)
+            const stat = fs.statSync(itemPath)
+            
+            if (stat.isDirectory()) {
+              injectFooterRecursively(itemPath, footerHtml)
+            } else if (item.endsWith('.html') && item !== 'index.html') {
+              // Skip the main index.html (already has footer), but process all other HTML files
+              try {
+                let content = fs.readFileSync(itemPath, 'utf-8')
+                if (content.includes('</body>') && !content.includes('Dynasty Tools')) {
+                  content = content.replace('</body>', `${footerHtml}\n  </body>`)
+                  fs.writeFileSync(itemPath, content)
+                }
+              } catch (e) {
+                // Skip files that can't be read/written
+              }
+            }
+          }
+        } catch (e) {
+          // Skip if directory doesn't exist
+        }
+      }
+      
+      try {
+        injectFooterRecursively(distDir, staticFooterHtml)
+        console.log('[spa-routes] Injected SEO footer into all generated pages')
+      } catch (e) {
+        console.error('[spa-routes] Failed to inject footer into all pages:', e)
+      }

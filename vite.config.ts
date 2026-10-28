@@ -1,7 +1,10 @@
+import { generateDynastyBasicsHubHtml, generateTradingStrategiesHubHtml, generateFormatStrategyHubHtml, generatePositionGuideHubHtml } from './src/seo-topical-hubs'
+import { generatePlayerComparisonPageHtml } from './src/seo-player-comparison'
+import { enhanceInternalLinking } from './src/seo-internal-linking'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
-import { writeFileSync, readFileSync, mkdirSync, existsSync } from 'fs'
+import { writeFileSync, readFileSync, mkdirSync, existsSync, readdirSync } from 'fs'
 import { computeDynastyTradeVal, playerSlug, tierLabel, VALUES_UPDATED_AT } from './src/logic'
 import { generateSeoData, getPositionRankingTitle, getPositionRankingDescription, formatTradeValue } from './src/seo-data'
 
@@ -11,9 +14,15 @@ import { generateDynastyHubHtml } from './src/seo-authority-hubs'
 import { generateBuyLowHtml, generateSellHighHtml, generateDraftPickValuesHtml } from './src/seo-strategy-pages'
 import { generateAboutHtml, generateMethodologyHtml, generateEditorialPolicyHtml } from './src/seo-trust-pages'
 import { generateEnhancedPlayerHtml } from './src/seo-player-pages'
+import { generateSuperfexRankingPageHtml, generateTePremiumRankingPageHtml, generateIdpOverallRankingPageHtml } from './src/seo-format-rankings'
 import { SEO_ROUTES, findRoute } from './src/seo-routes'
 import { generatePlayerDirectories, generateRegistryLandingPages } from './src/build-seo-integration'
 import { generateSitemap as generateSitemapRegistry } from './src/build-sitemap'
+import { getStaticSeoFooterHtml } from './src/seo-footer-static'
+import { injectSchemaMarkupIntoPages } from './src/seo-schema-injection'
+import { generateDynastyBasicsHubHtml, generateTradingStrategiesHubHtml, generateFormatStrategyHubHtml, generatePositionGuideHubHtml } from './src/seo-topical-hubs'
+import { generatePlayerComparisonPageHtml } from './src/seo-player-comparison'
+import { enhanceInternalLinking } from './src/seo-internal-linking'
 // Parse the PLAYERS array from afdp.tsx source at build time.
 function parsePlayers(srcPath: string): Array<{ name: string; pos: string; age: number; team: string; ktcVal?: number; proj: { PPR: number; Half: number; Standard: number }; note?: string }> {
   const src = readFileSync(srcPath, 'utf-8')
@@ -330,6 +339,9 @@ function generateSitemap(indexableSlugs: string[], valuesDate: string): string {
     { loc: '/rankings/dl/', priority: '0.7', freq: 'weekly' },
     { loc: '/rankings/lb/', priority: '0.7', freq: 'weekly' },
     { loc: '/rankings/db/', priority: '0.7', freq: 'weekly' },
+    { loc: '/rankings/superflex/', priority: '0.8', freq: 'weekly' },
+    { loc: '/rankings/te-premium/', priority: '0.8', freq: 'weekly' },
+    { loc: '/rankings/idp-overall/', priority: '0.7', freq: 'weekly' },
   ]
   let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`
   for (const r of staticRoutes) {
@@ -481,6 +493,46 @@ function spaRoutesPlugin() {
       }
       console.log(`[spa-routes] Generated ${rankingPages} position ranking pages with current SEO data`)
 
+      // Phase 13.1: Generate format-specific ranking pages (Superflex, TE Premium, IDP Overall)
+      let formatRankingPages = 0
+
+      // Superflex rankings
+      try {
+        const superfexDir = resolve(rankingsDir, 'superflex')
+        if (!existsSync(superfexDir)) mkdirSync(superfexDir, { recursive: true })
+        const superfexHtml = generateSuperfexRankingPageHtml(seoData.allPlayers, appScripts, appPreloads, darkModeScript)
+        writeFileSync(resolve(superfexDir, 'index.html'), superfexHtml)
+        formatRankingPages++
+      } catch (e) {
+        console.error('[spa-routes] Failed to generate Superflex rankings:', e)
+      }
+
+      // TE Premium rankings
+      try {
+        const tePremiumDir = resolve(rankingsDir, 'te-premium')
+        if (!existsSync(tePremiumDir)) mkdirSync(tePremiumDir, { recursive: true })
+        const tePremiumHtml = generateTePremiumRankingPageHtml(seoData.allPlayers, appScripts, appPreloads, darkModeScript)
+        writeFileSync(resolve(tePremiumDir, 'index.html'), tePremiumHtml)
+        formatRankingPages++
+      } catch (e) {
+        console.error('[spa-routes] Failed to generate TE Premium rankings:', e)
+      }
+
+      // IDP Overall rankings
+      try {
+        const idpOverallDir = resolve(rankingsDir, 'idp-overall')
+        if (!existsSync(idpOverallDir)) mkdirSync(idpOverallDir, { recursive: true })
+        const idpOverallHtml = generateIdpOverallRankingPageHtml(seoData.allPlayers, appScripts, appPreloads, darkModeScript)
+        writeFileSync(resolve(idpOverallDir, 'index.html'), idpOverallHtml)
+        formatRankingPages++
+      } catch (e) {
+        console.error('[spa-routes] Failed to generate IDP Overall rankings:', e)
+      }
+
+      if (formatRankingPages > 0) {
+        console.log(`[spa-routes] Generated ${formatRankingPages} format-specific ranking pages (Superflex, TE Premium, IDP Overall) for Phase 13.1`)
+      }
+
       // Generate /fdp-value/ SEO page
       const fdpValueDir = resolve(distDir, 'fdp-value')
       if (!existsSync(fdpValueDir)) mkdirSync(fdpValueDir, { recursive: true })
@@ -606,6 +658,110 @@ function spaRoutesPlugin() {
       writeFileSync(resolve(editorialDir, 'index.html'), editorialHtml)
 
       console.log('[spa-routes] Generated 3 trust pages (about, methodology, editorial-policy) for institutional credibility')
+
+      // Phase 12: Inject SEO footer into all generated pages for internal link equity
+      const staticFooterHtml = getStaticSeoFooterHtml()
+      let footerInjected = 0
+
+      function walkDirAndInjectFooter(dir: string, footer: string) {
+        try {
+          const entries = readdirSync(dir, { withFileTypes: true })
+          for (const entry of entries) {
+            if (entry.isDirectory()) {
+              walkDirAndInjectFooter(resolve(dir, entry.name), footer)
+            } else if (entry.isFile() && entry.name === 'index.html') {
+              const filePath = resolve(dir, entry.name)
+              // Skip main homepage (already has Phase 11 footer)
+              if (filePath === resolve(distDir, 'index.html')) continue
+
+              let content = readFileSync(filePath, 'utf-8')
+              // Skip if already has footer (prevent double-injection)
+              if (content.includes('Fantasy Draft Pros helps dynasty coaches')) continue
+
+              // Inject footer before </body>
+              if (content.includes('</body>')) {
+                content = content.replace('</body>', footer + '\n</body>')
+                writeFileSync(filePath, content)
+                footerInjected++
+              }
+            }
+          }
+        } catch (e) {
+          // Skip errors on directories we can't read
+        }
+      }
+
+      walkDirAndInjectFooter(distDir, staticFooterHtml)
+      console.log(`[spa-routes] Injected SEO footer into ${footerInjected} generated pages for internal link equity (Phase 12)`)
+
+      // Phase 13.2: Inject Schema Markup into all generated pages
+      try {
+        const schemaResult = injectSchemaMarkupIntoPages(distDir)
+        console.log(`[spa-routes] Injected schema markup into ${schemaResult.pagesProcessed} pages (${schemaResult.breadcrumbsAdded} breadcrumbs) for Phase 13.2`)
+      } catch (e) {
+        console.error('[spa-routes] Failed to inject schema markup:', e)
+      }
+
+      // Phase 13.3: Generate Topical Authority Hubs for thematic content clustering
+      const topicalHubsDir = [
+        { dir: 'dynasty-basics', gen: generateDynastyBasicsHubHtml, name: 'Dynasty Basics' },
+        { dir: 'trading-strategies', gen: generateTradingStrategiesHubHtml, name: 'Trading Strategies' },
+        { dir: 'format-strategy', gen: generateFormatStrategyHubHtml, name: 'Format Strategy' },
+        { dir: 'position-guides', gen: generatePositionGuideHubHtml, name: 'Position Guides' }
+      ]
+      let hubsGenerated = 0
+      for (const hub of topicalHubsDir) {
+        try {
+          const hubDir = resolve(distDir, hub.dir)
+          if (!existsSync(hubDir)) mkdirSync(hubDir, { recursive: true })
+          const hubHtml = hub.gen(appScripts, appPreloads, darkModeScript)
+          writeFileSync(resolve(hubDir, 'index.html'), hubHtml)
+          hubsGenerated++
+        } catch (e) {
+          console.error(`[spa-routes] Failed to generate ${hub.name} hub:`, e)
+        }
+      }
+      if (hubsGenerated > 0) {
+        console.log(`[spa-routes] Generated ${hubsGenerated} topical authority hubs for Phase 13.3`)
+
+      // Phase 13.4: Generate Player Comparison Pages for position-specific analysis
+      const comparisonsDir = resolve(distDir, 'comparisons')
+      if (!existsSync(comparisonsDir)) mkdirSync(comparisonsDir, { recursive: true })
+      
+      const positions = ['QB', 'RB', 'WR', 'TE', 'DL', 'LB', 'DB']
+      let comparisonsGenerated = 0
+      
+      for (const pos of positions) {
+        try {
+          const posDir = resolve(comparisonsDir, pos.toLowerCase())
+          if (!existsSync(posDir)) mkdirSync(posDir, { recursive: true })
+          
+          const comparisonHtml = generatePlayerComparisonPageHtml(
+            seoData.allPlayers,
+            pos,
+            appScripts,
+            appPreloads,
+            darkModeScript
+          )
+          writeFileSync(resolve(posDir, 'index.html'), comparisonHtml)
+          comparisonsGenerated++
+        } catch (e) {
+          console.error(`[spa-routes] Failed to generate ${pos} comparison page:`, e)
+        }
+      }
+      
+      if (comparisonsGenerated > 0) {
+        console.log(`[spa-routes] Generated ${comparisonsGenerated} player comparison pages for Phase 13.4`)
+
+      // Phase 14: Enhance Internal Linking & Related Content
+      try {
+        const internalLinkResult = enhanceInternalLinking(distDir)
+        console.log(`[spa-routes] Enhanced internal linking on ${internalLinkResult.filesProcessed} pages (${internalLinkResult.relatedContentAdded} related content blocks) for Phase 14`)
+      } catch (e) {
+        console.error('[spa-routes] Failed to enhance internal linking:', e)
+      }
+      }
+      }
 
     }
   }

@@ -70,6 +70,9 @@ export function generatePlayerDirectories(
 /**
  * Generate landing pages for registry routes
  * (guides, authority, strategy, hubs, etc.)
+ *
+ * Note: Phase 10 custom guide generators create their own specific
+ * guide content, so we skip those routes here to avoid duplicates.
  */
 export function generateRegistryLandingPages(
   distDir: string,
@@ -78,12 +81,22 @@ export function generateRegistryLandingPages(
   darkModeScript: string
 ): { generated: number; urls: string[] } {
   const categoriesToGenerate = ['guide', 'authority', 'hub']
+  // Skip these guide routes - they're handled by Phase 10 custom generators
+  const phase10GuideRoutes = new Set([
+    '/guides/',
+    '/guides/how-to-value-a-dynasty-trade/',
+    '/guides/dynasty-trade-calculator-guide/',
+    '/guides/superflex-strategy/',
+    '/guides/te-premium-strategy/',
+    '/guides/idp-dynasty-values/',
+  ])
   const generated = new Map<string, boolean>()
   const urls: string[] = []
 
   for (const route of SEO_ROUTES) {
     if (!categoriesToGenerate.includes(route.category)) continue
     if (route.slug === '/') continue // Skip homepage
+    if (phase10GuideRoutes.has(route.slug)) continue // Skip Phase 10 guides (handled separately)
     if (generated.has(route.slug)) continue // Skip duplicates
 
     // Create directory structure

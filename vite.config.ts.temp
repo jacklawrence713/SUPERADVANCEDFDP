@@ -1,0 +1,23 @@
+
+      // Phase 11: Inject SEO Footer into built index.html
+      const seoFooterHtml = generateSeoFooter()
+      const indexPath = resolve(distDir, 'index.html')
+      try {
+        let indexContent = readFileSync(indexPath, 'utf-8')
+        
+        // Inject footer before closing </body> tag
+        if (indexContent.includes('</body>')) {
+          indexContent = indexContent.replace(
+            '</body>',
+            `${seoFooterHtml}\n  </body>`
+          )
+          writeFileSync(indexPath, indexContent)
+          console.log('[spa-routes] Injected SEO footer with crawlable links into index.html')
+        }
+      } catch (e) {
+        console.error('[spa-routes] Failed to inject SEO footer:', e)
+      }
+
+    }
+  }
+}
