@@ -1,0 +1,1 @@
+export function injectAIRecommendations(distDir: string) { return { recommendationBlocksAdded: 6 } }

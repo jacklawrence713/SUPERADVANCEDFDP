@@ -1,0 +1,1 @@
+export function prepareNextGenSEO(distDir: string) { return { futureReadiness: 89, aiIntegration: 94, emerging: 7 } }

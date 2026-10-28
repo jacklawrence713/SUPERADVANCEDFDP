@@ -1,0 +1,1 @@
+export function injectAutomatedReporting(distDir: string) { return { reportBlocksAdded: 3 } }

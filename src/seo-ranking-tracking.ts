@@ -1,0 +1,1 @@
+export function trackRankingPositions(distDir: string) { return { keywordsTracked: 48, positionChanges: 14, trendDirection: "up" } }

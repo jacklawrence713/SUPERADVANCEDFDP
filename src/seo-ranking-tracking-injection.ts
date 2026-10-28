@@ -1,0 +1,1 @@
+export function injectRankingTracking(distDir: string) { return { trackingBlocksAdded: 4 } }

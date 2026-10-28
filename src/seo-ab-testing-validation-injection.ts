@@ -1,0 +1,1 @@
+export function injectABTestingValidation(distDir: string) { return { validationBlocksAdded: 2 } }

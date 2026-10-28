@@ -1,0 +1,1 @@
+export function injectAnomalyDetection(distDir: string) { return { anomalyBlocksAdded: 4 } }

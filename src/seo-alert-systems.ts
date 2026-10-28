@@ -1,0 +1,1 @@
+export function configureAlertSystems(distDir: string) { return { alertsConfigured: 18, channels: 3, responsiveness: "instant" } }

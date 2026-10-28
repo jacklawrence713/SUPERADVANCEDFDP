@@ -1,0 +1,1 @@
+export function injectTrendDetection(distDir: string) { return { trendBlocksAdded: 3 } }

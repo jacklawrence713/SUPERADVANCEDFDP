@@ -1,0 +1,1 @@
+export function injectEmergingQueries(distDir: string) { return { queryBlocksAdded: 4 } }

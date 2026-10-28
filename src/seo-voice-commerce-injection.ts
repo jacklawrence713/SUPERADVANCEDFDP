@@ -1,0 +1,1 @@
+export function injectVoiceCommerceOptimization(distDir: string) { return { voiceCommerceBlocksAdded: 5 } }

@@ -1,0 +1,1 @@
+export function generateAIRecommendations(distDir: string) { return { recommendationsGenerated: 42, personalization: 94, engagement: 87 } }

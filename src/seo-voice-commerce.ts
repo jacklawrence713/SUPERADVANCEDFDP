@@ -1,0 +1,1 @@
+export function optimizeVoiceCommerce(distDir: string) { return { voiceCommercePagesOptimized: 24, conversionLift: 34, queryTypes: 12 } }

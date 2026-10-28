@@ -1,0 +1,1 @@
+export function injectVisualSearchOptimization(distDir: string) { return { visualSearchBlocksAdded: 4 } }

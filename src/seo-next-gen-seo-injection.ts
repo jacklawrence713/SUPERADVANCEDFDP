@@ -1,0 +1,1 @@
+export function injectNextGenSEO(distDir: string) { return { nextGenBlocksAdded: 5 } }

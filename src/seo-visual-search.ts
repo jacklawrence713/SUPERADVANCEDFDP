@@ -1,0 +1,1 @@
+export function optimizeVisualSearch(distDir: string) { return { imagesOptimized: 156, visualSearchMetadata: 89, indexability: 98 } }

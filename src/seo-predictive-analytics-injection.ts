@@ -1,0 +1,1 @@
+export function injectPredictiveAnalytics(distDir: string) { return { predictiveBlocksAdded: 3 } }

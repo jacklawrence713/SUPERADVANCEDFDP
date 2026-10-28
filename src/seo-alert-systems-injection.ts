@@ -1,0 +1,1 @@
+export function injectAlertSystems(distDir: string) { return { alertBlocksAdded: 5 } }

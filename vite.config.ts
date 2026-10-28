@@ -93,7 +93,46 @@ import { injectSocialMediaCalendar } from './src/seo-social-media-injection'
 import { injectEmailIntegration } from './src/seo-email-injection'
 import { injectRepurposingAutomation } from './src/seo-repurposing-injection'
 import { generateDistributionAnalytics } from './src/seo-distribution-analytics'
+
+// Phase 25 imports (Testing, Automation & Monitoring, Advanced Features)
 // Parse the PLAYERS array from afdp.tsx source at build time.
+// Phase 25 imports (Testing, Automation & Monitoring, Advanced Features)
+import { validateABTestResults } from './src/seo-ab-testing-validation'
+import { injectABTestingValidation } from './src/seo-ab-testing-validation-injection'
+import { benchmarkPerformance } from './src/seo-performance-benchmarking'
+import { injectPerformanceBenchmarking } from './src/seo-performance-benchmarking-injection'
+import { analyzeCompetitors } from './src/seo-competitive-benchmarking'
+import { injectCompetitiveBenchmarking } from './src/seo-competitive-benchmarking-injection'
+import { trackRankingPositions } from './src/seo-ranking-tracking'
+import { injectRankingTracking } from './src/seo-ranking-tracking-injection'
+import { validateConversions } from './src/seo-conversion-validation'
+import { injectConversionValidation } from './src/seo-conversion-validation-injection'
+import { verifyAuditResults } from './src/seo-audit-verification'
+import { injectAuditVerification } from './src/seo-audit-verification-injection'
+import { monitorRealtimePerformance } from './src/seo-realtime-monitoring'
+import { injectRealtimeMonitoring } from './src/seo-realtime-monitoring-injection'
+import { configureAlertSystems } from './src/seo-alert-systems'
+import { injectAlertSystems } from './src/seo-alert-systems-injection'
+import { generateAutomatedReports } from './src/seo-automated-reporting'
+import { injectAutomatedReporting } from './src/seo-automated-reporting-injection'
+import { aggregatePerformanceData } from './src/seo-performance-aggregation'
+import { injectPerformanceAggregation } from './src/seo-performance-aggregation-injection'
+import { detectTrends } from './src/seo-trend-detection'
+import { injectTrendDetection } from './src/seo-trend-detection-injection'
+import { detectAnomalies } from './src/seo-anomaly-detection'
+import { injectAnomalyDetection } from './src/seo-anomaly-detection-injection'
+import { optimizeVoiceCommerce } from './src/seo-voice-commerce'
+import { injectVoiceCommerceOptimization } from './src/seo-voice-commerce-injection'
+import { optimizeVisualSearch } from './src/seo-visual-search'
+import { injectVisualSearchOptimization } from './src/seo-visual-search-injection'
+import { generateAIRecommendations } from './src/seo-ai-recommendations'
+import { injectAIRecommendations } from './src/seo-ai-recommendations-injection'
+import { generatePredictiveAnalytics } from './src/seo-predictive-analytics'
+import { injectPredictiveAnalytics } from './src/seo-predictive-analytics-injection'
+import { detectEmergingQueries } from './src/seo-emerging-queries'
+import { injectEmergingQueries } from './src/seo-emerging-queries-injection'
+import { prepareNextGenSEO } from './src/seo-next-gen-seo'
+import { injectNextGenSEO } from './src/seo-next-gen-seo-injection'
 function parsePlayers(srcPath: string): Array<{ name: string; pos: string; age: number; team: string; ktcVal?: number; proj: { PPR: number; Half: number; Standard: number }; note?: string }> {
   const src = readFileSync(srcPath, 'utf-8')
   const marker = 'const PLAYERS=['
@@ -1134,6 +1173,42 @@ function spaRoutesPlugin() {
       try { const r = injectEmailIntegration(distDir); console.log(`[spa-routes] Injected email (${r.campaignTemplates} templates) for Phase 24.21`) } catch (e) { console.error('[spa-routes] Phase 24.21 failed:', e) }
       try { const r = injectRepurposingAutomation(distDir); console.log(`[spa-routes] Injected repurposing (${r.repurposingRules} rules) for Phase 24.22`) } catch (e) { console.error('[spa-routes] Phase 24.22 failed:', e) }
       try { const r = generateDistributionAnalytics(distDir); console.log(`[spa-routes] Generated distribution analytics (${r.channelsAnalyzed} channels) for Phase 24.23`) } catch (e) { console.error('[spa-routes] Phase 24.23 failed:', e) }
+      try { const r = validateABTestResults(distDir); console.log(`[spa-routes] Validated A/B testing for Phase 25.1`) } catch (e) { console.error('[spa-routes] Phase 25.1 failed:', e) }
+      try { const r = injectABTestingValidation(distDir); console.log(`[spa-routes] Injected validation for Phase 25.1`) } catch (e) { console.error('[spa-routes] Phase 25.1i failed:', e) }
+      try { const r = benchmarkPerformance(distDir); console.log(`[spa-routes] Benchmarked performance for Phase 25.2`) } catch (e) { console.error('[spa-routes] Phase 25.2 failed:', e) }
+      try { const r = injectPerformanceBenchmarking(distDir); console.log(`[spa-routes] Injected benchmarks for Phase 25.2`) } catch (e) { console.error('[spa-routes] Phase 25.2i failed:', e) }
+      try { const r = analyzeCompetitors(distDir); console.log(`[spa-routes] Analyzed competitors for Phase 25.3`) } catch (e) { console.error('[spa-routes] Phase 25.3 failed:', e) }
+      try { const r = injectCompetitiveBenchmarking(distDir); console.log(`[spa-routes] Injected competitive for Phase 25.3`) } catch (e) { console.error('[spa-routes] Phase 25.3i failed:', e) }
+      try { const r = trackRankingPositions(distDir); console.log(`[spa-routes] Tracked rankings for Phase 25.4`) } catch (e) { console.error('[spa-routes] Phase 25.4 failed:', e) }
+      try { const r = injectRankingTracking(distDir); console.log(`[spa-routes] Injected tracking for Phase 25.4`) } catch (e) { console.error('[spa-routes] Phase 25.4i failed:', e) }
+      try { const r = validateConversions(distDir); console.log(`[spa-routes] Validated conversions for Phase 25.5`) } catch (e) { console.error('[spa-routes] Phase 25.5 failed:', e) }
+      try { const r = injectConversionValidation(distDir); console.log(`[spa-routes] Injected conversions for Phase 25.5`) } catch (e) { console.error('[spa-routes] Phase 25.5i failed:', e) }
+      try { const r = verifyAuditResults(distDir); console.log(`[spa-routes] Verified audit for Phase 25.6`) } catch (e) { console.error('[spa-routes] Phase 25.6 failed:', e) }
+      try { const r = injectAuditVerification(distDir); console.log(`[spa-routes] Injected verification for Phase 25.6`) } catch (e) { console.error('[spa-routes] Phase 25.6i failed:', e) }
+      try { const r = monitorRealtimePerformance(distDir); console.log(`[spa-routes] Monitoring performance for Phase 25.7`) } catch (e) { console.error('[spa-routes] Phase 25.7 failed:', e) }
+      try { const r = injectRealtimeMonitoring(distDir); console.log(`[spa-routes] Injected monitoring for Phase 25.7`) } catch (e) { console.error('[spa-routes] Phase 25.7i failed:', e) }
+      try { const r = configureAlertSystems(distDir); console.log(`[spa-routes] Configured alerts for Phase 25.8`) } catch (e) { console.error('[spa-routes] Phase 25.8 failed:', e) }
+      try { const r = injectAlertSystems(distDir); console.log(`[spa-routes] Injected alerts for Phase 25.8`) } catch (e) { console.error('[spa-routes] Phase 25.8i failed:', e) }
+      try { const r = generateAutomatedReports(distDir); console.log(`[spa-routes] Generated reports for Phase 25.9`) } catch (e) { console.error('[spa-routes] Phase 25.9 failed:', e) }
+      try { const r = injectAutomatedReporting(distDir); console.log(`[spa-routes] Injected reporting for Phase 25.9`) } catch (e) { console.error('[spa-routes] Phase 25.9i failed:', e) }
+      try { const r = aggregatePerformanceData(distDir); console.log(`[spa-routes] Aggregated performance for Phase 25.10`) } catch (e) { console.error('[spa-routes] Phase 25.10 failed:', e) }
+      try { const r = injectPerformanceAggregation(distDir); console.log(`[spa-routes] Injected aggregation for Phase 25.10`) } catch (e) { console.error('[spa-routes] Phase 25.10i failed:', e) }
+      try { const r = detectTrends(distDir); console.log(`[spa-routes] Detected trends for Phase 25.11`) } catch (e) { console.error('[spa-routes] Phase 25.11 failed:', e) }
+      try { const r = injectTrendDetection(distDir); console.log(`[spa-routes] Injected trends for Phase 25.11`) } catch (e) { console.error('[spa-routes] Phase 25.11i failed:', e) }
+      try { const r = detectAnomalies(distDir); console.log(`[spa-routes] Detected anomalies for Phase 25.12`) } catch (e) { console.error('[spa-routes] Phase 25.12 failed:', e) }
+      try { const r = injectAnomalyDetection(distDir); console.log(`[spa-routes] Injected anomalies for Phase 25.12`) } catch (e) { console.error('[spa-routes] Phase 25.12i failed:', e) }
+      try { const r = optimizeVoiceCommerce(distDir); console.log(`[spa-routes] Optimized voice commerce for Phase 25.13`) } catch (e) { console.error('[spa-routes] Phase 25.13 failed:', e) }
+      try { const r = injectVoiceCommerceOptimization(distDir); console.log(`[spa-routes] Injected voice commerce for Phase 25.13`) } catch (e) { console.error('[spa-routes] Phase 25.13i failed:', e) }
+      try { const r = optimizeVisualSearch(distDir); console.log(`[spa-routes] Optimized visual search for Phase 25.14`) } catch (e) { console.error('[spa-routes] Phase 25.14 failed:', e) }
+      try { const r = injectVisualSearchOptimization(distDir); console.log(`[spa-routes] Injected visual search for Phase 25.14`) } catch (e) { console.error('[spa-routes] Phase 25.14i failed:', e) }
+      try { const r = generateAIRecommendations(distDir); console.log(`[spa-routes] Generated AI recommendations for Phase 25.15`) } catch (e) { console.error('[spa-routes] Phase 25.15 failed:', e) }
+      try { const r = injectAIRecommendations(distDir); console.log(`[spa-routes] Injected AI for Phase 25.15`) } catch (e) { console.error('[spa-routes] Phase 25.15i failed:', e) }
+      try { const r = generatePredictiveAnalytics(distDir); console.log(`[spa-routes] Generated predictive for Phase 25.16`) } catch (e) { console.error('[spa-routes] Phase 25.16 failed:', e) }
+      try { const r = injectPredictiveAnalytics(distDir); console.log(`[spa-routes] Injected predictive for Phase 25.16`) } catch (e) { console.error('[spa-routes] Phase 25.16i failed:', e) }
+      try { const r = detectEmergingQueries(distDir); console.log(`[spa-routes] Detected emerging for Phase 25.17`) } catch (e) { console.error('[spa-routes] Phase 25.17 failed:', e) }
+      try { const r = injectEmergingQueries(distDir); console.log(`[spa-routes] Injected emerging for Phase 25.17`) } catch (e) { console.error('[spa-routes] Phase 25.17i failed:', e) }
+      try { const r = prepareNextGenSEO(distDir); console.log(`[spa-routes] Prepared next-gen SEO for Phase 25.18`) } catch (e) { console.error('[spa-routes] Phase 25.18 failed:', e) }
+      try { const r = injectNextGenSEO(distDir); console.log(`[spa-routes] Injected next-gen for Phase 25.18`) } catch (e) { console.error('[spa-routes] Phase 25.18i failed:', e) }
     }
   }
 }

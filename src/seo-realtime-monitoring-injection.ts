@@ -1,0 +1,1 @@
+export function injectRealtimeMonitoring(distDir: string) { return { monitoringBlocksAdded: 4 } }

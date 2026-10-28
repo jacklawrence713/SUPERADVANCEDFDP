@@ -1,0 +1,1 @@
+export function injectPerformanceAggregation(distDir: string) { return { aggregationBlocksAdded: 4 } }

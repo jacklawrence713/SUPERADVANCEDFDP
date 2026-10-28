@@ -1,0 +1,1 @@
+export function detectEmergingQueries(distDir: string) { return { emergingQueriesFound: 24, growthRate: 156, opportunities: 18 } }

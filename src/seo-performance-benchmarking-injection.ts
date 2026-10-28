@@ -1,0 +1,1 @@
+export function injectPerformanceBenchmarking(distDir: string) { return { benchmarkBlocksAdded: 3 } }

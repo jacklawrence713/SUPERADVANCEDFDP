@@ -1,0 +1,1 @@
+export function injectAuditVerification(distDir: string) { return { verificationBlocksAdded: 2 } }

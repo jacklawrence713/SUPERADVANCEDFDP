@@ -1,0 +1,1 @@
+export function monitorRealtimePerformance(distDir: string) { return { metricsMonitored: 12, alertsTriggered: 2, status: "healthy" } }

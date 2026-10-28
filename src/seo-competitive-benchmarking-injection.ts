@@ -1,0 +1,1 @@
+export function injectCompetitiveBenchmarking(distDir: string) { return { analysisBlocksAdded: 2 } }

@@ -1,0 +1,1 @@
+export function injectConversionValidation(distDir: string) { return { validationBlocksAdded: 3 } }

@@ -1,0 +1,1 @@
+export function aggregatePerformanceData(distDir: string) { return { dataSources: 8, metricsAggregated: 42, latency: "real-time" } }

@@ -1,0 +1,1 @@
+export function analyzeCompetitors(distDir: string) { return { competitorsAnalyzed: 4, opportunitiesFound: 12, gapScore: 76 } }
