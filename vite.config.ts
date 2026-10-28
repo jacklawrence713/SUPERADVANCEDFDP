@@ -58,6 +58,12 @@ import { injectAuthorityExpansion } from './src/seo-expansion-injection'
 import { injectEvergreenContent } from './src/seo-evergreen-injection'
 import { injectTrendingTopics } from './src/seo-trending-injection'
 import { writeDashboardReport } from './src/seo-performance-dashboard'
+import { injectLinkEquityOptimization } from './src/seo-link-equity-injection'
+import { injectExternalLinkOpportunities } from './src/seo-external-link-injection'
+import { injectAnchorTextOptimization } from './src/seo-anchor-text-injection'
+import { injectLinkBuildingStrategy } from './src/seo-link-building-injection'
+import { injectCompetitorBacklinkAnalysis } from './src/seo-competitor-link-injection'
+import { generateLinkMetricsReport } from './src/seo-link-metrics-report'
 // Parse the PLAYERS array from afdp.tsx source at build time.
 function parsePlayers(srcPath: string): Array<{ name: string; pos: string; age: number; team: string; ktcVal?: number; proj: { PPR: number; Half: number; Standard: number }; note?: string }> {
   const src = readFileSync(srcPath, 'utf-8')
@@ -979,6 +985,53 @@ function spaRoutesPlugin() {
         console.log(`[spa-routes] Generated performance dashboard report for Phase 21.6 at ${distDir}/performance-dashboard.html`)
       } catch (e) {
         console.error('[spa-routes] Failed to generate performance dashboard:', e)
+      }
+      // Phase 22.1: Internal Link Equity Distribution
+      try {
+        const equityResult = injectLinkEquityOptimization(distDir)
+        console.log(`[spa-routes] Injected link equity optimization (${equityResult.equityRecommendationsAdded} recommendation blocks + ${equityResult.equityIndicatorsAdded} equity indicators) for Phase 22.1`)
+      } catch (e) {
+        console.error('[spa-routes] Failed to inject link equity optimization:', e)
+      }
+
+      // Phase 22.2: External Link Opportunity Identification
+      try {
+        const externalResult = injectExternalLinkOpportunities(distDir)
+        console.log(`[spa-routes] Injected external link opportunities (${externalResult.linkOpportunitiesAdded} opportunity blocks + ${externalResult.outreachRecommendationsAdded} outreach blocks) for Phase 22.2`)
+      } catch (e) {
+        console.error('[spa-routes] Failed to inject external link opportunities:', e)
+      }
+
+      // Phase 22.3: Anchor Text Optimization
+      try {
+        const anchorResult = injectAnchorTextOptimization(distDir)
+        console.log(`[spa-routes] Injected anchor text optimization (${anchorResult.anchorAnalysisAdded} analysis blocks + ${anchorResult.optimizationRecsAdded} optimization recommendations) for Phase 22.3`)
+      } catch (e) {
+        console.error('[spa-routes] Failed to inject anchor text optimization:', e)
+      }
+
+      // Phase 22.4: Link Building Strategy & Timeline
+      try {
+        const strategyResult = injectLinkBuildingStrategy(distDir)
+        console.log(`[spa-routes] Generated link building strategy (${strategyResult.phasesDocumented} phases, ${strategyResult.tacticsIncluded} tactics) for Phase 22.4 at ${strategyResult.strategyReportPath}`)
+      } catch (e) {
+        console.error('[spa-routes] Failed to generate link building strategy:', e)
+      }
+
+      // Phase 22.5: Competitor Backlink Analysis
+      try {
+        const competitorResult = injectCompetitorBacklinkAnalysis(distDir)
+        console.log(`[spa-routes] Injected competitor backlink analysis (${competitorResult.competitorAnalysisAdded} analysis blocks + ${competitorResult.opportunityRecsAdded} opportunity recommendations) for Phase 22.5`)
+      } catch (e) {
+        console.error('[spa-routes] Failed to inject competitor backlink analysis:', e)
+      }
+
+      // Phase 22.6: Link Velocity & Growth Metrics
+      try {
+        const metricsResult = generateLinkMetricsReport(distDir)
+        console.log(`[spa-routes] Generated link metrics report (${metricsResult.metricsIncluded} velocity metrics, ${metricsResult.kpisTracked} KPIs tracked) for Phase 22.6 at ${metricsResult.reportPath}`)
+      } catch (e) {
+        console.error('[spa-routes] Failed to generate link metrics report:', e)
       }
     }
   }
