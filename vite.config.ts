@@ -1,6 +1,7 @@
 import { generateDynastyBasicsHubHtml, generateTradingStrategiesHubHtml, generateFormatStrategyHubHtml, generatePositionGuideHubHtml } from './src/seo-topical-hubs'
 import { generatePlayerComparisonPageHtml } from './src/seo-player-comparison'
 import { enhanceInternalLinking } from './src/seo-internal-linking'
+import { injectRichSnippets } from './src/seo-rich-snippet-injection'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
@@ -23,6 +24,7 @@ import { injectSchemaMarkupIntoPages } from './src/seo-schema-injection'
 import { generateDynastyBasicsHubHtml, generateTradingStrategiesHubHtml, generateFormatStrategyHubHtml, generatePositionGuideHubHtml } from './src/seo-topical-hubs'
 import { generatePlayerComparisonPageHtml } from './src/seo-player-comparison'
 import { enhanceInternalLinking } from './src/seo-internal-linking'
+import { injectRichSnippets } from './src/seo-rich-snippet-injection'
 // Parse the PLAYERS array from afdp.tsx source at build time.
 function parsePlayers(srcPath: string): Array<{ name: string; pos: string; age: number; team: string; ktcVal?: number; proj: { PPR: number; Half: number; Standard: number }; note?: string }> {
   const src = readFileSync(srcPath, 'utf-8')
@@ -759,6 +761,14 @@ function spaRoutesPlugin() {
         console.log(`[spa-routes] Enhanced internal linking on ${internalLinkResult.filesProcessed} pages (${internalLinkResult.relatedContentAdded} related content blocks) for Phase 14`)
       } catch (e) {
         console.error('[spa-routes] Failed to enhance internal linking:', e)
+      }
+
+      // Phase 15: Inject Rich Snippets & Advanced Schema Markup
+      try {
+        const richSnippetResult = injectRichSnippets(distDir, ranked.length)
+        console.log(`[spa-routes] Injected rich snippets (${richSnippetResult.faqSchemasAdded} FAQ + ${richSnippetResult.howToSchemasAdded} HowTo + ${richSnippetResult.dataCatalogAdded} DataCatalog) for Phase 15`)
+      } catch (e) {
+        console.error('[spa-routes] Failed to inject rich snippets:', e)
       }
       }
       }
