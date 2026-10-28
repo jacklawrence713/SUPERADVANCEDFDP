@@ -2,6 +2,7 @@ import { generateDynastyBasicsHubHtml, generateTradingStrategiesHubHtml, generat
 import { generatePlayerComparisonPageHtml } from './src/seo-player-comparison'
 import { enhanceInternalLinking } from './src/seo-internal-linking'
 import { injectRichSnippets } from './src/seo-rich-snippet-injection'
+import { injectKnowledgeGraphConnections } from './src/seo-knowledge-graph-injection'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
@@ -25,6 +26,7 @@ import { generateDynastyBasicsHubHtml, generateTradingStrategiesHubHtml, generat
 import { generatePlayerComparisonPageHtml } from './src/seo-player-comparison'
 import { enhanceInternalLinking } from './src/seo-internal-linking'
 import { injectRichSnippets } from './src/seo-rich-snippet-injection'
+import { injectKnowledgeGraphConnections } from './src/seo-knowledge-graph-injection'
 // Parse the PLAYERS array from afdp.tsx source at build time.
 function parsePlayers(srcPath: string): Array<{ name: string; pos: string; age: number; team: string; ktcVal?: number; proj: { PPR: number; Half: number; Standard: number }; note?: string }> {
   const src = readFileSync(srcPath, 'utf-8')
@@ -769,6 +771,14 @@ function spaRoutesPlugin() {
         console.log(`[spa-routes] Injected rich snippets (${richSnippetResult.faqSchemasAdded} FAQ + ${richSnippetResult.howToSchemasAdded} HowTo + ${richSnippetResult.dataCatalogAdded} DataCatalog) for Phase 15`)
       } catch (e) {
         console.error('[spa-routes] Failed to inject rich snippets:', e)
+      }
+
+      // Phase 16: Inject Knowledge Graph Connections & Content Recommendations
+      try {
+        const kgResult = injectKnowledgeGraphConnections(distDir)
+        console.log(`[spa-routes] Injected knowledge graph connections into ${kgResult.recommendationsAdded} pages (${kgResult.clustersIdentified} topic clusters) for Phase 16`)
+      } catch (e) {
+        console.error('[spa-routes] Failed to inject knowledge graph:', e)
       }
       }
       }
