@@ -5,6 +5,11 @@ import { writeFileSync, readFileSync, mkdirSync, existsSync } from 'fs'
 import { computeDynastyTradeVal, playerSlug, tierLabel, VALUES_UPDATED_AT } from './src/logic'
 import { generateSeoData, getPositionRankingTitle, getPositionRankingDescription, formatTradeValue } from './src/seo-data'
 
+import { generatePlayerDirectoryHtml, generatePositionDirectoryHtml } from './src/seo-player-directory'
+import { generateLandingPageHtml } from './src/seo-page-generator'
+import { SEO_ROUTES, findRoute } from './src/seo-routes'
+import { generatePlayerDirectories, generateRegistryLandingPages } from './src/build-seo-integration'
+import { generateSitemap as generateSitemapRegistry } from './src/build-sitemap'
 // Parse the PLAYERS array from afdp.tsx source at build time.
 function parsePlayers(srcPath: string): Array<{ name: string; pos: string; age: number; team: string; ktcVal?: number; proj: { PPR: number; Half: number; Standard: number }; note?: string }> {
   const src = readFileSync(srcPath, 'utf-8')
@@ -491,10 +496,35 @@ function spaRoutesPlugin() {
       writeFileSync(resolve(fdpValueDir, 'index.html'), fdpValueHtml)
       console.log('[spa-routes] Generated /fdp-value/ info page')
 
-      // Generate sitemap — only indexable pages, lastmod from VALUES_UPDATED_AT
-      const sitemap = generateSitemap(indexable.map(p => p.slug), VALUES_UPDATED_AT)
+      // Generate player directory pages (/players/, /players/{pos}/)
+      const { generated: dirGenerated, urls: dirUrls } = generatePlayerDirectories(
+        distDir,
+        seoData.allPlayers,
+        appScripts,
+        appPreloads,
+        darkModeScript
+      )
+
+      // Generate landing pages for guides, authority, strategy pages
+      const { generated: landingGenerated, urls: landingUrls } = generateRegistryLandingPages(
+        distDir,
+        appScripts,
+        appPreloads,
+        darkModeScript
+      )
+
+      // Collect all new SEO page URLs for sitemap
+      const allSeoPageUrls = [...dirUrls, ...landingUrls]
+
+      // Generate sitemap — includes registry routes, player pages, directories, and landing pages
+      const sitemap = generateSitemapRegistry(
+        indexable.map(p => p.slug),
+        dirUrls,
+        landingUrls,
+        VALUES_UPDATED_AT
+      )
       writeFileSync(resolve(distDir, 'sitemap.xml'), sitemap)
-      console.log(`[spa-routes] Generated sitemap.xml with ${indexable.length} player URLs + 7 ranking pages`)
+      console.log(`[spa-routes] Generated sitemap.xml with ${indexable.length} player + ${dirUrls.length} directory + ${landingUrls.length} landing pages`)
     }
   }
 }

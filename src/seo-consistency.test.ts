@@ -3,6 +3,7 @@ import { readFileSync, existsSync, readdirSync, statSync } from 'fs'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { playerSlug, computeDynastyTradeVal, VALUES_UPDATED_AT } from './logic'
+import { SEO_ROUTES, findRoute } from './seo-routes'
 
 const thisDir = dirname(fileURLToPath(import.meta.url))
 const rootDir = resolve(thisDir, '..')
@@ -501,4 +502,56 @@ describe('legacy slug redirects (requires build)', () => {
       expect(html).toContain('application/ld+json')
     })
   }
+})
+
+// ── SEO Route Registry (Phase 2) ────────────────────────────
+
+describe('SEO route registry: consistency', () => {
+
+
+  it('no duplicate slugs in registry', () => {
+    const slugs = SEO_ROUTES.map((r: any) => r.slug)
+    const unique = new Set(slugs)
+    expect(unique.size, 'duplicate slugs in registry').toBe(slugs.length)
+  })
+
+  it('all routes have required fields', () => {
+    for (const route of SEO_ROUTES) {
+      expect(route.slug, `route missing slug`).toBeTruthy()
+      expect(route.title, `${route.slug} missing title`).toBeTruthy()
+      expect(route.description, `${route.slug} missing description`).toBeTruthy()
+      expect(route.category, `${route.slug} missing category`).toBeTruthy()
+    }
+  })
+
+  it('all titles are unique', () => {
+    const titles = SEO_ROUTES.map(r => r.title)
+    const unique = new Set(titles)
+    expect(unique.size, 'duplicate titles in registry').toBe(titles.length)
+  })
+
+  it('all descriptions are unique', () => {
+    const descs = SEO_ROUTES.map(r => r.description)
+    const unique = new Set(descs)
+    expect(unique.size, 'duplicate descriptions in registry').toBe(descs.length)
+  })
+
+  it('home page has priority 1.0', () => {
+    const home = findRoute('/')
+    expect(home?.priority).toBe(1.0)
+  })
+
+  it('noindex pages have index: false', () => {
+    const noindexRoutes = SEO_ROUTES.filter(r => r.index === false)
+    expect(noindexRoutes.length, 'sitemap page should be noindex').toBeGreaterThan(0)
+  })
+
+  it('all categories are valid', () => {
+    const validCategories = ['ranking', 'tool', 'hub', 'guide', 'authority', 'directory']
+    for (const route of SEO_ROUTES) {
+      expect(validCategories, `${route.slug} invalid category: ${route.category}`).toContain(
+        route.category
+      )
+    }
+  })
 })
