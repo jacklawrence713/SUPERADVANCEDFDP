@@ -7,6 +7,7 @@ import { generateSeoData, getPositionRankingTitle, getPositionRankingDescription
 
 import { generatePlayerDirectoryHtml, generatePositionDirectoryHtml } from './src/seo-player-directory'
 import { generateLandingPageHtml } from './src/seo-page-generator'
+import { generateEnhancedPlayerHtml } from './src/seo-player-pages'
 import { SEO_ROUTES, findRoute } from './src/seo-routes'
 import { generatePlayerDirectories, generateRegistryLandingPages } from './src/build-seo-integration'
 import { generateSitemap as generateSitemapRegistry } from './src/build-sitemap'
@@ -396,23 +397,51 @@ function spaRoutesPlugin() {
       // Build lookup for comparable players (same position, close value)
       const bySlug = new Map(deduped.map(p => [p.slug, p]))
 
-      // Generate player pages
+      // Generate player pages with Phase 6 enhancements
       const playersDir = resolve(distDir, 'players')
       if (!existsSync(playersDir)) mkdirSync(playersDir, { recursive: true })
       let generated = 0
       for (const player of deduped) {
         const shouldIndex = isIndexEligible(player)
-        // Find 3 comparable players (same position, closest value, excluding self)
+        // Find 5 comparable players (same position, closest value, excluding self)
         const comps = deduped
           .filter(c => c.name !== player.name && c.pos === player.pos)
           .sort((a, b) => Math.abs(a.tradeVal - player.tradeVal) - Math.abs(b.tradeVal - player.tradeVal))
-          .slice(0, 3)
+          .slice(0, 5)
         const dir = resolve(playersDir, player.slug)
         if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
-        writeFileSync(resolve(dir, 'index.html'), generatePlayerHtml(player, comps, appScripts, appPreloads, darkModeScript, shouldIndex))
+        
+        // Generate enhanced player page with Phase 6 improvements
+        const playerHtml = generateEnhancedPlayerHtml(
+          {
+            name: player.name,
+            pos: player.pos,
+            team: player.team,
+            age: player.age,
+            tradeVal: player.tradeVal,
+            posRank: player.posRank,
+            rank: player.rank,
+            slug: player.slug,
+            proj: player.proj,
+            note: player.note,
+            shouldIndex: shouldIndex,
+            valuesDate: VALUES_UPDATED_AT,
+            comparablePlayers: comps.map(c => ({
+              name: c.name,
+              pos: c.pos,
+              team: c.team,
+              slug: c.slug,
+              tradeVal: c.tradeVal,
+            })),
+          },
+          appScripts,
+          appPreloads,
+          darkModeScript
+        )
+        writeFileSync(resolve(dir, 'index.html'), playerHtml)
         generated++
       }
-      console.log(`[spa-routes] Generated ${generated} player pages (${indexable.length} indexed, ${noindex.length} noindex)`)
+      console.log(`[spa-routes] Generated ${generated} player pages (${indexable.length} indexed, ${noindex.length} noindex) with Phase 6 internal links`)
 
       // Generate redirect pages for legacy slugs
       let redirects = 0
