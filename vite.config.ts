@@ -314,6 +314,13 @@ function generateSitemap(indexableSlugs: string[], valuesDate: string): string {
     { loc: '/sleeper-trade-calculator/', priority: '0.8', freq: 'weekly' },
     { loc: '/superflex-trade-calculator/', priority: '0.8', freq: 'weekly' },
     { loc: '/fdp-value/', priority: '0.7', freq: 'monthly' },
+    { loc: '/rankings/qb/', priority: '0.8', freq: 'weekly' },
+    { loc: '/rankings/rb/', priority: '0.8', freq: 'weekly' },
+    { loc: '/rankings/wr/', priority: '0.8', freq: 'weekly' },
+    { loc: '/rankings/te/', priority: '0.8', freq: 'weekly' },
+    { loc: '/rankings/dl/', priority: '0.7', freq: 'weekly' },
+    { loc: '/rankings/lb/', priority: '0.7', freq: 'weekly' },
+    { loc: '/rankings/db/', priority: '0.7', freq: 'weekly' },
   ]
   let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`
   for (const r of staticRoutes) {
@@ -414,7 +421,7 @@ function spaRoutesPlugin() {
       }
       if (redirects > 0) console.log(`[spa-routes] Generated ${redirects} legacy slug redirects`)
 
-      // Generate position-specific ranking pages from SEO data
+      // Generate position-specific ranking pages from SEO data (all 7 positions)
       const rankingsDir = resolve(distDir, 'rankings')
       if (!existsSync(rankingsDir)) mkdirSync(rankingsDir, { recursive: true })
       const positions = ['QB', 'RB', 'WR', 'TE', 'DL', 'LB', 'DB']
@@ -487,7 +494,7 @@ function spaRoutesPlugin() {
       // Generate sitemap — only indexable pages, lastmod from VALUES_UPDATED_AT
       const sitemap = generateSitemap(indexable.map(p => p.slug), VALUES_UPDATED_AT)
       writeFileSync(resolve(distDir, 'sitemap.xml'), sitemap)
-      console.log(`[spa-routes] Generated sitemap.xml with ${indexable.length} player URLs`)
+      console.log(`[spa-routes] Generated sitemap.xml with ${indexable.length} player URLs + 7 ranking pages`)
     }
   }
 }

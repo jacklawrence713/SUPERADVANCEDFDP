@@ -29,21 +29,30 @@ export interface SeoRankedPlayer {
 /**
  * SEO Data Context
  * Contains top players, rankings, and metadata for generating SEO content
+ * Includes: standard dynasty (1QB), Superflex (2QB), TE Premium, and IDP variants
  */
 export interface SeoDataContext {
   valuesDate: string
   allPlayers: SeoRankedPlayer[]
+
+  // Standard dynasty rankings (1QB, PPR, full IDP)
   topOverall: SeoRankedPlayer[]
   topQB: SeoRankedPlayer[]
   topRB: SeoRankedPlayer[]
   topWR: SeoRankedPlayer[]
   topTE: SeoRankedPlayer[]
-  topIDP: SeoRankedPlayer[]
-  topPick: SeoRankedPlayer[] // Early 1st round value equivalents
+  topDL: SeoRankedPlayer[]    // Defensive Line
+  topLB: SeoRankedPlayer[]    // Linebacker
+  topDB: SeoRankedPlayer[]    // Defensive Back
+  topPick: SeoRankedPlayer[]  // Early 1st round value equivalents
+
+  // Superflex (2QB) rankings - separate rankings for SF leagues
   superflex: {
     topOverall: SeoRankedPlayer[]
     topQB: SeoRankedPlayer[]
   }
+
+  // TE Premium rankings - for leagues with TE scoring boost
   tePremium: {
     topOverall: SeoRankedPlayer[]
     topTE: SeoRankedPlayer[]
@@ -64,12 +73,14 @@ export function generateSeoData(
   // Rank all players with standard dynasty settings (1QB, PPR, full IDP)
   const ranked = rankPlayersForSeo(players, { sf: false, tep: false, idp: true })
 
-  // Separate by position
+  // Separate by position (standard dynasty)
   const qbs = ranked.filter(p => p.pos === 'QB')
   const rbs = ranked.filter(p => p.pos === 'RB')
   const wrs = ranked.filter(p => p.pos === 'WR')
   const tes = ranked.filter(p => p.pos === 'TE')
-  const idps = ranked.filter(p => ['DL', 'LB', 'DB'].includes(p.pos))
+  const dls = ranked.filter(p => p.pos === 'DL')
+  const lbs = ranked.filter(p => p.pos === 'LB')
+  const dbs = ranked.filter(p => p.pos === 'DB')
 
   // For Superflex: recalculate with SF enabled
   const sfRanked = rankPlayersForSeo(players, { sf: true, tep: false, idp: true })
@@ -87,7 +98,9 @@ export function generateSeoData(
     topRB: rbs.slice(0, 50),
     topWR: wrs.slice(0, 50),
     topTE: tes.slice(0, 50),
-    topIDP: idps.slice(0, 50),
+    topDL: dls.slice(0, 50),
+    topLB: lbs.slice(0, 50),
+    topDB: dbs.slice(0, 50),
     topPick: ranked.slice(0, 50), // Players valued like 1st round picks
     superflex: {
       topOverall: sfRanked.slice(0, 100),
