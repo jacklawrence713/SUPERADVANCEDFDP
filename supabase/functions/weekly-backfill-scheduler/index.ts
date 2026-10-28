@@ -156,7 +156,7 @@ function generatePropLines(playerStats: any) {
   return props;
 }
 
-async function backfillWeek(week: number): Promise<{success: boolean; count: number}> {
+async function backfillWeek(week: number, season: number): Promise<{success: boolean; count: number}> {
   try {
     console.log(`[Weekly Backfill] Processing week ${week}...`);
 
@@ -183,7 +183,7 @@ async function backfillWeek(week: number): Promise<{success: boolean; count: num
         for (const prop of propLines) {
           propsToInsert.push({
             week,
-            season: 2026,
+            season,
             event_id: game.id,
             player_name: playerName,
             team: stats.team,
@@ -228,8 +228,17 @@ async function checkAndBackfillMissingWeeks(): Promise<void> {
   try {
     console.log("[Weekly Backfill] Starting automatic weekly backfill check...");
 
-    const currentWeek = getNFLWeekForDate(new Date());
-    console.log(`[Weekly Backfill] Current NFL week: ${currentWeek}`);
+    // Calculate current week and season dynamically
+    const currentDate = new Date();
+    const nflSeasonStart = new Date(2026, 8, 10);
+    const weeksSinceStart = Math.floor(
+      (currentDate.getTime() - nflSeasonStart.getTime()) /
+      (7 * 24 * 60 * 60 * 1000)
+    );
+    const currentWeek = Math.max(1, Math.min(18, weeksSinceStart + 1));
+    const season = 2026;
+
+    console.log(`[Weekly Backfill] Current NFL week: ${currentWeek}, Season: ${season}`);
 
     // Check weeks 1 through current week
     const weeksToCheck = Math.min(currentWeek, 18);
@@ -241,6 +250,7 @@ async function checkAndBackfillMissingWeeks(): Promise<void> {
         .from("historical_player_props")
         .select("week")
         .eq("week", week)
+        .eq("season", season)
         .limit(1);
 
       if (existing && existing.length > 0) {
@@ -250,7 +260,7 @@ async function checkAndBackfillMissingWeeks(): Promise<void> {
       }
 
       console.log(`[Weekly Backfill] Week ${week} missing props, backfilling...`);
-      results[week] = await backfillWeek(week);
+      results[week] = await backfillWeek(week, season);
     }
 
     // Log summary

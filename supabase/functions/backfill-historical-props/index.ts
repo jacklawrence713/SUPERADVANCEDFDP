@@ -171,8 +171,18 @@ Deno.serve(async (req) => {
     let totalInserted = 0;
     const results: {[week: number]: {fetched: number, inserted: number}} = {};
 
-    // Process weeks 1-6
-    for (let week = 1; week <= 6; week++) {
+    // Calculate current NFL week and season dynamically
+    const currentDate = new Date();
+    const nflSeasonStart = new Date(2026, 8, 10);
+    const weeksSinceStart = Math.floor(
+      (currentDate.getTime() - nflSeasonStart.getTime()) /
+      (7 * 24 * 60 * 60 * 1000)
+    );
+    const currentWeek = Math.max(1, Math.min(18, weeksSinceStart + 1));
+    const season = 2026;
+
+    // Process weeks 1 through current week
+    for (let week = 1; week <= currentWeek; week++) {
       console.log(`[Backfill] Fetching ESPN data for week ${week}...`);
 
       const games = await fetchESPNGameStats(week);
@@ -199,7 +209,7 @@ Deno.serve(async (req) => {
           for (const prop of propLines) {
             propsToInsert.push({
               week,
-              season: 2026,
+              season,
               event_id: game.id,
               player_name: playerName,
               team: stats.team,
