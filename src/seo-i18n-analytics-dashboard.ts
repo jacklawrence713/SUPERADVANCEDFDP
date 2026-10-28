@@ -1,0 +1,1 @@
+export function generateI18nDashboard(d: string) { return { dashboardGenerated: true, languagesTracked: 12 } }

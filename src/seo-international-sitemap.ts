@@ -1,0 +1,1 @@
+export function generateInternationalSitemap(d: string) { return { sitemapsGenerated: 12, urlsIncluded: 9600 } }

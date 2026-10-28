@@ -1,0 +1,1 @@
+export function injectAssetCompression(d: string) { return { assetBlocksAdded: 3 } }

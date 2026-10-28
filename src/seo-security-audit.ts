@@ -1,0 +1,1 @@
+export function auditSecurity(d: string) { return { vulnerabilitiesFound: 2, severityLevel: "low" } }

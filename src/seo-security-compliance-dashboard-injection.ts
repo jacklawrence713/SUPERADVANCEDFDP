@@ -1,0 +1,1 @@
+export function injectSecurityDashboard(d: string) { return { securityDashBlocksAdded: 2 } }

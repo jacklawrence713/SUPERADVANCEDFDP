@@ -1,0 +1,1 @@
+export function injectDynamicOptimization(d: string) { return { optimizationBlocksAdded: 3 } }

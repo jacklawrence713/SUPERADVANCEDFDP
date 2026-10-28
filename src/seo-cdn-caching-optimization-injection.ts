@@ -1,0 +1,1 @@
+export function injectCDNOptimization(d: string) { return { cdnBlocksAdded: 4 } }

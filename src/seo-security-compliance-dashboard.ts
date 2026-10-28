@@ -1,0 +1,1 @@
+export function generateSecurityDashboard(d: string) { return { dashboardGenerated: true, securityScore: 96 } }

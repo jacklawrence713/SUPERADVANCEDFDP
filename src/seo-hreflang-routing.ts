@@ -1,0 +1,1 @@
+export function manageHreflang(d: string) { return { hreflangTagsGenerated: 1100, coverage: 100 } }

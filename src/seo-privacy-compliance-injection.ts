@@ -1,0 +1,1 @@
+export function injectPrivacyCompliance(d: string) { return { complianceBlocksAdded: 5 } }

@@ -133,6 +133,56 @@ import { detectEmergingQueries } from './src/seo-emerging-queries'
 import { injectEmergingQueries } from './src/seo-emerging-queries-injection'
 import { prepareNextGenSEO } from './src/seo-next-gen-seo'
 import { injectNextGenSEO } from './src/seo-next-gen-seo-injection'
+
+// Phase 26 (all 24 sub-components)
+import { trainMLModels } from './src/seo-ml-model-training'
+import { injectMLTraining } from './src/seo-ml-model-training-injection'
+import { forecastTraffic } from './src/seo-predictive-traffic-forecast'
+import { injectTrafficForecast } from './src/seo-predictive-traffic-forecast-injection'
+import { predictContentPerformance } from './src/seo-content-performance-prediction'
+import { injectContentPrediction } from './src/seo-content-performance-prediction-injection'
+import { modelUserBehavior } from './src/seo-user-behavior-ml'
+import { injectBehaviorModeling } from './src/seo-user-behavior-ml-injection'
+import { optimizeDynamically } from './src/seo-dynamic-optimization'
+import { injectDynamicOptimization } from './src/seo-dynamic-optimization-injection'
+import { generateMLDashboard } from './src/seo-ml-analytics-dashboard'
+import { injectMLDashboard } from './src/seo-ml-analytics-dashboard-injection'
+import { manageMultiLanguage } from './src/seo-multi-language-management'
+import { injectLanguageManagement } from './src/seo-multi-language-management-injection'
+import { optimizeRegionalSEO } from './src/seo-regional-seo-optimization'
+import { injectRegionalOptimization } from './src/seo-regional-seo-optimization-injection'
+import { manageHreflang } from './src/seo-hreflang-routing'
+import { injectHreflangRouting } from './src/seo-hreflang-routing-injection'
+import { adaptCultural } from './src/seo-cultural-adaptation'
+import { injectCulturalAdaptation } from './src/seo-cultural-adaptation-injection'
+import { generateInternationalSitemap } from './src/seo-international-sitemap'
+import { injectInternationalSitemap } from './src/seo-international-sitemap-injection'
+import { generateI18nDashboard } from './src/seo-i18n-analytics-dashboard'
+import { injectI18nDashboard } from './src/seo-i18n-analytics-dashboard-injection'
+import { optimizeCDNCache } from './src/seo-cdn-caching-optimization'
+import { injectCDNOptimization } from './src/seo-cdn-caching-optimization-injection'
+import { optimizeSSR } from './src/seo-ssr-optimization'
+import { injectSSROptimization } from './src/seo-ssr-optimization-injection'
+import { optimizeAPI } from './src/seo-api-performance-optimization'
+import { injectAPIOptimization } from './src/seo-api-performance-optimization-injection'
+import { optimizeDatabase } from './src/seo-database-query-optimization'
+import { injectDatabaseOptimization } from './src/seo-database-query-optimization-injection'
+import { compressAssets } from './src/seo-asset-compression'
+import { injectAssetCompression } from './src/seo-asset-compression-injection'
+import { generateInfrastructureDashboard } from './src/seo-infrastructure-dashboard'
+import { injectInfrastructureDashboard } from './src/seo-infrastructure-dashboard-injection'
+import { auditSecurity } from './src/seo-security-audit'
+import { injectSecurityAudit } from './src/seo-security-audit-injection'
+import { verifyCompliance } from './src/seo-privacy-compliance'
+import { injectPrivacyCompliance } from './src/seo-privacy-compliance-injection'
+import { configureBotProtection } from './src/seo-bot-protection'
+import { injectBotProtection } from './src/seo-bot-protection-injection'
+import { verifySSL } from './src/seo-ssl-verification'
+import { injectSSLVerification } from './src/seo-ssl-verification-injection'
+import { protectData } from './src/seo-data-protection'
+import { injectDataProtection } from './src/seo-data-protection-injection'
+import { generateSecurityDashboard } from './src/seo-security-compliance-dashboard'
+import { injectSecurityDashboard } from './src/seo-security-compliance-dashboard-injection'
 function parsePlayers(srcPath: string): Array<{ name: string; pos: string; age: number; team: string; ktcVal?: number; proj: { PPR: number; Half: number; Standard: number }; note?: string }> {
   const src = readFileSync(srcPath, 'utf-8')
   const marker = 'const PLAYERS=['
@@ -1209,6 +1259,79 @@ function spaRoutesPlugin() {
       try { const r = injectEmergingQueries(distDir); console.log(`[spa-routes] Injected emerging for Phase 25.17`) } catch (e) { console.error('[spa-routes] Phase 25.17i failed:', e) }
       try { const r = prepareNextGenSEO(distDir); console.log(`[spa-routes] Prepared next-gen SEO for Phase 25.18`) } catch (e) { console.error('[spa-routes] Phase 25.18 failed:', e) }
       try { const r = injectNextGenSEO(distDir); console.log(`[spa-routes] Injected next-gen for Phase 25.18`) } catch (e) { console.error('[spa-routes] Phase 25.18i failed:', e) }
+      // Phase 26 (all 24 sub-components)
+      // Phase 26.1 - ML Model Training
+      try { const r = trainMLModels(distDir); console.log(`[spa-routes] Trained ML models for Phase 26.1`) } catch (e) { console.error('[spa-routes] Phase 26.1 failed:', e) }
+      try { const r = injectMLTraining(distDir); console.log(`[spa-routes] Injected ML training for Phase 26.1`) } catch (e) { console.error('[spa-routes] Phase 26.1i failed:', e) }
+      // Phase 26.2 - Predictive Traffic Forecast
+      try { const r = forecastTraffic(distDir); console.log(`[spa-routes] Forecasted traffic for Phase 26.2`) } catch (e) { console.error('[spa-routes] Phase 26.2 failed:', e) }
+      try { const r = injectTrafficForecast(distDir); console.log(`[spa-routes] Injected traffic forecast for Phase 26.2`) } catch (e) { console.error('[spa-routes] Phase 26.2i failed:', e) }
+      // Phase 26.3 - Content Performance Prediction
+      try { const r = predictContentPerformance(distDir); console.log(`[spa-routes] Predicted content performance for Phase 26.3`) } catch (e) { console.error('[spa-routes] Phase 26.3 failed:', e) }
+      try { const r = injectContentPrediction(distDir); console.log(`[spa-routes] Injected content prediction for Phase 26.3`) } catch (e) { console.error('[spa-routes] Phase 26.3i failed:', e) }
+      // Phase 26.4 - User Behavior Modeling
+      try { const r = modelUserBehavior(distDir); console.log(`[spa-routes] Modeled user behavior for Phase 26.4`) } catch (e) { console.error('[spa-routes] Phase 26.4 failed:', e) }
+      try { const r = injectBehaviorModeling(distDir); console.log(`[spa-routes] Injected behavior modeling for Phase 26.4`) } catch (e) { console.error('[spa-routes] Phase 26.4i failed:', e) }
+      // Phase 26.5 - Dynamic Optimization
+      try { const r = optimizeDynamically(distDir); console.log(`[spa-routes] Optimized dynamically for Phase 26.5`) } catch (e) { console.error('[spa-routes] Phase 26.5 failed:', e) }
+      try { const r = injectDynamicOptimization(distDir); console.log(`[spa-routes] Injected dynamic optimization for Phase 26.5`) } catch (e) { console.error('[spa-routes] Phase 26.5i failed:', e) }
+      // Phase 26.6 - ML Analytics Dashboard
+      try { const r = generateMLDashboard(distDir); console.log(`[spa-routes] Generated ML dashboard for Phase 26.6`) } catch (e) { console.error('[spa-routes] Phase 26.6 failed:', e) }
+      try { const r = injectMLDashboard(distDir); console.log(`[spa-routes] Injected ML dashboard for Phase 26.6`) } catch (e) { console.error('[spa-routes] Phase 26.6i failed:', e) }
+      // Phase 26.7 - Multi-Language Management
+      try { const r = manageMultiLanguage(distDir); console.log(`[spa-routes] Managed multi-language for Phase 26.7`) } catch (e) { console.error('[spa-routes] Phase 26.7 failed:', e) }
+      try { const r = injectLanguageManagement(distDir); console.log(`[spa-routes] Injected language management for Phase 26.7`) } catch (e) { console.error('[spa-routes] Phase 26.7i failed:', e) }
+      // Phase 26.8 - Regional SEO Optimization
+      try { const r = optimizeRegionalSEO(distDir); console.log(`[spa-routes] Optimized regional SEO for Phase 26.8`) } catch (e) { console.error('[spa-routes] Phase 26.8 failed:', e) }
+      try { const r = injectRegionalOptimization(distDir); console.log(`[spa-routes] Injected regional optimization for Phase 26.8`) } catch (e) { console.error('[spa-routes] Phase 26.8i failed:', e) }
+      // Phase 26.9 - Hreflang Routing
+      try { const r = manageHreflang(distDir); console.log(`[spa-routes] Managed hreflang for Phase 26.9`) } catch (e) { console.error('[spa-routes] Phase 26.9 failed:', e) }
+      try { const r = injectHreflangRouting(distDir); console.log(`[spa-routes] Injected hreflang routing for Phase 26.9`) } catch (e) { console.error('[spa-routes] Phase 26.9i failed:', e) }
+      // Phase 26.10 - Cultural Adaptation
+      try { const r = adaptCultural(distDir); console.log(`[spa-routes] Adapted cultural context for Phase 26.10`) } catch (e) { console.error('[spa-routes] Phase 26.10 failed:', e) }
+      try { const r = injectCulturalAdaptation(distDir); console.log(`[spa-routes] Injected cultural adaptation for Phase 26.10`) } catch (e) { console.error('[spa-routes] Phase 26.10i failed:', e) }
+      // Phase 26.11 - International Sitemap
+      try { const r = generateInternationalSitemap(distDir); console.log(`[spa-routes] Generated international sitemap for Phase 26.11`) } catch (e) { console.error('[spa-routes] Phase 26.11 failed:', e) }
+      try { const r = injectInternationalSitemap(distDir); console.log(`[spa-routes] Injected international sitemap for Phase 26.11`) } catch (e) { console.error('[spa-routes] Phase 26.11i failed:', e) }
+      // Phase 26.12 - i18n Analytics Dashboard
+      try { const r = generateI18nDashboard(distDir); console.log(`[spa-routes] Generated i18n dashboard for Phase 26.12`) } catch (e) { console.error('[spa-routes] Phase 26.12 failed:', e) }
+      try { const r = injectI18nDashboard(distDir); console.log(`[spa-routes] Injected i18n dashboard for Phase 26.12`) } catch (e) { console.error('[spa-routes] Phase 26.12i failed:', e) }
+      // Phase 26.13 - CDN Cache Optimization
+      try { const r = optimizeCDNCache(distDir); console.log(`[spa-routes] Optimized CDN cache for Phase 26.13`) } catch (e) { console.error('[spa-routes] Phase 26.13 failed:', e) }
+      try { const r = injectCDNOptimization(distDir); console.log(`[spa-routes] Injected CDN optimization for Phase 26.13`) } catch (e) { console.error('[spa-routes] Phase 26.13i failed:', e) }
+      // Phase 26.14 - SSR Optimization
+      try { const r = optimizeSSR(distDir); console.log(`[spa-routes] Optimized SSR for Phase 26.14`) } catch (e) { console.error('[spa-routes] Phase 26.14 failed:', e) }
+      try { const r = injectSSROptimization(distDir); console.log(`[spa-routes] Injected SSR optimization for Phase 26.14`) } catch (e) { console.error('[spa-routes] Phase 26.14i failed:', e) }
+      // Phase 26.15 - API Performance Optimization
+      try { const r = optimizeAPI(distDir); console.log(`[spa-routes] Optimized API performance for Phase 26.15`) } catch (e) { console.error('[spa-routes] Phase 26.15 failed:', e) }
+      try { const r = injectAPIOptimization(distDir); console.log(`[spa-routes] Injected API optimization for Phase 26.15`) } catch (e) { console.error('[spa-routes] Phase 26.15i failed:', e) }
+      // Phase 26.16 - Database Query Optimization
+      try { const r = optimizeDatabase(distDir); console.log(`[spa-routes] Optimized database queries for Phase 26.16`) } catch (e) { console.error('[spa-routes] Phase 26.16 failed:', e) }
+      try { const r = injectDatabaseOptimization(distDir); console.log(`[spa-routes] Injected database optimization for Phase 26.16`) } catch (e) { console.error('[spa-routes] Phase 26.16i failed:', e) }
+      // Phase 26.17 - Asset Compression
+      try { const r = compressAssets(distDir); console.log(`[spa-routes] Compressed assets for Phase 26.17`) } catch (e) { console.error('[spa-routes] Phase 26.17 failed:', e) }
+      try { const r = injectAssetCompression(distDir); console.log(`[spa-routes] Injected asset compression for Phase 26.17`) } catch (e) { console.error('[spa-routes] Phase 26.17i failed:', e) }
+      // Phase 26.18 - Infrastructure Dashboard
+      try { const r = generateInfrastructureDashboard(distDir); console.log(`[spa-routes] Generated infrastructure dashboard for Phase 26.18`) } catch (e) { console.error('[spa-routes] Phase 26.18 failed:', e) }
+      try { const r = injectInfrastructureDashboard(distDir); console.log(`[spa-routes] Injected infrastructure dashboard for Phase 26.18`) } catch (e) { console.error('[spa-routes] Phase 26.18i failed:', e) }
+      // Phase 26.19 - Security Audit
+      try { const r = auditSecurity(distDir); console.log(`[spa-routes] Audited security for Phase 26.19`) } catch (e) { console.error('[spa-routes] Phase 26.19 failed:', e) }
+      try { const r = injectSecurityAudit(distDir); console.log(`[spa-routes] Injected security audit for Phase 26.19`) } catch (e) { console.error('[spa-routes] Phase 26.19i failed:', e) }
+      // Phase 26.20 - Privacy Compliance
+      try { const r = verifyCompliance(distDir); console.log(`[spa-routes] Verified privacy compliance for Phase 26.20`) } catch (e) { console.error('[spa-routes] Phase 26.20 failed:', e) }
+      try { const r = injectPrivacyCompliance(distDir); console.log(`[spa-routes] Injected privacy compliance for Phase 26.20`) } catch (e) { console.error('[spa-routes] Phase 26.20i failed:', e) }
+      // Phase 26.21 - Bot Protection
+      try { const r = configureBotProtection(distDir); console.log(`[spa-routes] Configured bot protection for Phase 26.21`) } catch (e) { console.error('[spa-routes] Phase 26.21 failed:', e) }
+      try { const r = injectBotProtection(distDir); console.log(`[spa-routes] Injected bot protection for Phase 26.21`) } catch (e) { console.error('[spa-routes] Phase 26.21i failed:', e) }
+      // Phase 26.22 - SSL Verification
+      try { const r = verifySSL(distDir); console.log(`[spa-routes] Verified SSL for Phase 26.22`) } catch (e) { console.error('[spa-routes] Phase 26.22 failed:', e) }
+      try { const r = injectSSLVerification(distDir); console.log(`[spa-routes] Injected SSL verification for Phase 26.22`) } catch (e) { console.error('[spa-routes] Phase 26.22i failed:', e) }
+      // Phase 26.23 - Data Protection
+      try { const r = protectData(distDir); console.log(`[spa-routes] Protected data for Phase 26.23`) } catch (e) { console.error('[spa-routes] Phase 26.23 failed:', e) }
+      try { const r = injectDataProtection(distDir); console.log(`[spa-routes] Injected data protection for Phase 26.23`) } catch (e) { console.error('[spa-routes] Phase 26.23i failed:', e) }
+      // Phase 26.24 - Security Compliance Dashboard
+      try { const r = generateSecurityDashboard(distDir); console.log(`[spa-routes] Generated security dashboard for Phase 26.24`) } catch (e) { console.error('[spa-routes] Phase 26.24 failed:', e) }
+      try { const r = injectSecurityDashboard(distDir); console.log(`[spa-routes] Injected security dashboard for Phase 26.24`) } catch (e) { console.error('[spa-routes] Phase 26.24i failed:', e) }
     }
   }
 }

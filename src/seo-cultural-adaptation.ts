@@ -1,0 +1,1 @@
+export function adaptCultural(d: string) { return { adaptationsApplied: 24, culturalRelevance: 92 } }

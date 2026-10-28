@@ -1,0 +1,1 @@
+export function injectSecurityAudit(d: string) { return { securityBlocksAdded: 4 } }

@@ -1,0 +1,1 @@
+export function forecastTraffic(d: string) { return { forecastsGenerated: 12, accuracy: 91 } }

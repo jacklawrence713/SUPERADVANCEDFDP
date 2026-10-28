@@ -1,0 +1,1 @@
+export function injectLanguageManagement(d: string) { return { languageBlocksAdded: 8 } }

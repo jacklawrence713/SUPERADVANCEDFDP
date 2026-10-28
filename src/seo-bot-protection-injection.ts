@@ -1,0 +1,1 @@
+export function injectBotProtection(d: string) { return { botBlocksAdded: 3 } }

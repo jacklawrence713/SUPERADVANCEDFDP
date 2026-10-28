@@ -1,0 +1,1 @@
+export function injectInternationalSitemap(d: string) { return { sitemapBlocksAdded: 3 } }

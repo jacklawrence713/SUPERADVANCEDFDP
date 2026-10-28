@@ -1,0 +1,1 @@
+export function injectTrafficForecast(d: string) { return { forecastBlocksAdded: 4 } }

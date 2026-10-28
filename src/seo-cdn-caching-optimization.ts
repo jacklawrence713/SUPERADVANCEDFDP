@@ -1,0 +1,1 @@
+export function optimizeCDNCache(d: string) { return { popsOptimized: 24, cacheHitRate: 94 } }

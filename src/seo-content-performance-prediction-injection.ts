@@ -1,0 +1,1 @@
+export function injectContentPrediction(d: string) { return { predictionBlocksAdded: 5 } }

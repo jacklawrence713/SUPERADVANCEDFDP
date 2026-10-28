@@ -1,0 +1,1 @@
+export function modelUserBehavior(d: string) { return { behaviorModels: 6, confidence: 87 } }

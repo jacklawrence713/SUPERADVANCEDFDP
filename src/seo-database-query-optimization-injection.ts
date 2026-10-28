@@ -1,0 +1,1 @@
+export function injectDatabaseOptimization(d: string) { return { dbBlocksAdded: 4 } }

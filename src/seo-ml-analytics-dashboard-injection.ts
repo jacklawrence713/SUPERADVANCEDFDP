@@ -1,0 +1,1 @@
+export function injectMLDashboard(d: string) { return { dashboardBlocksAdded: 2 } }

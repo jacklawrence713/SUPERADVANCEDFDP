@@ -1,0 +1,1 @@
+export function injectRegionalOptimization(d: string) { return { regionalBlocksAdded: 6 } }

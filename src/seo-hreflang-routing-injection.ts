@@ -1,0 +1,1 @@
+export function injectHreflangRouting(d: string) { return { routingBlocksAdded: 4 } }

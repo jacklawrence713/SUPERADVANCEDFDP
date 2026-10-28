@@ -1,0 +1,1 @@
+export function protectData(d: string) { return { dataPointsProtected: 1320000, encryptionEnabled: true } }

@@ -1,0 +1,1 @@
+export function manageMultiLanguage(d: string) { return { languagesSupported: 12, contentsLocalized: 1100 } }

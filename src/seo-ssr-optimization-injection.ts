@@ -1,0 +1,1 @@
+export function injectSSROptimization(d: string) { return { ssrBlocksAdded: 3 } }

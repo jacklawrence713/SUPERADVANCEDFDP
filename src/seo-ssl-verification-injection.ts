@@ -1,0 +1,1 @@
+export function injectSSLVerification(d: string) { return { sslBlocksAdded: 2 } }

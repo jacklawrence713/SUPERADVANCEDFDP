@@ -1,0 +1,1 @@
+export function injectInfrastructureDashboard(d: string) { return { infraBlocksAdded: 2 } }

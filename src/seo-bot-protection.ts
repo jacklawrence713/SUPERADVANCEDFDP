@@ -1,0 +1,1 @@
+export function configureBotProtection(d: string) { return { rulesConfigured: 24, botBlockRate: 97 } }

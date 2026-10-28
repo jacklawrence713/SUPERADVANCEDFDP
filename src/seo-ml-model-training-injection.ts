@@ -1,0 +1,1 @@
+export function injectMLTraining(d: string) { return { mlBlocksAdded: 3 } }

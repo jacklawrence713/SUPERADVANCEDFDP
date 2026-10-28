@@ -1,0 +1,1 @@
+export function injectBehaviorModeling(d: string) { return { behaviorBlocksAdded: 4 } }

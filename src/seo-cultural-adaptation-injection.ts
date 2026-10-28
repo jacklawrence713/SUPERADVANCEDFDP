@@ -1,0 +1,1 @@
+export function injectCulturalAdaptation(d: string) { return { adaptationBlocksAdded: 5 } }

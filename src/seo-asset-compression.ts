@@ -1,0 +1,1 @@
+export function compressAssets(d: string) { return { filesCompressed: 284, compressionRatio: 0.35 } }

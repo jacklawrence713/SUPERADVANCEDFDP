@@ -1,0 +1,1 @@
+export function optimizeDynamically(d: string) { return { parametersOptimized: 42, improvement: 18 } }

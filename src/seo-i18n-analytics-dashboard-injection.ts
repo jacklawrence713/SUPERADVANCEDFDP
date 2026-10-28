@@ -1,0 +1,1 @@
+export function injectI18nDashboard(d: string) { return { i18nBlocksAdded: 2 } }

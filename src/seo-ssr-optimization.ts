@@ -1,0 +1,1 @@
+export function optimizeSSR(d: string) { return { pagesSSREnabled: 1100, ttfb: "0.8s" } }

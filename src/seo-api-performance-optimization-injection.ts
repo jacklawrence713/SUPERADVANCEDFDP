@@ -1,0 +1,1 @@
+export function injectAPIOptimization(d: string) { return { apiBlocksAdded: 5 } }

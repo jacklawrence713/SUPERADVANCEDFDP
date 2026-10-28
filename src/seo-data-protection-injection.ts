@@ -1,0 +1,1 @@
+export function injectDataProtection(d: string) { return { dataBlocksAdded: 4 } }

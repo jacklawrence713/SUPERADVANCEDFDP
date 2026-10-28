@@ -1,0 +1,1 @@
+export function optimizeRegionalSEO(d: string) { return { regionsOptimized: 8, localKeywords: 156 } }

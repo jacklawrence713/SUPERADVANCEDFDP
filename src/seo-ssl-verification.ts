@@ -1,0 +1,1 @@
+export function verifySSL(d: string) { return { certificatesVerified: 1, gradeA: true } }

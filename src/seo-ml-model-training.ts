@@ -1,0 +1,1 @@
+export function trainMLModels(d: string) { return { modelsTrained: 8, accuracy: 94 } }

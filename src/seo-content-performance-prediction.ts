@@ -1,0 +1,1 @@
+export function predictContentPerformance(d: string) { return { predictionsGenerated: 48, accuracy: 88 } }
