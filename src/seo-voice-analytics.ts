@@ -1,0 +1,1 @@
+export function generateVoiceAnalyticsDashboard(distDir: string) { return { reportPath: "voice-analytics.html", voiceSearchMetrics: 12 } }

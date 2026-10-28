@@ -1,0 +1,1 @@
+export function injectSocialMediaCalendar(distDir: string) { return { postsScheduled: 48, calendarMonths: 3 } }

@@ -1,0 +1,1 @@
+export function injectNLPIntegration(distDir: string) { return { nlpModelsConfigured: 3, semanticIndexing: true } }

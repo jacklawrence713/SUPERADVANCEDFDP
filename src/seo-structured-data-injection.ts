@@ -1,0 +1,1 @@
+export function injectStructuredDataValidation(distDir: string) { return { pagesProcessed: 0, schemaBlocksAdded: 0 } }

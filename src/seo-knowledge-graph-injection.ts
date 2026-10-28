@@ -1,68 +1,73 @@
 /**
- * Knowledge Graph Post-Processor (Phase 16)
+ * Knowledge Graph Injection (Phase 16)
  *
- * Injects smart content recommendations based on topic clustering
- * and player relationships.
+ * Injects knowledge graph connections and related content recommendations
  */
 
-import { readFileSync, writeFileSync, readdirSync, existsSync } from 'fs'
+import { readFileSync, writeFileSync, readdirSync } from 'fs'
 import { resolve } from 'path'
-import { generateContentRecommendations, generateTopicClusters } from './seo-knowledge-graph'
+import { generatePlayerKnowledgeGraph, generateContentRecommendations, generateTopicClusters } from './seo-knowledge-graph'
 
-export interface KnowledgeGraphResult {
+export interface KnowledgeGraphInjectionResult {
   pagesProcessed: number
+  connectionsAdded: number
   recommendationsAdded: number
-  clustersIdentified: number
 }
 
-export function injectKnowledgeGraphConnections(distDir: string): KnowledgeGraphResult {
+export function injectKnowledgeGraphConnections(distDir: string): KnowledgeGraphInjectionResult {
   let pagesProcessed = 0
+  let connectionsAdded = 0
   let recommendationsAdded = 0
-  const clustersIdentified = new Set<string>()
 
-  const clusters = generateTopicClusters()
-
-  function walkAndInject(dir: string, relativePath: string = ''): void {
+  function walkAndInject(dir: string, depth: number = 0): void {
     try {
-      const entries = readdirSync(dir, { withFileTypes: true })
-      for (const entry of entries) {
-        const fullPath = resolve(dir, entry.name)
-        const relPath = relativePath ? `${relativePath}/${entry.name}` : entry.name
+      if (depth < 3) {
+        const entries = readdirSync(dir, { withFileTypes: true })
+        for (const entry of entries) {
+          const fullPath = resolve(dir, entry.name)
+          if (entry.isDirectory()) {
+            walkAndInject(fullPath, depth + 1)
+          } else if (entry.isFile() && entry.name === 'index.html') {
+            pagesProcessed++
+            let content = readFileSync(fullPath, 'utf-8')
 
-        if (entry.isDirectory()) {
-          walkAndInject(fullPath, relPath)
-        } else if (entry.isFile() && entry.name === 'index.html') {
-          pagesProcessed++
-          let content = readFileSync(fullPath, 'utf-8')
+            // Skip if already has Phase 16
+            if (content.includes('Phase 16')) continue
 
-          // Skip if already has Phase 16
-          if (content.includes('Phase 16')) continue
+            // Add content recommendations to guide and ranking pages
+            const normalizedPath = fullPath.replace(/\\/g, '/').toLowerCase()
+            if ((normalizedPath.includes('guides') || normalizedPath.includes('rankings')) && pagesProcessed % 5 === 0) {
+              const recommendations = generateContentRecommendations(normalizedPath, 4)
 
-          // Generate recommendations for this path
-          const recommendations = generateContentRecommendations(fullPath, 3)
-
-          if (recommendations.length > 0) {
-            // Build recommendation HTML
-            const recHtml = `<div style="margin-top:32px;padding:16px;background:#1a1829;border-radius:8px;border-left:3px solid #7c4dff">
-    <h3 style="color:#7c4dff;margin-top:0;font-size:14px">Related Topics</h3>
-    <ul style="list-style:none;padding:0;margin:0;font-size:13px">
-    ${recommendations
-      .map(
-        r =>
-          `<li style="margin:6px 0"><a href="${r.url}" style="color:#7c4dff">${r.title}</a> <span style="color:#6b6580;font-size:12px">(${(r.relevance * 100).toFixed(0)}%)</span></li>`
-      )
-      .join('')}
+              if (recommendations.length > 0) {
+                const recBlock = `<div style="margin-top:40px;padding:20px;background:#1a1829;border-radius:8px;border-left:4px solid #06b6d4">
+    <h3 style="color:#06b6d4;margin-top:0;font-size:14px">🔗 Related Content</h3>
+    <ul style="margin:8px 0;padding-left:20px;color:#9b96b8;font-size:12px;">
+      ${recommendations.map(r => '<li><a href="' + r.url + '" style="color:#06b6d4;text-decoration:none">' + r.title + '</a></li>').join('')}
     </ul>
-    </div>
-    <!-- Phase 16: Knowledge Graph Recommendations -->`
+    <!-- Phase 16: Knowledge Graph Recommendations -->
+  </div>`
 
-            // Inject before </body>
-            if (content.includes('</body>')) {
-              content = content.replace('</body>', `\n  ${recHtml}\n  </body>`)
-              recommendationsAdded++
+                if (content.includes('</body>')) {
+                  content = content.replace('</body>', '\n  ' + recBlock + '\n  </body>')
+                  recommendationsAdded++
+                }
+              }
+            }
 
-              // Track clusters
-              recommendations.forEach(r => clustersIdentified.add(r.type))
+            // Add topic cluster information to hub pages
+            if (normalizedPath.includes('hub') && pagesProcessed % 3 === 0) {
+              const clusters = generateTopicClusters()
+              const clusterBlock = `<div style="margin-top:40px;padding:20px;background:#1a1829;border-radius:8px;border-left:4px solid #06b6d4">
+    <h3 style="color:#06b6d4;margin-top:0;font-size:14px">📚 Topic Clusters</h3>
+    <p style="color:#9b96b8;font-size:12px">Knowledge base connections: ${Object.keys(clusters).length} clusters</p>
+    <!-- Phase 16: Topic Cluster Metadata -->
+  </div>`
+
+              if (content.includes('</body>')) {
+                content = content.replace('</body>', '\n  ' + clusterBlock + '\n  </body>')
+                connectionsAdded++
+              }
             }
 
             writeFileSync(fullPath, content)
@@ -75,9 +80,5 @@ export function injectKnowledgeGraphConnections(distDir: string): KnowledgeGraph
   }
 
   walkAndInject(distDir)
-  return {
-    pagesProcessed,
-    recommendationsAdded,
-    clustersIdentified: clustersIdentified.size,
-  }
+  return { pagesProcessed, connectionsAdded, recommendationsAdded }
 }

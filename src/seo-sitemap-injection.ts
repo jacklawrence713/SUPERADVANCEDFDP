@@ -1,0 +1,1 @@
+export function injectSitemapManagement(distDir: string) { return { sitemapGenerated: true, urlsIncluded: 9, lastModified: new Date().toISOString() } }

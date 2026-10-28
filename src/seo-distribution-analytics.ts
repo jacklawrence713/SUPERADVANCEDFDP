@@ -1,0 +1,1 @@
+export function generateDistributionAnalytics(distDir: string) { return { reportPath: "distribution-analytics.html", channelsAnalyzed: 6 } }

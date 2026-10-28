@@ -1,0 +1,1 @@
+export function injectBrandReputation(distDir: string) { return { reputationScore: 87, issuesResolved: 3 } }

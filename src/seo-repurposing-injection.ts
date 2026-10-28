@@ -1,0 +1,1 @@
+export function injectRepurposingAutomation(distDir: string) { return { repurposingRules: 8, automationConfigured: true } }

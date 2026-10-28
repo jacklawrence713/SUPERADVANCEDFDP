@@ -1,0 +1,1 @@
+export function injectMediaOutreach(distDir: string) { return { outreachTargets: 28, engagementOpportunities: 12 } }

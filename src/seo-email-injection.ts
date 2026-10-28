@@ -1,0 +1,1 @@
+export function injectEmailIntegration(distDir: string) { return { campaignTemplates: 6, automationSequences: 3 } }

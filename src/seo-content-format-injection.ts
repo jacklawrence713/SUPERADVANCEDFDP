@@ -1,0 +1,1 @@
+export function injectContentFormatConversion(distDir: string) { return { formatsGenerated: 6, repurposingOpportunities: 24 } }

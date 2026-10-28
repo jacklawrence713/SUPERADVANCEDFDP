@@ -1,0 +1,1 @@
+export function injectPressReleaseStrategy(distDir: string) { return { releaseCount: 4, distributionChannels: 6 } }

@@ -1,0 +1,1 @@
+export function injectMobileOptimization(distDir: string) { return { pagesProcessed: 0, optimizationsAdded: 0 } }

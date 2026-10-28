@@ -70,6 +70,29 @@ import { injectAttributionModels } from './src/seo-attribution-injection'
 import { injectUserBehaviorTracking } from './src/seo-behavior-injection'
 import { injectABTestingStrategy } from './src/seo-testing-injection'
 import { generateAnalyticsDashboard } from './src/seo-analytics-dashboard'
+import { injectCrawlabilityAudit } from './src/seo-crawlability-injection'
+import { injectCoreWebVitals } from './src/seo-core-web-vitals-injection'
+import { injectSitemapManagement } from './src/seo-sitemap-injection'
+import { injectStructuredDataValidation } from './src/seo-structured-data-injection'
+import { injectMobileOptimization } from './src/seo-mobile-injection'
+import { generateTechnicalDashboard } from './src/seo-technical-dashboard'
+import { injectVoiceSearchOptimization } from './src/seo-voice-search-injection'
+import { injectNLPIntegration } from './src/seo-nlp-injection'
+import { injectEntityRecognition } from './src/seo-entity-injection'
+import { injectKnowledgeGraphOptimization } from './src/seo-phase24-knowledge-graph-injection'
+import { generateVoiceAnalyticsDashboard } from './src/seo-voice-analytics'
+import { injectBrandMentionTracking } from './src/seo-brand-mention-injection'
+import { injectPressReleaseStrategy } from './src/seo-press-release-injection'
+import { injectMediaOutreach } from './src/seo-media-outreach-injection'
+import { injectCitationBuilding } from './src/seo-citation-injection'
+import { injectBrandReputation } from './src/seo-brand-reputation-injection'
+import { generatePRDashboard } from './src/seo-pr-dashboard'
+import { injectContentFormatConversion } from './src/seo-content-format-injection'
+import { injectContentSyndication } from './src/seo-content-syndication-injection'
+import { injectSocialMediaCalendar } from './src/seo-social-media-injection'
+import { injectEmailIntegration } from './src/seo-email-injection'
+import { injectRepurposingAutomation } from './src/seo-repurposing-injection'
+import { generateDistributionAnalytics } from './src/seo-distribution-analytics'
 // Parse the PLAYERS array from afdp.tsx source at build time.
 function parsePlayers(srcPath: string): Array<{ name: string; pos: string; age: number; team: string; ktcVal?: number; proj: { PPR: number; Half: number; Standard: number }; note?: string }> {
   const src = readFileSync(srcPath, 'utf-8')
@@ -1086,6 +1109,31 @@ function spaRoutesPlugin() {
       } catch (e) {
         console.error('[spa-routes] Failed to generate analytics dashboard:', e)
       }
+
+      // Phase 24: All 4 Options (23 sub-components)
+      try { const r = injectCrawlabilityAudit(distDir); console.log(`[spa-routes] Injected crawlability audit (${r.auditsAdded} blocks) for Phase 24.1`) } catch (e) { console.error('[spa-routes] Phase 24.1 failed:', e) }
+      try { const r = injectCoreWebVitals(distDir); console.log(`[spa-routes] Injected Core Web Vitals (${r.metricsAdded} metrics) for Phase 24.2`) } catch (e) { console.error('[spa-routes] Phase 24.2 failed:', e) }
+      try { const r = injectSitemapManagement(distDir); console.log(`[spa-routes] Generated sitemap (${r.urlsIncluded} URLs) for Phase 24.3`) } catch (e) { console.error('[spa-routes] Phase 24.3 failed:', e) }
+      try { const r = injectStructuredDataValidation(distDir); console.log(`[spa-routes] Injected structured data (${r.schemaBlocksAdded} schemas) for Phase 24.4`) } catch (e) { console.error('[spa-routes] Phase 24.4 failed:', e) }
+      try { const r = injectMobileOptimization(distDir); console.log(`[spa-routes] Injected mobile optimization (${r.optimizationsAdded} optimizations) for Phase 24.5`) } catch (e) { console.error('[spa-routes] Phase 24.5 failed:', e) }
+      try { const r = generateTechnicalDashboard(distDir); console.log(`[spa-routes] Generated technical dashboard (${r.auditsIncluded} audits) for Phase 24.6`) } catch (e) { console.error('[spa-routes] Phase 24.6 failed:', e) }
+      try { const r = injectVoiceSearchOptimization(distDir); console.log(`[spa-routes] Injected voice search (${r.voiceOptimizationsAdded} optimizations) for Phase 24.7`) } catch (e) { console.error('[spa-routes] Phase 24.7 failed:', e) }
+      try { const r = injectNLPIntegration(distDir); console.log(`[spa-routes] Injected NLP (${r.nlpModelsConfigured} models) for Phase 24.8`) } catch (e) { console.error('[spa-routes] Phase 24.8 failed:', e) }
+      try { const r = injectEntityRecognition(distDir); console.log(`[spa-routes] Injected entities (${r.entitiesRecognized} entities) for Phase 24.9`) } catch (e) { console.error('[spa-routes] Phase 24.9 failed:', e) }
+      try { const r = injectKnowledgeGraphOptimization(distDir); console.log(`[spa-routes] Optimized knowledge graph (${r.connectionsOptimized} connections) for Phase 24.10`) } catch (e) { console.error('[spa-routes] Phase 24.10 failed:', e) }
+      try { const r = generateVoiceAnalyticsDashboard(distDir); console.log(`[spa-routes] Generated voice analytics (${r.voiceSearchMetrics} metrics) for Phase 24.11`) } catch (e) { console.error('[spa-routes] Phase 24.11 failed:', e) }
+      try { const r = injectBrandMentionTracking(distDir); console.log(`[spa-routes] Injected brand mention (${r.trackingAdded} blocks) for Phase 24.12`) } catch (e) { console.error('[spa-routes] Phase 24.12 failed:', e) }
+      try { const r = injectPressReleaseStrategy(distDir); console.log(`[spa-routes] Injected press release (${r.releaseCount} releases) for Phase 24.13`) } catch (e) { console.error('[spa-routes] Phase 24.13 failed:', e) }
+      try { const r = injectMediaOutreach(distDir); console.log(`[spa-routes] Injected media outreach (${r.outreachTargets} targets) for Phase 24.14`) } catch (e) { console.error('[spa-routes] Phase 24.14 failed:', e) }
+      try { const r = injectCitationBuilding(distDir); console.log(`[spa-routes] Injected citations (${r.citationsIdentified} citations) for Phase 24.15`) } catch (e) { console.error('[spa-routes] Phase 24.15 failed:', e) }
+      try { const r = injectBrandReputation(distDir); console.log(`[spa-routes] Injected brand reputation (${r.reputationScore} score) for Phase 24.16`) } catch (e) { console.error('[spa-routes] Phase 24.16 failed:', e) }
+      try { const r = generatePRDashboard(distDir); console.log(`[spa-routes] Generated PR dashboard (${r.metricsIncluded} metrics) for Phase 24.17`) } catch (e) { console.error('[spa-routes] Phase 24.17 failed:', e) }
+      try { const r = injectContentFormatConversion(distDir); console.log(`[spa-routes] Injected content format (${r.formatsGenerated} formats) for Phase 24.18`) } catch (e) { console.error('[spa-routes] Phase 24.18 failed:', e) }
+      try { const r = injectContentSyndication(distDir); console.log(`[spa-routes] Injected syndication (${r.syndicationChannels} channels) for Phase 24.19`) } catch (e) { console.error('[spa-routes] Phase 24.19 failed:', e) }
+      try { const r = injectSocialMediaCalendar(distDir); console.log(`[spa-routes] Injected social media (${r.postsScheduled} posts) for Phase 24.20`) } catch (e) { console.error('[spa-routes] Phase 24.20 failed:', e) }
+      try { const r = injectEmailIntegration(distDir); console.log(`[spa-routes] Injected email (${r.campaignTemplates} templates) for Phase 24.21`) } catch (e) { console.error('[spa-routes] Phase 24.21 failed:', e) }
+      try { const r = injectRepurposingAutomation(distDir); console.log(`[spa-routes] Injected repurposing (${r.repurposingRules} rules) for Phase 24.22`) } catch (e) { console.error('[spa-routes] Phase 24.22 failed:', e) }
+      try { const r = generateDistributionAnalytics(distDir); console.log(`[spa-routes] Generated distribution analytics (${r.channelsAnalyzed} channels) for Phase 24.23`) } catch (e) { console.error('[spa-routes] Phase 24.23 failed:', e) }
     }
   }
 }

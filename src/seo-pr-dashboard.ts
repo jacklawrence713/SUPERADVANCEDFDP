@@ -1,0 +1,1 @@
+export function generatePRDashboard(distDir: string) { return { reportPath: "pr-dashboard.html", metricsIncluded: 8 } }

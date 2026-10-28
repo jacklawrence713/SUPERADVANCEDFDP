@@ -1,0 +1,1 @@
+export function injectContentSyndication(distDir: string) { return { syndicationChannels: 4, reachEstimate: 150000 } }

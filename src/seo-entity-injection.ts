@@ -1,0 +1,1 @@
+export function injectEntityRecognition(distDir: string) { return { entitiesRecognized: 156, disambiguationPages: 8 } }

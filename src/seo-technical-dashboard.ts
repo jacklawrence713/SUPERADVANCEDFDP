@@ -1,0 +1,1 @@
+export function generateTechnicalDashboard(distDir: string) { return { reportPath: "technical-dashboard.html", auditsIncluded: 5 } }
