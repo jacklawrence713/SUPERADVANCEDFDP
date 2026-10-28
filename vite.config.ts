@@ -40,6 +40,18 @@ import { injectSiloOptimization } from './src/seo-silo-injection'
 import { generateTopicClusters } from './src/seo-topical-clusters'
 import { injectTopicalClusters } from './src/seo-cluster-injection'
 import { generateAuditReport } from './src/seo-audit-report'
+import { generateSemanticKeywordClusters } from './src/seo-semantic-keywords'
+import { injectSemanticKeywords } from './src/seo-semantic-injection'
+import { generateOptimizedMetaDescriptions } from './src/seo-meta-optimization'
+import { injectOptimizedMeta } from './src/seo-meta-injection'
+import { generateAdvancedLinkingStrategy } from './src/seo-advanced-linking'
+import { injectAdvancedLinking } from './src/seo-link-injection'
+import { analyzeContentGaps } from './src/seo-gap-analysis'
+import { injectContentGaps } from './src/seo-gap-injection'
+import { generateKeywordSynonyms } from './src/seo-keyword-synonyms'
+import { injectKeywordSynonyms } from './src/seo-synonym-injection'
+import { analyzeKeywordOpportunities } from './src/seo-keyword-analysis'
+import { generateKeywordAnalysisReport } from './src/seo-analysis-report'
 // Parse the PLAYERS array from afdp.tsx source at build time.
 function parsePlayers(srcPath: string): Array<{ name: string; pos: string; age: number; team: string; ktcVal?: number; proj: { PPR: number; Half: number; Standard: number }; note?: string }> {
   const src = readFileSync(srcPath, 'utf-8')
@@ -866,6 +878,54 @@ function spaRoutesPlugin() {
         console.log(`[spa-routes] Generated SEO audit report (${auditResult.pagesCrawled} pages audited, ${auditResult.issuesFound} issues found) for Phase 19.6 at ${auditResult.reportPath}`)
       } catch (e) {
         console.error('[spa-routes] Failed to generate audit report:', e)
+      }
+
+      // Phase 20.1: Semantic Keyword Research & Clustering
+      try {
+        const semanticResult = injectSemanticKeywords(distDir)
+        console.log(`[spa-routes] Injected semantic keywords (${semanticResult.semanticKeywordsAdded} keyword blocks + ${semanticResult.lsiBlocksAdded} LSI meta tags) for Phase 20.1`)
+      } catch (e) {
+        console.error('[spa-routes] Failed to inject semantic keywords:', e)
+      }
+
+      // Phase 20.2: Meta Optimization & Semantic Enhancement
+      try {
+        const metaResult = injectOptimizedMeta(distDir)
+        console.log(`[spa-routes] Injected optimized meta tags (${metaResult.descriptionsOptimized} descriptions + ${metaResult.ogTagsAdded} OG tags) for Phase 20.2`)
+      } catch (e) {
+        console.error('[spa-routes] Failed to inject optimized meta:', e)
+      }
+
+      // Phase 20.3: Advanced Internal Linking Strategy
+      try {
+        const linkResult = injectAdvancedLinking(distDir)
+        console.log(`[spa-routes] Injected advanced linking strategy (${linkResult.linkClustersAdded} semantic clusters + ${linkResult.anchorTextsOptimized} anchor variations) for Phase 20.3`)
+      } catch (e) {
+        console.error('[spa-routes] Failed to inject advanced linking:', e)
+      }
+
+      // Phase 20.4: Content Gap Analysis & Opportunities
+      try {
+        const gapResult = injectContentGaps(distDir)
+        console.log(`[spa-routes] Injected content gap opportunities (${gapResult.gapOpportunitiesAdded} gap blocks for ${gapResult.gapsIdentified} total gaps) for Phase 20.4`)
+      } catch (e) {
+        console.error('[spa-routes] Failed to inject content gaps:', e)
+      }
+
+      // Phase 20.5: Keyword Synonym & Variation Generation
+      try {
+        const synonymResult = injectKeywordSynonyms(distDir)
+        console.log(`[spa-routes] Injected keyword synonyms (${synonymResult.synonymBlocksAdded} synonym blocks + ${synonymResult.variationsInjected} variation meta tags) for Phase 20.5`)
+      } catch (e) {
+        console.error('[spa-routes] Failed to inject keyword synonyms:', e)
+      }
+
+      // Phase 20.6: Search Volume & Difficulty Analysis Report
+      try {
+        const analysisResult = generateKeywordAnalysisReport(distDir)
+        console.log(`[spa-routes] Generated keyword analysis report (${analysisResult.keywordsAnalyzed} keywords, ${analysisResult.totalTraffic} estimated traffic) for Phase 20.6 at ${analysisResult.reportPath}`)
+      } catch (e) {
+        console.error('[spa-routes] Failed to generate keyword analysis:', e)
       }
     }
   }
