@@ -29,6 +29,7 @@ import { enhanceInternalLinking } from './src/seo-internal-linking'
 import { injectRichSnippets } from './src/seo-rich-snippet-injection'
 import { injectKnowledgeGraphConnections } from './src/seo-knowledge-graph-injection'
 import { injectEeatSignals } from './src/seo-eat-injection'
+import { optimizeForSearchIntent } from './src/seo-search-intent-injection'
 // Parse the PLAYERS array from afdp.tsx source at build time.
 function parsePlayers(srcPath: string): Array<{ name: string; pos: string; age: number; team: string; ktcVal?: number; proj: { PPR: number; Half: number; Standard: number }; note?: string }> {
   const src = readFileSync(srcPath, 'utf-8')
@@ -729,19 +730,20 @@ function spaRoutesPlugin() {
       }
       if (hubsGenerated > 0) {
         console.log(`[spa-routes] Generated ${hubsGenerated} topical authority hubs for Phase 13.3`)
+      }
 
       // Phase 13.4: Generate Player Comparison Pages for position-specific analysis
       const comparisonsDir = resolve(distDir, 'comparisons')
       if (!existsSync(comparisonsDir)) mkdirSync(comparisonsDir, { recursive: true })
-      
-      const positions = ['QB', 'RB', 'WR', 'TE', 'DL', 'LB', 'DB']
+
+      const comparisonPositions = ['QB', 'RB', 'WR', 'TE', 'DL', 'LB', 'DB']
       let comparisonsGenerated = 0
-      
-      for (const pos of positions) {
+
+      for (const pos of comparisonPositions) {
         try {
           const posDir = resolve(comparisonsDir, pos.toLowerCase())
           if (!existsSync(posDir)) mkdirSync(posDir, { recursive: true })
-          
+
           const comparisonHtml = generatePlayerComparisonPageHtml(
             seoData.allPlayers,
             pos,
@@ -755,9 +757,10 @@ function spaRoutesPlugin() {
           console.error(`[spa-routes] Failed to generate ${pos} comparison page:`, e)
         }
       }
-      
+
       if (comparisonsGenerated > 0) {
         console.log(`[spa-routes] Generated ${comparisonsGenerated} player comparison pages for Phase 13.4`)
+      }
 
       // Phase 14: Enhance Internal Linking & Related Content
       try {
@@ -790,9 +793,14 @@ function spaRoutesPlugin() {
       } catch (e) {
         console.error('[spa-routes] Failed to inject E-E-A-T signals:', e)
       }
-      }
-      }
 
+      // Phase 18: Optimize for Search Intent
+      try {
+        const siResult = optimizeForSearchIntent(distDir)
+        console.log(`[spa-routes] Optimized ${siResult.pagesProcessed} pages for search intent (${siResult.ctasAdded} CTAs + ${siResult.crossLinksAdded} cross-links) for Phase 18`)
+      } catch (e) {
+        console.error('[spa-routes] Failed to optimize search intent:', e)
+      }
     }
   }
 }
