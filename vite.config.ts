@@ -52,6 +52,12 @@ import { generateKeywordSynonyms } from './src/seo-keyword-synonyms'
 import { injectKeywordSynonyms } from './src/seo-synonym-injection'
 import { analyzeKeywordOpportunities } from './src/seo-keyword-analysis'
 import { generateKeywordAnalysisReport } from './src/seo-analysis-report'
+import { injectSeasonalContent } from './src/seo-seasonal-injection'
+import { injectContentRefresh } from './src/seo-refresh-injection'
+import { injectAuthorityExpansion } from './src/seo-expansion-injection'
+import { injectEvergreenContent } from './src/seo-evergreen-injection'
+import { injectTrendingTopics } from './src/seo-trending-injection'
+import { writeDashboardReport } from './src/seo-performance-dashboard'
 // Parse the PLAYERS array from afdp.tsx source at build time.
 function parsePlayers(srcPath: string): Array<{ name: string; pos: string; age: number; team: string; ktcVal?: number; proj: { PPR: number; Half: number; Standard: number }; note?: string }> {
   const src = readFileSync(srcPath, 'utf-8')
@@ -926,6 +932,53 @@ function spaRoutesPlugin() {
         console.log(`[spa-routes] Generated keyword analysis report (${analysisResult.keywordsAnalyzed} keywords, ${analysisResult.totalTraffic} estimated traffic) for Phase 20.6 at ${analysisResult.reportPath}`)
       } catch (e) {
         console.error('[spa-routes] Failed to generate keyword analysis:', e)
+      }
+      // Phase 21.1: Seasonal Content Strategy
+      try {
+        const seasonalResult = injectSeasonalContent(distDir)
+        console.log(`[spa-routes] Injected seasonal content (${seasonalResult.seasonalBlocksAdded} seasonal blocks + ${seasonalResult.seasonalCalendarsInjected} calendars) for Phase 21.1`)
+      } catch (e) {
+        console.error('[spa-routes] Failed to inject seasonal content:', e)
+      }
+
+      // Phase 21.2: Content Refresh & Freshness Strategy
+      try {
+        const refreshResult = injectContentRefresh(distDir)
+        console.log(`[spa-routes] Injected content refresh recommendations (${refreshResult.refreshRecommendationsAdded} refresh blocks + ${refreshResult.freshnessIndicatorsAdded} freshness scores) for Phase 21.2`)
+      } catch (e) {
+        console.error('[spa-routes] Failed to inject content refresh:', e)
+      }
+
+      // Phase 21.3: Authority Expansion & Topical Deepening
+      try {
+        const expansionResult = injectAuthorityExpansion(distDir)
+        console.log(`[spa-routes] Injected authority expansion opportunities (${expansionResult.expansionOpportunitiesAdded} expansion blocks + ${expansionResult.hierarchiesInjected} content hierarchies) for Phase 21.3`)
+      } catch (e) {
+        console.error('[spa-routes] Failed to inject authority expansion:', e)
+      }
+
+      // Phase 21.4: Evergreen Content Optimization
+      try {
+        const evergreenResult = injectEvergreenContent(distDir)
+        console.log(`[spa-routes] Injected evergreen optimization recommendations (${evergreenResult.optimizationRecommendationsAdded} optimization blocks + ${evergreenResult.evergreenIndicatorsAdded} evergreen scores) for Phase 21.4`)
+      } catch (e) {
+        console.error('[spa-routes] Failed to inject evergreen content:', e)
+      }
+
+      // Phase 21.5: Trending Topics & Real-Time Integration
+      try {
+        const trendingResult = injectTrendingTopics(distDir)
+        console.log(`[spa-routes] Injected trending topic insights (${trendingResult.trendingInsightsAdded} insight blocks + ${trendingResult.trendingAlertsAdded} alert blocks) for Phase 21.5`)
+      } catch (e) {
+        console.error('[spa-routes] Failed to inject trending topics:', e)
+      }
+
+      // Phase 21.6: Content Performance Dashboard & Analytics
+      try {
+        writeDashboardReport(distDir)
+        console.log(`[spa-routes] Generated performance dashboard report for Phase 21.6 at ${distDir}/performance-dashboard.html`)
+      } catch (e) {
+        console.error('[spa-routes] Failed to generate performance dashboard:', e)
       }
     }
   }
