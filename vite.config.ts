@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
 import { writeFileSync, readFileSync, mkdirSync, existsSync } from 'fs'
 import { computeDynastyTradeVal, playerSlug, tierLabel, VALUES_UPDATED_AT } from './src/logic'
+import { generateSeoData, getPositionRankingTitle, getPositionRankingDescription, formatTradeValue } from './src/seo-data'
 
 // Parse the PLAYERS array from afdp.tsx source at build time.
 function parsePlayers(srcPath: string): Array<{ name: string; pos: string; age: number; team: string; ktcVal?: number; proj: { PPR: number; Half: number; Standard: number }; note?: string }> {
@@ -53,6 +54,102 @@ function isPageEligible(p: RankedPlayer): boolean {
   if (p.pos === 'K' || p.pos === 'DST') return false
   if (p.tradeVal < 100) return false
   return true
+}
+
+// Generate position-specific ranking page HTML
+function generateRankingPageHtml(
+  position: string,
+  players: RankedPlayer[],
+  count: number,
+  valuesDate: string,
+  appScripts: string,
+  appPreloads: string,
+  darkModeScript: string,
+): string {
+  const title = getPositionRankingTitle(position)
+  const desc = getPositionRankingDescription(position, count)
+  const url = `https://fantasydraftpros.com/rankings/${position.toLowerCase()}/`
+  const canonicalTitle = `${title} 2026 | Fantasy Draft Pros`
+
+  const tableRows = players.slice(0, count).map((p, i) => `
+    <tr>
+      <td>${i + 1}</td>
+      <td><a href="https://fantasydraftpros.com/players/${p.slug}/" style="color:#7c4dff;text-decoration:none">${escHtml(p.name)}</a></td>
+      <td>${p.pos}</td>
+      <td>${p.team}</td>
+      <td style="color:#f59e0b;font-weight:700">${formatTradeValue(p.tradeVal)}</td>
+    </tr>
+  `).join('')
+
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${canonicalTitle}</title>
+  <meta name="description" content="${desc}" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="${url}" />
+  <meta property="og:title" content="${title} 2026" />
+  <meta property="og:description" content="${desc}" />
+  <meta property="og:url" content="${url}" />
+  <meta property="og:image" content="https://fantasydraftpros.com/logo-horizontal.png" />
+  <link rel="icon" type="image/png" href="/logo-shield.png" />
+  <meta name="theme-color" content="#7c4dff" />
+  <style>
+    body { background:#13111e; color:#e0dce8; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; max-width:960px; margin:0 auto; padding:40px 20px; line-height:1.7; }
+    a { color:#7c4dff; text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    h1 { color:#7c4dff; font-size:28px; margin-bottom:8px; }
+    .subtitle { color:#9b96b8; font-size:14px; margin-bottom:24px; }
+    table { width:100%; border-collapse:collapse; margin:24px 0; }
+    th { text-align:left; padding:12px 8px; color:#7c4dff; font-weight:700; border-bottom:2px solid #7c4dff; font-size:13px; }
+    td { padding:10px 8px; border-bottom:1px solid #2a254044; font-size:13px; }
+    tr:hover { background:#1a1829; }
+    .cta { display:inline-block; background:#7c4dff; color:#fff; padding:12px 24px; border-radius:8px; font-weight:700; margin:20px 0; }
+    .cta:hover { background:#6a3de8; text-decoration:none; }
+    nav { margin-top:40px; padding-top:20px; border-top:1px solid #2a2540; }
+  </style>
+  <script>${darkModeScript}</script>
+  ${appPreloads}
+</head>
+<body>
+  <h1>${title}</h1>
+  <p class="subtitle">Updated ${valuesDate}</p>
+  <p>${desc}</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Rank</th>
+        <th>Player</th>
+        <th>Pos</th>
+        <th>Team</th>
+        <th>FDP Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${tableRows}
+    </tbody>
+  </table>
+
+  <p style="font-size:14px;color:#9b96b8">Browse the <a href="https://fantasydraftpros.com/#rankings">full dynasty rankings</a> to search, filter, and compare all ${count}+ players.</p>
+  <a href="https://fantasydraftpros.com/#rankings" class="cta">View Full Rankings →</a>
+
+  <nav>
+    <p style="font-size:14px;color:#fff;font-weight:700;margin-bottom:12px">More Dynasty Rankings</p>
+    <ul style="font-size:13px;padding-left:20px;line-height:2;color:#9b96b8">
+      ${['QB', 'RB', 'WR', 'TE', 'DL', 'LB', 'DB'].filter(p => p !== position).map(p =>
+        `<li><a href="https://fantasydraftpros.com/rankings/${p.toLowerCase()}/">${getPositionRankingTitle(p)}</a></li>`
+      ).join('')}
+      <li style="margin-top:8px"><a href="https://fantasydraftpros.com/">Fantasy Draft Pros — Home</a></li>
+    </ul>
+  </nav>
+
+  <div id="root"></div>
+  ${appScripts}
+</body>
+</html>`
 }
 
 // Index eligibility: page gets indexed by Google (in sitemap, robots=index).
@@ -249,13 +346,23 @@ function spaRoutesPlugin() {
       const darkModeScript = inlineScriptMatch ? inlineScriptMatch[1].trim() : ''
 
       // Parse PLAYERS from afdp.tsx and compute canonical values
-      let ranked: RankedPlayer[]
+      let ranked: RankedPlayer[], players: any[]
       try {
-        const players = parsePlayers(resolve(__dirname, 'afdp.tsx'))
+        players = parsePlayers(resolve(__dirname, 'afdp.tsx'))
         ranked = rankAllPlayers(players)
         console.log(`[spa-routes] Parsed ${players.length} players, computed canonical values`)
       } catch (e) {
         console.error('[spa-routes] Failed to parse PLAYERS:', e)
+        return
+      }
+
+      // Generate dynamic SEO data (top 50-100 per position, Superflex, TE Premium)
+      let seoData
+      try {
+        seoData = generateSeoData(players, { sf: false, tep: false, idp: true })
+        console.log(`[spa-routes] Generated SEO data context - values dated ${seoData.valuesDate}`)
+      } catch (e) {
+        console.error('[spa-routes] Failed to generate SEO data:', e)
         return
       }
 
@@ -306,6 +413,29 @@ function spaRoutesPlugin() {
         }
       }
       if (redirects > 0) console.log(`[spa-routes] Generated ${redirects} legacy slug redirects`)
+
+      // Generate position-specific ranking pages from SEO data
+      const rankingsDir = resolve(distDir, 'rankings')
+      if (!existsSync(rankingsDir)) mkdirSync(rankingsDir, { recursive: true })
+      const positions = ['QB', 'RB', 'WR', 'TE', 'DL', 'LB', 'DB']
+      let rankingPages = 0
+      for (const pos of positions) {
+        const posData = seoData[`top${pos}` as keyof typeof seoData] as any[]
+        if (posData && posData.length > 0) {
+          // Convert SeoRankedPlayer to RankedPlayer format for display
+          const posRanked = posData.map(p => ({
+            name: p.name, pos: p.pos, team: p.team, age: p.age,
+            slug: p.slug, tradeVal: p.tradeVal, posRank: p.posRank, rank: p.rank,
+            ktcVal: p.ktcVal, proj: p.proj || { PPR: 0, Half: 0, Standard: 0 }, note: p.note
+          }))
+          const posDir = resolve(rankingsDir, pos.toLowerCase())
+          if (!existsSync(posDir)) mkdirSync(posDir, { recursive: true })
+          const rankingHtml = generateRankingPageHtml(pos, posRanked, 50, seoData.valuesDate, appScripts, appPreloads, darkModeScript)
+          writeFileSync(resolve(posDir, 'index.html'), rankingHtml)
+          rankingPages++
+        }
+      }
+      console.log(`[spa-routes] Generated ${rankingPages} position ranking pages with current SEO data`)
 
       // Generate /fdp-value/ SEO page
       const fdpValueDir = resolve(distDir, 'fdp-value')
