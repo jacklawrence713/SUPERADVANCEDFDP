@@ -9,6 +9,7 @@ import { generatePlayerDirectoryHtml, generatePositionDirectoryHtml } from './sr
 import { generateLandingPageHtml } from './src/seo-page-generator'
 import { generateDynastyHubHtml } from './src/seo-authority-hubs'
 import { generateBuyLowHtml, generateSellHighHtml, generateDraftPickValuesHtml } from './src/seo-strategy-pages'
+import { generateAboutHtml, generateMethodologyHtml, generateEditorialPolicyHtml } from './src/seo-trust-pages'
 import { generateEnhancedPlayerHtml } from './src/seo-player-pages'
 import { SEO_ROUTES, findRoute } from './src/seo-routes'
 import { generatePlayerDirectories, generateRegistryLandingPages } from './src/build-seo-integration'
@@ -584,6 +585,27 @@ function spaRoutesPlugin() {
       writeFileSync(resolve(pickValuesDir, 'index.html'), pickValuesHtml)
 
       console.log('[spa-routes] Generated 3 strategy pages (buy-low, sell-high, draft-pick-values) with real player data')
+
+      // Phase 9: Generate Trust & Authority Pages
+      // About page
+      const aboutDir = resolve(distDir, 'about')
+      if (!existsSync(aboutDir)) mkdirSync(aboutDir, { recursive: true })
+      const aboutHtml = generateAboutHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(aboutDir, 'index.html'), aboutHtml)
+
+      // Methodology page
+      const methodologyDir = resolve(distDir, 'methodology')
+      if (!existsSync(methodologyDir)) mkdirSync(methodologyDir, { recursive: true })
+      const methodologyHtml = generateMethodologyHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(methodologyDir, 'index.html'), methodologyHtml)
+
+      // Editorial Policy page
+      const editorialDir = resolve(distDir, 'editorial-policy')
+      if (!existsSync(editorialDir)) mkdirSync(editorialDir, { recursive: true })
+      const editorialHtml = generateEditorialPolicyHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(editorialDir, 'index.html'), editorialHtml)
+
+      console.log('[spa-routes] Generated 3 trust pages (about, methodology, editorial-policy) for institutional credibility')
 
     }
   }
