@@ -30,6 +30,16 @@ import { injectRichSnippets } from './src/seo-rich-snippet-injection'
 import { injectKnowledgeGraphConnections } from './src/seo-knowledge-graph-injection'
 import { injectEeatSignals } from './src/seo-eat-injection'
 import { optimizeForSearchIntent } from './src/seo-search-intent-injection'
+import { generateFeaturedSnippetPageHtml } from './src/seo-featured-snippets'
+import { injectFeaturedSnippetOptimization } from './src/seo-featured-snippet-injection'
+import { generateVideoMetadata, generateVideoSitemap } from './src/seo-video-schema'
+import { injectVideoSchema } from './src/seo-video-injection'
+import { injectInternationalOptimization } from './src/seo-international-injection'
+import { generateSiloLandingPageHtml } from './src/seo-content-silos'
+import { injectSiloOptimization } from './src/seo-silo-injection'
+import { generateTopicClusters } from './src/seo-topical-clusters'
+import { injectTopicalClusters } from './src/seo-cluster-injection'
+import { generateAuditReport } from './src/seo-audit-report'
 // Parse the PLAYERS array from afdp.tsx source at build time.
 function parsePlayers(srcPath: string): Array<{ name: string; pos: string; age: number; team: string; ktcVal?: number; proj: { PPR: number; Half: number; Standard: number }; note?: string }> {
   const src = readFileSync(srcPath, 'utf-8')
@@ -800,6 +810,62 @@ function spaRoutesPlugin() {
         console.log(`[spa-routes] Optimized ${siResult.pagesProcessed} pages for search intent (${siResult.ctasAdded} CTAs + ${siResult.crossLinksAdded} cross-links) for Phase 18`)
       } catch (e) {
         console.error('[spa-routes] Failed to optimize search intent:', e)
+      }
+
+      // Phase 19.1: Featured Snippet & Position Zero Optimization
+      try {
+        const faqDir = resolve(distDir, 'featured-snippets')
+        if (!existsSync(faqDir)) mkdirSync(faqDir, { recursive: true })
+        const faqHtml = generateFeaturedSnippetPageHtml(appScripts, appPreloads, darkModeScript)
+        writeFileSync(resolve(faqDir, 'index.html'), faqHtml)
+        const snippetResult = injectFeaturedSnippetOptimization(distDir)
+        console.log(`[spa-routes] Injected featured snippet optimization (${snippetResult.answerSchemasAdded} answer schemas + ${snippetResult.faqBlocksAdded} FAQ blocks) for Phase 19.1`)
+      } catch (e) {
+        console.error('[spa-routes] Failed to optimize featured snippets:', e)
+      }
+
+      // Phase 19.2: Video Schema & Multimedia Expansion
+      try {
+        const videoResult = injectVideoSchema(distDir)
+        const videos = generateVideoMetadata()
+        const videoSitemap = generateVideoSitemap(videos)
+        writeFileSync(resolve(distDir, 'video-sitemap.xml'), videoSitemap)
+        console.log(`[spa-routes] Injected video schema (${videoResult.videoSchemasAdded} schemas + ${videoResult.videoBlocksAdded} blocks) for Phase 19.2`)
+      } catch (e) {
+        console.error('[spa-routes] Failed to inject video schema:', e)
+      }
+
+      // Phase 19.3: International/Multi-Language Foundation
+      try {
+        const intlResult = injectInternationalOptimization(distDir)
+        console.log(`[spa-routes] Injected international optimization (${intlResult.hrefLangsAdded} hreflang tags + ${intlResult.multiLanguageSchemasAdded} schemas) for Phase 19.3`)
+      } catch (e) {
+        console.error('[spa-routes] Failed to inject international optimization:', e)
+      }
+
+      // Phase 19.4: Content Silo Architecture
+      try {
+        const siloResult = injectSiloOptimization(distDir)
+        console.log(`[spa-routes] Injected silo optimization (${siloResult.breadcrumbsAdded} breadcrumbs + ${siloResult.siloNavigationAdded} navigation blocks) for Phase 19.4`)
+      } catch (e) {
+        console.error('[spa-routes] Failed to inject silo optimization:', e)
+      }
+
+      // Phase 19.5: Advanced Topical Authority
+      try {
+        const clusters = generateTopicClusters()
+        const clusterResult = injectTopicalClusters(distDir)
+        console.log(`[spa-routes] Injected topical clusters (${clusterResult.clusterSchemasAdded} schemas + ${clusterResult.clusterNavigationAdded} blocks for ${clusters.length} clusters) for Phase 19.5`)
+      } catch (e) {
+        console.error('[spa-routes] Failed to inject topical clusters:', e)
+      }
+
+      // Phase 19.6: Technical SEO & Performance Audit
+      try {
+        const auditResult = generateAuditReport(distDir)
+        console.log(`[spa-routes] Generated SEO audit report (${auditResult.pagesCrawled} pages audited, ${auditResult.issuesFound} issues found) for Phase 19.6 at ${auditResult.reportPath}`)
+      } catch (e) {
+        console.error('[spa-routes] Failed to generate audit report:', e)
       }
     }
   }
