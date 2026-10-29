@@ -2672,7 +2672,11 @@ function AnalyticsDashboard({T,data,loading,onLoad}:{T:any,data:any,loading:bool
   var [faabA,setFaabA]=useState(0);
   var [faabB,setFaabB]=useState(0);
   var tvA=tVal(tradeA,faabA),tvB=tVal(tradeB,faabB);
-// Platform-specific import functionsfunction doEspnImport(){}function doYahooImport(){}function doSleeperImport(){}function buildTradeContext(){
+// Platform-specific import functions
+function doEspnImport(){}
+function doYahooImport(){}
+function doSleeperImport(){}
+function buildTradeContext(){
 var rosterImpact=null;if(leagueIntel&&leagueIntel.hasSlotData&&leagueIntel.starterSlots){rosterImpact={};}
 var posImpact:any[]=[];var uNames:string[]=[];var aOnU=0,bOnU=0;
 tradeA.forEach((p:any)=>{if(p.pos!=="PICK"&&uNames.indexOf(p.name)>=0){aOnU=1;}});
@@ -2699,9 +2703,11 @@ if(aAge!=null&&bAge!=null){}
 return{aAge:aAge,bAge:bAge,aAges:aAges,bAges:bAges};
 }
 function tVal(side,fa){return side.reduce(function(s,x){return s+(x.pos==="PICK"?x.est:Math.max(0,x.tradeVal));},0)}
-function verdict(){var diff=tvA-tvB;var maxVal=Math.max(tvA,tvB);if(maxVal===0)return{txt:"Fair Trade",sub:"Both sides get equal value",c:"#22c55e",pct:50};var pct=Math.abs(diff)/maxVal*100;if(pct<8) return {txt:"Fair Trade",sub:"Both sides get equal value",c:"#22c55e",pct:50};if(diff>0)return{txt:"Team A Overpays",sub:"Team B wins by "+pct.toFixed(0)+"%",c:"#ef4444",pct:Math.max(15,50-pct/2)};return {txt:"Team B Overpays",sub:"Team A wins by "+pct.toFixed(0)+"%",c:"#f59e0b",pct:Math.min(85,50+pct/2)};}}
-// ══════════════════════════════════════════════════════════════// LEAGUE INTELLIGENCE ENGINE (Prompt 16)// ══════════════════════════════════════════════════════════════function computeOptimalLineup(rosters:any[],isSF:boolean,tePremium:boolean){var posRanks:{[pos:string]:any[]}={};return{lineup:[],posRanks:posRanks};}
-// Paywall component for feature gatingfunction PaywallCard(feature:string){return React.createElement("div",{style:{background:"#1a1829",border:"1px solid #7c4dff",borderRadius:12,padding:24,textAlign:"center"}},React.createElement("h3",{style:{color:"#7c4dff",marginBottom:12}},"Premium Feature"),React.createElement("p",{style:{color:"#9b96b8",marginBottom:16}},"Sign In to Continue"),React.createElement("button",{onClick:function(){setAuthMode("signup");},style:{background:"#7c4dff",color:"#fff",padding:"12px 24px",borderRadius:8,border:"none",fontWeight:700,cursor:"pointer"}},"Create Account"));}
+function verdict(){var diff=tvA-tvB;var maxVal=Math.max(tvA,tvB);if(maxVal===0)return{txt:"Fair Trade",sub:"Both sides get equal value",c:"#22c55e",pct:50};var pct=Math.abs(diff)/maxVal*100;if(pct<8) return {txt:"Fair Trade",sub:"Both sides get equal value",c:"#22c55e",pct:50};if(diff>0)return{txt:"Team A Overpays",sub:"Team B wins by "+pct.toFixed(0)+"%",c:"#ef4444",pct:Math.max(15,50-pct/2)};return {txt:"Team B Overpays",sub:"Team A wins by "+pct.toFixed(0)+"%",c:"#f59e0b",pct:Math.min(85,50+pct/2)}}
+  // League Intelligence Engine (Prompt 16)
+  function computeOptimalLineup(rosters:any[],isSF:boolean,tePremium:boolean){var posRanks:{[pos:string]:any[]}={};return{lineup:[],posRanks:posRanks};}
+  // Paywall component for feature gating
+  function PaywallCard(feature:string){return React.createElement("div",{style:{background:"#1a1829",border:"1px solid #7c4dff",borderRadius:12,padding:24,textAlign:"center"}},React.createElement("h3",{style:{color:"#7c4dff",marginBottom:12}},"Premium Feature"),React.createElement("p",{style:{color:"#9b96b8",marginBottom:16}},"Sign In to Continue"),React.createElement("button",{onClick:function(){setAuthMode("signup");},style:{background:"#7c4dff",color:"#fff",padding:"12px 24px",borderRadius:8,border:"none",fontWeight:700,cursor:"pointer"}},"Create Account"));}
 export default function App(){
   var validTabs=["trade","league","rankings","reports","admin"];
   var [tab,setTabRaw]=useState(function(){

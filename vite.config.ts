@@ -1092,6 +1092,7 @@ function spaRoutesPlugin() {
 
       // 1. Generate /nfl/ team directory (all 32 teams)
       const nflDirPath = resolve(distDir, 'nfl')
+      if (!existsSync(nflDirPath)) mkdirSync(nflDirPath, { recursive: true })
       const teams = getTeams()
       const teamDirHtml = generateTeamDirectoryHtml(appScripts, appPreloads, darkModeScript)
       writeFileSync(resolve(nflDirPath, 'index.html'), teamDirHtml)
