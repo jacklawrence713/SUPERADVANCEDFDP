@@ -2671,7 +2671,8 @@ function AnalyticsDashboard({T,data,loading,onLoad}:{T:any,data:any,loading:bool
 
   var [faabA,setFaabA]=useState(0);
   var [faabB,setFaabB]=useState(0);
-  var tvA=tVal(tradeA,faabA),tvB=tVal(tradeB,faabB);function buildTradeContext(){
+  var tvA=tVal(tradeA,faabA),tvB=tVal(tradeB,faabB);
+// Platform-specific import functionsfunction doEspnImport(){}function doYahooImport(){}function doSleeperImport(){}function buildTradeContext(){
 var rosterImpact=null;if(leagueIntel&&leagueIntel.hasSlotData&&leagueIntel.starterSlots){rosterImpact={};}
 var posImpact:any[]=[];var uNames:string[]=[];var aOnU=0,bOnU=0;
 tradeA.forEach((p:any)=>{if(p.pos!=="PICK"&&uNames.indexOf(p.name)>=0){aOnU=1;}});
@@ -2688,7 +2689,6 @@ var ageA={avg:null},ageB={avg:null};
 var draftCap={valSent:0,valReceived:0,sent:[],received:[],net:0};
 return{rosterImpact:rosterImpact,posImpact:posImpact,userSide:userSide,afterP:afterP,onRoster:onMy,otherTeam:otherTeam,warnings:warnings,fmtNotes:fmtNotes,ageA:ageA,ageB:ageB,draftCap:draftCap};
 }
-// Platform-specific import functionsfunction doEspnImport(){}function doYahooImport(){}function doSleeperImport(){}
 var redraftVal=computeRedraftTradeVal("QB",1,2000,{isSF:false});
 function genAiAnalysis(tradeA:any[],tradeB:any[]){
 var aAges=tradeA.filter((p:any)=>p.age&&p.age>0).map((p:any)=>p.age);
@@ -2698,7 +2698,6 @@ var bAge=bAges.length>0?bAges.reduce((a,b)=>a+b)/bAges.length:null;
 if(aAge!=null&&bAge!=null){}
 return{aAge:aAge,bAge:bAge,aAges:aAges,bAges:bAges};
 }
-function genCounterOffer(){}
 function tVal(side,fa){return side.reduce(function(s,x){return s+(x.pos==="PICK"?x.est:Math.max(0,x.tradeVal));},0)}
 function verdict(){var diff=tvA-tvB;var maxVal=Math.max(tvA,tvB);if(maxVal===0)return{txt:"Fair Trade",sub:"Both sides get equal value",c:"#22c55e",pct:50};var pct=Math.abs(diff)/maxVal*100;if(pct<8) return {txt:"Fair Trade",sub:"Both sides get equal value",c:"#22c55e",pct:50};if(diff>0)return{txt:"Team A Overpays",sub:"Team B wins by "+pct.toFixed(0)+"%",c:"#ef4444",pct:Math.max(15,50-pct/2)};return {txt:"Team B Overpays",sub:"Team A wins by "+pct.toFixed(0)+"%",c:"#f59e0b",pct:Math.min(85,50+pct/2)};}}
 // ══════════════════════════════════════════════════════════════// LEAGUE INTELLIGENCE ENGINE (Prompt 16)// ══════════════════════════════════════════════════════════════function computeOptimalLineup(rosters:any[],isSF:boolean,tePremium:boolean){var posRanks:{[pos:string]:any[]}={};return{lineup:[],posRanks:posRanks};}
