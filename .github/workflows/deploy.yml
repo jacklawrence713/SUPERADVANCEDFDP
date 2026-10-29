@@ -25,6 +25,8 @@ jobs:
       - run: npm install
       - run: npm run typecheck
       - run: npm run test:run
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
       - run: npm run build
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
