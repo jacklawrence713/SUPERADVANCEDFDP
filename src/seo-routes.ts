@@ -366,6 +366,78 @@ const PLAYER_DIRECTORIES: SeoRoute[] = [
 ]
 
 /**
+ * Research & market analysis pages (Phase 1)
+ */
+const RESEARCH_PAGES: SeoRoute[] = [
+  {
+    slug: '/fdp-market-index/',
+    title: 'FDP Market Index | Dynasty Fantasy Football Market Metrics',
+    description:
+      'Proprietary FDP Market Index - Aggregate dynasty fantasy football market metrics. See position strength, top player values, and market composition.',
+    category: 'hub',
+    priority: 0.85,
+    changefreq: 'weekly',
+    h1: 'FDP Market Index',
+    usesPlayerData: true,
+    navGroup: 'Resources',
+    dynamic: true,
+  },
+  {
+    slug: '/dynasty-value-movers/',
+    title: 'Dynasty Value Movers | Biggest Risers & Fallers',
+    description:
+      'See which dynasty players are rising and falling in FDP Value. Track the biggest value movers in dynasty fantasy football.',
+    category: 'hub',
+    priority: 0.8,
+    changefreq: 'weekly',
+    h1: 'Dynasty Value Movers',
+    usesPlayerData: true,
+    navGroup: 'Resources',
+    dynamic: true,
+  },
+]
+
+/**
+ * NFL Team Hubs (Phase 1) - Fantasy football content for all 32 teams
+ */
+const NFL_TEAM_HUBS: SeoRoute[] = [
+  {
+    slug: '/nfl/',
+    title: 'NFL Teams Fantasy Football | Dynasty Guides for All 32 Teams',
+    description:
+      'Explore fantasy football dynasty guides for all 32 NFL teams. View team rosters, highest-value assets, and trading recommendations.',
+    category: 'directory',
+    priority: 0.85,
+    changefreq: 'monthly',
+    h1: 'NFL Teams Fantasy Football',
+    navGroup: 'Teams',
+    dynamic: true,
+  },
+  // Dynamic team hub routes: /nfl/{slug}/fantasy-football/ (32 URLs)
+  // Each page shows top 15 players by FDP Value, position breakdown, trade analyzer links
+  // Priority: 0.8, usesPlayerData: true, changefreq: weekly
+]
+
+/**
+ * Individual player pages (Phase 1 - Dynamic)
+ * ~1,000 URLs generated at build time from player database
+ * Both indexable (~686 URLs) and noindex (~314 URLs) based on FDP Value threshold
+ */
+const DYNAMIC_PLAYER_PAGES: SeoRoute = {
+  slug: '/players/{slug}/',
+  title: 'Dynasty Player Page | Trade Value & Analysis',
+  description:
+    'Dynasty player page with trade value, rankings, comparable players, and trading guidance.',
+  category: 'directory',
+  priority: 0.6,
+  changefreq: 'weekly',
+  h1: 'Player Profile',
+  usesPlayerData: true,
+  dynamic: true,
+  index: true, // Indexable based on FDP Value threshold
+}
+
+/**
  * Topical authority hubs
  */
 const AUTHORITY_HUBS: SeoRoute[] = [
@@ -560,6 +632,9 @@ export const SEO_ROUTES: SeoRoute[] = [
   ...SUPERFLEX_RANKINGS,
   ...TE_PREMIUM_RANKINGS,
   ...PLAYER_DIRECTORIES,
+  ...RESEARCH_PAGES,
+  ...NFL_TEAM_HUBS,
+  DYNAMIC_PLAYER_PAGES,
   ...AUTHORITY_HUBS,
   ...STRATEGY_PAGES,
   ...TRUST_PAGES,

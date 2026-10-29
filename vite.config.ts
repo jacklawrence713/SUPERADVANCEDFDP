@@ -18,6 +18,10 @@ import { generateBuyLowHtml, generateSellHighHtml, generateDraftPickValuesHtml }
 import { generateAboutHtml, generateMethodologyHtml, generateEditorialPolicyHtml } from './src/seo-trust-pages'
 import { generateEnhancedPlayerHtml } from './src/seo-player-pages'
 import { generateSuperfexRankingPageHtml, generateTePremiumRankingPageHtml, generateIdpOverallRankingPageHtml } from './src/seo-format-rankings'
+import { generateTeamDirectoryHtml, getTeams, getTeamBySlug } from './src/seo-team-directory'
+import { generateTeamHubHtml } from './src/seo-team-hubs'
+import { generateValueMoversHtml } from './src/seo-value-movers'
+import { generateMarketIndexHtml } from './src/seo-market-index'
 import { SEO_ROUTES, findRoute } from './src/seo-routes'
 import { generatePlayerDirectories, generateRegistryLandingPages } from './src/build-seo-integration'
 import { generateSitemap as generateSitemapRegistry } from './src/build-sitemap'
@@ -819,7 +823,18 @@ function spaRoutesPlugin() {
     name: 'spa-routes',
     closeBundle() {
       const distDir = resolve(__dirname, 'dist')
-      const index = readFileSync(resolve(distDir, 'index.html'), 'utf-8')
+      if (!existsSync(distDir)) mkdirSync(distDir, { recursive: true })
+
+
+      // Handle case where index.html hasn't been written yet by Vite
+      const indexPath = resolve(distDir, 'index.html')
+      if (!existsSync(indexPath)) {
+        // If index.html doesn't exist, copy it from root and process
+        const rootIndex = readFileSync(resolve(__dirname, 'index.html'), 'utf-8')
+        writeFileSync(indexPath, rootIndex)
+      }
+
+      const index = readFileSync(indexPath, 'utf-8')
 
       // 404.html for GitHub Pages SPA fallback
       writeFileSync(resolve(distDir, '404.html'), index)
@@ -1070,6 +1085,84 @@ function spaRoutesPlugin() {
       console.log(`[spa-routes] Generated sitemap.xml with ${indexable.length} player + ${dirUrls.length} directory + ${landingUrls.length} landing pages`)
 
       // Phase 7: Generate Dynasty Authority Hub
+
+      // ════════════════════════════════════════════════════════════════
+      // PHASE 1: NFL TEAM HUBS, MARKET INDEX, VALUE MOVERS, PLAYER PAGES
+      // ════════════════════════════════════════════════════════════════
+
+      // 1. Generate /nfl/ team directory (all 32 teams)
+      const nflDirPath = resolve(distDir, 'nfl')
+      const teams = getTeams()
+      const teamDirHtml = generateTeamDirectoryHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(nflDirPath, 'index.html'), teamDirHtml)
+      console.log('[spa-routes] Generated /nfl/ team directory')
+
+      // 2. Generate individual team hubs for all 32 NFL teams
+      let teamHubsGenerated = 0
+      for (const team of teams) {
+        // Find all players for this team
+        const teamPlayers = ranked.filter(p => p.team === team.short)
+        
+        // Build team hub player data
+        const hubPlayerData = teamPlayers.map(p => ({
+          name: p.name,
+          pos: p.pos,
+          age: p.age,
+          tradeVal: p.tradeVal,
+          rank: p.rank,
+          posRank: p.posRank,
+          slug: p.slug
+        }))
+
+        const teamHubData = {
+          teamName: team.name,
+          teamShort: team.short,
+          slug: team.slug,
+          players: hubPlayerData
+        }
+
+        const teamHubDir = resolve(nflDirPath, team.slug, 'fantasy-football')
+        if (!existsSync(teamHubDir)) mkdirSync(teamHubDir, { recursive: true })
+        const tHtml = generateTeamHubHtml(teamHubData, seoData.valuesDate, appScripts, appPreloads, darkModeScript)
+        writeFileSync(resolve(teamHubDir, 'index.html'), tHtml)
+        teamHubsGenerated++
+      }
+      console.log(`[spa-routes] Generated ${teamHubsGenerated} NFL team hubs (/nfl/{team}/fantasy-football/)`)
+
+      // 3. Generate /fdp-market-index/ with market metrics
+      const top100Pcts: { [pos: string]: number } = {}
+      for (const p of ranked.slice(0, 100)) {
+        top100Pcts[p.pos] = (top100Pcts[p.pos] || 0) + 1
+      }
+      for (const pos in top100Pcts) {
+        top100Pcts[pos] = top100Pcts[pos] / 100
+      }
+      
+      const marketMetrics = {
+        avgTop25: Math.round(ranked.slice(0, 25).reduce((s, p) => s + p.tradeVal, 0) / 25),
+        avgTop100: Math.round(ranked.slice(0, 100).reduce((s, p) => s + p.tradeVal, 0) / 100),
+        qbStrength: Math.round(ranked.filter(p => p.pos === 'QB').slice(0, 5).reduce((s, p) => s + p.tradeVal, 0) / 5) || 1000,
+        rbStrength: Math.round(ranked.filter(p => p.pos === 'RB').slice(0, 5).reduce((s, p) => s + p.tradeVal, 0) / 5) || 900,
+        wrStrength: Math.round(ranked.filter(p => p.pos === 'WR').slice(0, 5).reduce((s, p) => s + p.tradeVal, 0) / 5) || 850,
+        teStrength: Math.round(ranked.filter(p => p.pos === 'TE').slice(0, 5).reduce((s, p) => s + p.tradeVal, 0) / 5) || 700,
+        idpStrength: Math.round(ranked.filter(p => ['DL', 'LB', 'DB'].includes(p.pos)).slice(0, 5).reduce((s, p) => s + p.tradeVal, 0) / 5) || 300,
+        avgAgeTop100: Math.round((ranked.slice(0, 100).reduce((s, p) => s + p.age, 0) / 100) * 10) / 10,
+        percentTop100ByPos: top100Pcts
+      }
+
+      const mktDir = resolve(distDir, 'fdp-market-index')
+      if (!existsSync(mktDir)) mkdirSync(mktDir, { recursive: true })
+      const mktHtml = generateMarketIndexHtml(marketMetrics, players.length, seoData.valuesDate, appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(mktDir, 'index.html'), mktHtml)
+      console.log('[spa-routes] Generated /fdp-market-index/ with real market metrics')
+
+      // 4. Generate /dynasty-value-movers/ (infrastructure for future snapshots)
+      const mvDir = resolve(distDir, 'dynasty-value-movers')
+      if (!existsSync(mvDir)) mkdirSync(mvDir, { recursive: true })
+      const mvHtml = generateValueMoversHtml([], [], seoData.valuesDate, appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(mvDir, 'index.html'), mvHtml)
+      console.log('[spa-routes] Generated /dynasty-value-movers/ (value snapshot infrastructure)')
+
       const dynastyHubDir = resolve(distDir, 'dynasty-fantasy-football')
       if (!existsSync(dynastyHubDir)) mkdirSync(dynastyHubDir, { recursive: true })
       const dynastyHubHtml = generateDynastyHubHtml(appScripts, appPreloads, darkModeScript)
