@@ -523,6 +523,9 @@ import { generateBoomBustManagementHubHtml } from './src/seo-boom-bust-managemen
 import { generatePortfolioBalanceHubHtml } from './src/seo-portfolio-balance'
 import { generateContractStructuringHubHtml } from './src/seo-contract-structuring'
 import { generateDeadCapNavigationHubHtml } from './src/seo-dead-cap-navigation'
+import { generateWaiverProjectionsHubHtml } from './src/seo-waiver-projections'
+import { generateBackupRbStrategyHubHtml } from './src/seo-backup-rb-strategy'
+import { generateFlexStreamingStrategyHubHtml } from './src/seo-flex-streaming-strategy'
 function parsePlayers(srcPath: string): Array<{ name: string; pos: string; age: number; team: string; ktcVal?: number; proj: { PPR: number; Half: number; Standard: number }; note?: string }> {
   const src = readFileSync(srcPath, 'utf-8')
   const marker = 'const PLAYERS=['
@@ -1625,6 +1628,29 @@ function spaRoutesPlugin() {
       const deadCapHtml = generateDeadCapNavigationHubHtml(appScripts, appPreloads, darkModeScript)
       writeFileSync(resolve(deadCapDir, 'index.html'), deadCapHtml)
       console.log('[spa-routes] Generated /strategy/dead-cap-navigation/ dead cap navigation guide')
+
+      // OPTION B EXPANSION: Additional Waiver & Free Agency Pages
+
+      // Waiver Projections (1 page)
+      const waiverProjDir = resolve(strategyDir, 'waiver-projections')
+      if (!existsSync(waiverProjDir)) mkdirSync(waiverProjDir, { recursive: true })
+      const waiverProjHtml = generateWaiverProjectionsHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(waiverProjDir, 'index.html'), waiverProjHtml)
+      console.log('[spa-routes] Generated /strategy/waiver-projections/ weekly projections guide')
+
+      // Backup RB Strategy (1 page)
+      const backupRbDir = resolve(strategyDir, 'backup-rb-strategy')
+      if (!existsSync(backupRbDir)) mkdirSync(backupRbDir, { recursive: true })
+      const backupRbHtml = generateBackupRbStrategyHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(backupRbDir, 'index.html'), backupRbHtml)
+      console.log('[spa-routes] Generated /strategy/backup-rb-strategy/ handcuff value guide')
+
+      // Flex Streaming Strategy (1 page)
+      const flexDir = resolve(strategyDir, 'flex-streaming-strategy')
+      if (!existsSync(flexDir)) mkdirSync(flexDir, { recursive: true })
+      const flexHtml = generateFlexStreamingStrategyHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(flexDir, 'index.html'), flexHtml)
+      console.log('[spa-routes] Generated /strategy/flex-streaming-strategy/ position flexibility guide')
 
 
 

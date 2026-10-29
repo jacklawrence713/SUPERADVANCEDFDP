@@ -1180,6 +1180,48 @@ const DEAD_CAP_NAVIGATION_PAGES: SeoRoute[] = [
   },
 ]
 
+
+const WAIVER_PROJECTIONS_PAGES: SeoRoute[] = [
+  {
+    slug: '/strategy/waiver-projections/',
+    title: 'Waiver Wire Projections | Weekly Pickups',
+    description: 'Waiver projections guide. Identify breakout candidates and weekly pickup opportunities.',
+    category: 'guide',
+    priority: 0.65,
+    changefreq: 'weekly',
+    h1: 'Waiver Projections',
+    navGroup: 'Strategy',
+    dynamic: true,
+  },
+]
+
+const BACKUP_RB_STRATEGY_PAGES: SeoRoute[] = [
+  {
+    slug: '/strategy/backup-rb-strategy/',
+    title: 'Backup RB Strategy | Handcuff Value Guide',
+    description: 'Backup RB strategy guide. Master handcuff value and backup running back timing.',
+    category: 'guide',
+    priority: 0.65,
+    changefreq: 'monthly',
+    h1: 'Backup RB Strategy',
+    navGroup: 'Strategy',
+    dynamic: true,
+  },
+]
+
+const FLEX_STREAMING_PAGES: SeoRoute[] = [
+  {
+    slug: '/strategy/flex-streaming-strategy/',
+    title: 'Flex Streaming Strategy | Position Flexibility',
+    description: 'Flex streaming guide. Maximize position flexibility and weekly roster construction.',
+    category: 'guide',
+    priority: 0.65,
+    changefreq: 'weekly',
+    h1: 'Flex Streaming',
+    navGroup: 'Strategy',
+    dynamic: true,
+  },
+]
 export const SEO_ROUTES: SeoRoute[] = [
   HOME,
   ...TOOLS,
@@ -1219,6 +1261,9 @@ export const SEO_ROUTES: SeoRoute[] = [
   ...PORTFOLIO_BALANCE_PAGES,
   ...CONTRACT_STRUCTURING_PAGES,
   ...DEAD_CAP_NAVIGATION_PAGES,
+  ...WAIVER_PROJECTIONS_PAGES,
+  ...BACKUP_RB_STRATEGY_PAGES,
+  ...FLEX_STREAMING_PAGES,
   SITEMAP_PAGE,
 ]
 
