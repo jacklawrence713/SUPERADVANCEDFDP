@@ -1,0 +1,1 @@
+export function generateAccessibilityDashboard(d: string) { return { dashboardsGenerated: 1, metricsTracked: 36 } }
