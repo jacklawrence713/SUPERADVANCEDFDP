@@ -2669,7 +2669,38 @@ function AnalyticsDashboard({T,data,loading,onLoad}:{T:any,data:any,loading:bool
   );
 }
 
-function buildTradeContext(tradeA:any[],tradeB:any[],leagueIntel:any,myTeamIdx:number|null,powerRankingTeams:any){var rosterImpact=null;if(leagueIntel&&leagueIntel.hasSlotData&&leagueIntel.starterSlots){rosterImpact={};}var posImpact:any[]=[];var uNames:string[]=[];tradeA.forEach((p:any)=>{var onMy=uNames.indexOf(p.name)>=0;if(onMy){var aOnU=1;}});tradeB.forEach((p:any)=>{var onMy=uNames.indexOf(p.name)>=0;if(onMy){var bOnU=1;}});if(aOnU>0||bOnU>0){}var userSide=aOnU>0&&bOnU>0?null:aOnU>0?"A":"B";if(leagueIntel&&leagueIntel.teams){leagueIntel.teams.forEach(function(t:any,ti:number){});}var offP=tradeB.filter((p:any)=>p.pos!=="PICK");var afterP=offP.filter((p:any)=>p.pos!=="PICK").concat(tradeA.filter((p:any)=>p.pos==="PICK"));var onRoster=true,otherTeam="On another roster:",free="free agent";return{rosterImpact:rosterImpact,posImpact:posImpact,userSide:userSide,afterP:afterP};}
+  var [faabA,setFaabA]=useState(0);
+  var [faabB,setFaabB]=useState(0);
+  var tvA=tVal(tradeA,faabA),tvB=tVal(tradeB,faabB);function buildTradeContext(){
+var rosterImpact=null;if(leagueIntel&&leagueIntel.hasSlotData&&leagueIntel.starterSlots){rosterImpact={};}
+var posImpact:any[]=[];var uNames:string[]=[];var aOnU=0,bOnU=0;
+tradeA.forEach((p:any)=>{if(p.pos!=="PICK"&&uNames.indexOf(p.name)>=0){aOnU=1;}});
+tradeB.forEach((p:any)=>{if(p.pos!=="PICK"&&uNames.indexOf(p.name)>=0){bOnU=1;}});
+var userSide=null;
+if(aOnU>0||bOnU>0){userSide=aOnU>0&&bOnU>0?null:aOnU>0?"A":"B";}
+if(userSide){var uSent=userSide==="A"?tradeA:tradeB;if(powerRankingTeams&&myTeamIdx!=null){}}
+if(leagueIntel&&leagueIntel.teams){leagueIntel.teams.forEach(function(t,ti){});}
+var offP=tradeB.filter((p:any)=>p.pos!=="PICK");
+var afterP=offP.filter((p:any)=>p.pos!=="PICK").concat(tradeA.filter((p:any)=>p.pos==="PICK"));
+var onRoster=true,onMy=false,otherTeam="On another roster:",free="free agent";
+var warnings=[],fmtNotes=[];
+var ageA={avg:null},ageB={avg:null};
+var draftCap={valSent:0,valReceived:0,sent:[],received:[],net:0};
+return{rosterImpact:rosterImpact,posImpact:posImpact,userSide:userSide,afterP:afterP,onRoster:onMy,otherTeam:otherTeam,warnings:warnings,fmtNotes:fmtNotes,ageA:ageA,ageB:ageB,draftCap:draftCap};
+}
+// Platform-specific import functionsfunction doEspnImport(){}function doYahooImport(){}function doSleeperImport(){}
+var redraftVal=computeRedraftTradeVal("QB",1,2000,{isSF:false});
+function genAiAnalysis(tradeA:any[],tradeB:any[]){
+var aAges=tradeA.filter((p:any)=>p.age&&p.age>0).map((p:any)=>p.age);
+var bAges=tradeB.filter((p:any)=>p.age&&p.age>0).map((p:any)=>p.age);
+var aAge=aAges.length>0?aAges.reduce((a,b)=>a+b)/aAges.length:null;
+var bAge=bAges.length>0?bAges.reduce((a,b)=>a+b)/bAges.length:null;
+if(aAge!=null&&bAge!=null){}
+return{aAge:aAge,bAge:bAge,aAges:aAges,bAges:bAges};
+}
+function genCounterOffer(){}
+function tVal(side,fa){return side.reduce(function(s,x){return s+(x.pos==="PICK"?x.est:Math.max(0,x.tradeVal));},0)}
+function verdict(){var diff=tvA-tvB;var maxVal=Math.max(tvA,tvB);if(maxVal===0)return{txt:"Fair Trade",sub:"Both sides get equal value",c:"#22c55e",pct:50};var pct=Math.abs(diff)/maxVal*100;if(pct<8) return {txt:"Fair Trade",sub:"Both sides get equal value",c:"#22c55e",pct:50};if(diff>0)return{txt:"Team A Overpays",sub:"Team B wins by "+pct.toFixed(0)+"%",c:"#ef4444",pct:Math.max(15,50-pct/2)};return {txt:"Team B Overpays",sub:"Team A wins by "+pct.toFixed(0)+"%",c:"#f59e0b",pct:Math.min(85,50+pct/2)};}}
 // ══════════════════════════════════════════════════════════════// LEAGUE INTELLIGENCE ENGINE (Prompt 16)// ══════════════════════════════════════════════════════════════function computeOptimalLineup(rosters:any[],isSF:boolean,tePremium:boolean){var posRanks:{[pos:string]:any[]}={};return{lineup:[],posRanks:posRanks};}
 // Paywall component for feature gatingfunction PaywallCard(feature:string){return React.createElement("div",{style:{background:"#1a1829",border:"1px solid #7c4dff",borderRadius:12,padding:24,textAlign:"center"}},React.createElement("h3",{style:{color:"#7c4dff",marginBottom:12}},"Premium Feature"),React.createElement("p",{style:{color:"#9b96b8",marginBottom:16}},"Sign In to Continue"),React.createElement("button",{onClick:function(){setAuthMode("signup");},style:{background:"#7c4dff",color:"#fff",padding:"12px 24px",borderRadius:8,border:"none",fontWeight:700,cursor:"pointer"}},"Create Account"));}
 export default function App(){
@@ -2803,8 +2834,6 @@ export default function App(){
   var [tSrchB,setTSrchB]=useState("");
   var [tradeRosterSide,setTradeRosterSide]=useState<"A"|"B"|null>(null);
   var [tradeRosterTeam,setTradeRosterTeam]=useState(0);
-  var [faabA,setFaabA]=useState(0);
-  var [faabB,setFaabB]=useState(0);
   var [analyzed,setAnalyzed]=useState(false);
   var [tradeQuota,setTradeQuota]=useState({limit_per_day:2,used_count:0,reserved_count:0,remaining_count:0,quota_date:"",is_unlimited:false,loading:true,error:null});
   async function fetchTradeQuotaStatus(userToken: string) {
@@ -3200,8 +3229,7 @@ export default function App(){
         p.tradeVal=computeDynastyTradeVal(p.pos,p.age,p.ktcVal,p.posRank,p.proj[sKey]||0,{isSF:isSF,sKey:sKey,tePremium:tePremium,idpMode:idpMode});
         p._rawTV=computeDynastyTradeVal(p.pos,p.age,p.ktcVal,p.posRank,p.proj[sKey]||0,{isSF:isSF,sKey:sKey,tePremium:tePremium,idpMode:idpMode},true);
         } else {
-          setSignupConfirmationPending(true);
-          setErr("");
+        p.tradeVal=computeRedraftTradeVal(p.pos,p.age,p.ktcVal,p.posRank,p.proj[sKey]||0,{isSF:isSF,sKey:sKey});
         }
       }
     }
@@ -3472,6 +3500,7 @@ export default function App(){
     function normName(n){return (n||"").toLowerCase().replace(/[''`]/g,"'").replace(/\./g,"").replace(/\s+(jr|sr|ii|iii|iv)$/,"").trim();}
     var rpByName={},rpByNorm={};
     rankedPlayers.forEach(function(p){rpByName[p.name.toLowerCase()]=p;rpByNorm[normName(p.name)]=p;});
+    var byName=rpByName;rankedPlayers.forEach(function(p){var enriched=byName[p.name.toLowerCase()]||p;});
     fetch("https://api.sleeper.app/v1/user/"+slUser.trim()).then(function(r){if(!r.ok)throw new Error("User not found");return r.json();}).then(function(u){
       // Try 2026 first (dynasty offseason), fall back to 2025
       return fetch("https://api.sleeper.app/v1/user/"+u.user_id+"/leagues/nfl/2026").then(function(r){return r.json();}).then(function(leagues2026){
@@ -8384,11 +8413,12 @@ export default function App(){
                 React.createElement("div",{style:{fontSize:13,fontWeight:600,color:T.text}},"Week:"),
                 React.createElement("span",null," Week "+selectedHistoryWeek),
                 React.createElement("select",{value:selectedHistoryWeek,onChange:function(e){setSelectedHistoryWeek(Number(e.target.value));},style:{padding:"6px 10px",borderRadius:8,border:"1px solid "+T.border,background:T.bgInput,color:T.text,fontSize:13,fontWeight:600,cursor:"pointer",minWidth:100,minHeight:44}},
-                  PAST_WEEKS.slice().reverse().map(function(pw){return React.createElement("option",{key:pw.week,value:pw.week},"Week "+pw.week);})
+                  PAST_WEEKS.map(function(pw){return React.createElement("option",{key:pw.week,value:pw.week},"Week "+pw.week);})
                 )
               )
             ),
             (function(){
+              var historicalWeeks=PAST_WEEKS.slice().reverse();
               var selectedHistory=PAST_WEEKS.find(function(pw){return pw.week===selectedHistoryWeek;});
               if(!selectedHistory)return React.createElement("div",{style:{textAlign:"center",padding:"20px",color:T.textDim}},"No week selected");
               var pw=selectedHistory;
