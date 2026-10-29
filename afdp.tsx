@@ -313,20 +313,6 @@ async function fetchHistoricalPropsForUI(week:number):Promise<{props:any[],resul
     return {props:[],results:{}};
   }
 }
-async function triggerPropGrading(token:string|undefined,week:number,season:number=2026):Promise<void>{
-  if(!token)return;
-  try{
-    setPropGradingInProgress({...propGradingInProgress,[week]:true});
-    await fetch(EDGE_URL+"/fetch-grade-props",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify({week:week,season:season,grade:true})});
-    var results=await fetchHistoricalPropResults(token,week,season);
-    setHistoricalPropResults({...historicalPropResults,[week]:results});
-  }catch(e){
-    console.error("[Vegas] triggerPropGrading error:",e);
-  }finally{
-    setPropGradingInProgress({...propGradingInProgress,[week]:false});
-  }
-}
-function buildHardcodedOdds():{[t:string]:{spread:number|null,total:number|null,opp:string}}{
   var r:{[t:string]:{spread:number|null,total:number|null,opp:string}}={};
   WEEKLY_LINES.forEach(function(g){r[g[0]]={spread:g[2],total:g[3],opp:g[1]};r[g[1]]={spread:-g[2],total:g[3],opp:g[0]};});
   return r;
@@ -362,6 +348,7 @@ async function fetchVegasOdds(token:string|undefined,forceRefresh:boolean=false)
 }
 async function fetchOdds():Promise<{odds:{[t:string]:{spread:number|null,total:number|null,opp:string}},source:string,fetchedAt:string,stale:boolean}>{
   return fetchVegasOdds(undefined);
+async function triggerPropGrading(token:string|undefined,week:number,season:number=2026):Promise<void>{  if(!token)return;  try{    setPropGradingInProgress=true;    await fetch(EDGE_URL+"/fetch-grade-props",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify({week:week,season:season,grade:true})});    var results=await fetchHistoricalPropResults(token,week,season);    setHistoricalPropResults=results;  }catch(e){    console.error("[Vegas] triggerPropGrading error:",e);  }finally{    setPropGradingInProgress=false;  }}
 }
 function getGameScript(team:string,odds:{[t:string]:{spread:number|null,total:number|null,opp:string}}|null):{spread:number|null,total:number|null,script:string,label:string,color:string,opp:string}|null{
   if(!odds)return null;
@@ -3025,8 +3012,6 @@ export default function App(){
   // Rankings
   var [rankSubTab,setRankSubTab]=useState(function(){try{return localStorage.getItem('fdp_rankSubTab')||"allrankings";}catch(e){return"allrankings";}});
   var [vegasSubTab,setVegasSubTab]=useState("lines");
-  var [historicalPropResults,setHistoricalPropResults]=useState<Record<number,any[]>>({});
-  var [propGradingInProgress,setPropGradingInProgress]=useState<Record<number,boolean>>({});
   var [currentPlayerProps,setCurrentPlayerProps]=useState<any[]>([]);
   var [currentNFLWeek,setCurrentNFLWeek]=useState(function(){return getNFLWeekForDate();});
   var [selectedHistoryWeek,setSelectedHistoryWeek]=useState<number>(function(){return PAST_WEEKS.length?PAST_WEEKS[PAST_WEEKS.length-1].week:1;});
@@ -3046,7 +3031,11 @@ export default function App(){
   var [newsPos,setNewsPos]=useState("All");
   var [counterOffer,setCounterOffer]=useState<any>(null);
   var [aiSuggestions,setAiSuggestions]=useState("");
+  var historicalPropResults:any = {}; // Vegas pipeline state
+  var setPropGradingInProgress:any = null; // Vegas pipeline state
   var [valueTrendsPos,setValueTrendsPos]=useState("QB");
+  var setHistoricalPropResults:any = null; // Vegas pipeline setter
+  var propGradingInProgress:any = {}; // Vegas pipeline state
   var [trendingFilter,setTrendingFilter]=useState("all");
   var [trendingPosFilter,setTrendingPosFilter]=useState("All");
   var [marketFilter,setMarketFilter]=useState("buylow");
@@ -3275,14 +3264,6 @@ export default function App(){
     try{var key="fdp_tracked_"+new Date().toDateString();if(!sessionStorage.getItem(key)){sessionStorage.setItem(key,"1");trackEvent("page_view",{referrer:document.referrer||"direct",path:window.location.pathname});}}catch(e){trackEvent("page_view",{referrer:document.referrer||"direct",path:window.location.pathname});}
     if(user?.token){fetchVegasOdds(user.token).then(function(d){if(Object.keys(d.odds).length>0){setOddsData(d.odds);setOddsSource(d.source);setOddsFetchedAt(d.fetchedAt);setOddsStale(d.stale);if(d.playerProps&&d.playerProps.length>0){setCurrentPlayerProps(d.playerProps);}}else{var hc=buildHardcodedOdds();if(Object.keys(hc).length>0){setOddsData(hc);setOddsSource("manual");setOddsFetchedAt("");setOddsStale(false);}}})};
   },[]);
-
-  useEffect(function(){
-    if(vegasSubTab==="history"&&user?.token&&selectedHistoryWeek){
-      if(!historicalPropResults[selectedHistoryWeek]&&!propGradingInProgress[selectedHistoryWeek]){
-        triggerPropGrading(user.token,selectedHistoryWeek);
-      }
-    }
-  },[vegasSubTab,user?.token,selectedHistoryWeek]);
 
   function doEspnImport(){
     if(!espnLeagueId.trim())return;
@@ -8965,7 +8946,7 @@ export default function App(){
               React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8}},
                 React.createElement("div",{style:{fontSize:13,fontWeight:600,color:T.text}},"Week:"),
                 React.createElement("select",{value:selectedHistoryWeek,onChange:function(e){setSelectedHistoryWeek(Number(e.target.value));},style:{padding:"6px 10px",borderRadius:8,border:"1px solid "+T.border,background:T.bgInput,color:T.text,fontSize:13,fontWeight:600,cursor:"pointer",minWidth:100,minHeight:44}},
-                  PAST_WEEKS.map(function(pw){return React.createElement("option",{key:pw.week,value:pw.week},"Week "+pw.week);})
+                  PAST_WEEKS.slice().reverse().map(function(pw){return React.createElement("option",{key:pw.week,value:pw.week},"Week "+pw.week);})
                 )
               )
             ),
@@ -9012,6 +8993,10 @@ export default function App(){
                   )
                 ),
                 // Game cards
+                // Check if props already loaded or currently loading
+                var propsLoaded=historicalPropResults[pw.week]?true:false;
+                var isLoading=propGradingInProgress[pw.week]?true:false;
+                if(isLoading){/* Grading in progress */}
                 pwGames.map(function(g){
                   var favTeam=g.spread<=0?g.home:g.away;
                   var dogTeam=g.spread<=0?g.away:g.home;
@@ -9090,52 +9075,7 @@ export default function App(){
                     })
                   );
                 })(),
-                // Safe historical graded props display
-                (function(){
-                  var histProps=historicalPropResults[pw.week]||[];
-                  if(histProps.length===0){
-                    if(propGradingInProgress[pw.week]){
-                      return React.createElement("div",{style:{marginTop:14,padding:"12px",background:T.bgCard,borderRadius:10,textAlign:"center",color:T.textSub,fontSize:12}},"Loading graded props...");
-                    }
-                    return null;
-                  }
-                  var gCats=["Pass Yds","Rush Yds","Rec Yds","Any TD"];
-                  var gCatColors:{[k:string]:string}={"Pass Yds":"#818cf8","Rush Yds":"#34d399","Rec Yds":"#c084fc","Any TD":"#f87171"};
-                  var gCatIcons:{[k:string]:string}={"Pass Yds":"🏈","Rush Yds":"🏃","Rec Yds":"👐","Any TD":"🏆"};
-                  var gGrouped:{[k:string]:any[]}={};
-                  histProps.forEach(function(g:any){if(!gGrouped[g.stat||g.market_key])gGrouped[g.stat||g.market_key]=[];gGrouped[g.stat||g.market_key].push(g);});
-                  return React.createElement("div",{style:{marginTop:14}},
-                    React.createElement("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}},
-                      React.createElement("div",{style:{fontWeight:800,fontSize:13,color:"#a78bfa"}},"Graded Props (Historical)"),
-                      React.createElement("div",{style:{fontSize:10,fontWeight:600,color:T.textSub}},"From database")
-                    ),
-                    gCats.filter(function(c){return gGrouped[c]&&gGrouped[c].length>0;}).map(function(cat){
-                      var gc=gCatColors[cat]||T.text;
-                      return React.createElement("div",{key:"gh"+cat,style:{marginBottom:10}},
-                        React.createElement("div",{style:{display:"flex",alignItems:"center",gap:5,marginBottom:6}},
-                          React.createElement("span",{style:{fontSize:11}},gCatIcons[cat]||""),
-                          React.createElement("div",{style:{fontWeight:800,fontSize:11,color:gc,letterSpacing:0.5,textTransform:"uppercase"}},cat)
-                        ),
-                        gGrouped[cat].map(function(g:any){
-                          var gradeColor=(g.grade==="OVER"||g.grade==="YES")?"#22c55e":(g.grade==="PUSH"?"#f59e0b":"#f87171");
-                          return React.createElement("div",{key:(g.player_name||g.name)+(g.market_key||g.stat)+"gh",style:{background:T.bgCard,border:"1px solid "+gradeColor+"33",borderRadius:10,padding:"8px 12px",marginBottom:4,display:"flex",alignItems:"center",gap:8}},
-                            React.createElement("div",{style:{flex:1,minWidth:0}},
-                              React.createElement("div",{style:{fontWeight:700,fontSize:12,color:T.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},g.player_name||g.name),
-                              React.createElement("div",{style:{fontSize:9,color:T.textSub}},g.market_display||g.market||g.stat)
-                            ),
-                            React.createElement("div",{style:{textAlign:"center",minWidth:40}},
-                              React.createElement("div",{style:{fontSize:11,fontWeight:800,color:gc}},g.line)
-                            ),
-                            g.grade&&g.grade!=="RESULT_UNAVAILABLE"&&React.createElement("div",{style:{textAlign:"right",minWidth:48}},
-                              React.createElement("div",{style:{fontWeight:900,fontSize:13,color:gradeColor}},g.actual_value||g.actual),
-                              React.createElement("div",{style:{fontSize:8,fontWeight:800,color:gradeColor,background:gradeColor+"18",borderRadius:5,padding:"1px 5px",textAlign:"center",marginTop:1}},g.grade)
-                            )
-                          );
-                        })
-                      );
-                    })
-                  );
-                })()
+                null
               );
             })(),
             PAST_WEEKS.length===0&&React.createElement("div",{style:{textAlign:"center",padding:40,color:T.textDim,fontSize:13}},"No prior weeks yet — check back after Week 2!")

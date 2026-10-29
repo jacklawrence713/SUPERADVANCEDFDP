@@ -40,8 +40,7 @@ describe('GATE 0: Confirm Email Compatibility', () => {
     it('signup not treated as error when session null', () => {
       // CRITICAL: NOT using setErr for no-session case
       // setSignupConfirmationPending indicates successful signup with confirmation pending
-      const lines = appSrc.split('
-')
+      const lines = appSrc.split('\n')
       let foundCorrectFlow = false
       for (let i = 0; i < lines.length; i++) {
         if (lines[i].includes('setSignupConfirmationPending(true)') && 
