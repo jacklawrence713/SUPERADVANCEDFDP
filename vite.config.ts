@@ -526,6 +526,8 @@ import { generateDeadCapNavigationHubHtml } from './src/seo-dead-cap-navigation'
 import { generateWaiverProjectionsHubHtml } from './src/seo-waiver-projections'
 import { generateBackupRbStrategyHubHtml } from './src/seo-backup-rb-strategy'
 import { generateFlexStreamingStrategyHubHtml } from './src/seo-flex-streaming-strategy'
+import { generatePreseasonsplanningHubHtml } from './src/seo-preseason-planning'
+import { generatePlayoffPreparationHubHtml } from './src/seo-playoff-preparation'
 function parsePlayers(srcPath: string): Array<{ name: string; pos: string; age: number; team: string; ktcVal?: number; proj: { PPR: number; Half: number; Standard: number }; note?: string }> {
   const src = readFileSync(srcPath, 'utf-8')
   const marker = 'const PLAYERS=['
@@ -1651,6 +1653,22 @@ function spaRoutesPlugin() {
       const flexHtml = generateFlexStreamingStrategyHubHtml(appScripts, appPreloads, darkModeScript)
       writeFileSync(resolve(flexDir, 'index.html'), flexHtml)
       console.log('[spa-routes] Generated /strategy/flex-streaming-strategy/ position flexibility guide')
+
+      // OPTION C EXPANSION: Additional Seasonal Trends & Timing Pages
+
+      // Preseason Planning (1 page)
+      const preseasonsDir = resolve(analysisDir, 'preseason-planning')
+      if (!existsSync(preseasonsDir)) mkdirSync(preseasonsDir, { recursive: true })
+      const preseasonsHtml = generatePreseasonsplanningHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(preseasonsDir, 'index.html'), preseasonsHtml)
+      console.log('[spa-routes] Generated /analysis/preseason-planning/ preseason preparation guide')
+
+      // Playoff Preparation (1 page)
+      const playoffPrepDir = resolve(analysisDir, 'playoff-preparation')
+      if (!existsSync(playoffPrepDir)) mkdirSync(playoffPrepDir, { recursive: true })
+      const playoffPrepHtml = generatePlayoffPreparationHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(playoffPrepDir, 'index.html'), playoffPrepHtml)
+      console.log('[spa-routes] Generated /analysis/playoff-preparation/ playoff preparation guide')
 
 
 

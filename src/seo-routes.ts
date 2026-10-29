@@ -1222,6 +1222,34 @@ const FLEX_STREAMING_PAGES: SeoRoute[] = [
     dynamic: true,
   },
 ]
+
+const PRESEASON_PLANNING_PAGES: SeoRoute[] = [
+  {
+    slug: '/analysis/preseason-planning/',
+    title: 'Preseason Planning | Dynasty Preparation Guide',
+    description: 'Preseason planning guide. Prepare your roster for the upcoming season with strategy and preparation.',
+    category: 'guide',
+    priority: 0.65,
+    changefreq: 'yearly',
+    h1: 'Preseason Planning',
+    navGroup: 'Analysis',
+    dynamic: true,
+  },
+]
+
+const PLAYOFF_PREPARATION_PAGES: SeoRoute[] = [
+  {
+    slug: '/analysis/playoff-preparation/',
+    title: 'Playoff Preparation Strategy | Championship Timing',
+    description: 'Playoff preparation guide. Position your roster for playoff success and championship positioning.',
+    category: 'guide',
+    priority: 0.65,
+    changefreq: 'monthly',
+    h1: 'Playoff Preparation',
+    navGroup: 'Analysis',
+    dynamic: true,
+  },
+]
 export const SEO_ROUTES: SeoRoute[] = [
   HOME,
   ...TOOLS,
@@ -1264,6 +1292,8 @@ export const SEO_ROUTES: SeoRoute[] = [
   ...WAIVER_PROJECTIONS_PAGES,
   ...BACKUP_RB_STRATEGY_PAGES,
   ...FLEX_STREAMING_PAGES,
+  ...PRESEASON_PLANNING_PAGES,
+  ...PLAYOFF_PREPARATION_PAGES,
   SITEMAP_PAGE,
 ]
 
