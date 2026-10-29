@@ -3236,8 +3236,7 @@ export default function App(){
         } else {
         p.tradeVal=computeRedraftTradeVal(p.pos,p.age,p.ktcVal,p.posRank,p.proj[sKey]||0,{isSF:isSF,sKey:sKey});
         }
-      }
-    }
+    })
     // Warnings
     var warnings=[] as string[];
     if(powerRankingTeams&&myTeamIdx!=null&&!userSide){var ut3=powerRankingTeams[myTeamIdx as number];if(ut3&&ut3.players){var uN3=ut3.players.map(function(p){return p.name;});var a3=tradeA.filter(function(p){return p.pos!=="PICK"&&uN3.indexOf(p.name)>=0;}).length;var b3=tradeB.filter(function(p){return p.pos!=="PICK"&&uN3.indexOf(p.name)>=0;}).length;if(a3>0&&b3>0)warnings.push("Both sides contain your rostered players — roster impact cannot be determined. Use the standalone positional and value analysis above.");}}
@@ -3270,7 +3269,7 @@ export default function App(){
     if(isDynasty&&(aAged.length>0||bAged.length>0))fmtNotes.push("Age and draft picks are significant factors in dynasty.");
     if(!isDynasty&&(picksSent.length>0||picksRcvd.length>0))fmtNotes.push("Draft pick values reflect redraft context.");
     return{posImpact:posImpact,ageA:{avg:avgAgeA,count:aAged.length,prime:aPrime},ageB:{avg:avgAgeB,count:bAged.length,prime:bPrime},draftCap:draftCap,rosterImpact:rosterImpact,warnings:warnings,fmtNotes:fmtNotes,userSide:userSide};
-  }
+  },[sKey,isSF,tePremium,isDynasty,customPPRVal,liveProj,adminTvMult]);
 
   function downloadGradeCard(team:any){
     try{
