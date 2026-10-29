@@ -29,6 +29,16 @@ import { generateLeagueSetupHubHtml, generateLeagueFormatPageHtml } from './src/
 import { generateDraftStrategyHubHtml } from './src/seo-draft-strategy'
 import { generateTradeScenarioHubHtml } from './src/seo-trade-scenarios'
 import { generateRebuildRoadmapHubHtml } from './src/seo-rebuild-roadmaps'
+import { generateKeeperLeagueHubHtml } from './src/seo-keeper-leagues'
+import { generateAuctionStrategyHubHtml } from './src/seo-auction-strategy'
+import { generateBestBallStrategyHubHtml } from './src/seo-best-ball-strategy'
+import { generateScoringFormatsHubHtml } from './src/seo-scoring-formats'
+import { generatePlayerDevelopmentHubHtml } from './src/seo-player-development'
+import { generateBreakoutCandidatesHubHtml } from './src/seo-breakout-candidates'
+import { generateLeagueBenchmarkingHubHtml } from './src/seo-league-benchmarking'
+import { generateDynastyMetricsHubHtml } from './src/seo-dynasty-metrics'
+import { generateInjuryAnalysisHubHtml } from './src/seo-injury-analysis'
+import { generateLeagueComparisonHubHtml } from './src/seo-league-comparison'
 import { SEO_ROUTES, findRoute } from './src/seo-routes'
 import { generatePlayerDirectories, generateRegistryLandingPages } from './src/build-seo-integration'
 import { generateSitemap as generateSitemapRegistry } from './src/build-sitemap'
@@ -1369,6 +1379,89 @@ function spaRoutesPlugin() {
       const rebuildHtml = generateRebuildRoadmapHubHtml(appScripts, appPreloads, darkModeScript)
       writeFileSync(resolve(rebuildDir, 'index.html'), rebuildHtml)
       console.log('[spa-routes] Generated /guides/rebuild-strategy/ rebuild roadmap guide')
+
+      // PHASE 4: ADVANCED FORMATS, PLAYER ANALYSIS & ANALYTICS
+      // ════════════════════════════════════════════════════════════════
+
+      // Option A: Advanced Format Guides (5 pages)
+      const advancedGuideDir = resolve(distDir, 'guides')
+      if (!existsSync(advancedGuideDir)) mkdirSync(advancedGuideDir, { recursive: true })
+
+      // Keeper leagues
+      const keeperDir = resolve(advancedGuideDir, 'keeper-leagues')
+      if (!existsSync(keeperDir)) mkdirSync(keeperDir, { recursive: true })
+      const keeperHtml = generateKeeperLeagueHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(keeperDir, 'index.html'), keeperHtml)
+      console.log('[spa-routes] Generated /guides/keeper-leagues/ keeper strategy guide')
+
+      // Auction strategy
+      const auctionDir = resolve(advancedGuideDir, 'auction-draft-strategy')
+      if (!existsSync(auctionDir)) mkdirSync(auctionDir, { recursive: true })
+      const auctionHtml = generateAuctionStrategyHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(auctionDir, 'index.html'), auctionHtml)
+      console.log('[spa-routes] Generated /guides/auction-draft-strategy/ auction guide')
+
+      // Best ball
+      const bestBallDir = resolve(advancedGuideDir, 'best-ball-strategy')
+      if (!existsSync(bestBallDir)) mkdirSync(bestBallDir, { recursive: true })
+      const bestBallHtml = generateBestBallStrategyHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(bestBallDir, 'index.html'), bestBallHtml)
+      console.log('[spa-routes] Generated /guides/best-ball-strategy/ best ball guide')
+
+      // Scoring formats
+      const scoringDir = resolve(advancedGuideDir, 'scoring-formats')
+      if (!existsSync(scoringDir)) mkdirSync(scoringDir, { recursive: true })
+      const scoringHtml = generateScoringFormatsHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(scoringDir, 'index.html'), scoringHtml)
+      console.log('[spa-routes] Generated /guides/scoring-formats/ scoring format guide')
+
+      // League comparison
+      const leagueCompDir = resolve(advancedGuideDir, 'league-comparison')
+      if (!existsSync(leagueCompDir)) mkdirSync(leagueCompDir, { recursive: true })
+      const leagueCompHtml = generateLeagueComparisonHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(leagueCompDir, 'index.html'), leagueCompHtml)
+      console.log('[spa-routes] Generated /guides/league-comparison/ league comparison guide')
+
+      // Option B: Player Analysis Pages (2 pages)
+      const analysisDir = resolve(distDir, 'analysis')
+      if (!existsSync(analysisDir)) mkdirSync(analysisDir, { recursive: true })
+
+      // Player development
+      const devDir = resolve(analysisDir, 'player-development')
+      if (!existsSync(devDir)) mkdirSync(devDir, { recursive: true })
+      const devHtml = generatePlayerDevelopmentHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(devDir, 'index.html'), devHtml)
+      console.log('[spa-routes] Generated /analysis/player-development/ development arc analysis')
+
+      // Breakout candidates
+      const breakoutDir = resolve(analysisDir, 'breakout-candidates')
+      if (!existsSync(breakoutDir)) mkdirSync(breakoutDir, { recursive: true })
+      const breakoutHtml = generateBreakoutCandidatesHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(breakoutDir, 'index.html'), breakoutHtml)
+      console.log('[spa-routes] Generated /analysis/breakout-candidates/ breakout identification')
+
+      // Option C: Analytics Pages (3 pages)
+      // League benchmarking
+      const benchmarkDir = resolve(analysisDir, 'league-benchmarking')
+      if (!existsSync(benchmarkDir)) mkdirSync(benchmarkDir, { recursive: true })
+      const benchmarkHtml = generateLeagueBenchmarkingHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(benchmarkDir, 'index.html'), benchmarkHtml)
+      console.log('[spa-routes] Generated /analysis/league-benchmarking/ benchmarking guide')
+
+      // Dynasty metrics
+      const metricsDir = resolve(analysisDir, 'dynasty-metrics')
+      if (!existsSync(metricsDir)) mkdirSync(metricsDir, { recursive: true })
+      const metricsHtml = generateDynastyMetricsHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(metricsDir, 'index.html'), metricsHtml)
+      console.log('[spa-routes] Generated /analysis/dynasty-metrics/ advanced statistics')
+
+      // Injury risk
+      const injuryDir = resolve(analysisDir, 'injury-risk')
+      if (!existsSync(injuryDir)) mkdirSync(injuryDir, { recursive: true })
+      const injuryHtml = generateInjuryAnalysisHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(injuryDir, 'index.html'), injuryHtml)
+      console.log('[spa-routes] Generated /analysis/injury-risk/ injury assessment')
+
 
 
 

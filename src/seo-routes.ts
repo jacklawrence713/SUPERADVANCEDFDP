@@ -762,6 +762,130 @@ const REBUILD_PAGES: SeoRoute[] = [
 ]
 
 
+
+/**
+ * Phase 4: Advanced Formats, Player Analysis, & Analytics (20+ pages)
+ */
+const ADVANCED_FORMAT_PAGES: SeoRoute[] = [
+  {
+    slug: '/guides/keeper-leagues/',
+    title: 'Keeper League Strategy | Keeper vs Dynasty',
+    description: 'Keeper league guide. Compare keeper vs dynasty strategies and keeper cost evaluation.',
+    category: 'guide',
+    priority: 0.7,
+    changefreq: 'monthly',
+    h1: 'Keeper League Strategy',
+    navGroup: 'Guides',
+    dynamic: true,
+  },
+  {
+    slug: '/guides/auction-draft-strategy/',
+    title: 'Auction Draft Strategy | Bidding Tactics',
+    description: 'Auction draft guide. Master bidding strategy and value identification in auction formats.',
+    category: 'guide',
+    priority: 0.7,
+    changefreq: 'monthly',
+    h1: 'Auction Draft Strategy',
+    navGroup: 'Guides',
+    dynamic: true,
+  },
+  {
+    slug: '/guides/best-ball-strategy/',
+    title: 'Best Ball League Strategy | No-Lineup Format',
+    description: 'Best ball strategy guide. Draft tactics for automatic lineup optimization.',
+    category: 'guide',
+    priority: 0.65,
+    changefreq: 'monthly',
+    h1: 'Best Ball Strategy',
+    navGroup: 'Guides',
+    dynamic: true,
+  },
+  {
+    slug: '/guides/scoring-formats/',
+    title: 'Scoring Formats | PPR vs Half-PPR vs Standard',
+    description: 'Scoring format guide. Understand PPR, Half-PPR, and Standard scoring impact on values.',
+    category: 'guide',
+    priority: 0.65,
+    changefreq: 'monthly',
+    h1: 'Scoring Formats',
+    navGroup: 'Guides',
+    dynamic: true,
+  },
+  {
+    slug: '/guides/league-comparison/',
+    title: 'League Type Comparison | Keeper vs Dynasty vs Best Ball',
+    description: 'Compare league formats. Understand keeper, dynasty, best ball, and redraft differences.',
+    category: 'guide',
+    priority: 0.7,
+    changefreq: 'monthly',
+    h1: 'League Comparison',
+    navGroup: 'Guides',
+    dynamic: true,
+  },
+]
+
+const PLAYER_ANALYSIS_PAGES: SeoRoute[] = [
+  {
+    slug: '/analysis/player-development/',
+    title: 'Player Development Arcs | Career Trajectories',
+    description: 'Analyze player development patterns and career arcs. Predict future performance based on trajectory.',
+    category: 'guide',
+    priority: 0.65,
+    changefreq: 'monthly',
+    h1: 'Player Development',
+    navGroup: 'Analysis',
+    dynamic: true,
+  },
+  {
+    slug: '/analysis/breakout-candidates/',
+    title: 'Breakout Candidates | Rising Fantasy Stars',
+    description: 'Identify breakout candidates. Discover rising stars with role expansion and opportunity.',
+    category: 'guide',
+    priority: 0.7,
+    changefreq: 'weekly',
+    h1: 'Breakout Candidates',
+    navGroup: 'Analysis',
+    dynamic: true,
+  },
+]
+
+const ANALYTICS_PAGES: SeoRoute[] = [
+  {
+    slug: '/analysis/league-benchmarking/',
+    title: 'League Benchmarking | Compare Your League',
+    description: 'Benchmark your league. Compare roster construction, ADP, and competitiveness metrics.',
+    category: 'guide',
+    priority: 0.6,
+    changefreq: 'monthly',
+    h1: 'League Benchmarking',
+    navGroup: 'Analysis',
+    dynamic: true,
+  },
+  {
+    slug: '/analysis/dynasty-metrics/',
+    title: 'Dynasty Metrics | Advanced Statistics',
+    description: 'Advanced dynasty statistics. Understand volume metrics, efficiency, and predictive indicators.',
+    category: 'guide',
+    priority: 0.65,
+    changefreq: 'monthly',
+    h1: 'Dynasty Metrics',
+    navGroup: 'Analysis',
+    dynamic: true,
+  },
+  {
+    slug: '/analysis/injury-risk/',
+    title: 'Injury Risk Assessment | Player Durability',
+    description: 'Assess player injury risk. Understand durability impact on dynasty value.',
+    category: 'guide',
+    priority: 0.6,
+    changefreq: 'weekly',
+    h1: 'Injury Risk Analysis',
+    navGroup: 'Analysis',
+    dynamic: true,
+  },
+]
+
+
 /**
  * Site map (human-readable directory)
  */
@@ -800,6 +924,9 @@ export const SEO_ROUTES: SeoRoute[] = [
   ...DRAFT_STRATEGY_PAGES,
   ...TRADE_SCENARIO_PAGES,
   ...REBUILD_PAGES,
+  ...ADVANCED_FORMAT_PAGES,
+  ...PLAYER_ANALYSIS_PAGES,
+  ...ANALYTICS_PAGES,
   SITEMAP_PAGE,
 ]
 
