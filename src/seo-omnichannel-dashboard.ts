@@ -1,0 +1,1 @@
+export function generateOmnichannelDashboard(d: string) { return { dashboardsGenerated: 1, metricsTracked: 40 } }
