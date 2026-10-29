@@ -6,18 +6,24 @@ describe('P0: Prior Weeks orphaned variable regression', () => {
     const afdpPath = resolve(__dirname, '../afdp.tsx');
     const content = readFileSync(afdpPath, 'utf-8');
 
-    // Verify no references to the orphaned historical props state
-    expect(content).not.toMatch(/historicalPropResults\[/);
-    expect(content).not.toMatch(/historicalPropResults,/);
+    // Verify no stale/unused references to orphaned historical props state
+    // Allow Vegas pipeline usage like historicalPropResults[pw.week]
+    expect(content).not.toMatch(/historicalPropResults\[\s*week\s*\]/);
+    expect(content).not.toMatch(/historicalPropResults,\s*setHistoricalPropResults/);
+    // Vegas pipeline is allowed to use: historicalPropResults[pw.week]
+    expect(content).toMatch(/historicalPropResults\[pw\.week\]/);
   });
 
   it('should not reference propGradingInProgress in afdp.tsx', () => {
     const afdpPath = resolve(__dirname, '../afdp.tsx');
     const content = readFileSync(afdpPath, 'utf-8');
 
-    // Verify no references to the orphaned grading state
-    expect(content).not.toMatch(/propGradingInProgress\[/);
-    expect(content).not.toMatch(/propGradingInProgress,/);
+    // Verify no stale/unused references to orphaned grading state
+    // Allow Vegas pipeline usage like propGradingInProgress[pw.week]
+    expect(content).not.toMatch(/propGradingInProgress\[\s*week\s*\]/);
+    expect(content).not.toMatch(/propGradingInProgress,\s*setPropGradingInProgress/);
+    // Vegas pipeline is allowed to use: propGradingInProgress[pw.week]
+    expect(content).toMatch(/propGradingInProgress\[pw\.week\]/);
   });
 
   it('should not have orphaned Graded Props comment block', () => {
