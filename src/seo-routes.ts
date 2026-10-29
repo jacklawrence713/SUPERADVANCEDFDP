@@ -1250,6 +1250,62 @@ const PLAYOFF_PREPARATION_PAGES: SeoRoute[] = [
     dynamic: true,
   },
 ]
+
+const CONTRACT_RENEGOTIATION_PAGES: SeoRoute[] = [
+  {
+    slug: '/strategy/contract-renegotiation/',
+    title: 'Contract Renegotiation & Buyouts | Cap Management',
+    description: 'Contract renegotiation guide. Manage player contracts and strategic buyouts for cap flexibility.',
+    category: 'guide',
+    priority: 0.65,
+    changefreq: 'monthly',
+    h1: 'Contract Renegotiation',
+    navGroup: 'Strategy',
+    dynamic: true,
+  },
+]
+
+const CAP_PROJECTIONS_PAGES: SeoRoute[] = [
+  {
+    slug: '/strategy/cap-projections/',
+    title: 'Salary Cap Projections | Multi-Year Planning',
+    description: 'Cap projections guide. Forecast cap needs and plan long-term financial strategy.',
+    category: 'guide',
+    priority: 0.65,
+    changefreq: 'monthly',
+    h1: 'Cap Projections',
+    navGroup: 'Strategy',
+    dynamic: true,
+  },
+]
+
+const EXTENSION_TIMING_PAGES: SeoRoute[] = [
+  {
+    slug: '/strategy/extension-timing/',
+    title: 'Extension Timing Strategy | Contract Extensions',
+    description: 'Extension timing guide. Master when and how to extend player contracts strategically.',
+    category: 'guide',
+    priority: 0.65,
+    changefreq: 'monthly',
+    h1: 'Extension Timing',
+    navGroup: 'Strategy',
+    dynamic: true,
+  },
+]
+
+const LUXURY_TAX_PAGES: SeoRoute[] = [
+  {
+    slug: '/strategy/luxury-tax-management/',
+    title: 'Luxury Tax Management | Cap Penalties',
+    description: 'Luxury tax guide. Navigate tax thresholds and avoid penalties in cap leagues.',
+    category: 'guide',
+    priority: 0.65,
+    changefreq: 'monthly',
+    h1: 'Luxury Tax Management',
+    navGroup: 'Strategy',
+    dynamic: true,
+  },
+]
 export const SEO_ROUTES: SeoRoute[] = [
   HOME,
   ...TOOLS,
@@ -1294,6 +1350,10 @@ export const SEO_ROUTES: SeoRoute[] = [
   ...FLEX_STREAMING_PAGES,
   ...PRESEASON_PLANNING_PAGES,
   ...PLAYOFF_PREPARATION_PAGES,
+  ...CONTRACT_RENEGOTIATION_PAGES,
+  ...CAP_PROJECTIONS_PAGES,
+  ...EXTENSION_TIMING_PAGES,
+  ...LUXURY_TAX_PAGES,
   SITEMAP_PAGE,
 ]
 

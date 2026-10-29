@@ -528,6 +528,10 @@ import { generateBackupRbStrategyHubHtml } from './src/seo-backup-rb-strategy'
 import { generateFlexStreamingStrategyHubHtml } from './src/seo-flex-streaming-strategy'
 import { generatePreseasonsplanningHubHtml } from './src/seo-preseason-planning'
 import { generatePlayoffPreparationHubHtml } from './src/seo-playoff-preparation'
+import { generateContractRenegotiationHubHtml } from './src/seo-contract-renegotiation'
+import { generateCapProjectionsHubHtml } from './src/seo-cap-projections'
+import { generateExtensionTimingHubHtml } from './src/seo-extension-timing'
+import { generateLuxuryTaxManagementHubHtml } from './src/seo-luxury-tax-management'
 function parsePlayers(srcPath: string): Array<{ name: string; pos: string; age: number; team: string; ktcVal?: number; proj: { PPR: number; Half: number; Standard: number }; note?: string }> {
   const src = readFileSync(srcPath, 'utf-8')
   const marker = 'const PLAYERS=['
@@ -1669,6 +1673,36 @@ function spaRoutesPlugin() {
       const playoffPrepHtml = generatePlayoffPreparationHubHtml(appScripts, appPreloads, darkModeScript)
       writeFileSync(resolve(playoffPrepDir, 'index.html'), playoffPrepHtml)
       console.log('[spa-routes] Generated /analysis/playoff-preparation/ playoff preparation guide')
+
+      // OPTION D EXPANSION: Additional Salary Cap Management Pages
+
+      // Contract Renegotiation (1 page)
+      const renegotiationDir = resolve(strategyDir, 'contract-renegotiation')
+      if (!existsSync(renegotiationDir)) mkdirSync(renegotiationDir, { recursive: true })
+      const renegotiationHtml = generateContractRenegotiationHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(renegotiationDir, 'index.html'), renegotiationHtml)
+      console.log('[spa-routes] Generated /strategy/contract-renegotiation/ renegotiation strategy guide')
+
+      // Cap Projections (1 page)
+      const capProjDir = resolve(strategyDir, 'cap-projections')
+      if (!existsSync(capProjDir)) mkdirSync(capProjDir, { recursive: true })
+      const capProjHtml = generateCapProjectionsHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(capProjDir, 'index.html'), capProjHtml)
+      console.log('[spa-routes] Generated /strategy/cap-projections/ cap projections guide')
+
+      // Extension Timing (1 page)
+      const extensionDir = resolve(strategyDir, 'extension-timing')
+      if (!existsSync(extensionDir)) mkdirSync(extensionDir, { recursive: true })
+      const extensionHtml = generateExtensionTimingHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(extensionDir, 'index.html'), extensionHtml)
+      console.log('[spa-routes] Generated /strategy/extension-timing/ extension timing guide')
+
+      // Luxury Tax Management (1 page)
+      const luxuryTaxDir = resolve(strategyDir, 'luxury-tax-management')
+      if (!existsSync(luxuryTaxDir)) mkdirSync(luxuryTaxDir, { recursive: true })
+      const luxuryTaxHtml = generateLuxuryTaxManagementHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(luxuryTaxDir, 'index.html'), luxuryTaxHtml)
+      console.log('[spa-routes] Generated /strategy/luxury-tax-management/ luxury tax guide')
 
 
 
