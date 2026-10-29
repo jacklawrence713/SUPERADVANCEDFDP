@@ -8466,9 +8466,6 @@ export default function App(){
                 ),
                 // Game cards
                 // Check if props already loaded or currently loading
-                var propsLoaded=historicalPropResults[pw.week]?true:false;
-                var isLoading=propGradingInProgress[pw.week]?true:false;
-                if(isLoading){/* Grading in progress */}
                 pwGames.map(function(g){
                   var favTeam=g.spread<=0?g.home:g.away;
                   var dogTeam=g.spread<=0?g.away:g.home;

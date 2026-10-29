@@ -398,6 +398,64 @@ const RESEARCH_PAGES: SeoRoute[] = [
 ]
 
 /**
+ * Research Hub & Research Content Pages (Phase 2)
+ */
+const RESEARCH_HUB: SeoRoute = {
+  slug: '/research/',
+  title: 'Dynasty Research Hub | Advanced Analysis & Insights | Fantasy Draft Pros',
+  description:
+    'In-depth dynasty fantasy football research. Explore team dynasty capital, age curves, player tiers, and advanced analysis from FDP experts.',
+  category: 'hub',
+  priority: 0.85,
+  changefreq: 'monthly',
+  h1: 'Dynasty Research Hub',
+  navGroup: 'Resources',
+  dynamic: true,
+}
+
+const RESEARCH_CONTENT_PAGES: SeoRoute[] = [
+  {
+    slug: '/research/team-dynasty-capital/',
+    title: 'Team Dynasty Capital | NFL Team Asset Analysis | Fantasy Draft Pros',
+    description:
+      'Comprehensive analysis of each NFL team\'s dynasty asset pool. See which teams have the most valuable dynasty players and project future roster strength.',
+    category: 'hub',
+    priority: 0.8,
+    changefreq: 'weekly',
+    h1: 'Team Dynasty Capital Analysis',
+    usesPlayerData: true,
+    navGroup: 'Resources',
+    dynamic: true,
+  },
+  {
+    slug: '/research/age-curves/',
+    title: 'Dynasty Age Curves | Player Value Peaks by Position | Fantasy Draft Pros',
+    description:
+      'Understand player value trajectories by age. Analyze peak value windows for each position and plan multi-year dynasty strategies.',
+    category: 'hub',
+    priority: 0.75,
+    changefreq: 'monthly',
+    h1: 'Age Curves & Position Value Trajectories',
+    usesPlayerData: true,
+    navGroup: 'Resources',
+    dynamic: true,
+  },
+  {
+    slug: '/research/player-tiers/',
+    title: 'Dynasty Player Tiers | Value Clustering Analysis | Fantasy Draft Pros',
+    description:
+      'Discover natural clustering of player values. Identify bargains within tiers and understand the dynasty asset hierarchy.',
+    category: 'hub',
+    priority: 0.75,
+    changefreq: 'monthly',
+    h1: 'Player Tier Analysis',
+    usesPlayerData: true,
+    navGroup: 'Resources',
+    dynamic: true,
+  },
+]
+
+/**
  * NFL Team Hubs (Phase 1) - Fantasy football content for all 32 teams
  */
 const NFL_TEAM_HUBS: SeoRoute[] = [
@@ -607,6 +665,103 @@ const GUIDES: SeoRoute[] = [
   },
 ]
 
+
+/**
+ * Phase 3: Dynasty Setup, Drafting, Trading & Rebuilding
+ */
+const LEAGUE_SETUP_PAGES: SeoRoute[] = [
+  {
+    slug: '/dynasty-league-setup/',
+    title: 'Dynasty League Setup Guide | How to Start a League',
+    description: 'Complete guide to setting up dynasty fantasy football leagues. Learn formats, scoring, roster construction, and best practices.',
+    category: 'guide',
+    priority: 0.8,
+    changefreq: 'monthly',
+    h1: 'Dynasty League Setup',
+    navGroup: 'Guides',
+    dynamic: true,
+  },
+  {
+    slug: '/dynasty-league-setup/1qb-leagues/',
+    title: '1QB Dynasty League Setup | Single Quarterback Format',
+    description: 'Guide to 1QB dynasty league setup and strategy. The traditional format emphasizing RB/WR depth.',
+    category: 'guide',
+    priority: 0.7,
+    changefreq: 'monthly',
+    h1: '1QB Dynasty League',
+  },
+  {
+    slug: '/dynasty-league-setup/superflex-leagues/',
+    title: 'Superflex Dynasty League Setup | 2QB Format Guide',
+    description: 'Superflex/2QB dynasty league setup guide. Learn how 2 QB slots change draft strategy and player values.',
+    category: 'guide',
+    priority: 0.7,
+    changefreq: 'monthly',
+    h1: 'Superflex Dynasty League',
+  },
+  {
+    slug: '/dynasty-league-setup/te-premium-leagues/',
+    title: 'TE Premium Dynasty League Setup | Tight End Emphasis',
+    description: 'TE Premium dynasty league guide. Set up tight end premium scoring and strategy.',
+    category: 'guide',
+    priority: 0.65,
+    changefreq: 'monthly',
+    h1: 'TE Premium Dynasty League',
+  },
+  {
+    slug: '/dynasty-league-setup/idp-leagues/',
+    title: 'IDP Dynasty League Setup | Individual Defensive Players',
+    description: 'IDP dynasty league setup and strategy guide. Draft defensive players individually.',
+    category: 'guide',
+    priority: 0.65,
+    changefreq: 'monthly',
+    h1: 'IDP Dynasty League',
+  },
+]
+
+const DRAFT_STRATEGY_PAGES: SeoRoute[] = [
+  {
+    slug: '/guides/dynasty-draft-strategy/',
+    title: 'Dynasty Draft Strategy Guide | Round-by-Round Planning',
+    description: 'Complete dynasty draft strategy guide. Learn how to approach each round, draft by position, and startup draft tactics.',
+    category: 'guide',
+    priority: 0.75,
+    changefreq: 'monthly',
+    h1: 'Dynasty Draft Strategy',
+    navGroup: 'Guides',
+    dynamic: true,
+  },
+]
+
+const TRADE_SCENARIO_PAGES: SeoRoute[] = [
+  {
+    slug: '/guides/trade-scenarios/',
+    title: 'Common Dynasty Trade Scenarios | Trade Pattern Examples',
+    description: 'Explore common dynasty trade scenarios and patterns. Learn 2-for-1s, 3-for-1s, and trade structures.',
+    category: 'guide',
+    priority: 0.7,
+    changefreq: 'monthly',
+    h1: 'Trade Scenarios',
+    navGroup: 'Guides',
+    dynamic: true,
+  },
+]
+
+const REBUILD_PAGES: SeoRoute[] = [
+  {
+    slug: '/guides/rebuild-strategy/',
+    title: 'Dynasty Rebuild Strategy | Multi-Year Roadmaps',
+    description: 'Dynasty rebuild strategy guide. Learn multi-year rebuilding timelines and transitioning back to contention.',
+    category: 'guide',
+    priority: 0.7,
+    changefreq: 'monthly',
+    h1: 'Rebuild Strategy',
+    navGroup: 'Guides',
+    dynamic: true,
+  },
+]
+
+
 /**
  * Site map (human-readable directory)
  */
@@ -633,12 +788,18 @@ export const SEO_ROUTES: SeoRoute[] = [
   ...TE_PREMIUM_RANKINGS,
   ...PLAYER_DIRECTORIES,
   ...RESEARCH_PAGES,
+  RESEARCH_HUB,
+  ...RESEARCH_CONTENT_PAGES,
   ...NFL_TEAM_HUBS,
   DYNAMIC_PLAYER_PAGES,
   ...AUTHORITY_HUBS,
   ...STRATEGY_PAGES,
   ...TRUST_PAGES,
   ...GUIDES,
+  ...LEAGUE_SETUP_PAGES,
+  ...DRAFT_STRATEGY_PAGES,
+  ...TRADE_SCENARIO_PAGES,
+  ...REBUILD_PAGES,
   SITEMAP_PAGE,
 ]
 

@@ -1,5 +1,4 @@
 import { generateDynastyBasicsHubHtml, generateTradingStrategiesHubHtml, generateFormatStrategyHubHtml, generatePositionGuideHubHtml } from './src/seo-topical-hubs'
-import { generatePlayerComparisonPageHtml } from './src/seo-player-comparison'
 import { enhanceInternalLinking } from './src/seo-internal-linking'
 import { injectRichSnippets } from './src/seo-rich-snippet-injection'
 import { injectKnowledgeGraphConnections } from './src/seo-knowledge-graph-injection'
@@ -22,13 +21,20 @@ import { generateTeamDirectoryHtml, getTeams, getTeamBySlug } from './src/seo-te
 import { generateTeamHubHtml } from './src/seo-team-hubs'
 import { generateValueMoversHtml } from './src/seo-value-movers'
 import { generateMarketIndexHtml } from './src/seo-market-index'
+import { generateResearchHubHtml } from './src/seo-research-hub'
+import { generateTeamDynastyCapitalHtml } from './src/seo-team-dynasty-capital'
+import { generateAgeCurvesHtml } from './src/seo-age-curves'
+import { generatePlayerTiersHtml } from './src/seo-player-tiers'
+import { generateLeagueSetupHubHtml, generateLeagueFormatPageHtml } from './src/seo-league-setup'
+import { generateDraftStrategyHubHtml } from './src/seo-draft-strategy'
+import { generateTradeScenarioHubHtml } from './src/seo-trade-scenarios'
+import { generateRebuildRoadmapHubHtml } from './src/seo-rebuild-roadmaps'
 import { SEO_ROUTES, findRoute } from './src/seo-routes'
 import { generatePlayerDirectories, generateRegistryLandingPages } from './src/build-seo-integration'
 import { generateSitemap as generateSitemapRegistry } from './src/build-sitemap'
 import { getStaticSeoFooterHtml } from './src/seo-footer-static'
 import { injectSchemaMarkupIntoPages } from './src/seo-schema-injection'
 import { generateDynastyBasicsHubHtml, generateTradingStrategiesHubHtml, generateFormatStrategyHubHtml, generatePositionGuideHubHtml } from './src/seo-topical-hubs'
-import { generatePlayerComparisonPageHtml } from './src/seo-player-comparison'
 import { enhanceInternalLinking } from './src/seo-internal-linking'
 import { injectRichSnippets } from './src/seo-rich-snippet-injection'
 import { injectKnowledgeGraphConnections } from './src/seo-knowledge-graph-injection'
@@ -1169,6 +1175,202 @@ function spaRoutesPlugin() {
       const dynastyHubHtml = generateDynastyHubHtml(appScripts, appPreloads, darkModeScript)
       writeFileSync(resolve(dynastyHubDir, 'index.html'), dynastyHubHtml)
       console.log('[spa-routes] Generated /dynasty-fantasy-football/ authority hub')
+
+      // PHASE 2: RESEARCH HUB & RESEARCH PAGES
+      // ════════════════════════════════════════════════════════════════
+
+      // 1. Generate /research/ hub page
+      const researchDir = resolve(distDir, 'research')
+      if (!existsSync(researchDir)) mkdirSync(researchDir, { recursive: true })
+      const researchHubHtml = generateResearchHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(researchDir, 'index.html'), researchHubHtml)
+      console.log('[spa-routes] Generated /research/ research hub')
+
+      // 2. Generate /research/team-dynasty-capital/ directory
+      const teamCapDir = resolve(researchDir, 'team-dynasty-capital')
+      if (!existsSync(teamCapDir)) mkdirSync(teamCapDir, { recursive: true })
+
+      let teamCapPages = 0
+      for (const team of teams) {
+        const teamPlayers = ranked.filter(p => p.team === team.short)
+        const topTeamPlayers = teamPlayers.slice(0, 15)
+        const totalCapital = teamPlayers.reduce((s, p) => s + p.tradeVal, 0)
+        const posBreakdown: { [pos: string]: number } = {}
+        for (const p of teamPlayers) {
+          posBreakdown[p.pos] = (posBreakdown[p.pos] || 0) + 1
+        }
+        const avgAge = teamPlayers.length > 0 ? Math.round((teamPlayers.reduce((s, p) => s + p.age, 0) / teamPlayers.length) * 10) / 10 : 0
+        const isRebuilding = totalCapital < ranked[50]?.tradeVal * 5
+
+        const teamCapData = {
+          teamName: team.name,
+          teamShort: team.short,
+          slug: team.slug,
+          division: team.division,
+          totalCapital,
+          playerCount: teamPlayers.length,
+          topPlayers: topTeamPlayers.map(p => ({
+            name: p.name,
+            pos: p.pos,
+            age: p.age,
+            value: p.tradeVal,
+            rank: p.rank
+          })),
+          positionBreakdown: posBreakdown,
+          avgAge,
+          rebuilding: isRebuilding
+        }
+
+        const teamCapPageDir = resolve(teamCapDir, team.slug)
+        if (!existsSync(teamCapPageDir)) mkdirSync(teamCapPageDir, { recursive: true })
+        const teamCapHtml = generateTeamDynastyCapitalHtml(teamCapData, appScripts, appPreloads, darkModeScript)
+        writeFileSync(resolve(teamCapPageDir, 'index.html'), teamCapHtml)
+        teamCapPages++
+      }
+      console.log(`[spa-routes] Generated ${teamCapPages} team dynasty capital pages (/research/team-dynasty-capital/{team}/)`)
+
+      // 3. Generate /research/age-curves/ with position-specific curves
+      const ageCurveData = [
+        {
+          position: 'QB',
+          peakAge: 32,
+          peakValue: Math.round(ranked.filter(p => p.pos === 'QB').slice(0, 3).reduce((s, p) => s + p.tradeVal, 0) / 3),
+          declineRate: 0.02,
+          description: 'Quarterbacks peak in their early 30s and decline gradually. Late-career QBs maintain value due to experience.',
+          trajectory: []
+        },
+        {
+          position: 'RB',
+          peakAge: 27,
+          peakValue: Math.round(ranked.filter(p => p.pos === 'RB').slice(0, 3).reduce((s, p) => s + p.tradeVal, 0) / 3),
+          declineRate: 0.12,
+          description: 'Running backs peak in late 20s. Sharp decline post-30 due to workload, injury risk, and competition from younger players.',
+          trajectory: []
+        },
+        {
+          position: 'WR',
+          peakAge: 28,
+          peakValue: Math.round(ranked.filter(p => p.pos === 'WR').slice(0, 3).reduce((s, p) => s + p.tradeVal, 0) / 3),
+          declineRate: 0.08,
+          description: 'Wide receivers maintain value longer than RBs, peaking in late 20s. Gradual decline but can be productive into early 30s.',
+          trajectory: []
+        },
+        {
+          position: 'TE',
+          peakAge: 29,
+          peakValue: Math.round(ranked.filter(p => p.pos === 'TE').slice(0, 3).reduce((s, p) => s + p.tradeVal, 0) / 3),
+          declineRate: 0.06,
+          description: 'Tight ends have long peak windows, often not reaching peak until late 20s. Can maintain elite status into early 30s.',
+          trajectory: []
+        }
+      ]
+
+      const ageCurvesDir = resolve(researchDir, 'age-curves')
+      if (!existsSync(ageCurvesDir)) mkdirSync(ageCurvesDir, { recursive: true })
+      const ageCurvesHtml = generateAgeCurvesHtml(ageCurveData, appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(ageCurvesDir, 'index.html'), ageCurvesHtml)
+      console.log('[spa-routes] Generated /research/age-curves/ with position age curves')
+
+      // 4. Generate /research/player-tiers/ with value clustering analysis
+      const tierData = [
+        {
+          name: 'Elite Tier',
+          description: 'Top 10 dynasty assets. These are franchise cornerstones with elite production or long peak windows.',
+          valueRange: { min: ranked[0]?.tradeVal || 9500, max: ranked[9]?.tradeVal || 8000 },
+          playerCount: ranked.filter(p => p.rank <= 10).length,
+          characteristics: ['Franchise Cornerstone', 'Peak Value', 'Extreme Scarcity', 'High Demand'],
+          tradingNote: 'Only move for similarly elite talent or massive overpay. These anchors define your contention window.'
+        },
+        {
+          name: 'Premium Tier',
+          description: 'Ranks 11-50. Strong producers with multi-year windows. Core dynasty assets.',
+          valueRange: { min: ranked[50]?.tradeVal || 3000, max: ranked[10]?.tradeVal || 7500 },
+          playerCount: ranked.filter(p => p.rank > 10 && p.rank <= 50).length,
+          characteristics: ['Proven Producer', 'Multi-Year Window', 'League Winner', 'Trade Target'],
+          tradingNote: 'Sweet spot for acquisitions. Can build contending rosters around 2-3 premium tier assets.'
+        },
+        {
+          name: 'Solid Tier',
+          description: 'Ranks 51-150. Reliable contributors and emerging talent. Depth building blocks.',
+          valueRange: { min: ranked[150]?.tradeVal || 500, max: ranked[50]?.tradeVal || 3000 },
+          playerCount: ranked.filter(p => p.rank > 50 && p.rank <= 150).length,
+          characteristics: ['Emerging Talent', 'Depth Producer', 'Buy-Low Potential', 'Upside Play'],
+          tradingNote: 'Excellent value for rebuilds. Look for young players trending upward in this tier.'
+        },
+        {
+          name: 'Bench Tier',
+          description: 'Ranks 151-400. Bench depth and lottery tickets. Low draft capital value.',
+          valueRange: { min: ranked[400]?.tradeVal || 100, max: ranked[150]?.tradeVal || 500 },
+          playerCount: ranked.filter(p => p.rank > 150 && p.rank <= 400).length,
+          characteristics: ['Bench Depth', 'Lottery Ticket', 'Bounce-Back Candidate', 'Waiver Priority'],
+          tradingNote: 'Typically free agents. Useful for depth but avoid overpaying. Monitor for breakout opportunities.'
+        },
+        {
+          name: 'Speculative Tier',
+          description: 'Ranks 401+. Long-shot prospects and aging players. Minimal trade value.',
+          valueRange: { min: 0, max: ranked[400]?.tradeVal || 100 },
+          playerCount: ranked.filter(p => p.rank > 400).length,
+          characteristics: ['Deep Prospect', 'High Risk', 'Waiver Wire', 'Salary Cap Filler'],
+          tradingNote: 'Not trade targets. Valuable for free agency and waiver wire depth only.'
+        }
+      ]
+
+      const playerTiersDir = resolve(researchDir, 'player-tiers')
+      if (!existsSync(playerTiersDir)) mkdirSync(playerTiersDir, { recursive: true })
+      const playerTiersHtml = generatePlayerTiersHtml(tierData, ranked.length, appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(playerTiersDir, 'index.html'), playerTiersHtml)
+      console.log('[spa-routes] Generated /research/player-tiers/ with value tier analysis')
+
+      // PHASE 3: DYNASTY SETUP, DRAFTING, TRADING & REBUILDING
+      // ════════════════════════════════════════════════════════════════
+
+      // 1. Generate /dynasty-league-setup/ hub
+      const leagueSetupDir = resolve(distDir, 'dynasty-league-setup')
+      if (!existsSync(leagueSetupDir)) mkdirSync(leagueSetupDir, { recursive: true })
+      const leagueSetupHubHtml = generateLeagueSetupHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(leagueSetupDir, 'index.html'), leagueSetupHubHtml)
+      console.log('[spa-routes] Generated /dynasty-league-setup/ league setup hub')
+
+      // 2. Generate format-specific pages (1QB, Superflex, TE Premium, IDP)
+      const leagueFormats = [
+        { name: '1QB League', shortName: 'Single QB', slug: '1qb-leagues', description: 'Single QB format emphasizes RB/WR depth and TE scarcity.', qbImpact: 'Moderate', rbImpact: 'High', wrImpact: 'High', teImpact: 'High', advantages: ['Balanced scoring', 'Positional flexibility', 'Deep bench play'], disadvantages: ['QB less important', 'Lower QB value'], setupComplexity: 'Easy', recommendedTeamSize: '10-12 teams' },
+        { name: 'Superflex', shortName: 'Dual QB', slug: 'superflex-leagues', description: '2QB format dramatically increases QB scarcity and value.', qbImpact: 'Very High', rbImpact: 'Moderate', wrImpact: 'Moderate', teImpact: 'Moderate', advantages: ['QBs valuable', 'Increased complexity', 'Strategic depth'], disadvantages: ['QB dependent', 'Less RB/WR value'], setupComplexity: 'Moderate', recommendedTeamSize: '10-12 teams' },
+        { name: 'TE Premium', shortName: 'TE Emphasis', slug: 'te-premium-leagues', description: 'Extra TE scoring creates scarcity and value concentration.', qbImpact: 'Moderate', rbImpact: 'Moderate', wrImpact: 'Moderate', teImpact: 'Very High', advantages: ['TE more valuable', 'Positional scarcity', 'Strategic trade focus'], disadvantages: ['Tier-dependent', 'Top-heavy value'], setupComplexity: 'Moderate', recommendedTeamSize: '10-12 teams' },
+        { name: 'IDP Dynasty', shortName: 'Defense Included', slug: 'idp-leagues', description: 'Individual defensive players with DL/LB/DB scoring.', qbImpact: 'Moderate', rbImpact: 'Moderate', wrImpact: 'Moderate', teImpact: 'Moderate', advantages: ['Defense valued', 'Larger rosters', 'Increased trading'], disadvantages: ['Complex setup', 'Data availability'], setupComplexity: 'Complex', recommendedTeamSize: '10-12 teams' }
+      ]
+
+      let leagueFormatPages = 0
+      for (const format of leagueFormats) {
+        const formatDir = resolve(leagueSetupDir, format.slug)
+        if (!existsSync(formatDir)) mkdirSync(formatDir, { recursive: true })
+        const formatHtml = generateLeagueFormatPageHtml(format, appScripts, appPreloads, darkModeScript)
+        writeFileSync(resolve(formatDir, 'index.html'), formatHtml)
+        leagueFormatPages++
+      }
+      console.log(`[spa-routes] Generated ${leagueFormatPages} league format pages`)
+
+      // 3. Generate /guides/dynasty-draft-strategy/
+      const draftStrategyDir = resolve(distDir, 'guides', 'dynasty-draft-strategy')
+      if (!existsSync(draftStrategyDir)) mkdirSync(draftStrategyDir, { recursive: true })
+      const draftStrategyHtml = generateDraftStrategyHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(draftStrategyDir, 'index.html'), draftStrategyHtml)
+      console.log('[spa-routes] Generated /guides/dynasty-draft-strategy/ draft strategy guide')
+
+      // 4. Generate /guides/trade-scenarios/
+      const tradeScenarioDir = resolve(distDir, 'guides', 'trade-scenarios')
+      if (!existsSync(tradeScenarioDir)) mkdirSync(tradeScenarioDir, { recursive: true })
+      const tradeScenarioHtml = generateTradeScenarioHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(tradeScenarioDir, 'index.html'), tradeScenarioHtml)
+      console.log('[spa-routes] Generated /guides/trade-scenarios/ trade scenario guide')
+
+      // 5. Generate /guides/rebuild-strategy/
+      const rebuildDir = resolve(distDir, 'guides', 'rebuild-strategy')
+      if (!existsSync(rebuildDir)) mkdirSync(rebuildDir, { recursive: true })
+      const rebuildHtml = generateRebuildRoadmapHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(rebuildDir, 'index.html'), rebuildHtml)
+      console.log('[spa-routes] Generated /guides/rebuild-strategy/ rebuild roadmap guide')
+
+
 
       // Phase 8: Generate Strategy Pages with real player data
       // Buy-Low candidates
