@@ -886,6 +886,111 @@ const ANALYTICS_PAGES: SeoRoute[] = [
 ]
 
 
+
+/**
+ * Phase 5: Risk Management, Waiver Strategy, Seasonal Timing & Cap Management (10+ pages)
+ */
+const RISK_MANAGEMENT_PAGES: SeoRoute[] = [
+  {
+    slug: '/strategy/risk-management/',
+    title: 'Dynasty Risk Management | Portfolio Protection',
+    description: 'Risk management guide. Assess roster risk, implement hedging strategies, and protect against uncertainty.',
+    category: 'guide',
+    priority: 0.65,
+    changefreq: 'monthly',
+    h1: 'Risk Management',
+    navGroup: 'Strategy',
+    dynamic: true,
+  },
+]
+
+const WAIVER_STRATEGY_PAGES: SeoRoute[] = [
+  {
+    slug: '/strategy/waiver-wire-guide/',
+    title: 'Waiver Wire Strategy | Free Agent Acquisition',
+    description: 'Waiver wire guide. Learn weekly acquisition tactics, priority systems, and bench optimization.',
+    category: 'guide',
+    priority: 0.65,
+    changefreq: 'weekly',
+    h1: 'Waiver Wire Strategy',
+    navGroup: 'Strategy',
+    dynamic: true,
+  },
+]
+
+const SEASONAL_TIMING_PAGES: SeoRoute[] = [
+  {
+    slug: '/analysis/seasonal-trends/',
+    title: 'Seasonal Trends | Value Evolution Analysis',
+    description: 'Analyze seasonal trends. Understand value shifts through preseason, regular season, and playoffs.',
+    category: 'guide',
+    priority: 0.65,
+    changefreq: 'monthly',
+    h1: 'Seasonal Trends',
+    navGroup: 'Analysis',
+    dynamic: true,
+  },
+  {
+    slug: '/analysis/playoff-performance/',
+    title: 'Playoff Performance | Consistency Analysis',
+    description: 'Playoff strategy. Understand consistency metrics and playoff-specific performance patterns.',
+    category: 'guide',
+    priority: 0.65,
+    changefreq: 'monthly',
+    h1: 'Playoff Performance',
+    navGroup: 'Analysis',
+    dynamic: true,
+  },
+  {
+    slug: '/strategy/trade-deadline/',
+    title: 'Trade Deadline Strategy | Mid-Season Adjustments',
+    description: 'Trade deadline guide. Master deadline acquisitions and mid-season roster pivots.',
+    category: 'guide',
+    priority: 0.65,
+    changefreq: 'monthly',
+    h1: 'Trade Deadline',
+    navGroup: 'Strategy',
+    dynamic: true,
+  },
+  {
+    slug: '/analysis/mid-season-adjustments/',
+    title: 'Mid-Season Analysis | Halfway Point Evaluation',
+    description: 'Mid-season adjustments guide. Evaluate halfway performance and adjust strategy.',
+    category: 'guide',
+    priority: 0.6,
+    changefreq: 'weekly',
+    h1: 'Mid-Season Adjustments',
+    navGroup: 'Analysis',
+    dynamic: true,
+  },
+]
+
+const CAP_MANAGEMENT_PAGES: SeoRoute[] = [
+  {
+    slug: '/strategy/salary-cap-management/',
+    title: 'Salary Cap Management | Contract Strategy',
+    description: 'Cap management guide. Learn multi-year contract planning, dead cap navigation, and cap efficiency.',
+    category: 'guide',
+    priority: 0.65,
+    changefreq: 'monthly',
+    h1: 'Salary Cap Management',
+    navGroup: 'Strategy',
+    dynamic: true,
+  },
+  {
+    slug: '/strategy/rookie-contracts/',
+    title: 'Rookie Scale Contracts | Contract Economics',
+    description: 'Rookie contract guide. Understand rookie scale economics and extension decisions.',
+    category: 'guide',
+    priority: 0.6,
+    changefreq: 'monthly',
+    h1: 'Rookie Contracts',
+    navGroup: 'Strategy',
+    dynamic: true,
+  },
+]
+
+
 /**
  * Site map (human-readable directory)
  */
@@ -904,6 +1009,177 @@ const SITEMAP_PAGE: SeoRoute = {
 /**
  * All public SEO routes
  */
+
+// PHASE 5 ADDITIONAL ROUTES (Continuation)
+
+const HEDGE_STRATEGIES_PAGES: SeoRoute[] = [
+  {
+    slug: '/strategy/hedge-strategies/',
+    title: 'Dynasty Hedge Strategies | Portfolio Insurance',
+    description: 'Hedge strategies guide. Learn backup planning, age diversification, and risk mitigation tactics.',
+    category: 'guide',
+    priority: 0.65,
+    changefreq: 'monthly',
+    h1: 'Hedge Strategies',
+    navGroup: 'Strategy',
+    dynamic: true,
+  },
+]
+
+const INJURY_CONTINGENCY_PAGES: SeoRoute[] = [
+  {
+    slug: '/strategy/injury-contingency/',
+    title: 'Injury Contingency Planning | Recovery Strategies',
+    description: 'Injury contingency guide. Plan backup strategies and injury recovery timelines.',
+    category: 'guide',
+    priority: 0.65,
+    changefreq: 'monthly',
+    h1: 'Injury Contingency',
+    navGroup: 'Strategy',
+    dynamic: true,
+  },
+]
+
+const FREE_AGENT_RANKING_PAGES: SeoRoute[] = [
+  {
+    slug: '/strategy/free-agent-ranking/',
+    title: 'Free Agent Ranking Strategy | Acquisition Guide',
+    description: 'Free agent ranking guide. Identify and acquire undervalued free agents.',
+    category: 'guide',
+    priority: 0.65,
+    changefreq: 'weekly',
+    h1: 'Free Agent Ranking',
+    navGroup: 'Strategy',
+    dynamic: true,
+  },
+]
+
+const WAIVER_TIMING_PAGES: SeoRoute[] = [
+  {
+    slug: '/strategy/waiver-timing/',
+    title: 'Waiver Timing Strategy | Priority Management',
+    description: 'Waiver timing guide. Master weekly acquisition priority and waiver position strategy.',
+    category: 'guide',
+    priority: 0.65,
+    changefreq: 'weekly',
+    h1: 'Waiver Timing',
+    navGroup: 'Strategy',
+    dynamic: true,
+  },
+]
+
+const BENCH_OPTIMIZATION_PAGES: SeoRoute[] = [
+  {
+    slug: '/strategy/bench-optimization/',
+    title: 'Bench Optimization | Depth Strategy',
+    description: 'Bench optimization guide. Maximize bench productivity and roster depth.',
+    category: 'guide',
+    priority: 0.65,
+    changefreq: 'monthly',
+    h1: 'Bench Optimization',
+    navGroup: 'Strategy',
+    dynamic: true,
+  },
+]
+
+const DEPTH_ACQUISITION_PAGES: SeoRoute[] = [
+  {
+    slug: '/strategy/depth-acquisition/',
+    title: 'Depth Acquisition Strategy | Roster Building',
+    description: 'Depth acquisition guide. Build sustainable roster depth for contention.',
+    category: 'guide',
+    priority: 0.65,
+    changefreq: 'monthly',
+    h1: 'Depth Acquisition',
+    navGroup: 'Strategy',
+    dynamic: true,
+  },
+]
+
+const HISTORICAL_PERFORMANCE_PAGES: SeoRoute[] = [
+  {
+    slug: '/analysis/historical-performance/',
+    title: 'Historical Dynasty Performance | Trend Analysis',
+    description: 'Historical performance analysis. Learn from past player arcs and valuation trends.',
+    category: 'guide',
+    priority: 0.65,
+    changefreq: 'monthly',
+    h1: 'Historical Performance',
+    navGroup: 'Analysis',
+    dynamic: true,
+  },
+]
+
+const BYE_WEEK_STRATEGY_PAGES: SeoRoute[] = [
+  {
+    slug: '/strategy/bye-week-strategy/',
+    title: 'Bye Week Strategy | Schedule Management',
+    description: 'Bye week strategy guide. Navigate NFL bye weeks and schedule planning.',
+    category: 'guide',
+    priority: 0.65,
+    changefreq: 'monthly',
+    h1: 'Bye Week Strategy',
+    navGroup: 'Strategy',
+    dynamic: true,
+  },
+]
+
+const BOOM_BUST_MANAGEMENT_PAGES: SeoRoute[] = [
+  {
+    slug: '/strategy/boom-bust-management/',
+    title: 'Boom-Bust Management | Volatility Strategy',
+    description: 'Boom-bust management guide. Manage high-variance players and volatility.',
+    category: 'guide',
+    priority: 0.65,
+    changefreq: 'monthly',
+    h1: 'Boom-Bust Management',
+    navGroup: 'Strategy',
+    dynamic: true,
+  },
+]
+
+const PORTFOLIO_BALANCE_PAGES: SeoRoute[] = [
+  {
+    slug: '/strategy/portfolio-balance/',
+    title: 'Portfolio Balance Strategy | Diversification',
+    description: 'Portfolio balance guide. Diversify roster composition and manage asset allocation.',
+    category: 'guide',
+    priority: 0.65,
+    changefreq: 'monthly',
+    h1: 'Portfolio Balance',
+    navGroup: 'Strategy',
+    dynamic: true,
+  },
+]
+
+const CONTRACT_STRUCTURING_PAGES: SeoRoute[] = [
+  {
+    slug: '/strategy/contract-structuring/',
+    title: 'Contract Structuring | Salary Management',
+    description: 'Contract structuring guide. Navigate cap implications and contract strategy.',
+    category: 'guide',
+    priority: 0.65,
+    changefreq: 'monthly',
+    h1: 'Contract Structuring',
+    navGroup: 'Strategy',
+    dynamic: true,
+  },
+]
+
+const DEAD_CAP_NAVIGATION_PAGES: SeoRoute[] = [
+  {
+    slug: '/strategy/dead-cap-navigation/',
+    title: 'Dead Cap Navigation | Cap Penalties Strategy',
+    description: 'Dead cap guide. Navigate salary cap penalties and dead cap implications.',
+    category: 'guide',
+    priority: 0.65,
+    changefreq: 'monthly',
+    h1: 'Dead Cap Navigation',
+    navGroup: 'Strategy',
+    dynamic: true,
+  },
+]
+
 export const SEO_ROUTES: SeoRoute[] = [
   HOME,
   ...TOOLS,
@@ -927,6 +1203,22 @@ export const SEO_ROUTES: SeoRoute[] = [
   ...ADVANCED_FORMAT_PAGES,
   ...PLAYER_ANALYSIS_PAGES,
   ...ANALYTICS_PAGES,
+  ...RISK_MANAGEMENT_PAGES,
+  ...WAIVER_STRATEGY_PAGES,
+  ...SEASONAL_TIMING_PAGES,
+  ...CAP_MANAGEMENT_PAGES,
+  ...HEDGE_STRATEGIES_PAGES,
+  ...INJURY_CONTINGENCY_PAGES,
+  ...FREE_AGENT_RANKING_PAGES,
+  ...WAIVER_TIMING_PAGES,
+  ...BENCH_OPTIMIZATION_PAGES,
+  ...DEPTH_ACQUISITION_PAGES,
+  ...HISTORICAL_PERFORMANCE_PAGES,
+  ...BYE_WEEK_STRATEGY_PAGES,
+  ...BOOM_BUST_MANAGEMENT_PAGES,
+  ...PORTFOLIO_BALANCE_PAGES,
+  ...CONTRACT_STRUCTURING_PAGES,
+  ...DEAD_CAP_NAVIGATION_PAGES,
   SITEMAP_PAGE,
 ]
 

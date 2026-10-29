@@ -39,6 +39,14 @@ import { generateLeagueBenchmarkingHubHtml } from './src/seo-league-benchmarking
 import { generateDynastyMetricsHubHtml } from './src/seo-dynasty-metrics'
 import { generateInjuryAnalysisHubHtml } from './src/seo-injury-analysis'
 import { generateLeagueComparisonHubHtml } from './src/seo-league-comparison'
+import { generateRiskManagementHubHtml } from './src/seo-risk-management'
+import { generateWaiverWireGuideHtml } from './src/seo-waiver-wire-strategy'
+import { generateSeasonalTrendsHubHtml } from './src/seo-seasonal-trends'
+import { generatePlayoffStrategyHubHtml } from './src/seo-playoff-strategy'
+import { generateTradeDeadlineHubHtml } from './src/seo-trade-deadline-strategy'
+import { generateMidSeasonAdjustmentsHubHtml } from './src/seo-mid-season-adjustments'
+import { generateSalaryCapManagementHubHtml } from './src/seo-salary-cap-management'
+import { generateRookieContractsHubHtml } from './src/seo-rookie-contracts'
 import { SEO_ROUTES, findRoute } from './src/seo-routes'
 import { generatePlayerDirectories, generateRegistryLandingPages } from './src/build-seo-integration'
 import { generateSitemap as generateSitemapRegistry } from './src/build-sitemap'
@@ -503,6 +511,18 @@ import { optimizeCLV } from './src/seo-customer-lifetime-value'
 import { injectCLVOptimization } from './src/seo-customer-lifetime-value-injection'
 import { generateGrowthDashboard } from './src/seo-growth-strategy-dashboard'
 import { injectGrowthDashboard } from './src/seo-growth-strategy-dashboard-injection'
+import { generateHedgeStrategiesHubHtml } from './src/seo-hedge-strategies'
+import { generateInjuryContingencyHubHtml } from './src/seo-injury-contingency'
+import { generateFreeAgentRankingHubHtml } from './src/seo-free-agent-ranking'
+import { generateWaiverTimingHubHtml } from './src/seo-waiver-timing'
+import { generateBenchOptimizationHubHtml } from './src/seo-bench-optimization'
+import { generateDepthAcquisitionHubHtml } from './src/seo-depth-acquisition'
+import { generateHistoricalPerformanceHubHtml } from './src/seo-historical-performance'
+import { generateByeWeekStrategyHubHtml } from './src/seo-bye-week-strategy'
+import { generateBoomBustManagementHubHtml } from './src/seo-boom-bust-management'
+import { generatePortfolioBalanceHubHtml } from './src/seo-portfolio-balance'
+import { generateContractStructuringHubHtml } from './src/seo-contract-structuring'
+import { generateDeadCapNavigationHubHtml } from './src/seo-dead-cap-navigation'
 function parsePlayers(srcPath: string): Array<{ name: string; pos: string; age: number; team: string; ktcVal?: number; proj: { PPR: number; Half: number; Standard: number }; note?: string }> {
   const src = readFileSync(srcPath, 'utf-8')
   const marker = 'const PLAYERS=['
@@ -1461,6 +1481,151 @@ function spaRoutesPlugin() {
       const injuryHtml = generateInjuryAnalysisHubHtml(appScripts, appPreloads, darkModeScript)
       writeFileSync(resolve(injuryDir, 'index.html'), injuryHtml)
       console.log('[spa-routes] Generated /analysis/injury-risk/ injury assessment')
+
+      // PHASE 5: RISK MANAGEMENT, WAIVER STRATEGY, SEASONAL TIMING & CAP MANAGEMENT
+      // ════════════════════════════════════════════════════════════════
+
+      // Option A: Risk Management (1 page)
+      const strategyDir = resolve(distDir, 'strategy')
+      if (!existsSync(strategyDir)) mkdirSync(strategyDir, { recursive: true })
+      
+      const riskDir = resolve(strategyDir, 'risk-management')
+      if (!existsSync(riskDir)) mkdirSync(riskDir, { recursive: true })
+      const riskHtml = generateRiskManagementHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(riskDir, 'index.html'), riskHtml)
+      console.log('[spa-routes] Generated /strategy/risk-management/ risk management guide')
+
+      // Option B: Waiver Wire Strategy (1 page)
+      const waiverDir = resolve(strategyDir, 'waiver-wire-guide')
+      if (!existsSync(waiverDir)) mkdirSync(waiverDir, { recursive: true })
+      const waiverHtml = generateWaiverWireGuideHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(waiverDir, 'index.html'), waiverHtml)
+      console.log('[spa-routes] Generated /strategy/waiver-wire-guide/ waiver strategy guide')
+
+      // Option C: Seasonal Timing (4 pages)
+      const trendDir = resolve(analysisDir, 'seasonal-trends')
+      if (!existsSync(trendDir)) mkdirSync(trendDir, { recursive: true })
+      const trendHtml = generateSeasonalTrendsHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(trendDir, 'index.html'), trendHtml)
+      console.log('[spa-routes] Generated /analysis/seasonal-trends/ seasonal trends analysis')
+
+      const playoffDir = resolve(analysisDir, 'playoff-performance')
+      if (!existsSync(playoffDir)) mkdirSync(playoffDir, { recursive: true })
+      const playoffHtml = generatePlayoffStrategyHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(playoffDir, 'index.html'), playoffHtml)
+      console.log('[spa-routes] Generated /analysis/playoff-performance/ playoff consistency analysis')
+
+      const deadlineDir = resolve(strategyDir, 'trade-deadline')
+      if (!existsSync(deadlineDir)) mkdirSync(deadlineDir, { recursive: true })
+      const deadlineHtml = generateTradeDeadlineHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(deadlineDir, 'index.html'), deadlineHtml)
+      console.log('[spa-routes] Generated /strategy/trade-deadline/ trade deadline strategy')
+
+      const midseasonDir = resolve(analysisDir, 'mid-season-adjustments')
+      if (!existsSync(midseasonDir)) mkdirSync(midseasonDir, { recursive: true })
+      const midseasonHtml = generateMidSeasonAdjustmentsHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(midseasonDir, 'index.html'), midseasonHtml)
+      console.log('[spa-routes] Generated /analysis/mid-season-adjustments/ mid-season analysis')
+
+      // Option D: Cap Management (2 pages)
+      const capDir = resolve(strategyDir, 'salary-cap-management')
+      if (!existsSync(capDir)) mkdirSync(capDir, { recursive: true })
+      const capHtml = generateSalaryCapManagementHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(capDir, 'index.html'), capHtml)
+      console.log('[spa-routes] Generated /strategy/salary-cap-management/ cap management guide')
+
+      const rookieDir = resolve(strategyDir, 'rookie-contracts')
+      if (!existsSync(rookieDir)) mkdirSync(rookieDir, { recursive: true })
+      const rookieHtml = generateRookieContractsHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(rookieDir, 'index.html'), rookieHtml)
+      console.log('[spa-routes] Generated /strategy/rookie-contracts/ rookie contract guide')
+
+      // PHASE 5 CONTINUATION: Additional Risk Management, Waiver, Seasonal, & Cap Pages
+
+      // Hedge Strategies (1 page)
+      const hedgeDir = resolve(strategyDir, 'hedge-strategies')
+      if (!existsSync(hedgeDir)) mkdirSync(hedgeDir, { recursive: true })
+      const hedgeHtml = generateHedgeStrategiesHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(hedgeDir, 'index.html'), hedgeHtml)
+      console.log('[spa-routes] Generated /strategy/hedge-strategies/ hedge strategies guide')
+
+      // Injury Contingency (1 page)
+      const injuryContingencyDir = resolve(strategyDir, 'injury-contingency')
+      if (!existsSync(injuryContingencyDir)) mkdirSync(injuryContingencyDir, { recursive: true })
+      const injuryContingencyHtml = generateInjuryContingencyHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(injuryContingencyDir, 'index.html'), injuryContingencyHtml)
+      console.log('[spa-routes] Generated /strategy/injury-contingency/ injury contingency planning')
+
+      // Free Agent Ranking (1 page)
+      const freeAgentDir = resolve(strategyDir, 'free-agent-ranking')
+      if (!existsSync(freeAgentDir)) mkdirSync(freeAgentDir, { recursive: true })
+      const freeAgentHtml = generateFreeAgentRankingHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(freeAgentDir, 'index.html'), freeAgentHtml)
+      console.log('[spa-routes] Generated /strategy/free-agent-ranking/ free agent ranking guide')
+
+      // Waiver Timing (1 page)
+      const waiverTimingDir = resolve(strategyDir, 'waiver-timing')
+      if (!existsSync(waiverTimingDir)) mkdirSync(waiverTimingDir, { recursive: true })
+      const waiverTimingHtml = generateWaiverTimingHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(waiverTimingDir, 'index.html'), waiverTimingHtml)
+      console.log('[spa-routes] Generated /strategy/waiver-timing/ waiver timing strategy')
+
+      // Bench Optimization (1 page)
+      const benchDir = resolve(strategyDir, 'bench-optimization')
+      if (!existsSync(benchDir)) mkdirSync(benchDir, { recursive: true })
+      const benchHtml = generateBenchOptimizationHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(benchDir, 'index.html'), benchHtml)
+      console.log('[spa-routes] Generated /strategy/bench-optimization/ bench optimization guide')
+
+      // Depth Acquisition (1 page)
+      const depthDir = resolve(strategyDir, 'depth-acquisition')
+      if (!existsSync(depthDir)) mkdirSync(depthDir, { recursive: true })
+      const depthHtml = generateDepthAcquisitionHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(depthDir, 'index.html'), depthHtml)
+      console.log('[spa-routes] Generated /strategy/depth-acquisition/ depth acquisition strategy')
+
+      // Historical Performance (1 page)
+      const historicalDir = resolve(analysisDir, 'historical-performance')
+      if (!existsSync(historicalDir)) mkdirSync(historicalDir, { recursive: true })
+      const historicalHtml = generateHistoricalPerformanceHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(historicalDir, 'index.html'), historicalHtml)
+      console.log('[spa-routes] Generated /analysis/historical-performance/ historical performance analysis')
+
+      // Bye Week Strategy (1 page)
+      const byeWeekDir = resolve(strategyDir, 'bye-week-strategy')
+      if (!existsSync(byeWeekDir)) mkdirSync(byeWeekDir, { recursive: true })
+      const byeWeekHtml = generateByeWeekStrategyHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(byeWeekDir, 'index.html'), byeWeekHtml)
+      console.log('[spa-routes] Generated /strategy/bye-week-strategy/ bye week strategy guide')
+
+      // Boom-Bust Management (1 page)
+      const boomBustDir = resolve(strategyDir, 'boom-bust-management')
+      if (!existsSync(boomBustDir)) mkdirSync(boomBustDir, { recursive: true })
+      const boomBustHtml = generateBoomBustManagementHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(boomBustDir, 'index.html'), boomBustHtml)
+      console.log('[spa-routes] Generated /strategy/boom-bust-management/ boom-bust management guide')
+
+      // Portfolio Balance (1 page)
+      const portfolioDir = resolve(strategyDir, 'portfolio-balance')
+      if (!existsSync(portfolioDir)) mkdirSync(portfolioDir, { recursive: true })
+      const portfolioHtml = generatePortfolioBalanceHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(portfolioDir, 'index.html'), portfolioHtml)
+      console.log('[spa-routes] Generated /strategy/portfolio-balance/ portfolio balance strategy')
+
+      // Contract Structuring (1 page)
+      const contractDir = resolve(strategyDir, 'contract-structuring')
+      if (!existsSync(contractDir)) mkdirSync(contractDir, { recursive: true })
+      const contractHtml = generateContractStructuringHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(contractDir, 'index.html'), contractHtml)
+      console.log('[spa-routes] Generated /strategy/contract-structuring/ contract structuring guide')
+
+      // Dead Cap Navigation (1 page)
+      const deadCapDir = resolve(strategyDir, 'dead-cap-navigation')
+      if (!existsSync(deadCapDir)) mkdirSync(deadCapDir, { recursive: true })
+      const deadCapHtml = generateDeadCapNavigationHubHtml(appScripts, appPreloads, darkModeScript)
+      writeFileSync(resolve(deadCapDir, 'index.html'), deadCapHtml)
+      console.log('[spa-routes] Generated /strategy/dead-cap-navigation/ dead cap navigation guide')
+
 
 
 
