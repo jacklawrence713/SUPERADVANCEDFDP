@@ -234,19 +234,10 @@ ${darkModeScript}
       <div style="background:#1a1825;padding:16px;border-radius:8px;margin-bottom:24px">
         <div style="font-size:12px;color:#9b96b8;margin-bottom:4px">FDP Dynasty Value</div>
         <div style="font-size:32px;font-weight:800;color:#f59e0b;margin-bottom:12px">${valStr}</div>
-        <div style="display:flex;gap:24px;font-size:13px">
-          <div>
-            <div style="color:#9b96b8;margin-bottom:2px">Overall Rank</div>
-            <div style="color:#7c4dff;font-weight:600">#${rank}</div>
-          </div>
-          <div>
-            <div style="color:#9b96b8;margin-bottom:2px">${pos} Rank</div>
-            <div style="color:#7c4dff;font-weight:600">#${posRank}</div>
-          </div>
-          <div>
-            <div style="color:#9b96b8;margin-bottom:2px">Tier</div>
-            <div style="color:${tier.c};font-weight:600">${tier.t}</div>
-          </div>
+        <div style="display:flex;gap:24px;font-size:13px;align-items:baseline">
+          <div style="color:#9b96b8;font-size:13px">Overall: <span style="color:#7c4dff;font-weight:600">#${rank}</span></div>
+          <div style="color:#9b96b8;font-size:13px">${pos}: <span style="color:#7c4dff;font-weight:600">#${posRank}</span></div>
+          <div style="color:#9b96b8;font-size:13px">Tier: <span style="color:${tier.c};font-weight:600">${tier.t}</span></div>
         </div>
       </div>
 
