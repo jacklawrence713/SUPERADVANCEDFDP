@@ -3183,8 +3183,9 @@ export default function App(){
 
   var rankedPlayers=useMemo(function(){
     var bl=getBaselines(teams,isSF);
+    var UNQ_=UNQ||[];
     var byPos={};
-    UNQ.forEach(function(p){if(!byPos[p.pos])byPos[p.pos]=[];byPos[p.pos].push(p);});
+    UNQ_.forEach(function(p){if(!byPos[p.pos])byPos[p.pos]=[];byPos[p.pos].push(p);});
     var baseVal={};
     Object.keys(byPos).forEach(function(pos){
       var s=byPos[pos].slice().sort(function(a,b){return b.proj[sKey]-a.proj[sKey];});
@@ -3198,7 +3199,7 @@ export default function App(){
       var idx=Math.min((abl[pos]||teams*2)-1,s.length-1);
       aBaseVal[pos]=s[idx]?s[idx].proj[sKey]:0;
     });
-    var list=UNQ.map(function(p){
+    var list=UNQ_.map(function(p){
       var pts=customPPRVal===0?(p.proj["Standard"]||0):customPPRVal===0.5?(p.proj["Half"]||0):customPPRVal===1.5?((p.proj["Standard"]||0)+((p.proj["PPR"]||0)-(p.proj["Standard"]||0))*1.5):(p.proj[sKey]||p.proj["PPR"]||0);
       // Blend live weekly projection into season projection (remaining weeks scale)
       if(liveProj&&liveProj.map){
