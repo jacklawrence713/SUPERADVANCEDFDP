@@ -2682,8 +2682,8 @@ var userSide=null;
 if(aOnU>0||bOnU>0){userSide=aOnU>0&&bOnU>0?null:aOnU>0?"A":"B";}
 if(userSide){var uSent=userSide==="A"?tradeA:tradeB;if(powerRankingTeams&&myTeamIdx!=null){}}
 if(leagueIntel&&leagueIntel.teams){leagueIntel.teams.forEach(function(t,ti){});}
-var offP=tradeB.filter((p:any)=>p.pos!=="PICK");
-var afterP=offP.filter((p:any)=>p.pos!=="PICK").concat(tradeA.filter((p:any)=>p.pos==="PICK"));
+var offP=(tradeB||[]).filter((p:any)=>p.pos!=="PICK");
+var afterP=(offP||[]).filter((p:any)=>p.pos!=="PICK").concat((tradeA||[]).filter((p:any)=>p.pos==="PICK"));
 var onRoster=true,onMy=false,otherTeam="On another roster:",free="free agent";
 var warnings=[],fmtNotes=[];
 var ageA={avg:null},ageB={avg:null};
