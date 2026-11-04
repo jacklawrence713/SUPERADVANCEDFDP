@@ -2700,7 +2700,6 @@ if(aAge!=null&&bAge!=null){}
 return{aAge:aAge,bAge:bAge,aAges:aAges,bAges:bAges};
 }
 function tVal(side,fa){return side.reduce(function(s,x){return s+(x.pos==="PICK"?x.est:Math.max(0,x.tradeVal));},0)}
-function verdict(){var diff=tvA-tvB;var maxVal=Math.max(tvA,tvB);if(maxVal===0)return{txt:"Fair Trade",sub:"Both sides get equal value",c:"#22c55e",pct:50};var pct=Math.abs(diff)/maxVal*100;if(pct<8) return {txt:"Fair Trade",sub:"Both sides get equal value",c:"#22c55e",pct:50};if(diff>0)return{txt:"Team A Overpays",sub:"Team B wins by "+pct.toFixed(0)+"%",c:"#ef4444",pct:Math.max(15,50-pct/2)};return {txt:"Team B Overpays",sub:"Team A wins by "+pct.toFixed(0)+"%",c:"#f59e0b",pct:Math.min(85,50+pct/2)}}
   // League Intelligence Engine (Prompt 16)
   function computeOptimalLineup(rosters:any[],isSF:boolean,tePremium:boolean){var posRanks:{[pos:string]:any[]}={};return{lineup:[],posRanks:posRanks};}
   // Paywall component for feature gating
@@ -2836,6 +2835,7 @@ export default function App(){
   var [tradeB,setTradeB]=useState([]);
   var tvA=tVal(tradeA,faabA),tvB=tVal(tradeB,faabB);
   var [tSrchA,setTSrchA]=useState("");
+  function verdict(){var diff=tvA-tvB;var maxVal=Math.max(tvA,tvB);if(maxVal===0)return{txt:"Fair Trade",sub:"Both sides get equal value",c:"#22c55e",pct:50};var pct=Math.abs(diff)/maxVal*100;if(pct<8) return {txt:"Fair Trade",sub:"Both sides get equal value",c:"#22c55e",pct:50};if(diff>0)return{txt:"Team A Overpays",sub:"Team B wins by "+pct.toFixed(0)+"%",c:"#ef4444",pct:Math.max(15,50-pct/2)};return {txt:"Team B Overpays",sub:"Team A wins by "+pct.toFixed(0)+"%",c:"#f59e0b",pct:Math.min(85,50+pct/2)}}
   var [tSrchB,setTSrchB]=useState("");
   var [tradeRosterSide,setTradeRosterSide]=useState<"A"|"B"|null>(null);
   var [tradeRosterTeam,setTradeRosterTeam]=useState(0);
