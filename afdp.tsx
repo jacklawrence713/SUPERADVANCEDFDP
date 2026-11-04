@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { computeDynastyTradeVal, computeRedraftTradeVal, REDRAFT_TV_MULT, VALUES_UPDATED_AT, PRODUCT_STATS, formatContextLabel, explainFdpValue, generateTradeCandidates, computeTeamPosValues, computeTeamNeeds, computePosRanksForTeams, computeValueChange, isSnapshotContextSupported, normalizeSnapshotContext, HISTORY_PAGE_SIZE, findComparisonSnapshots, explainValueMovement, formatCalendarDate, formatRelativeTime, leagueFetchedAtKey, deriveProvider, freshnessFetchVerb } from "./src/logic";
 import type { FdpSnapshot } from "./src/logic";
@@ -2669,30 +2669,10 @@ function AnalyticsDashboard({T,data,loading,onLoad}:{T:any,data:any,loading:bool
   );
 }
 
-  var [faabA,setFaabA]=useState(0);
-  var [faabB,setFaabB]=useState(0);
-  var tvA=tVal(tradeA,faabA),tvB=tVal(tradeB,faabB);
 // Platform-specific import functions
 function doEspnImport(){}
 function doYahooImport(){}
 function doSleeperImport(){}
-function buildTradeContext(){
-var rosterImpact=null;if(leagueIntel&&leagueIntel.hasSlotData&&leagueIntel.starterSlots){rosterImpact={};}
-var posImpact:any[]=[];var uNames:string[]=[];var aOnU=0,bOnU=0;
-tradeA.forEach((p:any)=>{if(p.pos!=="PICK"&&uNames.indexOf(p.name)>=0){aOnU=1;}});
-tradeB.forEach((p:any)=>{if(p.pos!=="PICK"&&uNames.indexOf(p.name)>=0){bOnU=1;}});
-var userSide=null;
-if(aOnU>0||bOnU>0){userSide=aOnU>0&&bOnU>0?null:aOnU>0?"A":"B";}
-if(userSide){var uSent=userSide==="A"?tradeA:tradeB;if(powerRankingTeams&&myTeamIdx!=null){}}
-if(leagueIntel&&leagueIntel.teams){leagueIntel.teams.forEach(function(t,ti){});}
-var offP=tradeB.filter((p:any)=>p.pos!=="PICK");
-var afterP=offP.filter((p:any)=>p.pos!=="PICK").concat(tradeA.filter((p:any)=>p.pos==="PICK"));
-var onRoster=true,onMy=false,otherTeam="On another roster:",free="free agent";
-var warnings=[],fmtNotes=[];
-var ageA={avg:null},ageB={avg:null};
-var draftCap={valSent:0,valReceived:0,sent:[],received:[],net:0};
-return{rosterImpact:rosterImpact,posImpact:posImpact,userSide:userSide,afterP:afterP,onRoster:onMy,otherTeam:otherTeam,warnings:warnings,fmtNotes:fmtNotes,ageA:ageA,ageB:ageB,draftCap:draftCap};
-}
 var redraftVal=computeRedraftTradeVal("QB",1,2000,{isSF:false});
 function genAiAnalysis(tradeA:any[],tradeB:any[]){
 var aAges=tradeA.filter((p:any)=>p.age&&p.age>0).map((p:any)=>p.age);
@@ -2703,7 +2683,6 @@ if(aAge!=null&&bAge!=null){}
 return{aAge:aAge,bAge:bAge,aAges:aAges,bAges:bAges};
 }
 function tVal(side,fa){return side.reduce(function(s,x){return s+(x.pos==="PICK"?x.est:Math.max(0,x.tradeVal));},0)}
-function verdict(){var diff=tvA-tvB;var maxVal=Math.max(tvA,tvB);if(maxVal===0)return{txt:"Fair Trade",sub:"Both sides get equal value",c:"#22c55e",pct:50};var pct=Math.abs(diff)/maxVal*100;if(pct<8) return {txt:"Fair Trade",sub:"Both sides get equal value",c:"#22c55e",pct:50};if(diff>0)return{txt:"Team A Overpays",sub:"Team B wins by "+pct.toFixed(0)+"%",c:"#ef4444",pct:Math.max(15,50-pct/2)};return {txt:"Team B Overpays",sub:"Team A wins by "+pct.toFixed(0)+"%",c:"#f59e0b",pct:Math.min(85,50+pct/2)}}
   // League Intelligence Engine (Prompt 16)
   function computeOptimalLineup(rosters:any[],isSF:boolean,tePremium:boolean){var posRanks:{[pos:string]:any[]}={};return{lineup:[],posRanks:posRanks};}
   // Paywall component for feature gating
@@ -2730,6 +2709,8 @@ export default function App(){
   var [ppHistoryError,setPpHistoryError]=useState(false);
   var [ppHistoryRange,setPpHistoryRange]=useState("ALL");
   var [isDesktop,setIsDesktop]=useState(function(){return window.innerWidth>=1024;});
+  var [faabA,setFaabA]=useState(0);
+  var [faabB,setFaabB]=useState(0);
   useEffect(function(){
     function onResize(){setIsDesktop(window.innerWidth>=1024);}
     window.addEventListener("resize",onResize);
@@ -2834,8 +2815,13 @@ export default function App(){
   var [ffab,setFfab]=useState(100);
   var [sortBy,setSortBy]=useState("rank");
   var [tradeA,setTradeA]=useState([]);
+  var leagueIntel=null;
+  var powerRankingTeams=null,myTeamIdx=null;
+  var LEAGUE_TEAMS=Array.from({length:12},function(v,i){return{idx:i,name:"Team "+(i+1),owner:"",wins:0,losses:0,players:[],record:"0-0",totalVal:0,ownerId:"",pickDetails:[]};});
   var [tradeB,setTradeB]=useState([]);
+  var tvA=tVal(tradeA,faabA),tvB=tVal(tradeB,faabB);
   var [tSrchA,setTSrchA]=useState("");
+  function verdict(){var diff=tvA-tvB;var maxVal=Math.max(tvA,tvB);if(maxVal===0)return{txt:"Fair Trade",sub:"Both sides get equal value",c:"#22c55e",pct:50};var pct=Math.abs(diff)/maxVal*100;if(pct<8) return {txt:"Fair Trade",sub:"Both sides get equal value",c:"#22c55e",pct:50};if(diff>0)return{txt:"Team A Overpays",sub:"Team B wins by "+pct.toFixed(0)+"%",c:"#ef4444",pct:Math.max(15,50-pct/2)};return {txt:"Team B Overpays",sub:"Team A wins by "+pct.toFixed(0)+"%",c:"#f59e0b",pct:Math.min(85,50+pct/2)}}
   var [tSrchB,setTSrchB]=useState("");
   var [tradeRosterSide,setTradeRosterSide]=useState<"A"|"B"|null>(null);
   var [tradeRosterTeam,setTradeRosterTeam]=useState(0);
@@ -2855,7 +2841,7 @@ export default function App(){
       setTradeQuota({limit_per_day:2,used_count:0,reserved_count:0,remaining_count:0,quota_date:"",is_unlimited:false,loading:false,error:"Quota fetch error"});
     }
   }
-  var [pendingRequestRef]=useState({requestId:null,payloadKey:null});
+  var pendingRequestRef=useRef({requestId:null,payloadKey:null});
   var [impTab,setImpTab]=useState("sleeper");
   var [slUser,setSlUser]=useState("");
   var [impStatus,setImpStatus]=useState(null);
@@ -3181,8 +3167,9 @@ export default function App(){
 
   var rankedPlayers=useMemo(function(){
     var bl=getBaselines(teams,isSF);
+    var UNQ_=UNQ||[];
     var byPos={};
-    UNQ.forEach(function(p){if(!byPos[p.pos])byPos[p.pos]=[];byPos[p.pos].push(p);});
+    UNQ_.forEach(function(p){if(!byPos[p.pos])byPos[p.pos]=[];byPos[p.pos].push(p);});
     var baseVal={};
     Object.keys(byPos).forEach(function(pos){
       var s=byPos[pos].slice().sort(function(a,b){return b.proj[sKey]-a.proj[sKey];});
@@ -3196,7 +3183,7 @@ export default function App(){
       var idx=Math.min((abl[pos]||teams*2)-1,s.length-1);
       aBaseVal[pos]=s[idx]?s[idx].proj[sKey]:0;
     });
-    var list=UNQ.map(function(p){
+    var list=UNQ_.map(function(p){
       var pts=customPPRVal===0?(p.proj["Standard"]||0):customPPRVal===0.5?(p.proj["Half"]||0):customPPRVal===1.5?((p.proj["Standard"]||0)+((p.proj["PPR"]||0)-(p.proj["Standard"]||0))*1.5):(p.proj[sKey]||p.proj["PPR"]||0);
       // Blend live weekly projection into season projection (remaining weeks scale)
       if(liveProj&&liveProj.map){
@@ -3237,21 +3224,26 @@ export default function App(){
         p.tradeVal=computeRedraftTradeVal(p.pos,p.age,p.ktcVal,p.posRank,p.proj[sKey]||0,{isSF:isSF,sKey:sKey});
         }
     })
-    // Warnings
+    return list;
+  },[sKey,isSF,tePremium,isDynasty,customPPRVal,liveProj,adminTvMult]);
+  var tradePool=rankedPlayers;
+  var tradeContext=useMemo(function(){
+    var posImpact=[],avgAgeA=null,avgAgeB=null,aPrime=0,bPrime=0,draftCap={valSent:0,valReceived:0,sent:[],received:[],net:0},picksSent=[],picksRcvd=[],aAged=[],bAged=[];
+    var rosterImpact={ownr:[],lnA:null,lnB:null};var userSide=null;
     var warnings=[] as string[];
     if(powerRankingTeams&&myTeamIdx!=null&&!userSide){var ut3=powerRankingTeams[myTeamIdx as number];if(ut3&&ut3.players){var uN3=ut3.players.map(function(p){return p.name;});var a3=tradeA.filter(function(p){return p.pos!=="PICK"&&uN3.indexOf(p.name)>=0;}).length;var b3=tradeB.filter(function(p){return p.pos!=="PICK"&&uN3.indexOf(p.name)>=0;}).length;if(a3>0&&b3>0)warnings.push("Both sides contain your rostered players — roster impact cannot be determined. Use the standalone positional and value analysis above.");}}
     if(isSF){
       var qbSA=tradeA.filter(function(p){return p.pos==="QB";}).length;var qbSB=tradeB.filter(function(p){return p.pos==="QB";}).length;
       if(rosterImpact&&userSide){
         var uQbS=userSide==="A"?qbSA:qbSB;var uQbR=userSide==="A"?qbSB:qbSA;
-        if(uQbS>uQbR){var ut4=powerRankingTeams[myTeamIdx as number];var rQBs=ut4.players.filter(function(p){return p.pos==="QB";}).length;if(rQBs-uQbS+uQbR<=1)warnings.push("Trade leaves only "+(rQBs-uQbS+uQbR)+" QB on roster in Superflex.");}
+        if(uQbS>uQbR && powerRankingTeams && myTeamIdx!=null){var ut4=powerRankingTeams[myTeamIdx as number];var rQBs=ut4.players.filter(function(p){return p.pos==="QB";}).length;if(rQBs-uQbS+uQbR<=1)warnings.push("Trade leaves only "+(rQBs-uQbS+uQbR)+" QB on roster in Superflex.");}
       }else if(qbSA!==qbSB){warnings.push("One side trades away a QB without receiving one back in Superflex.");}
     }
-    if(rosterImpact){
+    if(rosterImpact && powerRankingTeams && myTeamIdx!=null){
       var ut5=powerRankingTeams[myTeamIdx as number];
       var uTeS=userSide==="A"?tradeA.filter(function(p){return p.pos==="TE";}).length:tradeB.filter(function(p){return p.pos==="TE";}).length;
       var uTeR=userSide==="A"?tradeB.filter(function(p){return p.pos==="TE";}).length:tradeA.filter(function(p){return p.pos==="TE";}).length;
-      var rTEs=ut5.players.filter(function(p){return p.pos==="TE";}).length;
+      var rTEs=ut5&&ut5.players?ut5.players.filter(function(p){return p.pos==="TE";}).length:0;
       if(rTEs-uTeS+uTeR<=0)warnings.push("Trade removes all TEs from roster.");
       var ownOnOther=rosterImpact.ownr.filter(function(o){return !o.onRoster&&o.otherTeam;});
       var ownFa=rosterImpact.ownr.filter(function(o){return !o.onRoster&&!o.otherTeam;});
@@ -3262,14 +3254,13 @@ export default function App(){
     if(rosterImpact&&leagueIntel&&!leagueIntel.hasSlotData)warnings.push("Lineup settings unavailable — lineup impact cannot be calculated.");
     if(rosterImpact&&rosterImpact.lnB&&rosterImpact.lnA){var svD=rosterImpact.lnA.sv-rosterImpact.lnB.sv;if(svD<-500)warnings.push("Trade significantly reduces optimal lineup value ("+svD.toLocaleString()+").");}
     if(idpMode){var hasIdpTrade=tradeA.concat(tradeB).some(function(p){return["DL","LB","DB"].indexOf(p.pos)>=0;});if(hasIdpTrade)warnings.push("IDP player values included in totals but lineup impact reflects offensive positions only.");}
-    // Format context notes
     var fmtNotes=[] as string[];
     if(isSF&&posImpact.find(function(d){return d.pos==="QB";}))fmtNotes.push("QB assets carry premium value in Superflex.");
     if(tePremium>0&&posImpact.find(function(d){return d.pos==="TE";}))fmtNotes.push("TE values already reflect TE Premium adjustment.");
     if(isDynasty&&(aAged.length>0||bAged.length>0))fmtNotes.push("Age and draft picks are significant factors in dynasty.");
     if(!isDynasty&&(picksSent.length>0||picksRcvd.length>0))fmtNotes.push("Draft pick values reflect redraft context.");
     return{posImpact:posImpact,ageA:{avg:avgAgeA,count:aAged.length,prime:aPrime},ageB:{avg:avgAgeB,count:bAged.length,prime:bPrime},draftCap:draftCap,rosterImpact:rosterImpact,warnings:warnings,fmtNotes:fmtNotes,userSide:userSide};
-  },[sKey,isSF,tePremium,isDynasty,customPPRVal,liveProj,adminTvMult]);
+  },[tradeA,tradeB,isSF,isDynasty,tePremium,idpMode,leagueIntel,powerRankingTeams,myTeamIdx]);
 
   function downloadGradeCard(team:any){
     try{
@@ -4428,7 +4419,7 @@ export default function App(){
         ),
         React.createElement("button",{onClick:async function(){
           if(tradeA.length===0&&tradeB.length===0)return;
-          var tCtx=buildTradeContext();
+          var tCtx=tradeContext;
           var currentPayloadKey=getPayloadKey(tradeA,tradeB,tvA,tvB,scoring,tCtx.posImpact,tCtx.ageA.avg!=null||tCtx.ageB.avg!=null?{avgA:tCtx.ageA.avg,avgB:tCtx.ageB.avg}:undefined,tCtx.draftCap.sent.length>0||tCtx.draftCap.received.length>0?{valSent:tCtx.draftCap.valSent,valReceived:tCtx.draftCap.valReceived,net:tCtx.draftCap.net}:undefined,tCtx.rosterImpact?{side:tCtx.rosterImpact.side,team:tCtx.rosterImpact.team,valDelta:tCtx.rosterImpact.delta,lineupDelta:tCtx.rosterImpact.lnA&&tCtx.rosterImpact.lnB?tCtx.rosterImpact.lnA.sv-tCtx.rosterImpact.lnB.sv:null}:undefined,tCtx.warnings.length>0?tCtx.warnings:undefined,tCtx.fmtNotes.length>0?tCtx.fmtNotes:undefined);
           var shouldGenerateNewId=!pendingRequestRef.current.requestId||pendingRequestRef.current.payloadKey!==currentPayloadKey;
           if(shouldGenerateNewId){pendingRequestRef.current.requestId=generateRequestId();pendingRequestRef.current.payloadKey=currentPayloadKey;}
@@ -4533,7 +4524,7 @@ export default function App(){
         ),
         !isPro&&tradeQuota.remaining_count<=0&&PaywallCard("trade_analyzer_limit"),
         analyzed&&(tradeA.length>0||tradeB.length>0)&&(function(){
-          var v=verdict();var ctx=buildTradeContext();
+          var v=verdict();var ctx=tradeContext;
           return React.createElement("div",{style:{marginTop:14,background:T.bgInput,borderRadius:14,padding:16,border:"1px solid "+v.c+"33"}},
             React.createElement("div",{style:{fontWeight:900,fontSize:18,color:v.c,marginBottom:2}},v.txt),
             React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:12}},v.sub),
@@ -4694,7 +4685,7 @@ export default function App(){
             })(),
             React.createElement("div",{style:{display:"flex",gap:8,marginTop:8}},
               React.createElement("button",{onClick:saveTrade,disabled:tradeSaved,style:{flex:1,padding:"10px",borderRadius:10,border:"1px solid "+(tradeSaved?T.green:T.border),cursor:tradeSaved?"default":"pointer",fontWeight:700,fontSize:12,background:tradeSaved?T.green:T.bgInput,color:tradeSaved?"#fff":T.textSub}},tradeSaved?"Saved ✓":"Save Trade"),
-              React.createElement("button",{onClick:async function(){setAiAnalysis("Analyzing...");var rCtx=buildTradeContext();try{var rr=await callEdgeFn("analyze-trade",{sideA:tradeA.map(function(p){return{name:p.name,pos:p.pos,age:p.age,val:p.tradeVal||0};}),sideB:tradeB.map(function(p){return{name:p.name,pos:p.pos,age:p.age,val:p.tradeVal||0};}),tvA,tvB,scoring,posImpact:rCtx.posImpact,ageContext:rCtx.ageA.avg!=null||rCtx.ageB.avg!=null?{avgA:rCtx.ageA.avg,avgB:rCtx.ageB.avg}:undefined,draftCapital:rCtx.draftCap.sent.length>0||rCtx.draftCap.received.length>0?{valSent:rCtx.draftCap.valSent,valReceived:rCtx.draftCap.valReceived,net:rCtx.draftCap.net}:undefined,rosterFit:rCtx.rosterImpact?{side:rCtx.rosterImpact.side,team:rCtx.rosterImpact.team,valDelta:rCtx.rosterImpact.delta,lineupDelta:rCtx.rosterImpact.lnA&&rCtx.rosterImpact.lnB?rCtx.rosterImpact.lnA.sv-rCtx.rosterImpact.lnB.sv:null}:undefined,warnings:rCtx.warnings.length>0?rCtx.warnings:undefined,formatNotes:rCtx.fmtNotes.length>0?rCtx.fmtNotes:undefined},user?.token);setAiAnalysis(rr.analysis||genAiAnalysis(tradeA,tradeB,tvA,tvB));}catch(e){setAiAnalysis(genAiAnalysis(tradeA,tradeB,tvA,tvB));}},style:{flex:1,padding:"10px",borderRadius:10,border:"1px solid "+T.borderPurple,cursor:"pointer",fontWeight:700,fontSize:12,background:T.bgInput,color:T.textSub}},"↻")
+              React.createElement("button",{onClick:async function(){setAiAnalysis("Analyzing...");var rCtx=tradeContext;try{var rr=await callEdgeFn("analyze-trade",{sideA:tradeA.map(function(p){return{name:p.name,pos:p.pos,age:p.age,val:p.tradeVal||0};}),sideB:tradeB.map(function(p){return{name:p.name,pos:p.pos,age:p.age,val:p.tradeVal||0};}),tvA,tvB,scoring,posImpact:rCtx.posImpact,ageContext:rCtx.ageA.avg!=null||rCtx.ageB.avg!=null?{avgA:rCtx.ageA.avg,avgB:rCtx.ageB.avg}:undefined,draftCapital:rCtx.draftCap.sent.length>0||rCtx.draftCap.received.length>0?{valSent:rCtx.draftCap.valSent,valReceived:rCtx.draftCap.valReceived,net:rCtx.draftCap.net}:undefined,rosterFit:rCtx.rosterImpact?{side:rCtx.rosterImpact.side,team:rCtx.rosterImpact.team,valDelta:rCtx.rosterImpact.delta,lineupDelta:rCtx.rosterImpact.lnA&&rCtx.rosterImpact.lnB?rCtx.rosterImpact.lnA.sv-rCtx.rosterImpact.lnB.sv:null}:undefined,warnings:rCtx.warnings.length>0?rCtx.warnings:undefined,formatNotes:rCtx.fmtNotes.length>0?rCtx.fmtNotes:undefined},user?.token);setAiAnalysis(rr.analysis||genAiAnalysis(tradeA,tradeB,tvA,tvB));}catch(e){setAiAnalysis(genAiAnalysis(tradeA,tradeB,tvA,tvB));}},style:{flex:1,padding:"10px",borderRadius:10,border:"1px solid "+T.borderPurple,cursor:"pointer",fontWeight:700,fontSize:12,background:T.bgInput,color:T.textSub}},"↻")
             ),
             (function(){var v=verdict();var pct=v.pct;var isUnfair=Math.abs(tvA-tvB)/Math.max(1,Math.max(tvA,tvB))*100>=8;
             return React.createElement(React.Fragment,null,
