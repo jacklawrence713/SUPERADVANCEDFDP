@@ -3229,7 +3229,7 @@ export default function App(){
   var tradePool=rankedPlayers;
   var tradeContext=useMemo(function(){
     var posImpact=[],avgAgeA=null,avgAgeB=null,aPrime=0,bPrime=0,draftCap={valSent:0,valReceived:0,sent:[],received:[],net:0},picksSent=[],picksRcvd=[],aAged=[],bAged=[];
-    var rosterImpact={ownr:[],lnA:null,lnB:null};var userSide=null;
+    var rosterImpact=null;var userSide=null;
     var warnings=[] as string[];
     if(powerRankingTeams&&myTeamIdx!=null&&!userSide){var ut3=powerRankingTeams[myTeamIdx as number];if(ut3&&ut3.players){var uN3=ut3.players.map(function(p){return p.name;});var a3=tradeA.filter(function(p){return p.pos!=="PICK"&&uN3.indexOf(p.name)>=0;}).length;var b3=tradeB.filter(function(p){return p.pos!=="PICK"&&uN3.indexOf(p.name)>=0;}).length;if(a3>0&&b3>0)warnings.push("Both sides contain your rostered players — roster impact cannot be determined. Use the standalone positional and value analysis above.");}}
     if(isSF){
@@ -4571,7 +4571,7 @@ export default function App(){
               )
             ),
             // ROSTER IMPACT (connected league only)
-            ctx.rosterImpact&&(function(){var ri=ctx.rosterImpact;var svD=ri.lnB&&ri.lnA?ri.lnA.sv-ri.lnB.sv:null;var bvD=ri.lnB&&ri.lnA?ri.lnA.bv-ri.lnB.bv:null;return React.createElement("div",{style:{marginTop:12,background:T.bgCard,borderRadius:12,padding:"12px 14px",border:"1px solid "+T.purple+"33"}},
+            ctx.rosterImpact&&ctx.rosterImpact.bVal!=null&&ctx.rosterImpact.aVal!=null&&ctx.rosterImpact.delta!=null&&ctx.rosterImpact.pgA&&ctx.rosterImpact.pgB&&(function(){var ri=ctx.rosterImpact;var svD=ri.lnB&&ri.lnA?ri.lnA.sv-ri.lnB.sv:null;var bvD=ri.lnB&&ri.lnA?ri.lnA.bv-ri.lnB.bv:null;return React.createElement("div",{style:{marginTop:12,background:T.bgCard,borderRadius:12,padding:"12px 14px",border:"1px solid "+T.purple+"33"}},
               React.createElement("div",{style:{fontSize:10,fontWeight:800,color:T.purple,letterSpacing:1,marginBottom:8}},"ROSTER IMPACT — "+ri.team),
               React.createElement("div",{style:{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:4,flexWrap:"wrap",gap:4}},React.createElement("span",{style:{color:T.textSub}},"Total Roster Value"),React.createElement("span",{style:{fontWeight:800,color:ri.delta>0?T.green:ri.delta<0?T.red:T.textSub}},ri.bVal.toLocaleString()+" → "+ri.aVal.toLocaleString()+" ("+(ri.delta>0?"+":"")+ri.delta.toLocaleString()+")")),
               svD!=null&&React.createElement("div",{style:{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:4,flexWrap:"wrap",gap:4}},React.createElement("span",{style:{color:T.textSub}},"Optimal Lineup Value"),React.createElement("span",{style:{fontWeight:800,color:svD>0?T.green:svD<0?T.red:T.textSub}},ri.lnB.sv.toLocaleString()+" → "+ri.lnA.sv.toLocaleString()+" ("+(svD>0?"+":"")+svD.toLocaleString()+")")),
