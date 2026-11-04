@@ -2726,6 +2726,10 @@ export default function App(){
     if(authClient)authClient.auth.getSession().catch(function(){});
   },[]);
   // Fetch FDP Value history for player page
+  // Track page view on load
+  useEffect(function(){
+    trackEvent("page_view",{path:window.location.pathname,hash:window.location.hash});
+  },[]);
   var ppSnapshotCtx=normalizeSnapshotContext({isDynasty:isDynasty,scoring:sKey,superflex:isSF,tePremium:tePremium,idp:idpMode});
   var ppCtxSupported=isSnapshotContextSupported(ppSnapshotCtx);
   var ppCanonicalMult=!isDynasty&&adminTvMult!==REDRAFT_TV_MULT;
