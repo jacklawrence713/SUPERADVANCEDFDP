@@ -74,14 +74,21 @@ async function getGeo() {
 
 async function trackEvent(type: string, data: Record<string, any> = {}) {
   const client = analyticsClient;
-  if (!client) { console.warn("[trackEvent] analyticsClient not initialized"); return; }
+  if (!client) { console.warn("[trackEvent] analyticsClient not initialized - check VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY"); return; }
   try {
     const result = await client.from("analytics_events").insert({
       visitor_id: getVisitorId(),
       event_type: type,
       event_data: _trackedEmail ? Object.assign({}, data, {user_email: _trackedEmail}) : data,
     });
-    if (result.error) { console.error("[trackEvent] DB error:", result.error); }
+    if (result.error) { 
+      console.error("[trackEvent] DB error:", result.error);
+      if (result.error.message?.includes("policy")) {
+        console.error("[trackEvent] RLS policy issue - run: CREATE POLICY anon_insert ON analytics_events FOR INSERT TO anon WITH CHECK (true);");
+      }
+    } else {
+      console.log("[trackEvent] Success:", type);
+    }
   } catch(e) { console.error("[trackEvent] Exception:", e); }
 }
 
