@@ -2669,8 +2669,6 @@ function AnalyticsDashboard({T,data,loading,onLoad}:{T:any,data:any,loading:bool
   );
 }
 
-  var [faabA,setFaabA]=useState(0);
-  var [faabB,setFaabB]=useState(0);
   var tvA=tVal(tradeA,faabA),tvB=tVal(tradeB,faabB);
 // Platform-specific import functions
 function doEspnImport(){}
@@ -2730,6 +2728,8 @@ export default function App(){
   var [ppHistoryError,setPpHistoryError]=useState(false);
   var [ppHistoryRange,setPpHistoryRange]=useState("ALL");
   var [isDesktop,setIsDesktop]=useState(function(){return window.innerWidth>=1024;});
+  var [faabA,setFaabA]=useState(0);
+  var [faabB,setFaabB]=useState(0);
   useEffect(function(){
     function onResize(){setIsDesktop(window.innerWidth>=1024);}
     window.addEventListener("resize",onResize);
