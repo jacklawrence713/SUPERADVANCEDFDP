@@ -17,6 +17,11 @@ const authClient = SUPA_URL && SUPA_KEY ? createClient(SUPA_URL, SUPA_KEY) : nul
 // Analytics write client — separate instance so it always uses anon key, never inherits user session
 const analyticsClient = SUPA_URL && SUPA_KEY ? createClient(SUPA_URL, SUPA_KEY, {auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}}) : null;
 
+// ── Startup Debug ─────────────────────────────────────────────────────
+if (typeof window !== 'undefined') {
+  console.log("[FDP] Supabase config:", { SUPA_URL: !!SUPA_URL, SUPA_KEY: !!SUPA_KEY, EDGE_URL: !!EDGE_URL, authClient: !!authClient, analyticsClient: !!analyticsClient });
+}
+
 // ── Edge Function helpers ─────────────────────────────────────────────────────
 async function callEdgeFn(fn: string, body: any, userToken?: string) {
   const headers: Record<string,string> = { "Content-Type": "application/json", "apikey": SUPA_KEY };
@@ -69,15 +74,15 @@ async function getGeo() {
 
 async function trackEvent(type: string, data: Record<string, any> = {}) {
   const client = analyticsClient;
-  if (!client) return;
+  if (!client) { console.warn("[trackEvent] analyticsClient not initialized"); return; }
   try {
     const result = await client.from("analytics_events").insert({
       visitor_id: getVisitorId(),
       event_type: type,
       event_data: _trackedEmail ? Object.assign({}, data, {user_email: _trackedEmail}) : data,
     });
-    if (result.error) { /* silent */ }
-  } catch(e) { /* silent */ }
+    if (result.error) { console.error("[trackEvent] DB error:", result.error); }
+  } catch(e) { console.error("[trackEvent] Exception:", e); }
 }
 
 const DARK={bg:"#13111e",bgCard:"#1c1a2e",bgInput:"#0f0d1a",border:"#2e2a4a",borderPurple:"#5b3fd4",purple:"#7c4dff",purpleLight:"#9b72ff",purpleDim:"#3d2a7a",text:"#ffffff",textSub:"#9b96b8",textDim:"#5c5880",green:"#22c55e",red:"#ef4444",gold:"#f59e0b",cyan:"#06b6d4"};
