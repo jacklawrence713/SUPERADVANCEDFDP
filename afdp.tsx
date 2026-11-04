@@ -13,9 +13,9 @@ const SUPA_URL = (import.meta as any).env?.VITE_SUPABASE_URL;
 const SUPA_KEY = (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY;
 const EDGE_URL = (import.meta as any).env?.VITE_EDGE_FUNCTIONS_URL || (SUPA_URL ? `${SUPA_URL}/functions/v1` : null);
 // Auth + data client
-const authClient = SUPA_URL && SUPA_KEY ? createClient(SUPA_URL, SUPA_KEY) : null;
+const authClient = SUPA_URL && SUPA_KEY ? createClient(SUPA_URL, SUPA_KEY, {auth:{storageKey:"fdp-auth"}}) : null;
 // Analytics write client — separate instance so it always uses anon key, never inherits user session
-const analyticsClient = SUPA_URL && SUPA_KEY ? createClient(SUPA_URL, SUPA_KEY, {auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}}) : null;
+const analyticsClient = SUPA_URL && SUPA_KEY ? createClient(SUPA_URL, SUPA_KEY, {auth:{storageKey:"fdp-analytics",persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}}) : null;
 
 // ── Startup Debug ─────────────────────────────────────────────────────
 if (typeof window !== 'undefined') {
