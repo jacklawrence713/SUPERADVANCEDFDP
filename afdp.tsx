@@ -2832,6 +2832,7 @@ export default function App(){
   var [ffab,setFfab]=useState(100);
   var [sortBy,setSortBy]=useState("rank");
   var [tradeA,setTradeA]=useState([]);
+  var powerRankingTeams=null,myTeamIdx=null;
   var [tradeB,setTradeB]=useState([]);
   var tvA=tVal(tradeA,faabA),tvB=tVal(tradeB,faabB);
   var [tSrchA,setTSrchA]=useState("");
