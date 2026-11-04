@@ -3257,7 +3257,7 @@ export default function App(){
       var ut5=powerRankingTeams[myTeamIdx as number];
       var uTeS=userSide==="A"?tradeA.filter(function(p){return p.pos==="TE";}).length:tradeB.filter(function(p){return p.pos==="TE";}).length;
       var uTeR=userSide==="A"?tradeB.filter(function(p){return p.pos==="TE";}).length:tradeA.filter(function(p){return p.pos==="TE";}).length;
-      var rTEs=ut5.players.filter(function(p){return p.pos==="TE";}).length;
+      var rTEs=ut5&&ut5.players?ut5.players.filter(function(p){return p.pos==="TE";}).length:0;
       if(rTEs-uTeS+uTeR<=0)warnings.push("Trade removes all TEs from roster.");
       var ownOnOther=rosterImpact.ownr.filter(function(o){return !o.onRoster&&o.otherTeam;});
       var ownFa=rosterImpact.ownr.filter(function(o){return !o.onRoster&&!o.otherTeam;});
