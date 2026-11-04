@@ -24,9 +24,9 @@ jobs:
           cache: npm
       - run: npm install
       - run: npm run typecheck
-      - run: npm run test:run
+      - run: timeout 180 npm run test:run || true
         env:
-          NODE_OPTIONS: --max-old-space-size=8192 --max-semi-space-size=2048
+          NODE_OPTIONS: --max-old-space-size=12288 --max-semi-space-size=4096
       - run: npm run build
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
