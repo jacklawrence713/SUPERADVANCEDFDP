@@ -1989,21 +1989,25 @@ function spaRoutesPlugin() {
       } catch (e) {
         console.error('[spa-routes] Failed to generate keyword analysis:', e)
       }
-      // Phase 21.1: Seasonal Content Strategy
+      // Phase 21.1: Seasonal Content Strategy - DISABLED due to SEO leakage
+      /*
       try {
         const seasonalResult = injectSeasonalContent(distDir)
         console.log(`[spa-routes] Injected seasonal content (${seasonalResult.seasonalBlocksAdded} seasonal blocks + ${seasonalResult.seasonalCalendarsInjected} calendars) for Phase 21.1`)
       } catch (e) {
         console.error('[spa-routes] Failed to inject seasonal content:', e)
       }
+      */
 
-      // Phase 21.2: Content Refresh & Freshness Strategy
+      // Phase 21.2: Content Refresh & Freshness Strategy - DISABLED due to SEO leakage
+      /*
       try {
         const refreshResult = injectContentRefresh(distDir)
         console.log(`[spa-routes] Injected content refresh recommendations (${refreshResult.refreshRecommendationsAdded} refresh blocks + ${refreshResult.freshnessIndicatorsAdded} freshness scores) for Phase 21.2`)
       } catch (e) {
         console.error('[spa-routes] Failed to inject content refresh:', e)
       }
+      */
 
       // Phase 21.3: Authority Expansion & Topical Deepening
       try {
