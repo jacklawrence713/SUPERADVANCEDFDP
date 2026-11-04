@@ -4305,8 +4305,8 @@ export default function App(){
     React.createElement("div",{style:{flex:1,display:"flex",flexDirection:"column",minWidth:0,height:"100vh",marginLeft:isDesktop?220:0}},
       // Dynasty Value Ticker (all tabs — outside scroll wrapper so it stays fixed)
       React.createElement("div",{style:{overflow:"hidden",background:darkMode?"#0a0818":"#f8f7ff",borderBottom:"1px solid "+T.border,padding:"6px 0",flexShrink:0}},
-        React.createElement("style",null,"@keyframes fdp-ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}"),
-        React.createElement("div",{style:{display:"flex",gap:20,animation:"fdp-ticker 40s linear infinite",width:"max-content"}},
+        React.createElement("style",null,"@keyframes fdp-ticker{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}"),
+        React.createElement("div",{style:{display:"flex",gap:20,animation:"fdp-ticker 40s linear infinite",width:"200%",whiteSpace:"nowrap"}},
           rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;}).slice(0,100).concat(rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;}).slice(0,100)).map(function(p,i){
             var pc=POS_COLORS[p.pos]||T.purple;
             return React.createElement("div",{key:p.name+"-t-"+i,style:{display:"flex",alignItems:"center",gap:5,flexShrink:0}},
