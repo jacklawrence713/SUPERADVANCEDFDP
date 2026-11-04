@@ -2669,7 +2669,6 @@ function AnalyticsDashboard({T,data,loading,onLoad}:{T:any,data:any,loading:bool
   );
 }
 
-  var tvA=tVal(tradeA,faabA),tvB=tVal(tradeB,faabB);
 // Platform-specific import functions
 function doEspnImport(){}
 function doYahooImport(){}
@@ -2835,6 +2834,7 @@ export default function App(){
   var [sortBy,setSortBy]=useState("rank");
   var [tradeA,setTradeA]=useState([]);
   var [tradeB,setTradeB]=useState([]);
+  var tvA=tVal(tradeA,faabA),tvB=tVal(tradeB,faabB);
   var [tSrchA,setTSrchA]=useState("");
   var [tSrchB,setTSrchB]=useState("");
   var [tradeRosterSide,setTradeRosterSide]=useState<"A"|"B"|null>(null);
