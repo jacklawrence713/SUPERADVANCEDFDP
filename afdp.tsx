@@ -3249,10 +3249,10 @@ export default function App(){
       var qbSA=tradeA.filter(function(p){return p.pos==="QB";}).length;var qbSB=tradeB.filter(function(p){return p.pos==="QB";}).length;
       if(rosterImpact&&userSide){
         var uQbS=userSide==="A"?qbSA:qbSB;var uQbR=userSide==="A"?qbSB:qbSA;
-        if(uQbS>uQbR){var ut4=powerRankingTeams[myTeamIdx as number];var rQBs=ut4.players.filter(function(p){return p.pos==="QB";}).length;if(rQBs-uQbS+uQbR<=1)warnings.push("Trade leaves only "+(rQBs-uQbS+uQbR)+" QB on roster in Superflex.");}
+        if(uQbS>uQbR && powerRankingTeams && myTeamIdx!=null){var ut4=powerRankingTeams[myTeamIdx as number];var rQBs=ut4.players.filter(function(p){return p.pos==="QB";}).length;if(rQBs-uQbS+uQbR<=1)warnings.push("Trade leaves only "+(rQBs-uQbS+uQbR)+" QB on roster in Superflex.");}
       }else if(qbSA!==qbSB){warnings.push("One side trades away a QB without receiving one back in Superflex.");}
     }
-    if(rosterImpact){
+    if(rosterImpact && powerRankingTeams && myTeamIdx!=null){
       var ut5=powerRankingTeams[myTeamIdx as number];
       var uTeS=userSide==="A"?tradeA.filter(function(p){return p.pos==="TE";}).length:tradeB.filter(function(p){return p.pos==="TE";}).length;
       var uTeR=userSide==="A"?tradeB.filter(function(p){return p.pos==="TE";}).length:tradeA.filter(function(p){return p.pos==="TE";}).length;
