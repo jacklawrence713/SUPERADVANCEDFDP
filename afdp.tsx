@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { computeDynastyTradeVal, computeRedraftTradeVal, REDRAFT_TV_MULT, VALUES_UPDATED_AT, PRODUCT_STATS, formatContextLabel, explainFdpValue, generateTradeCandidates, computeTeamPosValues, computeTeamNeeds, computePosRanksForTeams, computeValueChange, isSnapshotContextSupported, normalizeSnapshotContext, HISTORY_PAGE_SIZE, findComparisonSnapshots, explainValueMovement, formatCalendarDate, formatRelativeTime, leagueFetchedAtKey, deriveProvider, freshnessFetchVerb } from "./src/logic";
 import type { FdpSnapshot } from "./src/logic";
@@ -2857,7 +2857,7 @@ export default function App(){
       setTradeQuota({limit_per_day:2,used_count:0,reserved_count:0,remaining_count:0,quota_date:"",is_unlimited:false,loading:false,error:"Quota fetch error"});
     }
   }
-  var [pendingRequestRef]=useState({requestId:null,payloadKey:null});
+  var pendingRequestRef=useRef({requestId:null,payloadKey:null});
   var [impTab,setImpTab]=useState("sleeper");
   var [slUser,setSlUser]=useState("");
   var [impStatus,setImpStatus]=useState(null);
