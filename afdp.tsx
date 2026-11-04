@@ -3226,6 +3226,7 @@ export default function App(){
     })
     return list;
   },[sKey,isSF,tePremium,isDynasty,customPPRVal,liveProj,adminTvMult]);
+  var tradePool=rankedPlayers;
   var tradeContext=useMemo(function(){
     var posImpact=[],avgAgeA=null,avgAgeB=null,aPrime=0,bPrime=0,draftCap={valSent:0,valReceived:0,sent:[],received:[],net:0},picksSent=[],picksRcvd=[],aAged=[],bAged=[];
     var rosterImpact={ownr:[],lnA:null,lnB:null};var userSide=null;
