@@ -2833,6 +2833,7 @@ export default function App(){
   var [sortBy,setSortBy]=useState("rank");
   var [tradeA,setTradeA]=useState([]);
   var powerRankingTeams=null,myTeamIdx=null;
+  var LEAGUE_TEAMS=Array.from({length:12},function(v,i){return{idx:i,name:"Team "+(i+1),owner:"",wins:0,losses:0,players:[],record:"0-0",totalVal:0,ownerId:"",pickDetails:[]};});
   var [tradeB,setTradeB]=useState([]);
   var tvA=tVal(tradeA,faabA),tvB=tVal(tradeB,faabB);
   var [tSrchA,setTSrchA]=useState("");
