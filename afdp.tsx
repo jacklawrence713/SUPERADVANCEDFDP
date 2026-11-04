@@ -12,6 +12,13 @@ import type { FeatureKey } from "./src/paywall-config";
 const SUPA_URL = (import.meta as any).env?.VITE_SUPABASE_URL;
 const SUPA_KEY = (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY;
 const EDGE_URL = (import.meta as any).env?.VITE_EDGE_FUNCTIONS_URL || (SUPA_URL ? `${SUPA_URL}/functions/v1` : null);
+// Validate required environment variables at build/startup time
+if (!SUPA_URL || !SUPA_KEY) {
+  const missing = [];
+  if (!SUPA_URL) missing.push('VITE_SUPABASE_URL');
+  if (!SUPA_KEY) missing.push('VITE_SUPABASE_PUBLISHABLE_KEY');
+  throw new Error(`[CONFIG ERROR] Required Supabase configuration is missing: ${missing.join(', ')}. Set these environment variables before building.`);
+}
 // Auth + data client
 const authClient = SUPA_URL && SUPA_KEY ? createClient(SUPA_URL, SUPA_KEY) : null;
 // Analytics write client — separate instance so it always uses anon key, never inherits user session

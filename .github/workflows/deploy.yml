@@ -24,13 +24,14 @@ jobs:
           cache: npm
       - run: npm install
       - run: npm run typecheck
-      - run: timeout 180 npm run test:run || true
+      - run: npm run test:run
         env:
           NODE_OPTIONS: --max-old-space-size=12288 --max-semi-space-size=4096
       - run: npm run build
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_EDGE_FUNCTIONS_URL: ${{ secrets.VITE_EDGE_FUNCTIONS_URL }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
