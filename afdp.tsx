@@ -3242,7 +3242,7 @@ export default function App(){
     })
     // Warnings
     var posImpact=[],avgAgeA=null,avgAgeB=null,aPrime=0,bPrime=0,draftCap={valSent:0,valReceived:0,sent:[],received:[],net:0},picksSent=[],picksRcvd=[],aAged=[],bAged=[];
-    var rosterImpact=null;var userSide=null;
+    var rosterImpact={ownr:[],lnA:null,lnB:null};var userSide=null;
     var warnings=[] as string[];
     if(powerRankingTeams&&myTeamIdx!=null&&!userSide){var ut3=powerRankingTeams[myTeamIdx as number];if(ut3&&ut3.players){var uN3=ut3.players.map(function(p){return p.name;});var a3=tradeA.filter(function(p){return p.pos!=="PICK"&&uN3.indexOf(p.name)>=0;}).length;var b3=tradeB.filter(function(p){return p.pos!=="PICK"&&uN3.indexOf(p.name)>=0;}).length;if(a3>0&&b3>0)warnings.push("Both sides contain your rostered players — roster impact cannot be determined. Use the standalone positional and value analysis above.");}}
     if(isSF){
