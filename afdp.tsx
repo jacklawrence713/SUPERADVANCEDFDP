@@ -3982,6 +3982,9 @@ export default function App(){
   }
 
   return React.createElement("div",{style:{background:T.bg,height:"100vh",color:T.text,fontFamily:"-apple-system,BlinkMacSystemFont,'Inter',sans-serif",maxWidth:isDesktop?"100%":480,margin:"0 auto",display:"flex",flexDirection:isDesktop?"row":"column",overflow:"hidden"}},
+    React.createElement("style",{},`@keyframes ticker-scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}`),
+    React.createElement("style",{},`@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}`),
+
 
     showAuth&&React.createElement(AuthModal,{mode:authMode,onClose:function(){pendingCheckoutIntentRef.current=null;setPendingCheckoutIntent(null);setShowAuth(false);},onAuth:function(u){saveAndSetUser(u);setShowAuth(false);const intent=pendingCheckoutIntentRef.current;pendingCheckoutIntentRef.current=null;setPendingCheckoutIntent(null);if(intent){executeCheckout(intent.plan,intent.billing,u);}},T:T}),
     showResetPw&&React.createElement("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}},
@@ -4309,7 +4312,6 @@ export default function App(){
     React.createElement("div",{style:{flex:1,display:"flex",flexDirection:"column",minWidth:0,height:"100vh",marginLeft:isDesktop?220:0}},
       // Dynasty Value Ticker (all tabs — outside scroll wrapper so it stays fixed)
       React.createElement("div",{style:{width:"100%",overflow:"hidden",background:darkMode?"#0a0818":"#f8f7ff",borderBottom:"1px solid "+T.border,padding:"6px 0",flexShrink:0}},
-        React.createElement("style",null,"@keyframes ticker-scroll{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}"),
         React.createElement("div",{style:{display:"flex",gap:20,animation:"ticker-scroll 8s linear infinite",width:"200%",whiteSpace:"nowrap"}},
           rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;}).slice(0,100).concat(rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;}).slice(0,100)).map(function(p,i){
             var pc=POS_COLORS[p.pos]||T.purple;
