@@ -2429,7 +2429,7 @@ function AnalyticsDashboard({T,data,loading,onLoad}:{T:any,data:any,loading:bool
 
     // Summary cards
     React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(90px, 1fr))",gap:6,marginBottom:20}},
-      [["Today",todayVisitors,"📅"],["7d",weekVisitors,"📆"],["14d",totalUnique,"🗓️"],["All Time",data.totalVisitors,"👥"],["Trades Today",todayTrades,"⚖️"],["Trades 7d",weekTrades,"📊"],["Trades 14d",twoWeekTrades,"📈"],["Total Trades",data.trades,"🏆"]].map(function(s:any){
+      [["Today",todayVisitors,"📅"],["7d",weekVisitors,"📆"],["14d",totalUnique,"🗓️"],["All Time",data?.totalVisitors||0,"👥"],["Trades Today",todayTrades,"⚖️"],["Trades 7d",weekTrades,"📊"],["Trades 14d",twoWeekTrades,"📈"],["Total Trades",data?.trades||0,"🏆"]].map(function(s:any){
         return React.createElement("div",{key:s[0] as string,style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:12,padding:"12px 8px",textAlign:"center"}},
           React.createElement("div",{style:{fontSize:20,marginBottom:4}},s[2]),
           React.createElement("div",{style:{fontWeight:900,fontSize:22,color:T.purple}},s[1]),
