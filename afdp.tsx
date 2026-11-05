@@ -4347,17 +4347,17 @@ export default function App(){
       ),
 
       // MAIN CONTENT WRAPPER (flex:1 on desktop for sidebar layout)
-      React.createElement("div",{style:{flex:1,minWidth:0,overflowY:"auto",width:isDesktop?"100%":undefined,paddingBottom:isDesktop?40:70}},
+      React.createElement("div",{style:{flex:1,minWidth:0,overflowY:"auto",width:isDesktop?"100%":undefined,paddingBottom:isDesktop?40:50}},
 
     // ════ TRADE TAB ════
     tab==="trade"&&React.createElement("div",{style:{padding:"16px 16px 0"}},
       React.createElement("div",{style:{textAlign:"center",marginTop:8,marginBottom:20}},
         React.createElement("div",{style:{display:"flex",flexWrap:"wrap",justifyContent:"center",gap:6,marginBottom:14}},["Dynasty","Redraft","1QB","Superflex","PPR","Half PPR","Standard","TE Premium","IDP"].map(function(f){return React.createElement("span",{key:f,style:{background:T.purpleDim,border:"1px solid "+T.purple+"33",borderRadius:20,padding:"4px 12px",fontSize:10,color:T.purpleLight,fontWeight:700,letterSpacing:0.3}},f);})),
-        React.createElement("h1",{style:{fontWeight:900,fontSize:28,lineHeight:1.15,marginBottom:10,marginTop:0}},React.createElement("span",{style:{color:T.purple}},"Fantasy Football Decisions."),React.createElement("br",null),"Powered by Your League."),
-        React.createElement("p",{style:{fontSize:14,color:T.textSub,lineHeight:1.7,marginBottom:16,maxWidth:520,marginLeft:"auto",marginRight:"auto",marginTop:0}},"Connect your league, analyze trades, compare player values, understand your roster, and make better fantasy football decisions with league-aware tools."),
+        React.createElement("h1",{style:{fontWeight:900,fontSize:isDesktop?28:20,lineHeight:1.15,marginBottom:10,marginTop:0}},React.createElement("span",{style:{color:T.purple}},"Fantasy Football Decisions."),React.createElement("br",null),"Powered by Your League."),
+        React.createElement("p",{style:{fontSize:14,color:T.textSub,lineHeight:1.7,marginBottom:16,maxWidth:isDesktop?520:"100%",marginLeft:"auto",marginRight:"auto",marginTop:0}},"Connect your league, analyze trades, compare player values, understand your roster, and make better fantasy football decisions with league-aware tools."),
         React.createElement("div",{style:{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap",marginBottom:4}},
-          React.createElement("button",{onClick:function(){if(isPro){setTab("league");setLeagueSubTab("leagimport");}else{setAuthMode("signup");setShowAuth(true);}},style:{padding:"13px 24px",borderRadius:30,border:"none",cursor:"pointer",fontWeight:800,fontSize:14,background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff"}},"Connect Your League"),
-          React.createElement("button",{onClick:function(){var el=document.querySelector("[data-trade-form]");if(el)el.scrollIntoView({behavior:"smooth",block:"start"});},style:{padding:"13px 24px",borderRadius:30,border:"1px solid "+T.border,cursor:"pointer",fontWeight:700,fontSize:14,background:"transparent",color:T.text}},"Analyze a Trade")
+          React.createElement("button",{onClick:function(){if(isPro){setTab("league");setLeagueSubTab("leagimport");}else{setAuthMode("signup");setShowAuth(true);}},style:{padding:isDesktop?"13px 24px":"10px 16px",borderRadius:30,border:"none",cursor:"pointer",fontWeight:800,fontSize:isDesktop?14:12,background:"linear-gradient(135deg,"+T.purple+",#5b21b6)",color:"#fff"}},"Connect Your League"),
+          React.createElement("button",{onClick:function(){var el=document.querySelector("[data-trade-form]");if(el)el.scrollIntoView({behavior:"smooth",block:"start"});},style:{padding:isDesktop?"13px 24px":"10px 16px",borderRadius:30,border:"1px solid "+T.border,cursor:"pointer",fontWeight:700,fontSize:isDesktop?14:12,background:"transparent",color:T.text}},"Analyze a Trade")
         )
       ),
       React.createElement("div",{"data-trade-form":true,style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:20,padding:18,marginBottom:20}},
