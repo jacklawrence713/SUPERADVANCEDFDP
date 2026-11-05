@@ -2737,6 +2737,20 @@ export default function App(){
   useEffect(function(){
     trackEvent("page_view",{path:window.location.pathname,hash:window.location.hash});
   },[]);
+  // Ticker animation with requestAnimationFrame
+  useEffect(function(){
+    var el=tickerRef.current;
+    if(!el)return;
+    var pos=0;
+    var speed=2;
+    function animate(){
+      pos-=speed;
+      if(pos<-el.scrollWidth/2)pos=0;
+      el.style.transform="translateX("+pos+"px)";
+      requestAnimationFrame(animate);
+    }
+    requestAnimationFrame(animate);
+  },[]);
   var ppSnapshotCtx=normalizeSnapshotContext({isDynasty:isDynasty,scoring:sKey,superflex:isSF,tePremium:tePremium,idp:idpMode});
   var ppCtxSupported=isSnapshotContextSupported(ppSnapshotCtx);
   var ppCanonicalMult=!isDynasty&&adminTvMult!==REDRAFT_TV_MULT;
@@ -2824,6 +2838,7 @@ export default function App(){
   var rankingTabsRef=React.useRef<HTMLDivElement>(null);
   var reportsTabsRef=React.useRef<HTMLDivElement>(null);
   var adminTabsRef=React.useRef<HTMLDivElement>(null);
+  var tickerRef=React.useRef<HTMLDivElement>(null);
   var [leagueType,setLeagueType]=useState("Dynasty");
   var [format,setFormat]=useState("PPR");
   var [teams,setTeams]=useState(12);
@@ -4319,7 +4334,7 @@ export default function App(){
     React.createElement("div",{style:{flex:1,display:"flex",flexDirection:"column",minWidth:0,height:"100vh",marginLeft:isDesktop?220:0}},
       // Dynasty Value Ticker (all tabs — outside scroll wrapper so it stays fixed)
       React.createElement("div",{style:{width:"100%",overflow:"hidden",background:darkMode?"#0a0818":"#f8f7ff",borderBottom:"1px solid "+T.border,padding:"6px 0",flexShrink:0}},
-        React.createElement("div",{style:{display:"flex",gap:20,animation:"ticker-scroll 1s linear infinite",width:"200%",whiteSpace:"nowrap"}},
+        React.createElement("div",{ref:tickerRef,style:{display:"flex",gap:20,width:"200%",whiteSpace:"nowrap"}},
           rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;}).slice(0,100).concat(rankedPlayers.filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0;}).slice(0,100)).map(function(p,i){
             var pc=POS_COLORS[p.pos]||T.purple;
             return React.createElement("div",{key:p.name+"-t-"+i,style:{display:"flex",alignItems:"center",gap:5,flexShrink:0}},
