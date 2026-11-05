@@ -2742,7 +2742,7 @@ export default function App(){
     var el=tickerRef.current;
     if(!el)return;
     var pos=0;
-    var speed=2;
+    var speed=0.8;
     function animate(){
       pos-=speed;
       if(pos<-el.scrollWidth/2)pos=0;
