@@ -2723,6 +2723,26 @@ export default function App(){
   var [isDesktop,setIsDesktop]=useState(function(){return window.innerWidth>=1024;});
   var [faabA,setFaabA]=useState(0);
   var [faabB,setFaabB]=useState(0);
+  function connectLeague(lg:any){
+    if(!lg||!lg.league_id)return;
+    setLeagueImportStatus("connecting");
+    Promise.all([
+      fetch("https://api.sleeper.app/v1/league/"+lg.league_id+"/rosters").then(function(r){return r.json();}).catch(function(){return[];}),
+      fetch("https://api.sleeper.app/v1/league/"+lg.league_id+"/users").then(function(r){return r.json();}).catch(function(){return[];})
+    ]).then(function(results){
+      setLeagueRosters(results[0]||[]);
+      setLeagueUsers(results[1]||[]);
+      saveAndSetActiveLeague(lg);
+      setLeagueImportStatus(null);
+      var aid=user?.id||"anon";
+      var ts=new Date().toISOString();
+      try{localStorage.setItem(leagueFetchedAtKey(aid,deriveProvider(lg.league_id),lg.league_id),ts);}catch(e){}
+      setLeagueFetchedAt(ts);
+    }).catch(function(e){
+      setLeagueImportStatus(null);
+      console.error("Failed to connect league:",e);
+    });
+  }
   useEffect(function(){
     function onResize(){setIsDesktop(window.innerWidth>=1024);}
     window.addEventListener("resize",onResize);
