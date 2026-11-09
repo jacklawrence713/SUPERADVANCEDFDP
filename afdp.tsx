@@ -6957,7 +6957,7 @@ export default function App(){
                       React.createElement("div",{style:{fontWeight:700,fontSize:13}},lg.name),
                       React.createElement("div",{style:{fontSize:11,color:T.textSub,marginTop:2}},lg.total_rosters+" teams")
                     ),
-                    React.createElement("button",{onClick:function(){if(!isActive)connectLeague(lg);},style:{padding:"7px 14px",borderRadius:8,border:"none",background:isActive?T.green:T.purple,color:"#fff",fontWeight:700,fontSize:11,cursor:isActive?"default":"pointer",flexShrink:0}},isActive?"Connected":"Connect")
+                    React.createElement("button",{onClick:function(){console.log("[LeagueButton] Clicked lg=",lg);if(!isActive){console.log("[LeagueButton] Calling connectLeague");connectLeague(lg);}else{console.log("[LeagueButton] Already active");}},style:{padding:"7px 14px",borderRadius:8,border:"none",background:isActive?T.green:T.purple,color:"#fff",fontWeight:700,fontSize:11,cursor:isActive?"default":"pointer",flexShrink:0}},isActive?"Connected":"Connect")
                   );
                 });
               }
