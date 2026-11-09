@@ -2724,6 +2724,7 @@ export default function App(){
   var [faabA,setFaabA]=useState(0);
   var [faabB,setFaabB]=useState(0);
   function connectLeague(lg:any){
+    console.log("[connectLeague] Function called - START");
     if(!lg||!lg.league_id)return;
     setLeagueImportStatus("connecting");
     Promise.all([
