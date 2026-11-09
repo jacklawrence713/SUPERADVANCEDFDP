@@ -6949,24 +6949,7 @@ export default function App(){
           leagueImportStatus==="error"&&React.createElement("div",{style:{padding:"10px 14px",background:T.red+"15",borderRadius:10,color:T.red,fontSize:12}},leagueImportErr),
           (leagueImportStatus==="success"||leagueImportStatus==="connected")&&leagueImportData&&React.createElement("div",null,
             React.createElement("div",{style:{fontWeight:700,fontSize:14,marginBottom:10}},leagueImportData.username+"'s Leagues"),
-            (function(){
-              function renderLeagues(leagues){
-                return leagues.map(function(lg){
-                  var isActive=activeLeague&&activeLeague.league_id===lg.league_id;
-                  return React.createElement("div",{key:lg.league_id,style:{background:T.bgInput,borderRadius:10,padding:"12px 14px",marginBottom:8,display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}},
-                    React.createElement("div",null,
-                      React.createElement("div",{style:{fontWeight:700,fontSize:13}},lg.name),
-                      React.createElement("div",{style:{fontSize:11,color:T.textSub,marginTop:2}},lg.total_rosters+" teams")
-                    ),
-                    React.createElement("button",{onClick:function(){console.log("[LeagueButton] Clicked lg=",lg);if(!isActive){console.log("[LeagueButton] Calling connectLeague");connectLeague(lg);}else{console.log("[LeagueButton] Already active");}},style:{padding:"7px 14px",borderRadius:8,border:"none",background:isActive?T.green:T.purple,color:"#fff",fontWeight:700,fontSize:11,cursor:isActive?"default":"pointer",flexShrink:0}},isActive?"Connected":"Connect")
-                  );
-                });
-              }
-              var els=[];
-              if(leagueImportData.leagues2026&&leagueImportData.leagues2026.length){els.push(React.createElement("div",{key:"h26",style:{fontSize:11,fontWeight:700,color:T.textSub,letterSpacing:1,marginBottom:6}},"2026 SEASON"));renderLeagues(leagueImportData.leagues2026).forEach(function(el){els.push(el);});}
-              if(leagueImportData.leagues2025&&leagueImportData.leagues2025.length){els.push(React.createElement("div",{key:"h25",style:{fontSize:11,fontWeight:700,color:T.textSub,letterSpacing:1,marginBottom:6,marginTop:leagueImportData.leagues2026&&leagueImportData.leagues2026.length?12:0}},"2025 SEASON"));renderLeagues(leagueImportData.leagues2025).forEach(function(el){els.push(el);});}
-              return els;
-            })()
+            [leagueImportData.leagues2026&&leagueImportData.leagues2026.length?[React.createElement("div",{key:"h26",style:{fontSize:11,fontWeight:700,color:T.textSub,letterSpacing:1,marginBottom:6}},"2026 SEASON"),...leagueImportData.leagues2026.map(function(lg){var isActive=activeLeague&&activeLeague.league_id===lg.league_id;return React.createElement("div",{key:lg.league_id,style:{background:T.bgInput,borderRadius:10,padding:"12px 14px",marginBottom:8,display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}},React.createElement("div",null,React.createElement("div",{style:{fontWeight:700,fontSize:13}},lg.name),React.createElement("div",{style:{fontSize:11,color:T.textSub,marginTop:2}},lg.total_rosters+" teams")),React.createElement("button",{onClick:function(){console.log("[2026 clicked]");connectLeague(lg);},style:{padding:"7px 14px",borderRadius:8,border:"none",background:isActive?T.green:T.purple,color:"#fff",fontWeight:700,fontSize:11,cursor:"pointer",flexShrink:0}},isActive?"Connected":"Connect"));})]:[],leagueImportData.leagues2025&&leagueImportData.leagues2025.length?[React.createElement("div",{key:"h25",style:{fontSize:11,fontWeight:700,color:T.textSub,letterSpacing:1,marginBottom:6,marginTop:12}},"2025 SEASON"),...leagueImportData.leagues2025.map(function(lg){var isActive=activeLeague&&activeLeague.league_id===lg.league_id;return React.createElement("div",{key:lg.league_id,style:{background:T.bgInput,borderRadius:10,padding:"12px 14px",marginBottom:8,display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}},React.createElement("div",null,React.createElement("div",{style:{fontWeight:700,fontSize:13}},lg.name),React.createElement("div",{style:{fontSize:11,color:T.textSub,marginTop:2}},lg.total_rosters+" teams")),React.createElement("button",{onClick:function(){console.log("[2025 clicked]");connectLeague(lg);},style:{padding:"7px 14px",borderRadius:8,border:"none",background:isActive?T.green:T.purple,color:"#fff",fontWeight:700,fontSize:11,cursor:"pointer",flexShrink:0}},isActive?"Connected":"Connect"));})]:[]]
           )
         ),
         // ESPN
