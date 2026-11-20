@@ -2724,16 +2724,19 @@ export default function App(){
   var [faabA,setFaabA]=useState(0);
   var [faabB,setFaabB]=useState(0);
   function connectLeague(lg:any){
-    console.log("[connectLeague] Function called - START");
-    if(!lg||!lg.league_id)return;
+    console.log("[connectLeague] Connecting to league:", lg.name, lg.league_id);
+    if(!lg||!lg.league_id){console.error("[connectLeague] Invalid league object");return;}
     setLeagueImportStatus("connecting");
+    console.log("[connectLeague] Set status to connecting");
     Promise.all([
-      fetch("https://api.sleeper.app/v1/league/"+lg.league_id+"/rosters").then(function(r){return r.json();}).catch(function(){return[];}),
-      fetch("https://api.sleeper.app/v1/league/"+lg.league_id+"/users").then(function(r){return r.json();}).catch(function(){return[];})
+      fetch("https://api.sleeper.app/v1/league/"+lg.league_id+"/rosters").then(function(r){return r.json();}).catch(function(e){console.error("Rosters fetch failed:",e);return[];}),
+      fetch("https://api.sleeper.app/v1/league/"+lg.league_id+"/users").then(function(r){return r.json();}).catch(function(e){console.error("Users fetch failed:",e);return[];})
     ]).then(function(results){
+      console.log("[connectLeague] Data fetched successfully", results);
       setLeagueRosters(results[0]||[]);
       setLeagueUsers(results[1]||[]);
       saveAndSetActiveLeague(lg);
+      console.log("[connectLeague] Set active league to:", lg.name);
       setLeagueImportStatus(null);
       var aid=user?.id||"anon";
       var ts=new Date().toISOString();
@@ -2741,7 +2744,7 @@ export default function App(){
       setLeagueFetchedAt(ts);
     }).catch(function(e){
       setLeagueImportStatus(null);
-      console.error("Failed to connect league:",e);
+      console.error("[connectLeague] Failed to connect league:",e);
     });
   }
   useEffect(function(){
@@ -6949,14 +6952,14 @@ export default function App(){
           leagueImportStatus==="error"&&React.createElement("div",{style:{padding:"10px 14px",background:T.red+"15",borderRadius:10,color:T.red,fontSize:12}},leagueImportErr),
           (leagueImportStatus==="success"||leagueImportStatus==="connected")&&leagueImportData&&React.createElement("div",null,
             React.createElement("div",{style:{fontWeight:700,fontSize:14,marginBottom:10}},leagueImportData.username+"'s Leagues"),
-            React.createElement("button",{type:"button",onClick:function(e){e.preventDefault();e.stopPropagation();window.testClicked=true;alert("TEST WORKS");},style:{padding:"15px 20px",background:"#ff0000",color:"#fff",border:"none",borderRadius:8,cursor:"pointer",marginBottom:12,fontWeight:700,fontSize:16,width:"100%"}},"🔴 TEST BUTTON"),
+            
             leagueImportData.leagues2026&&React.createElement("div",null,
               React.createElement("div",{style:{fontSize:11,fontWeight:700,color:T.textSub,letterSpacing:1,marginBottom:6}},"2026 SEASON"),
-              leagueImportData.leagues2026.map(function(lg){var isActive=activeLeague&&activeLeague.league_id===lg.league_id;return React.createElement("div",{key:lg.league_id,style:{background:T.bgInput,borderRadius:10,padding:"12px 14px",marginBottom:8,display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}},React.createElement("div",null,React.createElement("div",{style:{fontWeight:700,fontSize:13}},lg.name),React.createElement("div",{style:{fontSize:11,color:T.textSub,marginTop:2}},lg.total_rosters+" teams")),React.createElement("button",{key:'btn_'+lg.league_id,onMouseDown:function(){console.log("MOUSE DOWN");connectLeague(lg);},onTouchStart:function(){console.log("TOUCH");connectLeague(lg);},style:{padding:"7px 14px",borderRadius:8,border:"none",background:isActive?T.green:T.purple,color:"#fff",fontWeight:700,fontSize:11,cursor:"pointer",flexShrink:0}},isActive?"Connected":"Connect"));})
+              leagueImportData.leagues2026.map(function(lg){var isActive=activeLeague&&activeLeague.league_id===lg.league_id;return React.createElement("div",{key:lg.league_id,style:{background:T.bgInput,borderRadius:10,padding:"12px 14px",marginBottom:8,display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}},React.createElement("div",null,React.createElement("div",{style:{fontWeight:700,fontSize:13}},lg.name),React.createElement("div",{style:{fontSize:11,color:T.textSub,marginTop:2}},lg.total_rosters+" teams")),React.createElement("button",{key:'btn_'+lg.league_id,onClick:function(e){e.preventDefault();e.stopPropagation();connectLeague(lg);},style:{padding:"7px 14px",borderRadius:8,border:"none",background:isActive?T.green:T.purple,color:"#fff",fontWeight:700,fontSize:11,cursor:"pointer",flexShrink:0}},isActive?"Connected":"Connect"));})
             ),
             leagueImportData.leagues2025&&React.createElement("div",null,
               React.createElement("div",{style:{fontSize:11,fontWeight:700,color:T.textSub,letterSpacing:1,marginBottom:6,marginTop:12}},"2025 SEASON"),
-              leagueImportData.leagues2025.map(function(lg){var isActive=activeLeague&&activeLeague.league_id===lg.league_id;return React.createElement("div",{key:lg.league_id,style:{background:T.bgInput,borderRadius:10,padding:"12px 14px",marginBottom:8,display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}},React.createElement("div",null,React.createElement("div",{style:{fontWeight:700,fontSize:13}},lg.name),React.createElement("div",{style:{fontSize:11,color:T.textSub,marginTop:2}},lg.total_rosters+" teams")),React.createElement("button",{key:'btn_'+lg.league_id,onMouseDown:function(){console.log("MOUSE DOWN");connectLeague(lg);},onTouchStart:function(){console.log("TOUCH");connectLeague(lg);},style:{padding:"7px 14px",borderRadius:8,border:"none",background:isActive?T.green:T.purple,color:"#fff",fontWeight:700,fontSize:11,cursor:"pointer",flexShrink:0}},isActive?"Connected":"Connect"));})
+              leagueImportData.leagues2025.map(function(lg){var isActive=activeLeague&&activeLeague.league_id===lg.league_id;return React.createElement("div",{key:lg.league_id,style:{background:T.bgInput,borderRadius:10,padding:"12px 14px",marginBottom:8,display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}},React.createElement("div",null,React.createElement("div",{style:{fontWeight:700,fontSize:13}},lg.name),React.createElement("div",{style:{fontSize:11,color:T.textSub,marginTop:2}},lg.total_rosters+" teams")),React.createElement("button",{key:'btn_'+lg.league_id,onClick:function(e){e.preventDefault();e.stopPropagation();connectLeague(lg);},style:{padding:"7px 14px",borderRadius:8,border:"none",background:isActive?T.green:T.purple,color:"#fff",fontWeight:700,fontSize:11,cursor:"pointer",flexShrink:0}},isActive?"Connected":"Connect"));})
             )
           )        ),
         // ESPN
