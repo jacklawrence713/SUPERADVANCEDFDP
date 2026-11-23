@@ -3611,7 +3611,7 @@ export default function App(){
     document.title="What is FDP Value? | Fantasy Draft Pros";
     var fdpMeta=document.querySelector('meta[name="description"]');
     if(fdpMeta)fdpMeta.setAttribute("content","Learn how FDP Value works. Fantasy Draft Pros uses a 0-9,999 scale to rank 1,000+ dynasty players. Understand age adjustments, Superflex, TE Premium, and scoring format impacts.");
-    return React.createElement("div",{style:{background:T.bg,minHeight:"100vh",color:T.text,fontFamily:"-apple-system,BlinkMacSystemFont,'Inter',sans-serif"}},
+    return React.createElement("div",{style:{background:T.bg,minHeight:"100vh",color:T.text,fontFamily:"-apple-system,BlinkMacSystemFont,'Inter',sans-serif",overflow:"hidden",width:"100vw"}},
       React.createElement("div",{style:{background:T.bgCard,borderBottom:"1px solid "+T.border,padding:"12px 20px",display:"flex",alignItems:"center",gap:12}},
         React.createElement("a",{href:"/",onClick:function(e:any){e.preventDefault();setFdpValuePage(false);window.history.pushState({},"","/");document.title="Fantasy Draft Pros \u2014 Fantasy Football Decisions Powered by Your League";},style:{color:T.purple,fontWeight:700,fontSize:13,textDecoration:"none",cursor:"pointer"}},"\u2190 Back to Trade Analyzer"),
         React.createElement("div",{style:{flex:1}}),
@@ -3723,7 +3723,7 @@ export default function App(){
     var ppScript=getGameScript(pp.team,oddsData);
     // Projections
     var ppProj=pp.proj||{};
-    return React.createElement("div",{style:{background:T.bg,minHeight:"100vh",color:T.text,fontFamily:"-apple-system,BlinkMacSystemFont,'Inter',sans-serif"}},
+    return React.createElement("div",{style:{background:T.bg,minHeight:"100vh",color:T.text,fontFamily:"-apple-system,BlinkMacSystemFont,'Inter',sans-serif",overflow:"hidden",width:"100vw"}},
       // Header bar
       React.createElement("div",{style:{background:T.bgCard,borderBottom:"1px solid "+T.border,padding:"12px 20px",display:"flex",alignItems:"center",gap:12}},
         React.createElement("a",{href:"/",onClick:function(e:any){e.preventDefault();setPlayerPage(null);window.history.pushState({},"","/");document.title="Fantasy Draft Pros — Fantasy Football Decisions Powered by Your League";},style:{color:T.purple,fontWeight:700,fontSize:13,textDecoration:"none",cursor:"pointer"}},"← Back to Trade Analyzer"),
@@ -4356,7 +4356,7 @@ export default function App(){
     ),
 
     // RIGHT COLUMN WRAPPER (ticker + main content for proper desktop flex layout)
-    React.createElement("div",{style:{flex:1,display:"flex",flexDirection:"column",minWidth:0,height:"100vh",marginLeft:isDesktop?220:0}},
+    React.createElement("div",{style:{flex:1,display:"flex",flexDirection:"column",minWidth:0,height:isDesktop?"100vh":"auto",marginLeft:isDesktop?220:0,overflowY:isDesktop?"auto":"visible",overflowX:"hidden"}},
       // Dynasty Value Ticker (all tabs — outside scroll wrapper so it stays fixed)
       React.createElement("div",{style:{width:"100%",overflow:"hidden",background:darkMode?"#0a0818":"#f8f7ff",borderBottom:"1px solid "+T.border,padding:"6px 0",flexShrink:0}},
         React.createElement("div",{ref:tickerRef,style:{display:"flex",gap:20,width:"200%",whiteSpace:"nowrap"}},
