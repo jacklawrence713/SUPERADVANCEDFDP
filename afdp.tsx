@@ -2723,7 +2723,7 @@ export default function App(){
   var [isDesktop,setIsDesktop]=useState(function(){return window.innerWidth>=1024;});
   var [faabA,setFaabA]=useState(0);
   var [faabB,setFaabB]=useState(0);
-  function connectLeague(lg:any){
+  function connectLeague(lg:any){window.console.log("LEAGUE CONNECT CLICKED - lg:", lg);alert("CONNECT BUTTON CLICKED");
     console.log("[connectLeague] Connecting to league:", lg.name, lg.league_id);
     if(!lg||!lg.league_id){console.error("[connectLeague] Invalid league object");return;}
     setLeagueImportStatus("connecting");
