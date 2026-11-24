@@ -3580,7 +3580,7 @@ export default function App(){
     }).catch(function(e){setImpErr(e.message||"Import failed");setImpStatus("error");});
   }
 
-  function doLeagueImport(){
+  function doLeagueImport(){alert("SEARCH CLICKED");
     if(!leagueImportUser.trim())return;
     setLeagueImportStatus("loading");setLeagueImportErr("");setLeagueImportData(null);
     fetch("https://api.sleeper.app/v1/user/"+leagueImportUser.trim()).then(function(r){if(!r.ok)throw new Error("User not found");return r.json();}).then(function(u){
@@ -3591,7 +3591,7 @@ export default function App(){
         fetch("https://api.sleeper.app/v1/user/"+uid+"/leagues/nfl/2026").then(function(r){return r.json();}).catch(function(){return[];})
       ]).then(function(results){
         setLeagueImportData({username:u.display_name||u.username,leagues2025:results[0]||[],leagues2026:results[1]||[]});
-        setLeagueImportStatus("success");
+        alert("LEAGUES LOADED: "+JSON.stringify(results));setLeagueImportStatus("success");
       });
     }).catch(function(e){setLeagueImportErr(e.message||"User not found");setLeagueImportStatus("error");});
   }
