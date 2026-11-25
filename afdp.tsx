@@ -3611,7 +3611,6 @@ export default function App(){
     document.title="What is FDP Value? | Fantasy Draft Pros";
     var fdpMeta=document.querySelector('meta[name="description"]');
     if(fdpMeta)fdpMeta.setAttribute("content","Learn how FDP Value works. Fantasy Draft Pros uses a 0-9,999 scale to rank 1,000+ dynasty players. Understand age adjustments, Superflex, TE Premium, and scoring format impacts.");
-  function handleLeagueConnect(e){if(!e.currentTarget)return;var leagueId=e.currentTarget.getAttribute("data-league-id");var leagueName=e.currentTarget.getAttribute("data-league-name");if(leagueId){connectLeague({league_id:leagueId,name:leagueName,total_rosters:parseInt(e.currentTarget.getAttribute("data-league-rosters")||0)});}}
     return React.createElement("div",{style:{background:T.bg,minHeight:"100vh",color:T.text,fontFamily:"-apple-system,BlinkMacSystemFont,'Inter',sans-serif",overflowX:"hidden",width:"100%",overflowY:"auto"}},
       React.createElement("div",{style:{background:T.bgCard,borderBottom:"1px solid "+T.border,padding:"12px 20px",display:"flex",alignItems:"center",gap:12}},
         React.createElement("a",{href:"/",onClick:function(e:any){e.preventDefault();setFdpValuePage(false);window.history.pushState({},"","/");document.title="Fantasy Draft Pros \u2014 Fantasy Football Decisions Powered by Your League";},style:{color:T.purple,fontWeight:700,fontSize:13,textDecoration:"none",cursor:"pointer"}},"\u2190 Back to Trade Analyzer"),
@@ -3724,7 +3723,6 @@ export default function App(){
     var ppScript=getGameScript(pp.team,oddsData);
     // Projections
     var ppProj=pp.proj||{};
-  function handleLeagueConnect(e){if(!e.currentTarget)return;var leagueId=e.currentTarget.getAttribute("data-league-id");var leagueName=e.currentTarget.getAttribute("data-league-name");if(leagueId){connectLeague({league_id:leagueId,name:leagueName,total_rosters:parseInt(e.currentTarget.getAttribute("data-league-rosters")||0)});}}
     return React.createElement("div",{style:{background:T.bg,minHeight:"100vh",color:T.text,fontFamily:"-apple-system,BlinkMacSystemFont,'Inter',sans-serif",overflowX:"hidden",width:"100%",overflowY:"auto"}},
       // Header bar
       React.createElement("div",{style:{background:T.bgCard,borderBottom:"1px solid "+T.border,padding:"12px 20px",display:"flex",alignItems:"center",gap:12}},
@@ -4030,7 +4028,6 @@ export default function App(){
     );
   }
 
-  function handleLeagueConnect(e){if(!e.currentTarget)return;var leagueId=e.currentTarget.getAttribute("data-league-id");var leagueName=e.currentTarget.getAttribute("data-league-name");if(leagueId){connectLeague({league_id:leagueId,name:leagueName,total_rosters:parseInt(e.currentTarget.getAttribute("data-league-rosters")||0)});}}
   return React.createElement("div",{style:{background:T.bg,height:"100vh",color:T.text,fontFamily:"-apple-system,BlinkMacSystemFont,'Inter',sans-serif",maxWidth:isDesktop?"100%":480,margin:"0 auto",display:"flex",flexDirection:isDesktop?"row":"column",overflow:"hidden"}},
     React.createElement("style",null,"@keyframes ticker-scroll{0%{transform:translateX(0)}100%{transform:translateX(-100%)}} @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}"),
     React.createElement("style",null,"@keyframes ticker-scroll{0%{transform:translateX(0)}100%{transform:translateX(-100%)}} @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}"),
@@ -4803,7 +4800,6 @@ export default function App(){
           return (p.age||25)<=24&&(p.tradeVal||0)>=1500&&(p.tradeVal||0)<=6000&&(targetPos==="ALL"||p.pos===targetPos);
         }).sort(function(a,b){return (b.tradeVal||0)-(a.tradeVal||0);}).slice(0,5);
         if(buyLow.length===0&&sellHigh.length===0)return null;
-  function handleLeagueConnect(e){if(!e.currentTarget)return;var leagueId=e.currentTarget.getAttribute("data-league-id");var leagueName=e.currentTarget.getAttribute("data-league-name");if(leagueId){connectLeague({league_id:leagueId,name:leagueName,total_rosters:parseInt(e.currentTarget.getAttribute("data-league-rosters")||0)});}}
         return React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:20,padding:18,marginBottom:20}},
           React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:4}},
             React.createElement("span",{style:{fontSize:20}},"🎯"),
@@ -4895,7 +4891,6 @@ export default function App(){
         ];
         var risers=movers.filter(function(m){return m.after>m.before;}).sort(function(a,b){return(b.after-b.before)-(a.after-a.before);});
         var fallers=movers.filter(function(m){return m.after<m.before;}).sort(function(a,b){return(a.after-a.before)-(b.after-b.before);});
-  function handleLeagueConnect(e){if(!e.currentTarget)return;var leagueId=e.currentTarget.getAttribute("data-league-id");var leagueName=e.currentTarget.getAttribute("data-league-name");if(leagueId){connectLeague({league_id:leagueId,name:leagueName,total_rosters:parseInt(e.currentTarget.getAttribute("data-league-rosters")||0)});}}
         return React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:16,padding:"16px",marginBottom:16}},
           React.createElement("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}},
             React.createElement("div",{style:{fontWeight:900,fontSize:15,color:T.text}},"Week 1 Value Movers"),
@@ -5377,7 +5372,6 @@ export default function App(){
               var posVals={QB:0,RB:0,WR:0,TE:0};
               team.players.forEach(function(p){if(posVals.hasOwnProperty(p.pos))posVals[p.pos]+=(p.tradeVal||0);});
               var maxPosVal=Math.max(posVals.QB,posVals.RB,posVals.WR,posVals.TE,1);
-  function handleLeagueConnect(e){if(!e.currentTarget)return;var leagueId=e.currentTarget.getAttribute("data-league-id");var leagueName=e.currentTarget.getAttribute("data-league-name");if(leagueId){connectLeague({league_id:leagueId,name:leagueName,total_rosters:parseInt(e.currentTarget.getAttribute("data-league-rosters")||0)});}}
               return React.createElement("div",{style:{background:T.bgInput,borderRadius:8,padding:"10px 12px",marginBottom:8}},
                 React.createElement("div",{style:{fontSize:10,color:T.textSub,marginBottom:6,fontWeight:700}},"Position Strength"),
                 ["QB","RB","WR","TE"].map(function(pos){
@@ -5721,7 +5715,6 @@ export default function App(){
               var wtdAge=totalW>0?totalAge/totalW:25;
               var windowYrs=wtdAge<24?"5+":wtdAge<26?"3-4":wtdAge<28?"2-3":wtdAge<30?"1-2":"<1";
               var windowColor=wtdAge<26?T.green:wtdAge<28?T.gold:T.red;
-  function handleLeagueConnect(e){if(!e.currentTarget)return;var leagueId=e.currentTarget.getAttribute("data-league-id");var leagueName=e.currentTarget.getAttribute("data-league-name");if(leagueId){connectLeague({league_id:leagueId,name:leagueName,total_rosters:parseInt(e.currentTarget.getAttribute("data-league-rosters")||0)});}}
               return React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+windowColor+"44",borderRadius:14,padding:16,marginBottom:14,display:"flex",alignItems:"center",gap:14}},
                 React.createElement("div",{style:{width:56,height:56,borderRadius:"50%",border:"3px solid "+windowColor,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}},
                   React.createElement("div",{style:{textAlign:"center"}},
@@ -5758,7 +5751,6 @@ export default function App(){
               // Hold — prime-age stars on roster
               var holdCands=myPlrs.filter(function(p){var lo=PRIME[p.pos]?PRIME[p.pos][0]:25;var hi=PRIME[p.pos]?PRIME[p.pos][1]:30;return (p.age||25)>=lo&&(p.age||25)<=hi&&(p.tradeVal||0)>=3000;}).sort(function(a,b){return (b.tradeVal||0)-(a.tradeVal||0);}).slice(0,3);
               if(holdCands.length>0) tips.push({type:"Hold",color:"#818cf8",icon:"●",players:holdCands,reason:"In their prime — don't sell unless overpaid"});
-  function handleLeagueConnect(e){if(!e.currentTarget)return;var leagueId=e.currentTarget.getAttribute("data-league-id");var leagueName=e.currentTarget.getAttribute("data-league-name");if(leagueId){connectLeague({league_id:leagueId,name:leagueName,total_rosters:parseInt(e.currentTarget.getAttribute("data-league-rosters")||0)});}}
               return React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:14,padding:16,marginTop:4}},
                 React.createElement("div",{style:{fontWeight:800,fontSize:15,marginBottom:12}},"Actionable Advice"),
                 tips.map(function(tip){
@@ -6964,11 +6956,11 @@ export default function App(){
             
             leagueImportData.leagues2026&&React.createElement("div",null,
               React.createElement("div",{style:{fontSize:11,fontWeight:700,color:T.textSub,letterSpacing:1,marginBottom:6}},"2026 SEASON"),
-              leagueImportData.leagues2026.map(function(lg){var isActive=activeLeague&&activeLeague.league_id===lg.league_id;return React.createElement("div",{key:lg.league_id,style:{background:T.bgInput,borderRadius:10,padding:"12px 14px",marginBottom:8,display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}},React.createElement("div",null,React.createElement("div",{style:{fontWeight:700,fontSize:13}},lg.name),React.createElement("div",{style:{fontSize:11,color:T.textSub,marginTop:2}},lg.total_rosters+" teams")),React.createElement("button",{type:"button",key:'btn_'+lg.league_id,"data-league-id":lg.league_id,"data-league-name":lg.name,"data-league-rosters":lg.total_rosters,onClick:handleLeagueConnect,style:{padding:"7px 14px",borderRadius:8,border:"none",background:isActive?T.green:T.purple,color:"#fff",fontWeight:700,fontSize:11,cursor:"pointer",flexShrink:0}},isActive?"Connected":"Connect"));})
+              leagueImportData.leagues2026.map(function(lg){var isActive=activeLeague&&activeLeague.league_id===lg.league_id;return React.createElement("div",{key:lg.league_id,style:{background:T.bgInput,borderRadius:10,padding:"12px 14px",marginBottom:8,display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}},React.createElement("div",null,React.createElement("div",{style:{fontWeight:700,fontSize:13}},lg.name),React.createElement("div",{style:{fontSize:11,color:T.textSub,marginTop:2}},lg.total_rosters+" teams")),React.createElement("button",{type:"button",key:'btn_'+lg.league_id,"data-league-id":lg.league_id,"data-league-name":lg.name,"data-league-rosters":lg.total_rosters,onClick:function(e){alert("BUTTON CLICKED!");var leagueId=e.currentTarget.getAttribute("data-league-id");alert("Got leagueId: "+leagueId);var leagueName=e.currentTarget.getAttribute("data-league-name");if(leagueId){alert("Calling connectLeague");connectLeague({league_id:leagueId,name:leagueName,total_rosters:parseInt(e.currentTarget.getAttribute("data-league-rosters"))});}},style:{padding:"7px 14px",borderRadius:8,border:"none",background:isActive?T.green:T.purple,color:"#fff",fontWeight:700,fontSize:11,cursor:"pointer",flexShrink:0}},isActive?"Connected":"Connect"));})
             ),
             leagueImportData.leagues2025&&React.createElement("div",null,
               React.createElement("div",{style:{fontSize:11,fontWeight:700,color:T.textSub,letterSpacing:1,marginBottom:6,marginTop:12}},"2025 SEASON"),
-              leagueImportData.leagues2025.map(function(lg){var isActive=activeLeague&&activeLeague.league_id===lg.league_id;return React.createElement("div",{key:lg.league_id,style:{background:T.bgInput,borderRadius:10,padding:"12px 14px",marginBottom:8,display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}},React.createElement("div",null,React.createElement("div",{style:{fontWeight:700,fontSize:13}},lg.name),React.createElement("div",{style:{fontSize:11,color:T.textSub,marginTop:2}},lg.total_rosters+" teams")),React.createElement("button",{type:"button",key:'btn_'+lg.league_id,"data-league-id":lg.league_id,"data-league-name":lg.name,"data-league-rosters":lg.total_rosters,onClick:handleLeagueConnect,style:{padding:"7px 14px",borderRadius:8,border:"none",background:isActive?T.green:T.purple,color:"#fff",fontWeight:700,fontSize:11,cursor:"pointer",flexShrink:0}},isActive?"Connected":"Connect"));})
+              leagueImportData.leagues2025.map(function(lg){var isActive=activeLeague&&activeLeague.league_id===lg.league_id;return React.createElement("div",{key:lg.league_id,style:{background:T.bgInput,borderRadius:10,padding:"12px 14px",marginBottom:8,display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}},React.createElement("div",null,React.createElement("div",{style:{fontWeight:700,fontSize:13}},lg.name),React.createElement("div",{style:{fontSize:11,color:T.textSub,marginTop:2}},lg.total_rosters+" teams")),React.createElement("button",{type:"button",key:'btn_'+lg.league_id,"data-league-id":lg.league_id,"data-league-name":lg.name,"data-league-rosters":lg.total_rosters,onClick:function(e){alert("BUTTON CLICKED!");var leagueId=e.currentTarget.getAttribute("data-league-id");alert("Got leagueId: "+leagueId);var leagueName=e.currentTarget.getAttribute("data-league-name");if(leagueId){alert("Calling connectLeague");connectLeague({league_id:leagueId,name:leagueName,total_rosters:parseInt(e.currentTarget.getAttribute("data-league-rosters"))});}},style:{padding:"7px 14px",borderRadius:8,border:"none",background:isActive?T.green:T.purple,color:"#fff",fontWeight:700,fontSize:11,cursor:"pointer",flexShrink:0}},isActive?"Connected":"Connect"));})
             )
           )        ),
         // ESPN
@@ -8993,7 +8985,6 @@ export default function App(){
               )
             )
           :React.createElement("div",{style:{padding:"16px"}},
-  function handleLeagueConnect(e){if(!e.currentTarget)return;var leagueId=e.currentTarget.getAttribute("data-league-id");var leagueName=e.currentTarget.getAttribute("data-league-name");if(leagueId){connectLeague({league_id:leagueId,name:leagueName,total_rosters:parseInt(e.currentTarget.getAttribute("data-league-rosters")||0)});}}
               (function(){var wlPlayers=rankedPlayers.filter(function(p){return watchlist.indexOf(p.name)!==-1;});var wlTotal=wlPlayers.reduce(function(s,p){return s+(p.tradeVal||0);},0);var wlChange=wlPlayers.reduce(function(s,p){var snap=watchlistSnapshots[p.name];return snap!=null?s+((p.tradeVal||0)-snap):s;},0);return React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.borderPurple,borderRadius:14,padding:"12px 16px",marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center"}},
                 React.createElement("div",null,
                   React.createElement("div",{style:{fontSize:10,color:T.textSub,fontWeight:700}},"WATCHLIST VALUE"),
@@ -9211,7 +9202,6 @@ export default function App(){
                 {label:"Age Curve",v1:ab1*100,v2:ab2*100,max:Math.max(ab1,ab2,1)*100,fmt:function(v){return v>=100?"+"+Math.round(v-100)+"%":"-"+Math.round(100-v)+"%";}},
                 {label:"Pos Rank",v1:Math.max(1,50-(compareP1.posRank||50)),v2:Math.max(1,50-(compareP2.posRank||50)),max:49,fmt:function(v){return "#"+Math.max(1,50-Math.round(v));}}
               ];
-  function handleLeagueConnect(e){if(!e.currentTarget)return;var leagueId=e.currentTarget.getAttribute("data-league-id");var leagueName=e.currentTarget.getAttribute("data-league-name");if(leagueId){connectLeague({league_id:leagueId,name:leagueName,total_rosters:parseInt(e.currentTarget.getAttribute("data-league-rosters")||0)});}}
               return React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"14px 16px",marginBottom:12}},
                 React.createElement("div",{style:{fontSize:10,fontWeight:800,color:T.textDim,letterSpacing:1,marginBottom:10}},"HEAD-TO-HEAD"),
                 bars.map(function(b){
@@ -9259,7 +9249,6 @@ export default function App(){
               if(Math.abs(ageScore)>5)reasons.push((ageScore>0?p1.name:p2.name)+" is younger (better long-term)");
               if(Math.abs(curveScore)>5)reasons.push((curveScore>0?p1.name:p2.name)+" has a better dynasty curve");
               if(Math.abs(rankScore)>5)reasons.push((rankScore>0?p1.name:p2.name)+" has a higher position rank");
-  function handleLeagueConnect(e){if(!e.currentTarget)return;var leagueId=e.currentTarget.getAttribute("data-league-id");var leagueName=e.currentTarget.getAttribute("data-league-name");if(leagueId){connectLeague({league_id:leagueId,name:leagueName,total_rosters:parseInt(e.currentTarget.getAttribute("data-league-rosters")||0)});}}
               return React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+confColor+"44",borderRadius:12,padding:"14px 16px",marginBottom:10}},
                 React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:8}},
                   React.createElement(Avatar,{name:pick.name,pos:pick.pos,size:32}),
@@ -9539,7 +9528,6 @@ export default function App(){
           React.createElement("div",{style:{fontSize:12,color:T.textSub,marginBottom:16}},"Pulls actual scoring stats from Sleeper's free API"),
           React.createElement("button",{onClick:loadSleeperStats,style:{padding:"11px 24px",borderRadius:10,border:"none",background:T.purple,color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}},"Load Now")
         ),
-  function handleLeagueConnect(e){if(!e.currentTarget)return;var leagueId=e.currentTarget.getAttribute("data-league-id");var leagueName=e.currentTarget.getAttribute("data-league-name");if(leagueId){connectLeague({league_id:leagueId,name:leagueName,total_rosters:parseInt(e.currentTarget.getAttribute("data-league-rosters")||0)});}}
         sleeperStats&&sleeperStats.data&&(function(){var allEntries=Object.entries(sleeperStats.data);var hasData=allEntries.some(function(e){var s=e[1]||{};return (s.pts_ppr||s.pts_half_ppr||s.pts_std||0)>0;});if(!hasData)return React.createElement("div",{style:{background:T.bgCard,border:"1px solid "+T.border,borderRadius:14,padding:"48px 20px",textAlign:"center"}},React.createElement("div",{style:{fontSize:36,marginBottom:10}},"📭"),React.createElement("div",{style:{fontWeight:700,fontSize:15,marginBottom:6,color:T.text}},"No Stats Available"),React.createElement("div",{style:{fontSize:13,color:T.textSub,lineHeight:1.6,maxWidth:280,margin:"0 auto"}},"The NFL is in the offseason. Weekly stats will be available once the 2026 regular season begins in September."));return null;})(),
         sleeperStats&&sleeperStats.data&&React.createElement("div",null,
           React.createElement("div",{style:{fontSize:11,color:T.textSub,fontWeight:600,marginBottom:10}},"TOP SCORERS — WEEK "+sleeperStats.week),
