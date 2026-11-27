@@ -2723,18 +2723,35 @@ export default function App(){
   var [isDesktop,setIsDesktop]=useState(function(){return window.innerWidth>=1024;});
   var [faabA,setFaabA]=useState(0);
   var [faabB,setFaabB]=useState(0);
+  var connectLeagueRequestIdRef=React.useRef<string|null>(null);
   function connectLeague(lg:any){
     console.log("[connectLeague] Connecting to league:", lg.name, lg.league_id);
-    if(!lg||!lg.league_id){console.error("[connectLeague] Invalid league object");return;}
+    if(!lg||!lg.league_id){console.error("[connectLeague] Invalid league object");setLeagueImportErr("Invalid league data");setLeagueImportStatus("error");return;}
+    var requestId=Math.random().toString(36).substring(2,11);
+    connectLeagueRequestIdRef.current=requestId;
     setLeagueImportStatus("connecting");
-    console.log("[connectLeague] Set status to connecting");
+    setLeagueImportErr("");
+    console.log("[connectLeague] Connecting to league:", lg.name, lg.league_id, "requestId:", requestId);
+    var timeoutHandle=setTimeout(function(){
+      if(connectLeagueRequestIdRef.current===requestId){
+        setLeagueImportStatus("error");
+        setLeagueImportErr("League sync timed out. Sleeper API may be slow or unavailable.");
+        console.error("[connectLeague] Timeout after 30s");
+      }
+    },30000);
     Promise.all([
-      fetch("https://api.sleeper.app/v1/league/"+lg.league_id+"/rosters").then(function(r){return r.json();}).catch(function(e){console.error("Rosters fetch failed:",e);return[];}),
-      fetch("https://api.sleeper.app/v1/league/"+lg.league_id+"/users").then(function(r){return r.json();}).catch(function(e){console.error("Users fetch failed:",e);return[];})
+      fetch("https://api.sleeper.app/v1/league/"+lg.league_id+"/rosters",{signal:AbortSignal.timeout(25000)}).then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.json();}).catch(function(e){console.error("Rosters fetch failed:",e);throw e;}),
+      fetch("https://api.sleeper.app/v1/league/"+lg.league_id+"/users",{signal:AbortSignal.timeout(25000)}).then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.json();}).catch(function(e){console.error("Users fetch failed:",e);throw e;})
     ]).then(function(results){
+      if(connectLeagueRequestIdRef.current!==requestId){console.log("[connectLeague] Ignoring stale response");return;}
+      clearTimeout(timeoutHandle);
+      var rosters=results[0]||[];
+      var users=results[1]||[];
+      if(!Array.isArray(rosters)||!Array.isArray(users)){throw new Error("Invalid response format");}
+      if(rosters.length===0){throw new Error("No rosters found in this league");}
       console.log("[connectLeague] Data fetched successfully", results);
-      setLeagueRosters(results[0]||[]);
-      setLeagueUsers(results[1]||[]);
+      setLeagueRosters(rosters);
+      setLeagueUsers(users);
       saveAndSetActiveLeague(lg);
       console.log("[connectLeague] Set active league to:", lg.name);
       setLeagueImportStatus(null);
@@ -2743,7 +2760,16 @@ export default function App(){
       try{localStorage.setItem(leagueFetchedAtKey(aid,deriveProvider(lg.league_id),lg.league_id),ts);}catch(e){}
       setLeagueFetchedAt(ts);
     }).catch(function(e){
-      setLeagueImportStatus(null);
+      if(connectLeagueRequestIdRef.current!==requestId){console.log("[connectLeague] Ignoring stale error");return;}
+      clearTimeout(timeoutHandle);
+      var msg=e.message||"Failed to sync league";
+      if(msg.includes("HTTP 404"))msg="League not found. Check your league ID.";
+      else if(msg.includes("HTTP 429"))msg="Rate limited. Sleeper API is busy. Try again in a moment.";
+      else if(msg.includes("HTTP 5"))msg="Sleeper API error. Try again later.";
+      else if(msg.includes("No rosters found"))msg="This league has no rosters. Invalid league ID?";
+      else if(msg.includes("AbortError")||msg.includes("timed out"))msg="Request timed out. Check your internet connection.";
+      setLeagueImportStatus("error");
+      setLeagueImportErr(msg);
       console.error("[connectLeague] Failed to connect league:",e);
     });
   }
