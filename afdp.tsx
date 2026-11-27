@@ -2739,9 +2739,11 @@ export default function App(){
         console.error("[connectLeague] Timeout after 30s");
       }
     },30000);
+    var controllers=[new AbortController(),new AbortController()];
+    var fetchTimeoutHandles=[setTimeout(function(){controllers[0].abort();},25000),setTimeout(function(){controllers[1].abort();},25000)];
     Promise.all([
-      fetch("https://api.sleeper.app/v1/league/"+lg.league_id+"/rosters",{signal:AbortSignal.timeout(25000)}).then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.json();}).catch(function(e){console.error("Rosters fetch failed:",e);throw e;}),
-      fetch("https://api.sleeper.app/v1/league/"+lg.league_id+"/users",{signal:AbortSignal.timeout(25000)}).then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.json();}).catch(function(e){console.error("Users fetch failed:",e);throw e;})
+      fetch("https://api.sleeper.app/v1/league/"+lg.league_id+"/rosters",{signal:controllers[0].signal}).then(function(r){clearTimeout(fetchTimeoutHandles[0]);if(!r.ok)throw new Error("HTTP "+r.status);return r.json();}).catch(function(e){clearTimeout(fetchTimeoutHandles[0]);console.error("Rosters fetch failed:",e);throw e;}),
+      fetch("https://api.sleeper.app/v1/league/"+lg.league_id+"/users",{signal:controllers[1].signal}).then(function(r){clearTimeout(fetchTimeoutHandles[1]);if(!r.ok)throw new Error("HTTP "+r.status);return r.json();}).catch(function(e){clearTimeout(fetchTimeoutHandles[1]);console.error("Users fetch failed:",e);throw e;})
     ]).then(function(results){
       if(connectLeagueRequestIdRef.current!==requestId){console.log("[connectLeague] Ignoring stale response");return;}
       clearTimeout(timeoutHandle);
@@ -3606,7 +3608,7 @@ export default function App(){
     }).catch(function(e){setImpErr(e.message||"Import failed");setImpStatus("error");});
   }
 
-  function doLeagueImport(){alert("SEARCH CLICKED");
+  function doLeagueImport(){
     if(!leagueImportUser.trim())return;
     setLeagueImportStatus("loading");setLeagueImportErr("");setLeagueImportData(null);
     fetch("https://api.sleeper.app/v1/user/"+leagueImportUser.trim()).then(function(r){if(!r.ok)throw new Error("User not found");return r.json();}).then(function(u){
