@@ -2750,7 +2750,7 @@ export default function App(){
       var rosters=results[0]||[];
       var users=results[1]||[];
       if(!Array.isArray(rosters)||!Array.isArray(users)){throw new Error("Invalid response format");}
-      if(rosters.length===0){throw new Error("No rosters found in this league");}
+
       console.log("[connectLeague] Data fetched successfully", results);
       setLeagueRosters(rosters);
       setLeagueUsers(users);
